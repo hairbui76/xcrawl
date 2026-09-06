@@ -1,0 +1,171 @@
+{
+  "registry_version": "1.0",
+  "status": "DRAFT_FOR_REVIEW",
+  "product_status": "NOT_READY_FOR_PRODUCT_CODE",
+  "source_baselines": [
+    {
+      "path": "/workspace/scratch/9cff39a6f330/research-radar-pre-code-plan.md",
+      "sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "bytes": 64915
+    },
+    {
+      "path": "/workspace/scratch/9cff39a6f330/upload/research-radar-spec(1).md",
+      "sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "bytes": 41770
+    }
+  ],
+  "open_product_blockers": [
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+    "B13",
+    "B14",
+    "B15",
+    "B16",
+    "B17"
+  ],
+  "instruction_precedence": [
+    "platform_constraints",
+    "explicit_owner_instructions",
+    "accepted_owner_decisions",
+    "valid_scoped_delegation",
+    "pinned_agent_protocol",
+    "task_packet"
+  ],
+  "roles": {
+    "Coordinator": {
+      "profile": "coordinator.md",
+      "enabled": true,
+      "physical_write": false,
+      "dispatches": [
+        "Worker",
+        "Auditor"
+      ],
+      "outputs": [
+        "TASK_PACKET",
+        "WRITE_LEASE",
+        "FROZEN_CANDIDATE",
+        "OWNER_DECISION_REQUEST"
+      ],
+      "cannot": [
+        "coauthor_physical_artifacts",
+        "self_grant_authority",
+        "rewrite_audit_verdict",
+        "close_finding_without_designated_authority"
+      ]
+    },
+    "Worker": {
+      "profile": "worker.md",
+      "enabled": true,
+      "physical_write": true,
+      "dispatches": [],
+      "requires": [
+        "exact_path_and_region_allowlist",
+        "baseline_hash",
+        "verified_authority",
+        "exclusive_write_lease",
+        "stop_gates",
+        "explicit_expiry"
+      ],
+      "outputs": [
+        "HANDOFF",
+        "EVIDENCE_RECORD"
+      ],
+      "cannot": [
+        "product_decision",
+        "other_agent_scope_write",
+        "audit_own_candidate"
+      ]
+    },
+    "Auditor": {
+      "profile": "auditor.md",
+      "enabled": true,
+      "physical_write": false,
+      "conditional_route": true,
+      "dispatches": [],
+      "outputs": [
+        "AUDIT_REPORT",
+        "EVIDENCE_RECORD"
+      ],
+      "cannot": [
+        "coauthor",
+        "patch",
+        "close_finding",
+        "audit_authored_candidate"
+      ]
+    },
+    "Specialist": {
+      "profile": null,
+      "enabled": false,
+      "physical_write": false,
+      "dispatches": [],
+      "enable_requires": [
+        "approved_read_only_profile",
+        "valid_authority",
+        "registry_amendment"
+      ]
+    }
+  },
+  "dispatch_edges": [
+    [
+      "Owner",
+      "Coordinator"
+    ],
+    [
+      "Coordinator",
+      "Worker"
+    ],
+    [
+      "Coordinator",
+      "Auditor"
+    ]
+  ],
+  "forbidden_dispatch_edges": [
+    [
+      "Owner",
+      "Worker"
+    ],
+    [
+      "Owner",
+      "Auditor"
+    ],
+    [
+      "Owner",
+      "Specialist"
+    ]
+  ],
+  "handoff_router": "Coordinator",
+  "physical_write_includes": [
+    "create",
+    "write",
+    "append",
+    "rename",
+    "delete",
+    "mkdir",
+    "temp",
+    "cache",
+    "logs",
+    "state",
+    "manifest",
+    "formatter_autofix",
+    "archive",
+    "upload",
+    "replace_remote_file"
+  ],
+  "source_authority_distinction": "Development Worker role never changes Research Radar runtime module permissions.",
+  "manifest_algorithm": "sha256-path-role-hash-bytes-v1",
+  "schema_file": "packets.schema.json",
+  "examples_file": "examples.json",
+  "operational_enforcement_status": "NOT_IMPLEMENTED",
+  "session_drafting_mode": "DOCUMENTARY_DRAFT",
+  "specialist_status": "DISABLED"
+}

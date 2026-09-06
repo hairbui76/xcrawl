@@ -1,0 +1,1024 @@
+{
+  "examples_version": "1.0",
+  "warning": "All messages are NONEXECUTABLE_EXAMPLE. Synthetic authority, files, evidence and timestamps confer no rights. Runtime negative cases isolate one predicate; actual execution first rejects example mode.",
+  "synthetic_files": [
+    {
+      "path": "/example/research-radar/contracts/sample.md",
+      "utf8_text": "# Draft contract\n",
+      "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+      "bytes": 17
+    },
+    {
+      "path": "/example/research-radar/source/spec.md",
+      "utf8_text": "Synthetic source\n",
+      "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+      "bytes": 17
+    }
+  ],
+  "manifest_vector": {
+    "algorithm": "sha256-path-role-hash-bytes-v1",
+    "canonical_utf8_text": "/example/research-radar/contracts/sample.md|CANDIDATE|1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa|17\n/example/research-radar/source/spec.md|SOURCE|93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f|17\n",
+    "expected_sha256": "00d57c131dbee8c39ca73c761227a7617db6e6d201025382d938a58c93055170"
+  },
+  "positive_cases": [
+    {
+      "case_id": "M-AUTH",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-AUTH",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-owner",
+        "recipient_principal": "example-coordinator",
+        "type": "AUTHORITY_GRANT",
+        "authority_id": "AUTH-EXAMPLE",
+        "issuer_principal": "example-owner",
+        "holder_principal": "example-coordinator",
+        "parent_authority_id": null,
+        "grant_evidence_ref": "synthetic:owner-grant-NOT-EXECUTABLE",
+        "not_before": "2026-09-06T00:00:00Z",
+        "expires_at": "2026-09-06T02:00:00Z",
+        "allowed_actions": [
+          "read",
+          "create",
+          "delegate",
+          "issue_lease",
+          "freeze",
+          "audit",
+          "dispose_finding"
+        ],
+        "exact_paths": [
+          "/example/research-radar/contracts/sample.md",
+          "/example/research-radar/source/spec.md"
+        ],
+        "delegation_depth": 1,
+        "revocation_channel": "synthetic:control-channel",
+        "scope_constraints": [
+          "Synthetic document drafting only; never executable."
+        ]
+      }
+    },
+    {
+      "case_id": "M-WAUTH",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-WAUTH",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-worker",
+        "type": "AUTHORITY_GRANT",
+        "authority_id": "AUTH-WORKER",
+        "issuer_principal": "example-coordinator",
+        "holder_principal": "example-worker",
+        "parent_authority_id": "AUTH-EXAMPLE",
+        "grant_evidence_ref": "synthetic:delegation-NOT-EXECUTABLE",
+        "not_before": "2026-09-06T00:00:00Z",
+        "expires_at": "2026-09-06T01:00:00Z",
+        "allowed_actions": [
+          "read",
+          "create"
+        ],
+        "exact_paths": [
+          "/example/research-radar/contracts/sample.md",
+          "/example/research-radar/source/spec.md"
+        ],
+        "delegation_depth": 0,
+        "revocation_channel": "synthetic:control-channel",
+        "scope_constraints": [
+          "Synthetic exact target creation only."
+        ]
+      }
+    },
+    {
+      "case_id": "M-AAUTH",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-AAUTH",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-auditor",
+        "type": "AUTHORITY_GRANT",
+        "authority_id": "AUTH-AUDITOR",
+        "issuer_principal": "example-coordinator",
+        "holder_principal": "example-auditor",
+        "parent_authority_id": "AUTH-EXAMPLE",
+        "grant_evidence_ref": "synthetic:review-grant-NOT-EXECUTABLE",
+        "not_before": "2026-09-06T00:00:00Z",
+        "expires_at": "2026-09-06T01:30:00Z",
+        "allowed_actions": [
+          "read",
+          "audit"
+        ],
+        "exact_paths": [
+          "/example/research-radar/contracts/sample.md",
+          "/example/research-radar/source/spec.md"
+        ],
+        "delegation_depth": 0,
+        "revocation_channel": "synthetic:control-channel",
+        "scope_constraints": [
+          "Read-only synthetic candidate."
+        ]
+      }
+    },
+    {
+      "case_id": "M-LEASE",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-LEASE",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-worker",
+        "type": "WRITE_LEASE",
+        "lease_id": "LEASE-EXAMPLE",
+        "packet_id": "PACKET-EXAMPLE",
+        "authority_id": "AUTH-WORKER",
+        "holder_principal": "example-worker",
+        "issued_at": "2026-09-06T00:00:00Z",
+        "expires_at": "2026-09-06T00:30:00Z",
+        "fencing_token": 1,
+        "exact_paths": [
+          "/example/research-radar/contracts/sample.md"
+        ],
+        "exclusive": true,
+        "grant_evidence_ref": "synthetic:lease-message",
+        "revocation_channel": "synthetic:control-channel",
+        "enforcement_mode": "DOCUMENTARY_DRAFT"
+      }
+    },
+    {
+      "case_id": "M-TASK",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-TASK",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-worker",
+        "type": "TASK_PACKET",
+        "packet_id": "PACKET-EXAMPLE",
+        "goal": "Create a synthetic contract document.",
+        "non_goals": [
+          "No product implementation."
+        ],
+        "assignee_role": "Worker",
+        "assignee_principal": "example-worker",
+        "authority_id": "AUTH-WORKER",
+        "enforcement_mode": "DOCUMENTARY_DRAFT",
+        "read_set": [
+          {
+            "path": "/example/research-radar/source/spec.md",
+            "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+            "bytes": 17
+          }
+        ],
+        "write_targets": [
+          {
+            "path": "/example/research-radar/contracts/sample.md",
+            "operation": "CREATE",
+            "baseline": {
+              "state": "ABSENT",
+              "sha256": null,
+              "bytes": 0
+            },
+            "region": {
+              "kind": "WHOLE_NEW_FILE"
+            }
+          }
+        ],
+        "lease_id": "LEASE-EXAMPLE",
+        "expires_at": "2026-09-06T00:30:00Z",
+        "dependencies": [],
+        "invariants": [
+          "Only exact target may be created."
+        ],
+        "forbidden_effects": [
+          "No cache, network, product behavior changes."
+        ],
+        "stop_gates": [
+          {
+            "guard_id": "GUARD-LEASE",
+            "trigger": "Lease unverifiable or overlapping",
+            "status": "BLOCKED_LEASE",
+            "allowed_next_action": "Stop and ask Coordinator to resolve lease."
+          },
+          {
+            "guard_id": "GUARD-BASELINE",
+            "trigger": "Target no longer ABSENT",
+            "status": "STALE_BASELINE",
+            "allowed_next_action": "Stop; request new baseline packet."
+          }
+        ],
+        "verification": [
+          {
+            "check_id": "CHECK-SYNTHETIC",
+            "procedure": "Compare candidate bytes with synthetic fixture in examples.json.",
+            "oracle": "Candidate equals UTF-8 # Draft contract followed by LF.",
+            "expected_evidence": "Tool output with candidate hash.",
+            "write_effects": []
+          }
+        ],
+        "audit_route": {
+          "decision": "INDEPENDENT_REQUIRED",
+          "risk": "HIGH",
+          "complexity": "MEDIUM",
+          "residual_uncertainty": "Privilege and lifecycle semantics need independent review.",
+          "rationale": "Cross-role authority boundaries.",
+          "available_evidence_refs": [],
+          "authority_ref": "AUTH-EXAMPLE",
+          "decided_at": "2026-09-06T00:00:00Z"
+        },
+        "frozen_ref": null,
+        "completion_ceiling": "DRAFT_FOR_REVIEW"
+      }
+    },
+    {
+      "case_id": "M-HANDOFF",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-HANDOFF",
+        "created_at": "2026-09-06T00:10:01Z",
+        "sender_principal": "example-worker",
+        "recipient_principal": "example-coordinator",
+        "type": "HANDOFF",
+        "packet_id": "PACKET-EXAMPLE",
+        "worker_principal": "example-worker",
+        "authority_id": "AUTH-WORKER",
+        "lease_id": "LEASE-EXAMPLE",
+        "status": "READY_FOR_FREEZE",
+        "changes": [
+          {
+            "path": "/example/research-radar/contracts/sample.md",
+            "before": {
+              "state": "ABSENT",
+              "sha256": null,
+              "bytes": 0
+            },
+            "after": {
+              "state": "FILE",
+              "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+              "bytes": 17
+            },
+            "delta_summary": "Create entire new synthetic document."
+          }
+        ],
+        "source_baselines": [
+          {
+            "path": "/example/research-radar/source/spec.md",
+            "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+            "bytes": 17
+          }
+        ],
+        "evidence": [
+          {
+            "evidence_id": "EV-SYNTHETIC",
+            "producer_principal": "example-worker",
+            "review_type": "SELF_VALIDATION",
+            "procedure": "Synthetic fixture only; no command was run for this example.",
+            "environment": "Illustrative in-memory bytes, no runtime service.",
+            "started_at": "2026-09-06T00:05:00Z",
+            "ended_at": "2026-09-06T00:05:01Z",
+            "inputs": [
+              {
+                "path": "/example/research-radar/contracts/sample.md",
+                "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+                "bytes": 17
+              }
+            ],
+            "oracle": "Exact synthetic UTF-8 byte string.",
+            "expected": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+            "observed": "NOT_RUN example",
+            "exit_code": null,
+            "status": "NOT_RUN",
+            "output_refs": [
+              "synthetic:illustration-not-execution"
+            ],
+            "limitations": [
+              "Not actual execution or authority evidence."
+            ]
+          }
+        ],
+        "unresolved_refs": [],
+        "stop_reason": null,
+        "next_actor": "example-coordinator",
+        "lease_released_at": "2026-09-06T00:10:00Z",
+        "completion_claim": "DRAFT_FOR_REVIEW"
+      }
+    },
+    {
+      "case_id": "M-FROZEN",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-FROZEN",
+        "created_at": "2026-09-06T00:11:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-auditor",
+        "type": "FROZEN_CANDIDATE",
+        "candidate_id": "CANDIDATE-EXAMPLE",
+        "epoch": 1,
+        "packet_ids": [
+          "PACKET-EXAMPLE"
+        ],
+        "author_principals": [
+          "example-worker"
+        ],
+        "frozen_at": "2026-09-06T00:11:00Z",
+        "manifest_algorithm": "sha256-path-role-hash-bytes-v1",
+        "manifest_entries": [
+          {
+            "path": "/example/research-radar/contracts/sample.md",
+            "role": "CANDIDATE",
+            "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+            "bytes": 17
+          },
+          {
+            "path": "/example/research-radar/source/spec.md",
+            "role": "SOURCE",
+            "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+            "bytes": 17
+          }
+        ],
+        "manifest_sha256": "00d57c131dbee8c39ca73c761227a7617db6e6d201025382d938a58c93055170",
+        "scope": [
+          "Synthetic sample contract only."
+        ],
+        "excluded_scope": [
+          "Product implementation."
+        ],
+        "source_baselines": [
+          {
+            "path": "/example/research-radar/source/spec.md",
+            "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+            "bytes": 17
+          }
+        ],
+        "quiescence": {
+          "released_lease_ids": [
+            "LEASE-EXAMPLE"
+          ],
+          "acknowledgment_refs": [
+            "synthetic:M-HANDOFF-release"
+          ],
+          "fencing_evidence_ref": null,
+          "proof_mode": "DOCUMENTARY_DRAFT"
+        },
+        "completion_ceiling": "DRAFT_FOR_REVIEW"
+      }
+    },
+    {
+      "case_id": "M-REVIEW-TASK",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-REVIEW-TASK",
+        "created_at": "2026-09-06T00:12:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-auditor",
+        "type": "TASK_PACKET",
+        "packet_id": "PACKET-REVIEW",
+        "goal": "Review exact synthetic frozen candidate.",
+        "non_goals": [
+          "No product implementation."
+        ],
+        "assignee_role": "Auditor",
+        "assignee_principal": "example-auditor",
+        "authority_id": "AUTH-AUDITOR",
+        "enforcement_mode": "DOCUMENTARY_DRAFT",
+        "read_set": [
+          {
+            "path": "/example/research-radar/source/spec.md",
+            "sha256": "93d6b1eb7b6bca56a4e3c72ee9104945c27941fad6bc401d0aa2d666bbc8e58f",
+            "bytes": 17
+          },
+          {
+            "path": "/example/research-radar/contracts/sample.md",
+            "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+            "bytes": 17
+          }
+        ],
+        "write_targets": [],
+        "lease_id": null,
+        "expires_at": "2026-09-06T01:00:00Z",
+        "dependencies": [],
+        "invariants": [
+          "Read-only review of the exact frozen candidate and pinned dependencies; preserve reviewer independence."
+        ],
+        "forbidden_effects": [
+          "No cache, network, product behavior changes."
+        ],
+        "stop_gates": [
+          {
+            "guard_id": "GUARD-LEASE",
+            "trigger": "Frozen quiescence or fencing proof unverifiable",
+            "status": "BLOCKED_LEASE",
+            "allowed_next_action": "Stop and ask Coordinator to establish quiescence."
+          },
+          {
+            "guard_id": "GUARD-FROZEN-HASH",
+            "trigger": "Frozen candidate or pinned dependency hash/manifest drift",
+            "status": "STALE_CANDIDATE",
+            "allowed_next_action": "Stop; request new frozen epoch and review packet."
+          },
+          {
+            "guard_id": "GUARD-DEPENDENCY",
+            "trigger": "Pinned review dependency or evidence missing",
+            "status": "BLOCKED_DEPENDENCY",
+            "allowed_next_action": "Stop; ask Coordinator for the exact pinned dependency."
+          },
+          {
+            "guard_id": "GUARD-INDEPENDENCE",
+            "trigger": "Reviewer authored or coauthored the candidate, or independence unverifiable",
+            "status": "BLOCKED_INDEPENDENCE",
+            "allowed_next_action": "Stop; ask Coordinator to route an independent reviewer."
+          }
+        ],
+        "verification": [
+          {
+            "check_id": "CHECK-SYNTHETIC",
+            "procedure": "Compare candidate bytes with synthetic fixture in examples.json.",
+            "oracle": "Candidate equals UTF-8 # Draft contract followed by LF.",
+            "expected_evidence": "Tool output with candidate hash.",
+            "write_effects": []
+          }
+        ],
+        "audit_route": {
+          "decision": "INDEPENDENT_REQUIRED",
+          "risk": "HIGH",
+          "complexity": "MEDIUM",
+          "residual_uncertainty": "Privilege and lifecycle semantics need independent review.",
+          "rationale": "Cross-role authority boundaries.",
+          "available_evidence_refs": [],
+          "authority_ref": "AUTH-EXAMPLE",
+          "decided_at": "2026-09-06T00:00:00Z"
+        },
+        "frozen_ref": {
+          "candidate_id": "CANDIDATE-EXAMPLE",
+          "epoch": 1,
+          "manifest_sha256": "00d57c131dbee8c39ca73c761227a7617db6e6d201025382d938a58c93055170"
+        },
+        "completion_ceiling": "DRAFT_FOR_REVIEW"
+      }
+    },
+    {
+      "case_id": "M-AUDIT",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-AUDIT",
+        "created_at": "2026-09-06T00:15:00Z",
+        "sender_principal": "example-auditor",
+        "recipient_principal": "example-coordinator",
+        "type": "AUDIT_REPORT",
+        "review_packet_id": "PACKET-REVIEW",
+        "reviewer_principal": "example-auditor",
+        "frozen_ref": {
+          "candidate_id": "CANDIDATE-EXAMPLE",
+          "epoch": 1,
+          "manifest_sha256": "00d57c131dbee8c39ca73c761227a7617db6e6d201025382d938a58c93055170"
+        },
+        "independence": {
+          "authored_candidate": false,
+          "coauthored_candidate": false,
+          "identity_lineage_checked": true,
+          "evidence_ref": "synthetic:authorship-registry"
+        },
+        "verdict": "BLOCKED",
+        "scope_checked": [
+          "Synthetic structure only."
+        ],
+        "scope_excluded": [
+          "No runtime verification."
+        ],
+        "evidence": [
+          {
+            "evidence_id": "EV-AUDIT-SYNTHETIC",
+            "producer_principal": "example-auditor",
+            "review_type": "INDEPENDENT_AUDIT",
+            "procedure": "Synthetic fixture only; no command was run for this example.",
+            "environment": "Illustrative in-memory bytes, no runtime service.",
+            "started_at": "2026-09-06T00:13:00Z",
+            "ended_at": "2026-09-06T00:13:01Z",
+            "inputs": [
+              {
+                "path": "/example/research-radar/contracts/sample.md",
+                "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+                "bytes": 17
+              }
+            ],
+            "oracle": "Exact synthetic UTF-8 byte string.",
+            "expected": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+            "observed": "NOT_RUN example",
+            "exit_code": null,
+            "status": "NOT_RUN",
+            "output_refs": [
+              "synthetic:illustration-not-execution"
+            ],
+            "limitations": [
+              "Not actual execution or authority evidence."
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "finding_id": "F-EXAMPLE",
+            "severity": "HIGH",
+            "state": "OPEN",
+            "location": "/example/research-radar/contracts/sample.md",
+            "expected": "Actual execution evidence.",
+            "observed": "Only illustrative evidence present.",
+            "reproduction": "Inspect EV-SYNTHETIC status.",
+            "impact": "Cannot claim implementation verification.",
+            "remediation_constraint": "Provide authorized execution evidence on new frozen scope.",
+            "evidence_refs": [
+              "EV-AUDIT-SYNTHETIC"
+            ]
+          }
+        ],
+        "verified_finding_ids": [],
+        "limitations": [
+          "Example is not an audit run."
+        ],
+        "completion_ceiling": "DRAFT_FOR_REVIEW"
+      }
+    },
+    {
+      "case_id": "M-DECISION",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-DECISION",
+        "created_at": "2026-09-06T00:00:00Z",
+        "sender_principal": "example-coordinator",
+        "recipient_principal": "example-owner",
+        "type": "OWNER_DECISION_REQUEST",
+        "decision_request_id": "ODR-EXAMPLE",
+        "question": "Should the separate product change be authorized?",
+        "material_reason": "Would change an existing product acceptance criterion.",
+        "source_refs": [
+          "synthetic:B03"
+        ],
+        "options": [
+          {
+            "option_id": "KEEP",
+            "description": "Keep existing scope blocked.",
+            "tradeoffs": [
+              "No implementation for blocked scope."
+            ]
+          },
+          {
+            "option_id": "AMEND",
+            "description": "Consider a separate scoped amendment.",
+            "tradeoffs": [
+              "Requires explicit acceptance and new evidence."
+            ]
+          }
+        ],
+        "recommendation_option_id": "KEEP",
+        "blocked_scope": [
+          "Changed product behavior."
+        ],
+        "safe_remaining_work": [
+          "Finish unrelated documentation."
+        ],
+        "decision_authority_principal": "example-owner",
+        "reply_deadline": null,
+        "status": "PENDING"
+      }
+    },
+    {
+      "case_id": "M-DISPOSITION",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-DISPOSITION",
+        "created_at": "2026-09-06T00:16:00Z",
+        "sender_principal": "example-owner",
+        "recipient_principal": "example-coordinator",
+        "type": "FINDING_DISPOSITION",
+        "finding_id": "F-EXAMPLE",
+        "disposition": "REOPENED",
+        "disposition_authority_id": "AUTH-EXAMPLE",
+        "decision_evidence_ref": "synthetic:owner-disposition",
+        "candidate_ref": {
+          "candidate_id": "CANDIDATE-EXAMPLE",
+          "epoch": 1,
+          "manifest_sha256": "00d57c131dbee8c39ca73c761227a7617db6e6d201025382d938a58c93055170"
+        },
+        "verification_report_ref": "M-AUDIT",
+        "rationale": "Execution evidence remains missing.",
+        "residual_risk": "No verified runtime behavior.",
+        "review_by": null,
+        "review_trigger": null
+      }
+    },
+    {
+      "case_id": "M-REVOKE",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-REVOKE",
+        "created_at": "2026-09-06T01:45:00Z",
+        "sender_principal": "example-owner",
+        "recipient_principal": "example-coordinator",
+        "type": "AUTHORITY_REVOCATION",
+        "authority_id": "AUTH-EXAMPLE",
+        "revoked_at": "2026-09-06T01:45:00Z",
+        "reason": "Synthetic session ended.",
+        "revocation_evidence_ref": "synthetic:owner-revoke",
+        "descendants_included": true,
+        "acknowledgment_required": true
+      }
+    },
+    {
+      "case_id": "M-EVIDENCE",
+      "message": {
+        "schema_version": "1.0",
+        "document_mode": "NONEXECUTABLE_EXAMPLE",
+        "message_id": "M-EVIDENCE",
+        "created_at": "2026-09-06T00:05:02Z",
+        "sender_principal": "example-worker",
+        "recipient_principal": "example-coordinator",
+        "type": "EVIDENCE_RECORD",
+        "record": {
+          "evidence_id": "EV-SYNTHETIC",
+          "producer_principal": "example-worker",
+          "review_type": "SELF_VALIDATION",
+          "procedure": "Synthetic fixture only; no command was run for this example.",
+          "environment": "Illustrative in-memory bytes, no runtime service.",
+          "started_at": "2026-09-06T00:05:00Z",
+          "ended_at": "2026-09-06T00:05:01Z",
+          "inputs": [
+            {
+              "path": "/example/research-radar/contracts/sample.md",
+              "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+              "bytes": 17
+            }
+          ],
+          "oracle": "Exact synthetic UTF-8 byte string.",
+          "expected": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+          "observed": "NOT_RUN example",
+          "exit_code": null,
+          "status": "NOT_RUN",
+          "output_refs": [
+            "synthetic:illustration-not-execution"
+          ],
+          "limitations": [
+            "Not actual execution or authority evidence."
+          ]
+        }
+      }
+    }
+  ],
+  "negative_cases": [
+    {
+      "case_id": "N-SCHEMA-EXTRA",
+      "layer": "schema",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "add",
+          "path": "/secret_bypass",
+          "value": true
+        }
+      ],
+      "expected_guard": "SCHEMA_ADDITIONAL_PROPERTIES",
+      "expected_reason": "Unknown top-level field forbidden.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-GLOB",
+      "layer": "schema",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/write_targets/0/path",
+          "value": "/example/research-radar/contracts/*.md"
+        }
+      ],
+      "expected_guard": "SCHEMA_EXACT_PATH",
+      "expected_reason": "Glob is not an exact path.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-NO-LEASE",
+      "layer": "schema",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/lease_id",
+          "value": null
+        }
+      ],
+      "expected_guard": "SCHEMA_WORKER_LEASE",
+      "expected_reason": "Worker packet requires non-null lease.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-AUDITOR-WRITE",
+      "layer": "schema",
+      "base_case_id": "M-REVIEW-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/write_targets",
+          "value": [
+            {
+              "path": "/example/research-radar/contracts/sample.md",
+              "operation": "CREATE",
+              "baseline": {
+                "state": "ABSENT",
+                "sha256": null,
+                "bytes": 0
+              },
+              "region": {
+                "kind": "WHOLE_NEW_FILE"
+              }
+            }
+          ]
+        }
+      ],
+      "expected_guard": "SCHEMA_AUDITOR_READ_ONLY",
+      "expected_reason": "Auditor write target list must be empty.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-HASH",
+      "layer": "schema",
+      "base_case_id": "M-FROZEN",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/manifest_sha256",
+          "value": "BAD"
+        }
+      ],
+      "expected_guard": "SCHEMA_HASH",
+      "expected_reason": "Hash requires 64 lowercase hex characters.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-AUDIT-AUTHOR",
+      "layer": "schema",
+      "base_case_id": "M-AUDIT",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/independence/authored_candidate",
+          "value": true
+        }
+      ],
+      "expected_guard": "SCHEMA_INDEPENDENCE",
+      "expected_reason": "Authored declaration cannot be true.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-REGION",
+      "layer": "schema",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/write_targets/0/region",
+          "value": {
+            "kind": "BYTE_RANGES",
+            "ranges": [
+              {
+                "start": 0,
+                "end": 1
+              }
+            ]
+          }
+        }
+      ],
+      "expected_guard": "SCHEMA_OPERATION_REGION",
+      "expected_reason": "CREATE requires WHOLE_NEW_FILE.",
+      "context": {}
+    },
+    {
+      "case_id": "N-SCHEMA-TIME",
+      "layer": "schema",
+      "base_case_id": "M-LEASE",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/expires_at",
+          "value": "2026-09-06T00:30:00+07:00"
+        }
+      ],
+      "expected_guard": "SCHEMA_UTC",
+      "expected_reason": "Timestamp must use UTC Z.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-EXAMPLE",
+      "layer": "runtime",
+      "base_case_id": "M-TASK",
+      "patches": [],
+      "expected_guard": "GUARD_NONEXECUTABLE",
+      "expected_reason": "Examples never authorize mutation.",
+      "context": {
+        "attempt_execution": true
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-AUTHORITY",
+      "layer": "runtime",
+      "base_case_id": "M-TASK",
+      "patches": [],
+      "expected_guard": "BLOCKED_AUTHORITY",
+      "expected_reason": "Grant ID exists but real authority provenance cannot be verified.",
+      "context": {
+        "authority_verified": false
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-EXPIRED",
+      "layer": "runtime",
+      "base_case_id": "M-LEASE",
+      "patches": [],
+      "expected_guard": "STOPPED_EXPIRED",
+      "expected_reason": "Clock is past lease expiry.",
+      "context": {
+        "now": "2026-09-06T00:31:00Z"
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-TIME-ORDER",
+      "layer": "runtime",
+      "base_case_id": "M-LEASE",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/expires_at",
+          "value": "2026-09-05T23:59:00Z"
+        }
+      ],
+      "expected_guard": "BLOCKED_LEASE",
+      "expected_reason": "Expiry precedes issued_at; schema cannot compare dates.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-OVERLAP",
+      "layer": "runtime",
+      "base_case_id": "M-LEASE",
+      "patches": [],
+      "expected_guard": "BLOCKED_LEASE",
+      "expected_reason": "Another live holder leases same physical path.",
+      "context": {
+        "overlapping_lease_holder": "another-worker",
+        "overlapping_path": "/example/research-radar/contracts/sample.md"
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-FENCE",
+      "layer": "runtime",
+      "base_case_id": "M-LEASE",
+      "patches": [],
+      "expected_guard": "BLOCKED_LEASE",
+      "expected_reason": "Lease fencing token is stale.",
+      "context": {
+        "current_fencing_token": 2
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-BASELINE",
+      "layer": "runtime",
+      "base_case_id": "M-TASK",
+      "patches": [],
+      "expected_guard": "STALE_BASELINE",
+      "expected_reason": "ABSENT target exists at commit.",
+      "context": {
+        "observed_target_state": "FILE"
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-IDENTITY",
+      "layer": "runtime",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/assignee_principal",
+          "value": "different-worker"
+        }
+      ],
+      "expected_guard": "BLOCKED_AUTHORITY",
+      "expected_reason": "Assignee differs from holder of AUTH-WORKER and LEASE-EXAMPLE.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-GRANT-SUBSET",
+      "layer": "runtime",
+      "base_case_id": "M-WAUTH",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/allowed_actions",
+          "value": [
+            "read",
+            "create",
+            "upload"
+          ]
+        }
+      ],
+      "expected_guard": "BLOCKED_AUTHORITY",
+      "expected_reason": "Child upload permission exceeds parent grant.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-MANIFEST",
+      "layer": "runtime",
+      "base_case_id": "M-FROZEN",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/manifest_entries/0/bytes",
+          "value": 999
+        }
+      ],
+      "expected_guard": "STALE_CANDIDATE",
+      "expected_reason": "Recomputed manifest digest differs.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-AUTHOR-LINEAGE",
+      "layer": "runtime",
+      "base_case_id": "M-AUDIT",
+      "patches": [],
+      "expected_guard": "BLOCKED_INDEPENDENCE",
+      "expected_reason": "New display identity shares author principal lineage.",
+      "context": {
+        "reviewer_root_principal": "example-worker"
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-NO-QUIESCENCE",
+      "layer": "runtime",
+      "base_case_id": "M-FROZEN",
+      "patches": [],
+      "expected_guard": "BLOCKED_LEASE",
+      "expected_reason": "Release acknowledgment unverified and no enforcing fence.",
+      "context": {
+        "acknowledgments_verified": false,
+        "runtime_fence_verified": false
+      }
+    },
+    {
+      "case_id": "N-RUNTIME-CLOSURE",
+      "layer": "runtime",
+      "base_case_id": "M-DISPOSITION",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/disposition",
+          "value": "CLOSED"
+        }
+      ],
+      "expected_guard": "BLOCKED_AUTHORITY",
+      "expected_reason": "Referenced report is BLOCKED, not independent verification of a fixed candidate.",
+      "context": {}
+    },
+    {
+      "case_id": "N-RUNTIME-REGION-DELTA",
+      "layer": "runtime",
+      "base_case_id": "M-TASK",
+      "patches": [
+        {
+          "op": "replace",
+          "path": "/write_targets/0",
+          "value": {
+            "path": "/example/research-radar/contracts/sample.md",
+            "operation": "MODIFY",
+            "baseline": {
+              "state": "FILE",
+              "sha256": "1eb6cc8509d5ad77a481507a6cecc5b0a18450e02db97059b190c9f696e94caa",
+              "bytes": 17
+            },
+            "region": {
+              "kind": "BYTE_RANGES",
+              "ranges": [
+                {
+                  "start": 2,
+                  "end": 7
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expected_guard": "BLOCKED_SCOPE",
+      "expected_reason": "Observed delta touches bytes outside granted interval.",
+      "context": {
+        "observed_delta_start": 0,
+        "observed_delta_end": 1
+      }
+    }
+  ],
+  "runtime_guard_status": "SPECIFIED_FIXTURE_PREDICATES_ONLY_NOT_A_DEPLOYED_GUARD_SERVICE"
+}
