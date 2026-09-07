@@ -3,7 +3,7 @@
 
 contract_id: CT-arch-ports
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: architecture owner
 source_refs:
   - SRC-SPEC §4
@@ -77,7 +77,15 @@ verification: >
   E0 self-validation: (a) YAML parse bằng python3 yaml.safe_load; (b) script kiểm chéo với contracts/modules.yaml —
   không trùng operation_id, mọi module tham chiếu tồn tại, mọi operation thuộc đúng inbound của owner và outbound
   của từng caller. Không có evidence E1–E4; mọi thứ chưa chạy ghi NOT_RUN.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratification_note_vi: >
+  Owner phê chuẩn B01–B17 ngày 2026-09-07 (OD-20260907-01, authority AUTH-OWNER-20260907-02).
+  A2-R4 tuyên bố phạm vi "Boundaries and rights" đủ điều kiện CONTRACT_READY khi có phê chuẩn.
+  `CONTRACT_READY` khẳng định **bộ hợp đồng đủ trường, không còn quyết định chặn, ví dụ hợp lệ và
+  bất hợp lệ đã được kiểm** (SRC-PLAN §2) — nó **không** khẳng định gì về runtime: E1–E4 vẫn NOT_RUN,
+  chưa có code, chưa có probe. Các mục còn phụ thuộc KC mang `kc_dependency` riêng và không hạ trần
+  của file.
 
 conventions:
   operation_id_form: "<domain>.<verb_noun> snake_case, duy nhất toàn hệ thống (baseline §3)"
@@ -138,7 +146,7 @@ conventions:
   timeout_note_vi: >
     Giá trị timeout/lease TTL/retry budget **không** được chốt ở file này; PC03 đóng chúng trong
     contracts/retry-policy.yaml và contracts/state/*.yaml. Số duy nhất PC01 chốt là ngưỡng readiness
-    "collector online" trong contracts/ops/deployment.md (PROVISIONAL).
+    "collector online" trong contracts/ops/deployment.md §6 (tham số cấu hình, hiệu chỉnh sau probe A1).
 
 error_code_registry_note:
   owner_file: contracts/errors.yaml (PC03)
@@ -168,7 +176,8 @@ error_code_registry_note:
   codes_from_fix3_ruling:
     - code: CSRF_REJECTED
       registered_by: PC03 (contracts/errors.yaml)
-      status: PROVISIONAL
+      status: ACCEPTED
+      ratification_ref: OD-20260907-01 (mục 25 — thay đổi kỹ thuật được chấp nhận)
       http_status: 403
       scope: request
       retry_class: none
@@ -179,15 +188,17 @@ error_code_registry_note:
         `UNAUTHORIZED` (vẫn là "danh tính chưa xác lập / sai lớp principal"). Giải quyết CR-PC08-03.
   codes_requested_provisional:
     - code: CAPABILITY_DENIED
-      status: PROVISIONAL
-      change_request: CR-PC01-01
+      status: ACCEPTED
+      registered_in: contracts/errors.yaml
+      change_request: CR-PC01-01 (khép lại)
       reason_vi: >
         Cần một mã cho trường hợp capability tiến trình/mạng/tool bị từ chối (egress allowlist, tool bị khóa,
         module không có driver DB) — khác với UNAUTHORIZED vốn là lỗi xác thực/ủy quyền ở API. PC03 phải đăng ký
         mã này trong contracts/errors.yaml; PC01 không được ghi file đó.
     - code: CONFLICT
-      status: PROVISIONAL
-      change_request: CR-PC01-03
+      status: ACCEPTED
+      registered_in: contracts/errors.yaml
+      change_request: CR-PC01-03 (khép lại)
       introduced_by: PKT-PC01-FIX1 (ruling của Coordinator)
       used_by: [identity.merge_works]
       reason_vi: >
@@ -1754,15 +1765,23 @@ operations:
       `kind: purge_all`. Sau khi xong, `storage.health` vẫn ở `maintenance` cho tới khi owner mở lại — **không** tự
       động resume dispatcher (cùng nguyên tắc với NC-10).
     exclusions_vi: >
-      PROVISIONAL: "toàn bộ dữ liệu" được hiểu là **dữ liệu nghiên cứu và dữ liệu người dùng** (post, work,
-      analysis, vector, report, Saved, delivery, ledger, run). Loại trừ đề xuất: `settings`, `secret_ref` /
-      `task_credential` / `secret_audit`, `owner` + credential đăng nhập, `telegram_link`, `schema_migration` —
-      vì xóa chúng biến thao tác này thành "gỡ cài đặt" chứ không phải "xóa dữ liệu", và người dùng sẽ mất đường
-      đăng nhập vào chính app của mình.
-    exclusions_status: OWNER_DECISION_REQUIRED
-    exclusions_note_vi: >
-      **Chỉ danh sách loại trừ** là `OWNER_DECISION_REQUIRED` (ruling R-04); bản thân operation không bị chặn.
-      Owner phải xác nhận từng mục trước khi operation này được coi là đủ điều kiện implementation.
+      **ĐÃ CHỐT** (OD-20260907-01 mục 24). Ba tập, phủ đúng 60 entity, không chồng lấn. Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`.
+      **Giữ lại theo quyết định của Owner — 21 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`.
+      **Không bao giờ xóa — 2 bảng:** `schema_migration`, `data_deletion_audit` — `schema_migration` là cấu trúc kho, còn `data_deletion_audit` giữ vĩnh
+      viễn theo tham số PC08 đã phê chuẩn; chính lần purge này ghi thêm một hàng audit vào đó.
+      **Xóa — 37 bảng:** post/work và liên kết, identity alias/conflict/merge audit, work_label, analysis và các
+      bảng phụ thuộc, embedding_generation, tag_vector, report/report_item, emerging_direction, các ledger
+      coverage/pending/backfill/first_announced/rescan, Saved, delivery và outbox, run/assignment/assignment_lease/
+      checkpoint/ingest_receipt, source_fetch_log, telegram_update_log, và `telegram_link_attempt` (bộ đếm
+      rate-limit — dữ liệu vận hành, không phải cấu hình; CR-PC05-07 đưa nó vào tập xóa cho đủ 37).
+      **Artifact backup KHÔNG bị xóa**; hộp thoại xác nhận phải nói rõ dữ liệu đã xóa **vẫn còn trong các bản
+      backup** cho tới khi chúng hết hạn hoặc bị xóa bằng tay (contracts/ops/backup-restore.md §8.1).
+    exclusions_status: ACCEPTED
+    exclusions_rationale_vi: >
+      Lý do Owner giữ nhóm trên: xóa credential đăng nhập sẽ khóa chính chủ nhà ra ngoài app (REQ-D05 cấm signup
+      và cấm quên-mật-khẩu tự động), và xóa cấu hình biến "xóa dữ liệu" thành "gỡ cài đặt" — hai thao tác khác
+      nhau về ý định. Sau purge, hệ thống vẫn đăng nhập được và vẫn có đủ cấu hình để chạy đợt mới từ đầu.
+    ratification_ref: OD-20260907-01
     forbidden_effects_vi: >
       Không chạy khi `storage.health ≠ maintenance`; không tự resume dispatcher/scheduler sau khi xóa; không replay
       outbox cũ; không xóa khi challenge sai hoặc hết hạn; không xóa một phần rồi báo thành công.
@@ -1771,7 +1790,9 @@ operations:
       `confirmation_phrase` sai/hết hạn → `VALIDATION_ERROR` (challenge bị hủy, không xóa gì). Không phải owner →
       `UNAUTHORIZED`. `storage.health ≠ maintenance` → `CONFLICT`. Challenge không tồn tại → `NOT_FOUND`.
       Lỗi ghi giữa chừng → `STORAGE_WRITE_FAILED`; transaction rollback, không có trạng thái "xóa một nửa".
-    state_effects_vi: Xem transaction_vi và exclusions_vi. Danh sách bảng cuối cùng do PC02/PC08 chốt (CR-PC01-05).
+    state_effects_vi: >
+      Xem transaction_vi và exclusions_vi. Ba tập bảng (37 xóa / 21 giữ / 2 không bao giờ xóa) theo ruling
+      CR-PC05-06 + CR-PC05-07; CR-PC01-05 khép lại.
     scenario_refs: [SC44]
     scenario_note_vi: >
       `SC44` (đăng ký theo ruling FIX3, F-A1R2-06) phải phủ: hai phase xác nhận (`request_challenge` rồi
@@ -1812,7 +1833,7 @@ operations:
     mutation: false
     lifecycle_status: deferred_p1
     lifecycle_note_vi: >
-      PROVISIONAL — hoãn sang P1 theo baseline §5 (OQ defaults, REQ-OQ10). Operation được đặt tên sẵn để PC07/PC09
+      **ACCEPTED** — Owner xác nhận hoãn sang P1 (OD-20260907-01 mục 20, F-PC00-02). Operation được đặt tên sẵn để PC07/PC09
       trích dẫn, **không** nằm trong phạm vi P0 và không có nghĩa vụ implementation ở MVP.
     idempotency: {required: false, key: null, rule_vi: "Read-only."}
     request_summary_vi: Định dạng export mong muốn.
@@ -1940,9 +1961,9 @@ operations:
       Tăng link generation; delivery đang `pending`/`retry_wait` cho recipient cũ chuyển `cancelled`, **không**
       chuyển payload cũ sang recipient mới (SRC-PLAN §8.3).
     provisional_note_vi: >
-      PROVISIONAL: D37 nói "có lệnh hủy liên kết" nhưng D36 (XN) chốt đúng ba lệnh Telegram và B10 cấm thêm lệnh
-      Telegram thứ tư; PC01 đặt hủy liên kết là **hành động trong app**, không phải lệnh chat. Cần Owner phê duyệt
-      (unresolved ref PROV-PC01-02, CR-PC01-02 tới PC07).
+      **ACCEPTED** (OD-20260907-01 mục 13). D37 nói "có lệnh hủy liên kết" nhưng D36 (XN) chốt đúng ba lệnh
+      Telegram và B10 cấm thêm lệnh thứ tư; Owner phê chuẩn phương án B10 (a): hủy liên kết là **hành động trong
+      app**, không phải lệnh chat. PROV-PC01-02 và CR-PC01-02 khép lại.
     error_codes: [UNAUTHORIZED, CSRF_REJECTED, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
     scenario_refs: [SC25]
     requirement_refs: [REQ-D37, REQ-P0-09]

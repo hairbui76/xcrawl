@@ -14,7 +14,8 @@
       "bytes": 41770
     }
   ],
-  "open_product_blockers": [
+  "open_product_blockers": [],
+  "ratified_product_blockers": [
     "B01",
     "B02",
     "B03",
@@ -33,6 +34,7 @@
     "B16",
     "B17"
   ],
+  "ratification_evidence": "precode/owner-decisions.md (OD-20260907-01)",
   "instruction_precedence": [
     "platform_constraints",
     "explicit_owner_instructions",

@@ -32,11 +32,20 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # Research Radar — Baseline Pre-code
 
-> **Trạng thái: `NOT_READY_FOR_PRODUCT_CODE`. Claim tối đa của mọi file trong baseline này:
-> `DRAFT_FOR_REVIEW`.**
+> **Trạng thái: `NOT_READY_FOR_PRODUCT_CODE`.**
 >
-> Chưa có hợp đồng nào được tuyên bố `accepted`. Chưa có bằng chứng E1–E4. Chưa chạy collector, chưa gọi
-> provider AI, chưa gửi Telegram. Không được bắt đầu viết product code.
+> Owner đã phê chuẩn các quyết định sản phẩm ngày 2026-09-07 (`OD-20260907-01` — xem
+> [`precode/owner-decisions.md`](owner-decisions.md)). B01–B17 nay `RATIFIED`; mười ADR `accepted`.
+>
+> **Trần claim không đồng nhất.** Bốn phạm vi hợp đồng đã lên `CONTRACT_READY` — *ranh giới và quyền*,
+> *dữ liệu và định danh*, *workflow và trạng thái*, *báo cáo và thời gian* (21 file khai
+> `claim_ceiling: CONTRACT_READY` trong header của chính chúng). Bốn phạm vi còn lại vẫn
+> `DRAFT_FOR_REVIEW`: **collector, AI, Telegram, ops** — cộng `contracts/http/openapi.yaml`, `ui/screens.yaml`
+> và bốn schema. Kiểm bằng `grep -h claim_ceiling <file>`; đừng suy ra từ thư mục.
+>
+> **Chưa có bằng chứng E1–E4.** Chưa chạy collector, chưa gọi provider AI, chưa gửi Telegram, chưa chạy probe
+> SP1. Phê chuẩn của Owner là một **quyết định**, không phải một **phép đo**. Không được bắt đầu viết product
+> code trước G5 và trước khi Owner ra lệnh.
 
 ## 1. Baseline này là gì
 
@@ -45,7 +54,8 @@ toán được, đủ chi tiết để một agent nhận việc mà **không ph
 hay điều kiện lỗi.
 
 Nó **không** phải là code, không phải thiết kế chi tiết cho một framework, và không phải lời khẳng định rằng
-sản phẩm sẽ hoạt động. SRC-PLAN §18 nói rõ kết quả đầu tiên cần có là *"một baseline yêu cầu có thể truy vết
+sản phẩm sẽ hoạt động. **Stack đã chốt** (Option B: Python worker/server, TypeScript web), nhưng hợp đồng
+trong `contracts/` vẫn **độc lập framework** — đổi framework không được đụng tới chúng. SRC-PLAN §18 nói rõ kết quả đầu tiên cần có là *"một baseline yêu cầu có thể truy vết
 và một danh sách quyết định chặn được diễn đạt đủ cụ thể để chấp nhận hoặc bác bỏ"*.
 
 **Nguồn bất biến.** Hai file dưới đây là nguồn duy nhất; bản đã pin nằm ở `precode/source/`:
@@ -105,28 +115,58 @@ PC09: xem `evidence/runs/` (run gần nhất tại thời điểm viết: `E0-20
 `precode/review.md`. Đừng suy ra "E0 pass" từ việc file tool tồn tại, và đừng suy ra nó từ file này — đọc
 chính bản ghi run.
 
-## 4. Quyết định còn chờ Owner
+## 4. Quyết định của Owner — đã phê chuẩn ngày 2026-09-07
+
+**Điểm vào của mọi quyết định: [`precode/owner-decisions.md`](owner-decisions.md)** — bản ghi
+`OD-20260907-01`, authority `AUTH-OWNER-20260907-02`, evidence `session_017QmDJtMqD9o1z79waqSB9W`.
 
 | Cần gì | Đọc ở đâu |
 | --- | --- |
-| Danh sách quyết định trình Owner, kèm khuyến nghị và hệ quả | `precode/owner-decision-request.md` |
-| B01–B17, amendment, và trạng thái từng quyết định | `precode/decision-register.md` |
+| **Owner đã quyết những gì** | `precode/owner-decisions.md` (`OD-20260907-01`) |
+| B01–B17, amendment, trạng thái từng quyết định | `precode/decision-register.md` |
+| Câu hỏi đã trình Owner và khuyến nghị kèm theo | `precode/owner-decision-request.md` (bản ghi lịch sử của vòng hỏi) |
 | Lý do và phương án của từng quyết định kiến trúc | `precode/adr/README.md` + `precode/adr/ADR-000*.md` |
 
-**Không có blocker nào được đóng.** B01–B17 ở trạng thái `PROVISIONAL`: mỗi cái đã có một phương án làm việc
-tạm theo khuyến nghị của SRC-PLAN, nhưng phê chuẩn là của Owner. Không file nào trong baseline được ghi
-`CLOSED` hay `ACCEPTED` cho chúng.
+**B01–B17 nay là `RATIFIED`**, không còn `PROVISIONAL`. Mười ADR ở `status: accepted`. Registry
+`open_product_blockers` rỗng; thay bằng `ratified_product_blockers` có trích evidence ref.
 
-**Ba điểm không có mặc định an toàn** (`OWNER_DECISION_REQUIRED`):
+### 4.1 Đã chốt — không còn là câu hỏi
 
-1. **REQ-OQ02 — chọn stack.** ADR-0006 ghi Option A (Python toàn bộ) là PROVISIONAL, dùng **duy nhất** để
-   viết đường dẫn/lệnh trong task card. Chặn M1.
-2. **REQ-OQ03 — provider và model cụ thể.** Không có mặc định; phụ thuộc tài khoản và điều khoản của Owner.
-   Chặn M3.
-3. **Phạm vi loại trừ của `data.purge_all`.** Cụm "toàn bộ dữ liệu" không có nghĩa an toàn suy ra được
-   (`PROV-PC00-01`).
+| Điểm | Owner chốt | Hệ quả |
+| --- | --- | --- |
+| **Stack** (REQ-OQ02) | **Option B — Python workers + TypeScript web** | ADR-0006 `accepted`, thay thế phương án A. `server/`, `collector/`, `worker/`, `probe/` là **Python**; `web/` là **TypeScript**. Ranh giới hai ngôn ngữ là HTTP API đã có hợp đồng ⇒ **không** sinh cạnh quyền mới. **M1 hết bị chặn.** Vẫn PROVISIONAL: **framework** (ADR-0006 cố ý không nêu tên) và **đường dẫn cụ thể** ở §3/§8 của card, cho tới khi có repo triển khai |
+| **`data.purge_all`** | Xóa **chỉ dữ liệu nghiên cứu**; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup KHÔNG bị xóa** | `PROV-PC00-01`/`PROV-PC01-03` đã giải; `TXN-purge-all` có danh sách loại trừ; `MOD-data-admin-service` hết bị chặn |
+| **D09 / REQ-OQ01** | Dùng **Chrome profile riêng của dự án** | D09 ĐX → XN. **M0 không còn bị chặn bởi quyết định này** — nhưng xem 4.2: probe vẫn chưa chạy |
+| **Timezone** (B08) | Một IANA timezone, giá trị `Asia/Ho_Chi_Minh` | AMD-B08 + ADR-0007 accepted; fixture lịch đứng vững |
+| **Giá trị mặc định OQ** | Nhận tất cả: N = 7 ngày; 200 post hoặc 30 phút; 08:00 và 20:00 giờ owner; không có giờ yên lặng; hoãn export Saved sang P1 | Là **giá trị làm việc được Owner chấp nhận**. Ba giá trị vẫn phải **đo lại** rồi mới chốt cứng: OQ05 sau M0, OQ08 sau M3, OQ09 sau A3 |
+| **Tham số PC04 và PC08** | Nhận tất cả (RPO 24 h, RTO 2 h, backup 03:00, giữ 14d+8w+monthly, Argon2id, phiên 12 h nghỉ / 30 d tuyệt đối, khóa 5 lần/15 phút, token 180 d, audit 365 d, xóa là vĩnh viễn) | `PROV-PC04-01..09` và `PROV-PC08-01..05` thành giá trị Owner chấp nhận; ngưỡng tương đồng vẫn `uncalibrated` cho tới A2 |
+| **Hai thay đổi kỹ thuật** | Nhận cả hai: mã `CSRF_REJECTED`; `run.resume` từ `blocked` với lý do bắt buộc | `PROV-PC00-02`/`-04` accepted |
 
-Thêm vào đó, **REQ-OQ01 (xác nhận D09 — Chrome profile riêng của dự án) chặn M0** và chặn cả SP1.
+### 4.2 Chưa chốt — vẫn chặn
+
+| Điểm | Trạng thái | Chặn gì |
+| --- | --- | --- |
+| **REQ-OQ03 — provider và model cụ thể** | `OWNER_DECISION_REQUIRED` (Owner chọn "quyết sau") | **Chặn M3** và việc bật provider. Không có mặc định an toàn: phụ thuộc tài khoản và điều khoản của chính Owner |
+
+Đó là **điểm duy nhất** còn chờ Owner. Mọi thứ còn lại chặn vì **thiếu bằng chứng**, không vì thiếu quyết
+định — xem §8.
+
+### 4.3 Chuẩn bị cho vòng hỏi Owner kế tiếp
+
+Phê chuẩn vừa rồi **không** tạo ra bằng chứng runtime nào; chính `OD-20260907-01` ghi rõ điều đó. Vòng hỏi
+sau nên gom đúng hai nhóm:
+
+1. **Số mà Owner duyệt nhưng chưa từng nhìn thấy tận nơi** — `CR-PC02-22` (`evidence/handoffs/PC02-handoff.md`)
+   nêu thẳng vấn đề này: một số giá trị được duyệt theo gói chứ không theo từng con số. Trình lại chúng dưới
+   dạng "giá trị này ảnh hưởng điều gì bạn sẽ nhìn thấy", không phải dưới dạng bảng tham số.
+2. **Quyết định kỹ thuật mà chính người soạn xin được soi** — `PROV-PC03-01` (quy tắc DST: giờ không tồn tại
+   / giờ lặp), `PROV-PC03-02` (`run_now_active_run_policy = coalesce`), `PROV-PC03-03` (tách ngân sách
+   provider-unavailable), **`PROV-PC03-04`** (`analysis_unknown_attempt_auto_rerun = 1` — PC03 tự ghi rằng
+   đây là chỗ họ diễn giải **khác** câu "không bao giờ tự chạy lại unknown" và **đề nghị Auditor soi kỹ**;
+   nó khác hẳn `delivery.unknown`, vốn không bao giờ tự gửi lại), `PROV-PC03-05` (41 giá trị lease/backoff),
+   `PROV-PC03-06` (`storage.maintenance`).
+
+Cộng thêm REQ-OQ03 khi Owner sẵn sàng chọn provider.
 
 ## 5. Đọc gates và review
 
@@ -154,7 +194,10 @@ X) là nhánh riêng, nên chạy sớm sau G2/PC05 vì đó là rủi ro nguồ
 Mẫu card: `agent-tasks/TEMPLATE.md` (14 mục bắt buộc). Kiểm chứng card có đủ thông tin không:
 `agent-tasks/WALKTHROUGH.md`.
 
-**Pin hiện tại: `PC10-PIN-FCW4f-20260907`.**
+**Pin hiện tại: `PC10-PIN-OD01c-20260907`.** Trong 18 card, **8 card** nằm trọn trong phạm vi đã phê chuẩn
+(read set không chạm `contracts/ai/`, `contracts/telegram/`, hay `contracts/ops/` ngoài `deployment.md`);
+**10 card** giữ nguyên điểm dừng KC. §9 của mỗi card nói rõ nó thuộc nhóm nào **và** liệt kê đích danh những
+file hợp đồng trong read set của nó còn ở `DRAFT_FOR_REVIEW`.
 
 > **Đừng tin dòng trên — kiểm nó.** Nguồn chuẩn của tên epoch là **chính các card**, không phải file này
 > (finding `F-A2R1-03`: trước đây file này chép tay tên epoch và bị bỏ lại sau một lần pin lại). Đọc tên
@@ -167,8 +210,8 @@ Mẫu card: `agent-tasks/TEMPLATE.md` (14 mục bắt buộc). Kiểm chứng ca
 > Kết quả phải là **đúng một** dòng, và phải khớp tên ở trên. Lệch ⇒ file này stale, tin card.
 > `evidence/tools/e0_check.py` và EV-PC10-01 đều kiểm ràng buộc này; xem `agent-tasks/README.md` §4.
 
-Epoch cũ, theo thứ tự bị thay: `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ←
-`PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
+Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01b-20260907` ←
+`PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 Sáu file của PC09 cộng `evidence/tools/e0_check.py` **cố ý không được pin hash** vì PC09-FIX1 chạy song song;
 chúng được dẫn bằng đường dẫn + SC id, và agent phải đọc bản mới nhất trước khi bắt đầu. Chi tiết ở
@@ -179,9 +222,11 @@ chúng được dẫn bằng đường dẫn + SC id, và agent phải đọc b�
 
 1. **Không sửa nguồn.** `research-radar-spec.md` và `research-radar-pre-code-plan.md` bất biến. Đổi câu chữ
    đã cam kết ⇒ tạo `AMD-B<nn>` trong `decision-register.md`.
-2. **Không đóng blocker khi Owner chưa trả lời.** Không ghi `CLOSED`/`ACCEPTED`/`XN` cho B01–B17.
+2. **Không mở lại blocker đã được phê chuẩn, và không đóng cái chưa được.** B01–B17 nay `RATIFIED` bằng
+   `OD-20260907-01` — muốn đổi thì cần một vòng quyết định mới của Owner, không phải một CR. Ngược lại,
+   **REQ-OQ03 vẫn `OWNER_DECISION_REQUIRED`**: không ai được chọn provider/model thay Owner.
 3. **Không bắt đầu coding trước G5 và trước khi Owner ra lệnh.** SRC-PLAN §11 PC10: *"Chưa tự chạy coding vì
-   có task card."*
+   có task card."* Stack đã chốt **không** phải là lệnh bắt đầu.
 4. **Không sửa fixture, oracle hay test expectation để implementation pass.** Phát hiện hợp đồng sai ⇒ change
    request có bằng chứng (`precode/change-control.md`).
 5. **Không thêm cạnh giao tiếp ngoài `contracts/modules.yaml`.** Default deny.
@@ -189,7 +234,8 @@ chúng được dẫn bằng đường dẫn + SC id, và agent phải đọc b�
    "independent audit passed".
 7. **Không đoán dữ kiện bên ngoài.** Giới hạn định dạng Telegram, nhịp gọi arXiv/OpenAlex, điều khoản nhà
    cung cấp AI đều đang ở `KC` vì phiên Pre-code không có mạng. `contracts/telegram/delivery.md` §3.4:
-   *"Cấm suy ra giới hạn từ trí nhớ."*
+   *"Cấm suy ra giới hạn từ trí nhớ."* Phê chuẩn của Owner **không** đóng được một `KC` nào — nó là quyết
+   định, không phải dữ kiện.
 8. **Không thêm cơ chế né CAPTCHA hay che giấu danh tính.** SRC-SPEC §13.2 — không thương lượng. Bị chặn thì
    dừng và báo.
 9. **Không cập nhật hash trong card của một task đang chạy.** Baseline mới đi qua impact review
@@ -202,13 +248,17 @@ bằng cách viết thêm hợp đồng.
 
 | Rủi ro | Trạng thái | Chặn gì |
 | --- | --- | --- |
-| Probe khả thi X (SP1) chưa chạy; REQ-OQ01/D09 chưa được Owner xác nhận | `NOT_RUN` + `OWNER_DECISION_REQUIRED` | M0; mọi khẳng định live của collector; AC-01, AC-04 ở mức E3 |
+| Probe khả thi X (SP1) **chưa chạy** | `NOT_RUN` (REQ-OQ01/D09 **đã được Owner trả lời** — quyết định không còn chặn) | Mọi khẳng định live của collector; AC-01, AC-04 ở mức E3. M0 chờ **bằng chứng**, không chờ quyết định |
 | Nhịp gọi và yêu cầu định danh của arXiv/OpenAlex | `KC` — SRC-SPEC không chứa URL tài liệu (`CR-PC05-03`) | `CONTRACT_READY` của research connector |
 | Giới hạn định dạng Telegram (độ dài tin, callback data, parse mode, escape, rate limit) | `KC` (`CR-PC07-04`) | nhánh multipart của delivery; một phần AC-14 |
 | Chưa adapter CLI/ACP nào được probe | `BLOCKED` (`CR-PC06-04`) | AC-16 báo **BLOCKED**, không phải FAIL; đường CLI/ACP dừng ở `CONTRACT_READY`. Cổng dữ liệu: `provider_config.enabled = true` đòi `terms_check_at IS NOT NULL` (`CR-PC07-07`) |
 
 Ngoài ra: **chưa validator OpenAPI 3.1 nào được chạy** trên `contracts/http/openapi.yaml` trong phiên
-Pre-code; và phạm vi loại trừ của `data.purge_all` vẫn `OWNER_DECISION_REQUIRED`.
+Pre-code; và **REQ-OQ03 (provider/model) vẫn `OWNER_DECISION_REQUIRED`, chặn M3**. Phạm vi loại trừ của
+`data.purge_all` **đã được Owner chốt** và không còn là rủi ro mở.
+
+**E1–E4 đều `NOT_RUN`.** Chỉ có E0 đã chạy thật (của PC09). Phê chuẩn của Owner là một quyết định, không
+phải một phép đo: nó không nâng bất kỳ mục bằng chứng nào.
 
 ## 9. Bảo mật — chốt hiện tại
 

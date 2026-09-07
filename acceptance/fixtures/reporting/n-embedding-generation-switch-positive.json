@@ -40,7 +40,12 @@
     "contracts/state/report.yaml",
     "acceptance/scenarios.yaml"
   ],
-  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "claim_ceiling": "CONTRACT_READY",
+  "ratification_ref": "OD-20260907-01",
+  "ratified_by": "AUTH-OWNER-20260907-02",
+  "ratified_at": "2026-09-07",
+  "ratification_scope": "Fixture của phạm vi 'Reporting and time' mà Owner đã phê chuẩn (OD-20260907-01 mục 22); đây là các ORACLE CHẤP NHẬN của phạm vi đó, nên chúng mang cùng ceiling với hợp đồng chúng kiểm (F-A2R5-04: một README index không được claim cao hơn file nó liệt kê).",
+  "ratification_limits": "CONTRACT_READY nói dữ liệu vào và oracle đã đóng. Nó KHÔNG nói fixture đã chạy: evidence_status vẫn là NOT_RUN và E1–E4 chưa chạy lần nào. Ngưỡng similarity vẫn 'uncalibrated' (REQ-A2) và tham số mật độ vẫn sau cổng REQ-A4 — Owner chấp nhận GIÁ TRỊ LÀM VIỆC, không phải kết quả hiệu chỉnh.",
   "evidence_status": "NOT_RUN",
   "operation_name_note_vi": "Tên operation trong fixture này lấy nguyên văn từ contracts/ports.yaml, là naming authority cho operation (baseline §3): `embedding.start_generation_rebuild` và `embedding.activate_generation`. acceptance/scenarios.yaml SC52 → event_order hiện viết hai tên KHÁC không tồn tại trong ports.yaml; chuyển PC09 sửa qua CR-PC04-11. Lịch sử cụ thể của hai tên cũ nằm ở evidence/handoffs/PC04-handoff.md (addendum PKT-PC04-FIX3), không lặp lại ở đây để prose hợp đồng không chứa token đã chết.",
   "given": {

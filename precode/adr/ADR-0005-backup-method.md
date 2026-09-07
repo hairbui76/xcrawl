@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0005
 title: Phương pháp backup và restore cho SQLite
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B11]
 source_refs: [SRC-SPEC §3.6, SRC-SPEC §6.4, SRC-SPEC §7.3, SRC-SPEC §9.3, SRC-SPEC §13, SRC-SPEC AC-12, SRC-PLAN §3.1, SRC-PLAN §10, SRC-PLAN §11]
 requirement_refs: [REQ-D58, REQ-S7.3-04, REQ-S6.4-01, REQ-AC12, REQ-S9.3-08, REQ-S13-09]
@@ -34,6 +37,8 @@ SRC-SPEC D58 và §7.3 mô tả backup là "copy file SQLite" và restore là "�
 6. **Retention:** giữ vô thời hạn (giữ nguyên D58 phần retention). RPO/RTO cụ thể do PC08 chốt cùng Owner.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Điểm 1 sửa câu chữ của D58 (UQ) nên cần Owner phê chuẩn qua AMD-B11. Bằng chứng restore thật (E2/E3) **chưa có** và được ghi `NOT_RUN`; ADR này chỉ chốt phương pháp.
 

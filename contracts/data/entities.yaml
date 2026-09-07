@@ -3,7 +3,8 @@
 
 contract_id: CT-data-entities
 version: 0.1.0
-status: draft
+status: accepted
+ratification_ref: OD-20260907-01
 owner_role: data contract owner
 source_refs:
   - "SRC-SPEC §7.1 (bảng entity)"
@@ -104,7 +105,53 @@ verification: >-
   tồn tại trong `entities` (EV-PC02-03), và mọi target object trong fixture identity phải
   validate theo contracts/schemas/target.schema.json (EV-PC02-02). Không có E1–E4 ở gói này:
   NOT_RUN.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+
+# ---------------------------------------------------------------------------
+# 0. Trạng thái phê chuẩn (OD-20260907-01)
+# ---------------------------------------------------------------------------
+ratification:
+  decision_id: OD-20260907-01
+  authority: AUTH-OWNER-20260907-02
+  date: "2026-09-07"
+  scope_vi: >-
+    A2-R4 tuyên bố phạm vi "Data and identity" đủ điều kiện `CONTRACT_READY`. Owner đã phê
+    chuẩn B01–B17 trong một buổi hỏi từng mục. File này và các file cùng phạm vi
+    (identity.md, invariants.md, target.schema.json, ingest-batch.schema.json,
+    acceptance/fixtures/identity/README.md) chuyển `status: accepted`,
+    `claim_ceiling: CONTRACT_READY`.
+  accepted_items:
+    - {ref: "OD mục 4", subject_vi: "B08 timezone — một IANA timezone, giá trị Asia/Ho_Chi_Minh"}
+    - {ref: "OD mục 5", subject_vi: "B01 tag freeze tại transaction publish (AMD-B01)"}
+    - {ref: "OD mục 9", subject_vi: "B05 không ingest trùng theo x_post_id (AMD-B05)"}
+    - {ref: "OD mục 10", subject_vi: "B06 alias + work version + target union (ADR-0009)"}
+    - {ref: "OD mục 11", subject_vi: "B07 analysis key + generation (AMD-B07, ADR-0008)"}
+    - {ref: "OD mục 17", subject_vi: "B15 phạm vi 0-trùng + đếm xung đột (AMD-B15)"}
+    - {ref: "OD mục 20", subject_vi: "backfill N = 7 ngày (REQ-OQ04)"}
+    - {ref: "OD mục 24", subject_vi: "phạm vi data.purge_all — chỉ dữ liệu nghiên cứu; danh sách giữ lại đã chốt"}
+  accepted_working_values:
+    note_vi: >-
+      Owner CHẤP NHẬN làm giá trị làm việc, nhưng chúng còn phụ thuộc đo đạc thật. Chúng mang
+      `status: ACCEPTED_WORKING_VALUE`, không phải `ACCEPTED` tuyệt đối: con số có thể đổi khi
+      có dữ liệu mà KHÔNG cần Owner quyết định lại.
+    items:
+      - {field: "mục limits → ingest_batch_max_items", value: 200, remeasure_after: "M0 (REQ-A1, REQ-OQ05)"}
+  still_provisional:
+    note_vi: >-
+      Các số dưới đây do PC02 tự đề xuất và **KHÔNG** nằm trong buổi phê chuẩn (Owner chỉ được
+      hỏi các OQ default và tham số PC04/PC08). Giữ `PROVISIONAL`. Đánh dấu ở đây thay vì lặng
+      lẽ nâng lên ACCEPTED, vì nói Owner đã duyệt một con số họ chưa từng thấy là khai man.
+    change_request: CR-PC02-22
+    items: [limits → ingest_item_max_text_bytes, limits → ingest_batch_max_payload_bytes,
+            limits → ingest_item_max_media_refs, limits → ingest_item_max_referenced_links,
+            limits → ingest_thread_context_max_posts, limits → identity_merge_max_moved_rows,
+            limits → saved_snapshot_max_payload_bytes,
+            "entities[telegram_link_attempt].retention (30 ngày)"]
+  still_kc:
+    note_vi: "Mục còn `KC` trong phạm vi này — không mục nào chặn CONTRACT_READY vì chúng là điều kiện RUNTIME, không phải khoảng trống hợp đồng."
+    items:
+      - {item: "entities[provider_config].terms_doc_ref", why_vi: "REQ-A5: điều khoản của từng nhà AI chưa được đọc (Pre-code không có mạng). Cột khóa chỗ để ghi; CHECK ck_provider_config_terms_before_enable giữ adapter ở enabled=false cho tới khi có người đọc thật."}
+      - {item: "identity.md §9 non-goals (fuzzy title merge, author+year merge, OCR, undo merge)", why_vi: "KC theo thiết kế: cần dữ liệu có nhãn để đánh giá, không phải thiếu quyết định."}
 
 # ---------------------------------------------------------------------------
 # 1. Quy ước chung
@@ -118,7 +165,7 @@ conventions:
     sql_affinity: TEXT
   timestamps:
     format: "RFC 3339 UTC, hậu tố `Z`, độ chính xác mili-giây bắt buộc: `^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$`."
-    rationale: "B08 (PROVISIONAL): mọi timestamp lưu ở UTC; timezone hiển thị là một IANA timezone duy nhất do owner xác nhận, lưu trong settings, mặc định PROVISIONAL `Asia/Ho_Chi_Minh`."
+    rationale: "B08 **ACCEPTED (OD-20260907-01 mục 4)**: mọi timestamp lưu ở UTC; timezone hiển thị là một IANA timezone duy nhất, giá trị Owner đã xác nhận là `Asia/Ho_Chi_Minh`, lưu trong settings."
     tie_break: "Các hàng cùng timestamp được sắp thứ tự bằng `ingest_sequence` (số nguyên đơn điệu tăng do server cấp). SRC-PLAN §9.1."
     sql_affinity: TEXT
   clock_trust:
@@ -439,7 +486,7 @@ entities:
       - {name: id, type: string_ulid, nullable: false, constraints: "PK."}
       - {name: singleton_guard, type: integer, nullable: false, constraints: "CHECK (singleton_guard = 1); UNIQUE. Ép đúng một hàng."}
       - {name: display_name, type: string, nullable: false, constraints: "1..120 ký tự. Chỉ để hiển thị."}
-      - {name: timezone_iana, type: string, nullable: false, constraints: "IANA timezone do owner xác nhận (B08). PROVISIONAL mặc định `Asia/Ho_Chi_Minh`; cần Owner xác nhận."}
+      - {name: timezone_iana, type: string, nullable: false, constraints: "IANA timezone do owner xác nhận (B08). Giá trị **ACCEPTED**: `Asia/Ho_Chi_Minh` (OD-20260907-01 mục 4)."}
       - {name: created_at, type: timestamp_utc_ms, nullable: false, constraints: "Giờ server."}
     keys:
       primary: [id]
@@ -540,7 +587,7 @@ entities:
         - {name: ux_tag_config_version_owner_hash, columns: [owner_id, content_hash], note: "Hai lần publish không đổi tag dùng lại cùng một version — tránh sinh version rác."}
     freeze_point:
       decision_refs: [B01, AMD-B01]
-      statement: "PROVISIONAL: version được chốt trong **transaction publish report**, không phải lúc gửi Telegram. Delivery không bao giờ đổi nội dung đã publish."
+      statement: "**ACCEPTED (OD-20260907-01 mục 5, AMD-B01)**: version được chốt trong **transaction publish report**, không phải lúc gửi Telegram. Delivery không bao giờ đổi nội dung đã publish."
       cross_package: "Ngữ nghĩa chọn nội dung theo version này thuộc PC04."
 
   - name: source_connection
@@ -910,7 +957,7 @@ entities:
       components: [owner_id, target_key, task_type, source_fingerprint, prompt_version, schema_version, generation_number]
       excluded_deliberately:
         - "tag / tag_config_version — đổi tag không đổi key, do đó không gọi lại AI (REQ-AC06, I04)."
-        - "provider / model — đổi provider KHÔNG tự invalidate; giữ kết quả cũ tới khi owner yêu cầu reanalysis (SRC-PLAN §9.3, PROVISIONAL; quyết định cuối thuộc PC06)."
+        - "provider / model — đổi provider KHÔNG tự invalidate; giữ kết quả cũ tới khi owner yêu cầu reanalysis. **ACCEPTED** cùng analysis key + generation (OD-20260907-01 mục 11, AMD-B07)."
         - "report_id — một analysis dùng lại được ở nhiều kỳ báo cáo."
     fields:
       - {name: id, type: string_ulid, nullable: false, constraints: "PK."}
@@ -1355,7 +1402,7 @@ entities:
       - {name: subscription_identity_hash, type: string, nullable: false, constraints: "sha256 hex của `owner_id + \"\\n\" + văn bản tag ĐÃ CHUẨN HÓA` (quy tắc chuẩn hóa ở contracts/reporting/time-and-tags.md §6.2). Khóa danh tính subscription: xóa tag rồi thêm lại CÙNG chữ cho cùng hash, nên backfill không được tiêu thụ lần hai (CR-PC04-02, finding F-A1R2-03)."}
       - {name: entitlement, type: enum, nullable: false, constraints: "`granted` | `consumed` | `denied_already_consumed`. Trạng thái quyền dùng backfill, tách khỏi việc đã tiêu thụ hay chưa."}
       - {name: entitlement_reason, type: string, nullable: true, constraints: "Văn bản tự do giải thích vì sao `granted`/`denied_already_consumed`. Bắt buộc có nội dung khi `entitlement = 'denied_already_consumed'` để người dùng biết vì sao tag mới thêm lại không được với ngược."}
-      - {name: backfill_days, type: integer, nullable: false, constraints: "PROVISIONAL mặc định 7 (baseline §5 OQ defaults, REQ-OQ04)."}
+      - {name: backfill_days, type: integer, nullable: false, constraints: "**ACCEPTED** giá trị 7 ngày (OD-20260907-01 mục 20, REQ-OQ04)."}
       - {name: consumed_in_report_id, type: string_ulid, nullable: true, constraints: "FK → report.id. NULL = chưa tiêu thụ. Crash của builder KHÔNG được tiêu thụ backfill (SRC-PLAN §9.2)."}
       - {name: consumed_at, type: timestamp_utc_ms, nullable: true, constraints: "NOT NULL khi consumed_in_report_id NOT NULL."}
     keys:
@@ -2001,6 +2048,7 @@ entities:
       unit: days
       status: PROVISIONAL
       decision_ref: CR-PC02-17
+      ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
       rule_vi: >-
         Đây là NGOẠI LỆ của quy tắc retention vô thời hạn (REQ-D58): bảng chứa dấu vết của
         người KHÔNG phải owner. Giữ đủ lâu để rate limit và điều tra có tác dụng, rồi xóa.
@@ -2046,16 +2094,19 @@ limits:
   ingest_batch_max_items:
     value: 200
     unit: items
-    status: PROVISIONAL
-    decision_ref: "baseline §5 OQ defaults (per-run limit PROVISIONAL 200 posts), REQ-OQ05"
+    status: ACCEPTED_WORKING_VALUE
+    decision_ref: "OD-20260907-01 mục 20 (REQ-OQ05); đo lại sau M0"
     rationale: >-
       Một batch không được lớn hơn giới hạn của cả một đợt; nếu owner đặt giới hạn đợt thấp
-      hơn thì giới hạn đợt thắng. Owner chốt số thật sau M0 (REQ-A1).
+      hơn thì giới hạn đợt thắng. Owner đã CHẤP NHẬN 200 làm giá trị làm việc; nó vẫn phụ
+      thuộc đo đạc thật ở M0 (REQ-A1), nên trạng thái là `ACCEPTED_WORKING_VALUE` chứ không
+      phải `ACCEPTED` tuyệt đối — con số có thể đổi khi có dữ liệu, mà không cần Owner họp lại.
   ingest_item_max_text_bytes:
     value: 65536
     unit: bytes_utf8
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: >-
       Đủ cho post dài của X kể cả long-form, còn dưới ngưỡng làm phình transaction SQLite.
       Cần xác nhận lại theo giới hạn thực tế quan sát được ở M0; nếu một post vượt ngưỡng thì
@@ -2065,30 +2116,35 @@ limits:
     unit: bytes
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: "8 MiB: một batch vẫn nằm gọn trong bộ nhớ và trong một transaction SQLite ngắn."
   ingest_item_max_media_refs:
     value: 8
     unit: items
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: "X cho tối đa 4 ảnh/post ở luồng thường; 8 để dự phòng biến thể mà vẫn chặn payload bất thường."
   ingest_item_max_referenced_links:
     value: 32
     unit: items
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: "Đủ cho post liệt kê nhiều link; chặn payload rác."
   ingest_thread_context_max_posts:
     value: 50
     unit: items
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: "Thread của chính tác giả (REQ-D31); replies người ngoài không được ingest nên không cần lớn hơn."
   identity_merge_max_moved_rows:
     value: 100000
     unit: rows
     status: PROVISIONAL
     decision_ref: CR-PC02-05
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: >-
       Ngưỡng an toàn: merge vượt số hàng này bị từ chối và chuyển thành `identity_conflict`
       với `conflict_type = 'canonical_value_mismatch'` để owner xem, vì merge quá lớn nhiều khả
@@ -2098,6 +2154,7 @@ limits:
     unit: bytes
     status: PROVISIONAL
     decision_ref: CR-PC02-04
+    ratification_note_vi: "KHÔNG nằm trong buổi phê chuẩn OD-20260907-01 (Owner chỉ được hỏi các OQ default và tham số PC04/PC08). Giữ PROVISIONAL; xem CR-PC02-22."
     rationale: "1 MiB cho một snapshot văn bản là dư; vượt ngưỡng nghĩa là payload đang chứa thứ không nên chụp (media nhị phân)."
 
 # ---------------------------------------------------------------------------
@@ -2516,44 +2573,54 @@ transactions:
       - "Cụm từ gõ tay khớp `purge_challenge` do SERVER phát, còn `active`, chưa hết hạn, dùng một lần. Client KHÔNG được tự sinh cụm từ."
       - "Mọi `assignment_lease` đang `held` đã bị thu hồi; dispatcher đã khóa."
     tables:
+      set_authority_vi: >-
+        Ba tập dưới đây là NGUỒN LIỆT KÊ CÓ THẨM QUYỀN cho `data.purge_all` (ruling
+        PURGE-LIST 2026-09-07, OD-20260907-01 mục 24). Mọi artefact khác COPY nguyên văn,
+        không tự dựng danh sách riêng. Ba tập PHẢI phủ kín và rời nhau đôi một trên toàn bộ
+        `entities` — kiểm tự động bởi EV-PC02-08.
+      counts: {purged: 37, retained: 21, never_purged: 2, total: 60}
       purged:
-        note: "Xóa toàn bộ hàng của mọi entity dữ liệu nghiên cứu và vận hành:"
-        list: [post, post_work, work, work_version, identity_alias, identity_conflict,
-               identity_merge_audit, work_label, analysis, analysis_generation, analysis_attempt,
-               analysis_task, embedding_generation, tag_vector, report, report_item,
-               emerging_direction, coverage_window, pending_item_ledger, backfill_ledger,
-               first_announced_ledger, rescan_ledger, saved_item, saved_snapshot, delivery,
-               delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run,
-               assignment, assignment_lease, schedule_occurrence, checkpoint, ingest_receipt,
-               source_fetch_log, worker_registration, telegram_update_log, data_deletion_audit]
-      excluded_pending_owner_decision:
-        status: OWNER_DECISION_REQUIRED
-        note: >-
-          PC02 KHÔNG tự quyết định các bảng dưới đây có bị xóa hay không. Đây là các bảng mà
-          xóa chúng biến thao tác thành "cài lại từ đầu" thay vì "xóa dữ liệu", và ranh giới đó
-          là quyết định sản phẩm. R-04 đã đánh dấu chính điểm này là OWNER_DECISION_REQUIRED.
+        note_vi: "Dữ liệu NGHIÊN CỨU và dữ liệu VẬN HÀNH sinh ra từ nó. Xóa toàn bộ hàng."
+        list: [post, post_work, work, work_version, identity_alias, identity_conflict, identity_merge_audit, work_label, analysis, analysis_generation, analysis_attempt, analysis_task, embedding_generation, tag_vector, report, report_item, emerging_direction, coverage_window, pending_item_ledger, backfill_ledger, first_announced_ledger, rescan_ledger, saved_item, saved_snapshot, delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run, assignment, assignment_lease, checkpoint, ingest_receipt, source_fetch_log, telegram_update_log, telegram_link_attempt]
+        telegram_link_attempt_note_vi: "Bộ đếm rate limit là dữ liệu VẬN HÀNH, không phải cấu hình — nên bị xóa (ruling PURGE-LIST)."
+      retained_by_owner_decision:
+        status: ACCEPTED
+        decision_ref: OD-20260907-01
+        owner_answer_vi: >-
+          Owner quyết định (mục 24): phạm vi xóa CHỈ là dữ liệu nghiên cứu. Các bảng dưới đây
+          được GIỮ — xóa chúng biến thao tác thành "cài lại từ đầu" thay vì "xóa dữ liệu".
         tables:
-          - {table: owner, question: "Xóa hàng owner nghĩa là mất luôn tài khoản đăng nhập duy nhất (REQ-D05)."}
-          - {table: settings, question: "Lịch, giới hạn, N ngày backfill — cấu hình hay dữ liệu?"}
-          - {table: provider_config, question: "Cấu hình provider/model."}
-          - {table: provider_test_result, question: "Nhật ký test provider."}
-          - {table: secret_ref, question: "Con trỏ secret; xóa nghĩa là phải nhập lại mọi key."}
-          - {table: task_credential, question: "Nên xóa (ngắn hạn), nhưng đi cùng quyết định về secret_ref."}
-          - {table: secret_audit, question: "Nhật ký truy cập secret — xóa audit làm mất khả năng kiểm toán (I11)."}
-          - {table: session, question: "Xóa nghĩa là đăng xuất mọi phiên; nhiều khả năng nên xóa."}
-          - {table: tag, question: "Tag là 'dữ liệu' hay 'cấu hình'? Xóa tag làm báo cáo sau đó trống (SRC-SPEC §4 Topics)."}
-          - {table: tag_alias, question: "Đi cùng tag."}
-          - {table: tag_exclusion, question: "Đi cùng tag."}
-          - {table: tag_config_version, question: "Snapshot tag lịch sử; report đã publish trỏ vào đây."}
-          - {table: telegram_link, question: "Xóa nghĩa là phải liên kết lại bot."}
-          - {table: telegram_link_code, question: "Nên xóa (ngắn hạn)."}
-          - {table: source_connection, question: "Trạng thái phiên nguồn."}
-          - {table: backup_snapshot, question: "Xóa sổ backup khác với xóa artifact backup."}
-          - {table: backup_manifest, question: "Đi cùng backup_snapshot."}
-          - {table: restore_record, question: "Nhật ký khôi phục."}
-          - {table: purge_challenge, question: "Chính bảng cấp phép cho thao tác này."}
+          - {table: owner, reason_vi: "Tài khoản đăng nhập duy nhất phải còn (REQ-D05)."}
+          - {table: session, reason_vi: "Phiên đăng nhập được giữ; owner không bị đá ra khỏi app khi xóa dữ liệu nghiên cứu."}
+          - {table: secret_ref, reason_vi: "Giữ, để không phải nhập lại mọi API key sau khi xóa dữ liệu."}
+          - {table: task_credential, reason_vi: "Giữ cùng secret_ref; credential ngắn hạn tự hết hạn theo TTL của PC08."}
+          - {table: secret_audit, reason_vi: "Nhật ký truy cập secret là bằng chứng kiểm toán (I11); xóa audit làm mất khả năng kiểm toán."}
+          - {table: telegram_link, reason_vi: "Giữ liên kết bot; không phải liên kết lại sau khi xóa dữ liệu."}
+          - {table: telegram_link_code, reason_vi: "Giữ cùng telegram_link (mã ngắn hạn tự hết hạn)."}
+          - {table: provider_config, reason_vi: "Cấu hình provider/model theo tác vụ được giữ (REQ-D39)."}
+          - {table: provider_test_result, reason_vi: "Giữ cùng provider_config."}
+          - {table: settings, reason_vi: "Lịch, giới hạn đợt, N ngày backfill — cấu hình, không phải dữ liệu nghiên cứu."}
+          - {table: schedule_occurrence, reason_vi: "Lịch được giữ để đợt kế tiếp vẫn chạy đúng giờ (OD-20260907-01 mục 20 và 24)."}
+          - {table: tag, reason_vi: "Tag là SUBSCRIPTION của người dùng (lớp 2 của SRC-SPEC §8.1), không phải dữ liệu nghiên cứu (lớp 1)."}
+          - {table: tag_alias, reason_vi: "Đi cùng tag."}
+          - {table: tag_exclusion, reason_vi: "Đi cùng tag."}
+          - {table: tag_config_version, reason_vi: "Đi cùng tag; cũng là ảnh chụp lịch sử mà report từng trỏ vào."}
+          - {table: source_connection, reason_vi: "Trạng thái phiên nguồn; giữ để không phải đăng nhập X lại."}
+          - {table: backup_snapshot, reason_vi: "Owner nói rõ: backup KHÔNG bị xóa."}
+          - {table: backup_manifest, reason_vi: "Đi cùng backup_snapshot."}
+          - {table: restore_record, reason_vi: "Nhật ký khôi phục; đi cùng backup."}
+          - {table: purge_challenge, reason_vi: "Chính bảng cấp phép cho thao tác này."}
+          - {table: worker_registration, reason_vi: "Đăng ký collector và ràng buộc token là CẤU HÌNH, không chứa dữ liệu nghiên cứu; xóa sẽ buộc đăng ký lại collector (ruling PURGE-LIST 2026-09-07)."}
       never_purged:
-        - {table: schema_migration, why: "Mô tả cấu trúc kho, không phải dữ liệu của owner; xóa sẽ làm kho không xác định được phiên bản."}
+        - {table: schema_migration, why_vi: "Mô tả cấu trúc kho, không phải dữ liệu của owner; xóa sẽ làm kho không xác định được phiên bản."}
+        - {table: data_deletion_audit, why_vi: "Bản ghi xóa được giữ VĨNH VIỄN theo tham số PC08 đã phê chuẩn (OD-20260907-01 mục 23); chính thao tác purge ghi một hàng audit vào đây."}
+      backup_artifacts_rule:
+        status: ACCEPTED
+        decision_ref: OD-20260907-01
+        rule_vi: >-
+          Artifact backup trên hệ thống tệp KHÔNG bị đụng tới, và ba bảng `backup_*` cũng không.
+          Hệ quả phải nói thẳng trong hộp thoại xác nhận: **dữ liệu vừa xóa vẫn còn trong các
+          bản backup**; xóa khỏi backup là thao tác riêng của PC08.
     rows_written_together:
       - "Xóa các bảng ở mục `tables` → `purged`."
       - "`purge_challenge` → `state = 'consumed'`, `consumed_at`."
@@ -2568,7 +2635,9 @@ transactions:
       - "`#schema_migration` không đổi."
       - "`purge_challenge.state = 'consumed'`; gọi lại với cùng cụm từ → `VALIDATION_ERROR` (dùng một lần)."
       - "`#assignment_lease[state='held'] = 0` tại thời điểm bắt đầu."
-      - "Không thao tác nào chạm artifact backup: `backup_snapshot.artifact_sha256` của các bản đã có không đổi (nếu bảng đó không bị xóa theo quyết định Owner)."
+      - "Không thao tác nào chạm artifact backup: `backup_snapshot.artifact_sha256` của các bản đã có không đổi, và `#backup_snapshot` không đổi."
+      - "Với mọi bảng trong `retained_by_owner_decision`: số hàng KHÔNG đổi."
+      - "`#session` không đổi ⇒ owner vẫn đăng nhập được ngay sau khi xóa."
     failure_timeline:
       - {point: "Kho không ở trạng thái maintenance", server_state: "không đổi", client_sees: "VALIDATION_ERROR", recovery: "chuyển maintenance trước (PC03)"}
       - {point: "Cụm từ sai/hết hạn/đã dùng", server_state: "không đổi", client_sees: "VALIDATION_ERROR", recovery: "xin challenge mới"}
@@ -2577,7 +2646,7 @@ transactions:
       - "Chạy khi kho không ở `maintenance`."
       - "Chấp nhận cụm từ do client tự sinh."
       - "Xóa `schema_migration`."
-      - "Xóa các bảng ở `excluded_pending_owner_decision` khi Owner CHƯA quyết định — phạm vi đó vẫn bị chặn."
+      - "Xóa bất kỳ bảng nào trong `retained_by_owner_decision` — Owner đã quyết định giữ chúng (OD-20260907-01 mục 24)."
       - "Chạy khi còn `assignment_lease` ở `held`."
       - "Xóa artifact backup như một phần của thao tác này (backup là hệ thống tệp, thuộc PC08)."
 

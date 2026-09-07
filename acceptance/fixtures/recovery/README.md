@@ -45,7 +45,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `i-collector-token-calls-save.json` | Collector token gọi Save và sửa tag → `UNAUTHORIZED`; đường ingest hợp lệ vẫn chạy | SC41 | I01, I08 |
 | `j-restore-verification-incomplete-dispatch-locked.json` | Đối soát chưa xong → dispatch vẫn khóa, nêu rõ mệnh đề nào chưa đạt | SC42, SC27 | I15, I13 |
 | `k-delete-target-preserves-saved.json` | `data.delete_target`: xóa dữ liệu gốc một target, **giữ** `saved_snapshot` + `first_announced_ledger` + report đã publish; ca âm thiếu cờ xác nhận | SC32 | I08, I01, I05, I07 |
-| `l-purge-all-two-phase-and-negatives.json` | `data.purge_all`: hai pha xác nhận, chỉ trong `maintenance`, thu hồi lease trước khi xóa; bốn ca âm (cụm từ sai, sai trạng thái storage, sai principal, dùng lại challenge) | SC44 | I01, I15, I13 |
+| `l-purge-all-two-phase-and-negatives.json` | `data.purge_all`: hai pha xác nhận, chỉ trong `maintenance`, thu hồi lease trước khi xóa; bốn ca âm (cụm từ sai, sai trạng thái storage, sai principal, dùng lại challenge); **khẳng định cả 20 bảng retained còn nguyên và 39 bảng dữ liệu nghiên cứu về 0** | SC44 | I01, I15, I13 |
 | `m-post-restore-reconciled-dispatch-reopens.json` | Đối soát **hoàn tất** → dispatcher mở lại, nhưng outbox generation cũ vẫn **không** tự phát lại — mặt dương của I15 | SC53, SC27 | I15, I09, I13 |
 
 ## Hình dạng chung
@@ -142,9 +142,22 @@ gate **không rỗng**: mọi khóa trong các hàng đó là cột thật của
 tiền tố `_`. Nhờ vậy ba fixture này đóng góp cột thật vào phép kiểm, khác bảy fixture cũ (`a`–`j`) vốn khẳng định
 về trạng thái hệ thống và mã lỗi chứ không về hàng.
 
-Một điểm cố ý **không** khẳng định: trong `l`, `deleted_counts` cho `settings`, `secret_ref`, credential đăng nhập,
-`telegram_link` và `schema_migration` **bị bỏ trống**, vì danh sách loại trừ của `data.purge_all` vẫn là
-`OWNER_DECISION_REQUIRED` (`PROV-PC01-03`). Điền số vào đó bây giờ là tự quyết thay Owner.
+**Phạm vi purge đã chốt** (OD-20260907-01 mục 24), với ba tập bảng theo ruling **CR-PC05-06 + CR-PC05-07**
+(`PURGE-LIST-ruling.md`) — bản `TXN-purge-all` đầu tiên tự mâu thuẫn và **không** được dùng. Ba tập phủ đúng
+60 entity, không chồng lấn, và `l` khẳng định cả ba:
+
+- **21 bảng retained** — `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`,
+  `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`,
+  `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`,
+  `restore_record`, `purge_challenge`, `worker_registration` — mỗi bảng có một hàng trong khối `rows` của `given`
+  và hàng tương ứng trong khối `rows` của `expected`, nên field gate kiểm được từng cột.
+- **2 bảng never_purged** — `schema_migration`, `data_deletion_audit`; bảng thứ hai còn **tăng đúng một hàng**
+  vì chính lần purge ghi audit của nó.
+- **37 bảng bị xóa** — dữ liệu nghiên cứu và vận hành, gồm `telegram_link_attempt` (CR-PC05-07); khẳng định
+  `COUNT(*) = 0` sau ca hợp lệ, qua khóa `purged_table_counts_after` trong `expected`.
+
+`l` cũng khẳng định **backup không bị chạm** và hộp thoại xác nhận **phải nói** rằng dữ liệu đã xóa vẫn còn trong
+các bản backup: nếu không nói, người dùng tin sai rằng dữ liệu đã biến mất hoàn toàn.
 
 ## Trạng thái bằng chứng
 

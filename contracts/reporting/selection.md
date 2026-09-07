@@ -1,7 +1,7 @@
 ---
 contract_id: CT-reporting-selection
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: reporting contract owner
 source_refs:
   - "SRC-SPEC §3.4 D22, D46, D47, D48, D49, D59"
@@ -44,15 +44,44 @@ verification: >-
   E0 SELF_VALIDATION ở gói PC04: EV-PC04-01 (schema + fixture), EV-PC04-02 (tính lại ví dụ số
   §8.7 bằng script trong scratch dir và so với các con số ghi trong file này), EV-PC04-03
   (operation_id / entity được trích dẫn có tồn tại). E1–E4 `NOT_RUN`.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratified_by: AUTH-OWNER-20260907-02
+ratified_at: "2026-09-07"
+ratification_scope: >-
+  A2-R4 tuyên bố phạm vi "Reporting and time" đủ điều kiện `CONTRACT_READY`; Owner phê chuẩn
+  B01–B17 và 8 tham số của PC04 cộng phương án kỳ rỗng (b) (OD-20260907-01 mục 22).
+  PROV-PC04-01..09 nay là `ACCEPTED (OD-20260907-01)` với tư cách **giá trị làm việc**.
+ratification_limits: >-
+  Owner phê chuẩn GIÁ TRỊ LÀM VIỆC, KHÔNG phải kết quả hiệu chỉnh. Hai thứ vẫn chưa được đo và
+  KHÔNG được đọc là đã kiểm chứng: (1) ngưỡng similarity giữ nguyên
+  `threshold_calibration_state: uncalibrated` cho tới khi REQ-A2 chạy; (2) mọi tham số mật độ
+  giữ nguyên cổng REQ-A4. `CONTRACT_READY` ở đây nghĩa là NGỮ NGHĨA và ORACLE đã đóng, không
+  nghĩa là các con số đã được chứng minh là tốt.
 ---
 
 # Chọn nội dung kỳ báo cáo và mật độ vector
 
-> **Trạng thái quyết định.** B14 và B17 vẫn **OPEN**; mọi tham số số học trong file này là
-> `PROVISIONAL` và **chưa được hiệu chỉnh**. Không mục nào ở đây được đọc là bằng chứng rằng
-> ngưỡng hay thuật toán hoạt động tốt: đó là REQ-A2 (ngưỡng) và REQ-A4 (mật độ), cả hai đều
-> `KC` và cần dữ liệu thật.
+> **Trạng thái quyết định — ĐÃ PHÊ CHUẨN, NHƯNG CHƯA HIỆU CHỈNH.** Owner đã phê chuẩn B14, B17
+> và 8 tham số của PC04 trong `OD-20260907-01` (authority `AUTH-OWNER-20260907-02`, 2026-09-07);
+> `PROV-PC04-01..09` nay đọc là **`ACCEPTED (OD-20260907-01)`**.
+>
+> **Đọc kỹ ranh giới này — nó là điểm dễ hiểu sai nhất của file.** Owner chấp nhận các **giá trị
+> làm việc** để hệ thống chạy được và để fixture tất định. Owner **không** chấp nhận, và không
+> thể chấp nhận, một kết luận rằng các con số đó tách được tín hiệu khỏi nhiễu — điều đó chỉ đo
+> được bằng dữ liệu thật. Vì vậy, sau phê chuẩn:
+>
+> - Ngưỡng similarity `0.8000` (§6) vẫn là `PROVISIONAL_BOOTSTRAP`, và
+>   `settings['reporting.threshold_calibration_state']` vẫn là **`uncalibrated`** cho tới khi
+>   REQ-A2 chạy trên 50–100 bài gán nhãn tay. Mọi report vẫn mang
+>   `coverage_note` → `threshold_calibration_state = 'uncalibrated'`, và **cấm** tuyên bố bất kỳ
+>   chỉ tiêu chất lượng nào của SRC-SPEC §1.4 khi còn ở trạng thái này.
+> - Mọi tham số mật độ (§8.2) vẫn nằm sau **cổng REQ-A4** và vẫn mang
+>   `parameters_status: PROVISIONAL_BOOTSTRAP` trong `report.schema.json`. REQ-A2, REQ-A3 và
+>   REQ-A4 vẫn là `KC`.
+>
+> `CONTRACT_READY` của file này khẳng định: thuật toán, thứ tự ưu tiên, tie-break, oracle và ví
+> dụ số đã đóng và tái lập được. Nó **không** khẳng định các tham số là đúng.
 
 ## 1. Selection là truy vấn dữ liệu, không phải việc của AI
 
@@ -179,7 +208,8 @@ E kích hoạt khi   excl_score(X, E) >= θ_excl(E)
 ```
 
 Ngưỡng loại trừ dùng lại ngưỡng của phạm vi tương ứng thay vì một tham số thứ ba
-(`PROVISIONAL`, gắn REQ-A2): exclusion sống trong cùng không gian vector và cùng thang điểm;
+(`ACCEPTED (OD-20260907-01)` như giá trị làm việc, **vẫn gắn cổng REQ-A2**): exclusion sống trong
+cùng không gian vector và cùng thang điểm;
 thêm một núm chưa hiệu chỉnh nữa làm A2 không đánh giá được.
 
 **Thứ tự áp dụng — và vì sao thứ tự không quan trọng.**
@@ -301,8 +331,8 @@ Khóa 4 và 5 làm cho thứ tự **toàn phần**: không tồn tại hai mục
 
 | Tham số | Giá trị | Đơn vị | Trạng thái | Lý do |
 | --- | --- | --- | --- | --- |
-| `settings['reporting.max_items_per_period']` | 50 | mục | `PROVISIONAL` (REQ-OQ05 chưa có số thật) | SRC-SPEC §10.4 yêu cầu có hạn mức vì mỗi mục vào báo cáo tốn một summary; 50 là mức một người đọc được trong một kỳ mà vẫn đủ rộng để §8 có mẫu |
-| `settings['reporting.max_emerging_directions']` | 3 | hướng | `PROVISIONAL` | Khối đầu báo cáo phải đọc được trong vài giây; SRC-SPEC §1.4 đặt mục tiêu "≥ 1 hướng mỗi tuần", không phải danh sách dài |
+| `settings['reporting.max_items_per_period']` | 50 | mục | `ACCEPTED (OD-20260907-01)` (REQ-OQ05 vẫn cần số đo sau M0) | SRC-SPEC §10.4 yêu cầu có hạn mức vì mỗi mục vào báo cáo tốn một summary; 50 là mức một người đọc được trong một kỳ mà vẫn đủ rộng để §8 có mẫu |
+| `settings['reporting.max_emerging_directions']` | 3 | hướng | `ACCEPTED (OD-20260907-01)` | Khối đầu báo cáo phải đọc được trong vài giây; SRC-SPEC §1.4 đặt mục tiêu "≥ 1 hướng mỗi tuần", không phải danh sách dài |
 
 Vượt hạn mức: các mục xếp sau vị trí thứ `max_items_per_period` **không bị bỏ**. Chúng được ghi
 `pending_item_ledger` với `reason = 'budget_exceeded'` trong cùng transaction publish, và là ứng
@@ -341,7 +371,12 @@ AI chỉ có một việc trong khối này: **diễn đạt lại** object đã
 danh sách thành viên và số liệu — chỉ thiếu câu văn. Khối **không bao giờ** phụ thuộc AI để tồn
 tại.
 
-### 8.2 Tham số (tất cả `PROVISIONAL`, cổng REQ-A4)
+### 8.2 Tham số — Owner chấp nhận làm giá trị làm việc, **cổng REQ-A4 vẫn nguyên**
+
+Owner đã chấp nhận bộ tham số dưới đây (OD-20260907-01 mục 22) để hệ thống chạy được. Việc
+chấp nhận đó **không** thay thế REQ-A4: chưa có 3–4 kỳ dữ liệu thật nào được đọc lại, nên
+không giá trị nào ở đây được coi là đã kiểm chứng. Cả hai điều cùng đúng, và trình bày thiếu
+một trong hai là sai.
 
 | Tham số | Giá trị | Đơn vị | Lý do |
 | --- | --- | --- | --- |

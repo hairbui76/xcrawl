@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0003
 title: Trạng thái delivery không xác định
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B03]
 source_refs: [SRC-SPEC §9.1, SRC-SPEC §9.3, SRC-SPEC AC-14, SRC-PLAN §3.1, SRC-PLAN §8.3, SRC-PLAN §10]
 requirement_refs: [REQ-AC14, REQ-D38, REQ-S9.1-03, REQ-S9.2-05, REQ-S9.3-06, REQ-S5.3-02, REQ-S5.4-02]
@@ -34,6 +37,8 @@ Tình huống cụ thể: hệ thống gửi request, Telegram nhận và xử l
 6. Hủy liên kết hoặc đổi link generation đưa delivery đang chờ về `cancelled`; không chuyển payload cũ sang recipient mới.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Quyết định này **thay đổi câu chữ của AC-14** — một tiêu chí nghiệm thu người dùng đã đọc — nên bắt buộc Owner phê chuẩn (AMD-B03). Cho tới lúc đó, PC07 không được tuyên bố `CONTRACT_READY` cho phần delivery.
 

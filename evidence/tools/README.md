@@ -73,7 +73,7 @@ Một `BLOCKED` (thiếu file đầu vào) **không** làm exit code khác 0 —
 Phụ thuộc: python3 stdlib + PyYAML + jsonschema. Không có phụ thuộc nào khác và công cụ **không**
 truy cập mạng.
 
-## 3. Mười chín check
+## 3. Hai mươi bốn check
 
 | ID | Kiểm gì | Oracle |
 | --- | --- | --- |
@@ -93,11 +93,13 @@ truy cập mạng.
 | `E0-10b-denied-edge-oracle` | `forbidden_edges` ↔ `denied_cases` ↔ fixture `boundary/` | **Song ánh khớp nội dung** (CR-PC01-11): mỗi `FE-nn` ↔ đúng một denied case có `attempted_edge` khớp caller/callee và `expected_error_code` đã đăng ký ↔ đúng một sự kiện quét có `actor`/`callee`/`denied_case_ref`/`expected_error_code`/`operation` khớp. Hai chiều ngược: không tham chiếu tới cạnh không tồn tại, không trỏ trùng. **Cộng (F-A2R1-05):** một operation được gọi tên phải do **chính callee sở hữu** khi callee là `MOD-*`; khi callee là `EXT-*` nó là port nội bộ mà kẻ vi phạm cố tạo ra hiệu ứng, theo quy ước đã khai trong `modules.yaml default_deny`. **Cộng (F-A2R2-04):** một case `operation: null` thiếu `event_type` hoặc `operation_absent_reason_vi` là **violation**, không phải note — quy tắc và cửa kiểm trích nó phải nói cùng một điều về cái gì là bắt buộc |
 | `E0-11a-no-orphan` | `acceptance/traceability.csv` | số dòng bằng `requirements.csv`; không dòng P0 với status XN/UQ nào là `ORPHAN`; `coverage_status` nằm trong từ vựng |
 | `E0-11b-invariant-polarity` | `acceptance/scenarios.yaml` | mỗi invariant có ≥ 1 scenario khai `positive` **và** ≥ 1 khai `negative`. **`mixed` tính cho KHÔNG cực nào** (F-A2R1-10): một ca hỗn hợp không phải một counterexample chuyên dụng, và tiêu đề của check không được hứa nhiều hơn oracle của nó |
-| `E0-12-forbidden-strings` | Toàn corpus | trường có cấu trúc: `status`/`claim_ceiling`/… không bao giờ là `CLOSED`, `ACCEPTED`, `TBD`, và không nhãn nào vượt `DRAFT_FOR_REVIEW`. Văn xuôi: báo dòng để người đọc (heuristic, xem §5) |
+| `E0-12-forbidden-strings` | Phạm vi quét (`contracts`, `acceptance`, `precode`, `evidence`) | **Viết lại ở đợt FIX10 theo `CR-PC01-13`.** Trước phê chuẩn nó là một lệnh cấm phẳng: không file nào vượt `DRAFT_FOR_REVIEW`. Sau `OD-20260907-01` nó là một **cửa phạm vi**: `ACCEPTED`/`RATIFIED`/`CONTRACT_READY` chỉ hợp lệ trong file có `ratification_ref: OD-20260907-01` (hoặc bất kỳ đâu dưới `precode/`, nơi phê chuẩn được ghi); `CONTRACT_READY` thêm điều kiện file phải nằm trong **bốn phạm vi đã phê chuẩn** — danh sách **không đủ điều kiện** viết cứng trong `CONTRACT_READY_INELIGIBLE_PREFIXES`/`_FILES`. Nhãn **trên** `CONTRACT_READY` vẫn bị cấm tuyệt đối trong phạm vi quét. `CLOSED` và `TBD` không đổi |
+| `E0-12b-ratification-refs` | Mọi file `contracts/`, `acceptance/` khai `CONTRACT_READY` | file phải mang `ratification_ref` nêu `OD-20260907-01`, **và** `precode/owner-decisions.md` phải tồn tại và chứa id đó. Một trần claim được nâng dựa trên một trích dẫn không phân giải được là một claim không có thẩm quyền đứng sau |
 | `E0-13-coverage-windows` | Fixture có `coverage_window` | `window_from < window_to`; `window_to[n] == window_from[n+1]` theo `sequence` |
 | `E0-14-fixture-actor-edge` | `events[]` của mọi fixture | `actor` ∈ `caller_modules` VÀ `(actor, owner, operation)` ∈ `allowed_edges`; `performed_by` là service thực thi, **không** phải khẳng định caller; `edge_assertion: forbidden` đảo ngược kỳ vọng (R4-02); một sự kiện `operation: null` **phải** khai `event_type` ∈ {`local_observation`, `in_process_call`} |
 | `E0-15-fixture-field-existence` | `given.rows` / `expected.rows` | mọi key là một cột của entity đó, HOẶC bắt đầu bằng `_`, HOẶC mang `pending_cr` (R4-01) |
 | `E0-16-scenario-catalogue` | `acceptance/scenarios.yaml` | mỗi AC-01..18 có SC; mỗi mã lỗi có SC; id duy nhất và liên tục; mọi `fixture_refs`/`contract_refs` tồn tại trên đĩa; mọi `status` là `NOT_RUN` |
+| `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: 37 + 21 + 2 = 60. (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
 | `E0-17-declared-deviations` | `x-contract.deviations` và các ngoại lệ header | mỗi deviation có `rule`/`deviation`/`reason`/`evidence_refs`; ngoại lệ ADR (R-05) và ngoại lệ CSV được ghi ở nơi đọc được |
 
 ## 4. Cách đếm — một phương pháp duy nhất
@@ -171,6 +173,11 @@ giờ trong repo): tiêm một khiếm khuyết đã biết, xác nhận check b
 | Check | Đột biến đã tiêm | Kết quả |
 | --- | --- | --- |
 | `E0-04b` | `` `worker.claim_assignment` `` → `` `worker.grab_assignment` `` trong `state/run.yaml` | Bắt được, nêu đúng file và liệt kê các operation thật của domain |
+| `E0-12` (M5) | `claim_ceiling: CONTRACT_READY` đặt vào `contracts/ai/tasks.yaml` — phạm vi **không** có trong allowlist | Bắt được |
+| `E0-12b` (**M6b**) | `ratification_ref` **chuyển ra khỏi header**, để lại một dòng văn xuôi nhắc chuỗi đó, trong `contracts/state/storage.yaml` | Bắt được — **ở FIX7 thì KHÔNG**; xem §5g |
+| `E0-12b` (M6c) | gỡ hẳn `ratification_ref` khỏi `contracts/state/report.yaml` | Bắt được |
+| `E0-12` (M7) | một claim **vượt** `CONTRACT_READY` đặt vào `contracts/errors.yaml` | Bắt được |
+| `E0-12` + `E0-12b` (**M8**, lượt riêng) | allowlist trong `precode/gates.yaml` không còn trích `OD-20260907-01` | **Cả hai chuyển `BLOCKED`**, không PASS |
 | `E0-04c` | `` `saved_snapshot.content_hash` `` → `` `saved_snapshot.body_digest` `` trong `scenarios.yaml` | Bắt được, nêu đúng entity |
 | `E0-04d` | `` `TELEGRAM_SEND_UNCERTAIN` `` → `` `TELEGRAM_TOTALLY_MADE_UP` `` trong `state/delivery.yaml` | Bắt được |
 | `E0-10b` | ba đột biến: đổi `expected_error_code` của `NC-01`; `denied_case_ref` trỏ `NC-99`; đổi `actor` một sự kiện | Bắt cả ba |
@@ -186,6 +193,60 @@ Chọn đột biến ở namespace **không nhập nhằng**. `report.publish_im
 để chứng minh `E0-04b`: `report` vừa là domain operation vừa là tên entity, nên token rơi vào
 nhánh "cả hai" và được báo bởi `E0-04c`. `worker.*` không phải tên entity, nên nó chứng minh đúng
 thứ cần chứng minh.
+
+## 5g. `F-A2R5-03` — self-test của tôi thiếu đúng đột biến quan trọng nhất
+
+Ở FIX7 tôi dựng `E0-12`/`E0-12b`, chạy ba đột biến, và báo "cả ba đều bị bắt". Auditor thử một
+đột biến thứ tư: **M6b** — chuyển `ratification_ref` ra khỏi header và để lại một câu văn xuôi
+nhắc chuỗi đó. Cả hai check **PASS**. Nguyên nhân: `ratification_ref_of()` có một regex dự phòng
+quét toàn văn bản, nên file "có ref" theo nghĩa *chuỗi xuất hiện đâu đó*. Tệ hơn PASS: `E0-12b`
+chỉ **đếm ít đi một mục** — file **rời khỏi tập được kiểm** thay vì bị báo, nên ngay cả người đọc
+kỹ đầu ra cũng không thấy gì bất thường.
+
+Bài học không phải "thêm M6b". Là: **một cửa kiểm mới chưa bị tấn công thì chưa phải bằng chứng**,
+và người dựng cửa là người tệ nhất trong việc nghĩ ra cách phá nó. Ba đột biến tôi chọn ở FIX7 đều
+là *xoá* hoặc *đặt sai chỗ*; không cái nào là *giữ nguyên bề mặt, đổi chỗ chứa* — đúng loại mà một
+oracle "chuỗi có mặt" bỏ lọt. `CR-PC01-11` và `F-A2R1-05` trước đó cũng cùng lớp: **có mặt không
+đủ, phải khớp**.
+
+Nay: `ratification_ref` **chỉ** đọc từ header đã parse, không còn regex dự phòng; eligibility là
+allowlist dữ liệu; và self-test chạy năm đột biến qua hai lượt.
+
+## 5h. Điều `E0-18` KHÔNG kiểm
+
+Bản đầu của `E0-18` so **tập hợp của các liệt kê trong văn xuôi** giữa các artefact. Nó cho 24 vi
+phạm, khoảng 20 trong đó là **sai**: bất kỳ đoạn văn nào nhắc "purge" gần năm tên bảng đều dính,
+và `entities.yaml` dính chỉ vì nó chứa mọi tên bảng. Tôi đã gỡ phần đó thay vì nới ngưỡng cho tới
+khi nó im — một check ồn dạy người đọc bỏ qua đầu ra của chính nó, và đó là thiệt hại lâu dài hơn
+một lỗ hổng đã được ghi ra.
+
+Nên: **liệt kê purge trong văn xuôi chưa được đối chiếu tự động.** Cái được kiểm là toàn vẹn phân
+hoạch, sự vắng mặt của marker "chưa quyết", và các danh sách **có cấu trúc**. Một artefact viết
+sai một tên bảng giữa một câu văn vẫn lọt. Đó là một CR mở, không phải một điều bản này ngụ ý đã
+xong.
+
+## 5f. Phạm vi của `E0-12` — điều nó **không** với tới, đo và in ra
+
+`SCAN_DIRS` là `contracts`, `acceptance`, `precode`, `evidence`. **`agent-tasks/` không nằm trong
+đó.** Vì thế câu "nhãn vượt `CONTRACT_READY` bị cấm ở mọi nơi" từng đúng về ý định và sai về phạm
+vi: 18 task card khai `claim_ceiling: IMPLEMENTATION_VERIFIED` (một card khai
+`LIVE_FEASIBILITY_VERIFIED`) mà không check nào nhìn thấy.
+
+Trong card, `claim_ceiling` mang **nghĩa khác**: trần mà công việc được giao có thể đạt tới, lấy
+từ SRC-PLAN §2 — không phải một tuyên bố về chính card. Nên đây không phải một vi phạm cần fail.
+Nhưng một khóa mang hai nghĩa là đúng lớp rủi ro mà mọi finding của audit trong gói này đã có, nên
+xử lý là:
+
+1. Oracle của `E0-12` nay nói **đúng phạm vi nó quét**, và nêu tên `agent-tasks/` là ngoài phạm vi.
+2. `E0-12` **đếm và in ra** mọi `claim_ceiling` vượt trần trong `agent-tasks/` như một note trong
+   bản ghi chạy — có mặt trong bằng chứng, không phải vắng mặt im lặng.
+3. `CR-PC09-14` (→ Coordinator): hoặc đổi tên khóa trong card, hoặc mở rộng `SCAN_DIRS`. Tôi
+   **không** tự mở rộng `SCAN_DIRS` ở đợt đóng gói: nó sẽ đổi nghĩa của mọi lần chạy trước đó và
+   đưa một thư mục do gói khác sở hữu vào phạm vi mà không có ruling.
+
+Đây là lần thứ hai trong gói này một check có **tiêu đề rộng hơn phép đo** (lần đầu: `E0-11b`,
+`F-A2R1-10`). Cách sửa cả hai lần giống nhau — thu tiêu đề về đúng phép đo, rồi đo phần chênh và
+in nó ra — và §5 nên được đọc với giả định rằng còn những chỗ như thế chưa ai tìm ra.
 
 ## 5c. Cải tiến được khuyến nghị tiếp theo — `CR-PC07-10` (KHÔNG thực hiện ở đợt này)
 

@@ -1,7 +1,7 @@
 ---
 contract_id: CT-fixtures-reporting
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: reporting contract owner
 source_refs:
   - "SRC-PLAN §11 PC04 (danh mục fixture bắt buộc)"
@@ -30,7 +30,20 @@ scope: >-
   vector. Đây là DỮ LIỆU VÀO + ORACLE, **không phải test đã chạy**. Ở gói PC04 chỉ E0
   (validate tĩnh) được thực hiện; E1–E4 là `NOT_RUN`.
 verification: "EV-PC04-01 (parse + report.schema.json), EV-PC04-02 (ví dụ mật độ), EV-PC04-03 (tham chiếu operation/entity), EV-PC04-04 (coverage nối liền)."
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratified_by: AUTH-OWNER-20260907-02
+ratified_at: "2026-09-07"
+ratification_scope: >-
+  A2-R4 tuyên bố phạm vi "Reporting and time" đủ điều kiện `CONTRACT_READY`; Owner phê chuẩn
+  B01–B17 và 8 tham số của PC04 cộng phương án kỳ rỗng (b) (OD-20260907-01 mục 22).
+  PROV-PC04-01..09 nay là `ACCEPTED (OD-20260907-01)` với tư cách **giá trị làm việc**.
+ratification_limits: >-
+  Owner phê chuẩn GIÁ TRỊ LÀM VIỆC, KHÔNG phải kết quả hiệu chỉnh. Hai thứ vẫn chưa được đo và
+  KHÔNG được đọc là đã kiểm chứng: (1) ngưỡng similarity giữ nguyên
+  `threshold_calibration_state: uncalibrated` cho tới khi REQ-A2 chạy; (2) mọi tham số mật độ
+  giữ nguyên cổng REQ-A4. `CONTRACT_READY` ở đây nghĩa là NGỮ NGHĨA và ORACLE đã đóng, không
+  nghĩa là các con số đã được chứng minh là tốt.
 ---
 
 # Fixture reporting — chỉ mục và cách dùng
@@ -46,6 +59,16 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > `contracts/reporting/time-and-tags.md` §4.7.1: **có**, `status='aborted'` +
 > `abort_reason='empty_period'`, vì `report_build_id` cần một mỏ neo bền cho replay. Đây là
 > chỗ PC04 không theo khuyến nghị của Coordinator; lý do và cách đảo nằm ở §4.7.1.
+
+> **Ceiling của thư mục này.** README **và cả 14 fixture** đều mang
+> `claim_ceiling: CONTRACT_READY` + `ratification_ref: OD-20260907-01` (F-A2R5-04: một index
+> không được claim cao hơn file nó liệt kê). Header hợp đồng của một fixture là **khối khóa cấp
+> cao nhất** của chính file JSON đó — đó là dạng header mà ruling R-05 cho phép fixture dùng, và
+> là nơi `ratification_ref` được đọc.
+>
+> Ceiling này nói **dữ liệu vào và oracle đã đóng**. Nó **không** nói fixture đã chạy: cả 14 file
+> vẫn mang `evidence_status: NOT_RUN`, và E1–E4 chưa chạy lần nào. Ngưỡng similarity vẫn
+> `uncalibrated` (REQ-A2), tham số mật độ vẫn sau cổng REQ-A4.
 
 ## 1. Danh mục
 

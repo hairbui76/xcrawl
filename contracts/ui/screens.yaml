@@ -550,17 +550,55 @@ screens:
           generation cũ chuyển `cancelled` (delivery.yaml T-DL-08).
       - {id: ACT-logout, label_vi: "Đăng xuất", operation_id: auth.logout, auth_scope: owner_session, mobile: true}
       - id: ACT-purge-all
-        label_vi: "Xóa toàn bộ dữ liệu"
+        label_vi: "Xóa toàn bộ dữ liệu nghiên cứu"
         operation_id: data.purge_all
         auth_scope: owner_session
         mobile: false
         requirement_refs: [REQ-S7.3-05]
+        status: ACCEPTED
+        ratification_ref: OD-20260907-01
+        scope_authority: "contracts/data/entities.yaml → transactions[TXN-purge-all] → mục `tables` là nguồn liệt kê CÓ THẨM QUYỀN: **37 bảng bị xóa**, **21 bảng giữ lại**, **2 bảng không bao giờ xóa** (tổng 60 = toàn bộ entity; ba tập rời nhau đôi một, kiểm bởi EV-PC02-08). Màn hình KHÔNG được giữ một bản sao khác của danh sách đó (ruling PURGE-LIST 2026-09-07)."
         rule_vi: >-
           Thao tác thứ ba của SRC-SPEC §7.3, đòi **xác nhận gõ tay**: người dùng phải gõ đúng
           cụm từ do SERVER phát (`purge_challenge`); client không tự sinh cụm từ. Chỉ khả dụng
-          khi trạng thái kho là `maintenance`. Hộp thoại phải liệt kê phạm vi bị xóa và phạm vi
-          còn `OWNER_DECISION_REQUIRED` (TXN-purge-all).
-        status: OWNER_DECISION_REQUIRED_SCOPE
+          khi trạng thái kho là `maintenance`.
+        confirmation_dialog:
+          requirement_vi: "Bốn khối dưới đây PHẢI hiện trước ô gõ xác nhận. Thiếu một khối là nút không được hiện."
+          deleted_vi: >-
+            **Sẽ bị xóa (37 bảng) — toàn bộ dữ liệu nghiên cứu và dữ liệu vận hành sinh ra từ
+            nó:** post và work cùng liên kết giữa chúng,
+            nhãn chủ đề và phiên bản công trình, alias/xung đột/audit hợp nhất định danh, toàn
+            bộ phân tích và task phân tích, vector và generation embedding, mọi kỳ báo cáo cùng
+            mục và hướng nổi, sổ coverage/pending/backfill/first-announced, **Saved cùng
+            snapshot**, mọi bản gửi và outbox, run/checkpoint/receipt/assignment, nhật ký
+            update Telegram, nhật ký thử mã liên kết, sổ quét lại kho và nhật ký gọi nguồn.
+          retained_vi: >-
+            **Được giữ lại (21 bảng) — bạn KHÔNG bị đá ra khỏi hệ thống:** tài khoản đăng nhập
+            và phiên hiện tại; API key, credential theo task và nhật ký truy cập secret; liên
+            kết Telegram và mã liên kết; cấu hình provider/model và kết quả test; cấu hình
+            chung và **lịch chạy** (`schedule_occurrence`); tag cùng từ đồng nghĩa, tag loại
+            trừ và các phiên bản bộ tag; trạng thái phiên nguồn; **đăng ký collector**
+            (`worker_registration` — là cấu hình, xóa sẽ buộc đăng ký lại collector); toàn bộ
+            sổ backup; challenge xác nhận. Danh sách đầy đủ ở mục `transactions` →
+            `TXN-purge-all` → `tables` → `retained_by_owner_decision`.
+          never_purged_vi: >-
+            **Không bao giờ xóa (2 bảng):** phiên bản schema của kho, và **nhật ký xóa dữ liệu**
+            — bản ghi xóa được giữ vĩnh viễn theo tham số PC08 đã phê chuẩn; chính thao tác này
+            ghi một hàng audit vào đó.
+          backups_vi: >-
+            **Dữ liệu vừa xóa VẪN CÒN trong các bản backup.** Backup không bị đụng tới bởi thao
+            tác này; muốn xóa khỏi backup là một thao tác riêng của quy trình vận hành (PC08).
+            Câu này là bắt buộc — người dùng bấm "xóa toàn bộ" mà không biết điều đó là bị lừa.
+          decision_note_vi: >-
+            Phạm vi này do Owner quyết định ngày 2026-09-07 (OD-20260907-01 mục 24: "chỉ dữ
+            liệu nghiên cứu; giữ đăng nhập, secret, liên kết Telegram, cấu hình provider,
+            lịch; backup KHÔNG bị xóa"). Trước đó phạm vi từng là `OWNER_DECISION_REQUIRED` —
+            nay chỉ còn là lịch sử, không phải trạng thái mở.
+        forbidden_vi:
+          - "Hiện nút khi thiếu bất kỳ khối nào trong bốn khối nội dung của `confirmation_dialog` (deleted / retained / never_purged / backups)."
+          - "Nói hoặc ngụ ý rằng backup cũng bị xóa."
+          - "Giữ một bản sao danh sách bảng trong mã UI thay vì đọc từ mục `transactions` → `TXN-purge-all`."
+          - "Cho client tự sinh cụm từ xác nhận."
     states:
       loading_vi: "Skeleton từng nhóm cấu hình."
       empty_vi: "Không áp dụng (luôn có giá trị mặc định)."

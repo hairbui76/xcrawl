@@ -3,32 +3,33 @@
   "version": "0.1.0",
   "status": "draft",
   "claim_ceiling": "DRAFT_FOR_REVIEW",
-  "generated_at": "2026-09-07T02:30:04Z",
+  "generated_at": "2026-09-07T05:25:17Z",
   "generated_by": "worker-W6 (PC09)",
   "record_schema": "evidence/manifest.schema.json",
   "shape_note_vi": "Mỗi phần tử của `records` là MỘT evidence manifest và validate được với evidence/manifest.schema.json. Bản thân file bao ngoài chỉ là chỉ mục: nó mang metadata của lần sinh và danh sách bản ghi. Kiểm bằng EV-PC09-02.",
-  "e0_run_ref": "evidence/runs/E0-20260907T023000Z.json",
-  "e0_run_sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
+  "e0_run_ref": "evidence/runs/E0-20260907T052513Z.json",
+  "e0_run_sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
   "sources": {
     "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
     "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40"
   },
   "summary": {
-    "records_total": 58,
-    "e0_pass": 22,
+    "records_total": 60,
+    "e0_pass": 24,
     "e0_fail": 0,
     "e0_blocked": 0,
     "e0_violations": 0,
     "not_run_placeholders": 32,
     "e1_e4_run": 0,
+    "independent_audit_reports_archived_in_repo": 7,
     "independent_audit_records_in_repo": 0
   },
-  "honesty_note_vi": "E1–E4 là NOT_RUN ở MỌI nhóm scenario, vì chưa có code, chưa có harness và chưa gọi bất kỳ dịch vụ ngoài nào. Ba AUDIT_REPORT độc lập của auditor-A1 (A1-R1, A1-R2, A1-R3) tồn tại NGOÀI repo trong thư mục scratch của Coordinator và KHÔNG được đăng ký ở đây: một Worker không được tự ghi bản ghi bằng chứng thay cho Auditor.",
+  "honesty_note_vi": "E1–E4 là NOT_RUN ở MỌI nhóm scenario, vì chưa có code, chưa có harness và chưa gọi bất kỳ dịch vụ ngoài nào. 7 AUDIT_REPORT độc lập (A1-R1-report.md, A1-R2-report.md, A1-R3-report.md, A2-R1-report.md, A2-R2-report.md, A2-R3-report.md, A2-R4-report.md) nay nằm TRONG repo tại evidence/audits/, nguyên vẹn từng byte so với bản gốc của Auditor. Chúng vẫn KHÔNG được đăng ký thành evidence record ở đây, và đó là chủ ý: một Worker không được tự ghi bản ghi bằng chứng thay cho Auditor. Vì vậy independent_audit_records_in_repo = 0 trong khi có 7 báo cáo trên đĩa — hai con số đo hai thứ khác nhau, và cả hai được nêu để không ai phải suy ra. Số báo cáo được ĐẾM từ thư mục, không viết tay (F-A2R5-06: câu cũ nói 'ba báo cáo, NGOÀI repo' và đã sai ở cả ba mệnh đề).",
   "records": [
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-PC09-01",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -37,7 +38,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
           "acceptance/fixtures/ai/README.md": "6b7ede2bc9866eed00ecdd45d52009fe7c3b895ed3c64764694b42c1f577c6a0",
           "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
           "acceptance/fixtures/ai/b-instruction-injection-in-post.json": "94db889e48aac2a74c3e645d44143075309d33bbef6010593db64340fee6c05b",
@@ -67,22 +68,22 @@
           "acceptance/fixtures/collection/l-storage-write-blocked-mid-run.json": "7f5f751e9f23ea48ddb0623ce38a168967e621a014f2ca954b5852add193aeaf",
           "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
           "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
-          "acceptance/fixtures/identity/README.md": "a6beae39f431a06104ff797094c79d51b21736a74908271b355bdeb2cf8209e5",
-          "acceptance/fixtures/identity/a-merge-doi-arxiv.json": "32fc87478139d84a69e07a69343e16859e83c2719346e02a96bb63685600b851",
-          "acceptance/fixtures/identity/b-post-only-missing-ids.json": "479a3cf7154950e118896a3bf8c260fc42351e199206edacd11dc1145d2e02fb",
-          "acceptance/fixtures/identity/c-identity-conflict.json": "884c03534f3cbfec034fe859a2c947b788f0ea1be6efffb9ad281091f4d53b60",
-          "acceptance/fixtures/identity/d-concurrent-save-app-telegram.json": "a9b5b041f41407066722861a04ce347513cb65d949e11774fd33c340d3d08b8d",
-          "acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json": "2cbbe8c91a24ab9dfe46c8396e3a63b5372005b3186d314d41d09ced613188c2",
-          "acceptance/fixtures/identity/f-ingest-replay-idempotent.json": "ea3c1b65adf186e6102ed88e61e986e5cb8051f47c51591f89afad2a44f1d996",
-          "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json": "3ce82f6d8b16a893978dc06ec998888b9c15baf095580e7d84e37e95b4017c38",
-          "acceptance/fixtures/identity/h-five-posts-thread-one-target.json": "f3167d8f45a59d992b6c679ec92a74b2acbbeaea9b966d7325ccc3e1e6aa878c",
-          "acceptance/fixtures/identity/neg-ingest-batch-bad-payload-hash.json": "5a6f14986261f606e84b85cdbb0d7eb1c7e4d872a37c0a03117dce5a32f10261",
-          "acceptance/fixtures/identity/neg-ingest-batch-empty-items.json": "f95cd4a2f67f2389abfedb27585b5afe41cd49700d82f0d0b7ac06646148e11f",
-          "acceptance/fixtures/identity/neg-ingest-batch-missing-idempotency-key.json": "95967e6004574b840029a611323eb9c4d6a5ebaf8df472fb799da68e01b6a405",
-          "acceptance/fixtures/identity/neg-ingest-batch-timestamp-precision.json": "5675c24e751ebf70c11f90a7acd2608716e00d7fd3f2dfa7c64b44c87e93567f",
-          "acceptance/fixtures/identity/neg-ingest-batch-unknown-field.json": "10ff2e91f754538f82faf395ca6339a2db81e6397d4d03169bb9ebfd3364d97a",
-          "acceptance/fixtures/identity/pos-ingest-batch-valid.json": "c4ad116eaa0434fbdb0cc573b31639e1a66fc963d6a26669e375ae1dae7a3644",
-          "acceptance/fixtures/recovery/README.md": "799728748dcc40f5a79ed727cb491c446f8ce5e9eb0b40465d5aad891fbc1f6c",
+          "acceptance/fixtures/identity/README.md": "ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14",
+          "acceptance/fixtures/identity/a-merge-doi-arxiv.json": "8726afee7b87cb0eeb294a91ac8b048f6fff53cd8f47e8e21480fdd04f71ff3a",
+          "acceptance/fixtures/identity/b-post-only-missing-ids.json": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+          "acceptance/fixtures/identity/c-identity-conflict.json": "0aac277eba619e7b2e191d3150bfb0d35af7929bec3768bf0f99b3a992657b63",
+          "acceptance/fixtures/identity/d-concurrent-save-app-telegram.json": "2b5e250ee3c21cd62e3cd87b42939cc0ed00b7d5167ab43ab67958477432b4ae",
+          "acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json": "c2fd418bf32e5870b304508443144e6637355b81526c393a2f0ead3f445900c5",
+          "acceptance/fixtures/identity/f-ingest-replay-idempotent.json": "27839c63e322c1dbdd9fbe98a7d98acc2cd37fa1d1a66f8a9f66ac36aa73a32b",
+          "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+          "acceptance/fixtures/identity/h-five-posts-thread-one-target.json": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+          "acceptance/fixtures/identity/neg-ingest-batch-bad-payload-hash.json": "d52521fa8a72dcab4631e49d99dee5112d97c499f19b2c801335a138042a9f08",
+          "acceptance/fixtures/identity/neg-ingest-batch-empty-items.json": "bc0d2deb84b51e3a254113470a1de07324086a56e88d467af1973c9c9e8fa227",
+          "acceptance/fixtures/identity/neg-ingest-batch-missing-idempotency-key.json": "a6424d8023a43ae94457a3dc77f551b91252daa1da8d2ce9d35f2c2d434b384c",
+          "acceptance/fixtures/identity/neg-ingest-batch-timestamp-precision.json": "39a5c2deab2a7f215d48bfb7c1d6b0590da103ac0b6f4bc5e00c5492dd204151",
+          "acceptance/fixtures/identity/neg-ingest-batch-unknown-field.json": "c57bdd621e1ca75dba3888458ce29c29f972ee6b320fefe0f167acf7e8d17020",
+          "acceptance/fixtures/identity/pos-ingest-batch-valid.json": "00886301c74078211be6720d3c6ec620a0a6355534cd58e73ce267073a0178f9",
+          "acceptance/fixtures/recovery/README.md": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
           "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json": "e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838",
           "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json": "4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c",
           "acceptance/fixtures/recovery/c-disk-full-mid-ingest.json": "8f6379b4b0c633ca7d3b48be039671b17ece9da58c1f96067003bf2fb0194092",
@@ -94,23 +95,23 @@
           "acceptance/fixtures/recovery/i-collector-token-calls-save.json": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
           "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
           "acceptance/fixtures/recovery/k-delete-target-preserves-saved.json": "0a02102333a7701b92c2b1c5b22032940cc0710d8b5faf98d67181ac16606486",
-          "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json": "e144d0ce7b26f45825c8b1c72621d925336dd5b0ac8acbee77a48d05e1fd8bed",
+          "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json": "9cd382e270e581b1b4ea69ac78f9ddb7730d215d34fadf6ce537a4e1f0dc053a",
           "acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json": "90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94",
-          "acceptance/fixtures/reporting/README.md": "2c7974e82c4f7ac6e2554050cc1ffda79bfd926faef2c01ed0d4070b8cc45663",
-          "acceptance/fixtures/reporting/a-tag-removed-before-publish.json": "1a88edc26f5e48cd77b12cb0745045e6e421dac29b52635ddcb6db2960a0e7b5",
-          "acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json": "ae933def10b59a79447200c97f6eeec115a2eb19d20cc7cbca216980d2ffd4d9",
-          "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "4d5f14c423c1764e9e866df55becd63e6ee6d828e788abc79b17d39db3b6f089",
-          "acceptance/fixtures/reporting/d-empty-period-coverage-only.json": "e619c514f35956db8d4454df4779eb5df56f4fab814acb4c9d3c55fdc790f7e3",
-          "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json": "4a18b08dfcc576a5767a665157de1a18150874605d0e7107c07e5e32029a7b66",
-          "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "6584abee3fdb83ff04be11f9e4992e8650e60095a7fc7d058d5c5177e4dfdfa9",
-          "acceptance/fixtures/reporting/g-concurrent-publishers-cas.json": "4427374d434a82a0aeeb1841c15200e58628b37dae62f8c63ec2892d0331a0b2",
-          "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json": "0d4d98c87000e19c886fc65748d101f07df79b4e2711f805726c18cc78fbce96",
-          "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "e2de531e3b5bbad92946b4f6b3ea5f960bbed7afb687df92252391095e24a624",
-          "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json": "7005bdd937beec466e99bfab5491060c7b59bafedab9cdebf412e1d75d0ed1d1",
-          "acceptance/fixtures/reporting/k-builder-crash-backfill-not-consumed.json": "f3126544eff18fdcfd913d6952dc486cdd871275c04ba2a35cdde2613bae47ab",
-          "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json": "c1035509a76e42802859138297ee9ac0d575538e3d1a3ce95ad1336c072543f2",
-          "acceptance/fixtures/reporting/m-density-worked-example.json": "39ef6a819b4f09b041d6d2b3e4b9338023a46c20b7e11da0871546f7e5c8e231",
-          "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json": "a526022dfba75c7ee06eb6ba58697d4ea849a844ef4b0f49707a651c25e75d34",
+          "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+          "acceptance/fixtures/reporting/a-tag-removed-before-publish.json": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+          "acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json": "57d26a0a8381b1b76c0c3109358e132a40bd3a2b5873c515bb5c5dcc828bc1c3",
+          "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+          "acceptance/fixtures/reporting/d-empty-period-coverage-only.json": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+          "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+          "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1",
+          "acceptance/fixtures/reporting/g-concurrent-publishers-cas.json": "825a383b20576864f45a8d9fb9be23bc01d04fe8103f9cf0e8275cff8052980e",
+          "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+          "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+          "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json": "b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a",
+          "acceptance/fixtures/reporting/k-builder-crash-backfill-not-consumed.json": "9fce157821143ef6d852a688e033424d8f4191dbedfb47caaa80d9ba9a3b6f82",
+          "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json": "e911021ea43f8d9168ea64da6919735a58c41a379a7e926b566128030939a359",
+          "acceptance/fixtures/reporting/m-density-worked-example.json": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+          "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json": "98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f",
           "acceptance/fixtures/telegram/README.md": "dbb368afae93bd40530a153769106995643996669a57a26dd2e55fb1ef905863",
           "acceptance/fixtures/telegram/a-multipart-part2-unknown-no-resend.json": "555bf7edf28f1d7b8b27718bf54d77f79046720cd47035db09a8d9a45846bed6",
           "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
@@ -133,45 +134,45 @@
           "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
           "acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json": "5b6e4f52b7558533b0555362fd38cad17ea23bb2349fe6600d08d311b9c5b8d8",
           "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "acceptance/traceability.csv": "cef95b2fc487e39bd84b5c5f89f8aacb4fe4f0d716bae8f8d5df734a9d62bf94",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "acceptance/traceability.csv": "82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4",
           "contracts/ai/grounding.md": "b54cec8b3f9f6a9cb2221daaafe8a61a149d0a6686d0d23dcbf7bf9f17995172",
           "contracts/ai/providers.yaml": "462e5321543df781e53d62b54cdffc819765e56f4d2842c871b82fe068dc1bbc",
           "contracts/ai/tasks.yaml": "0048bbdd3185fc4b7719014e7d70238c50720766f19e2968cb8e25101bbc05e7",
-          "contracts/capabilities.yaml": "fae5891cff5ff25757f168d8182111fa4fc6b49f6b851ac7cc07105fef952cf7",
-          "contracts/data/entities.yaml": "c2ceeafd1b78705941f368bfe73f67cf097ffad8179c7455b2d4eeda571b5a1e",
-          "contracts/data/identity.md": "62fd06635c5e29a955f40cc1d56bea9d4dde9d444607fe7c07da5164993468ce",
-          "contracts/data/invariants.md": "9def66cd6e918077a96a730327646c0040acd02a6a4c29135b28e5281e64b36d",
-          "contracts/errors.yaml": "b63eef7abd4cee328581e5e06cbc8314e60e52e03468dbe6acea42a0a843ad26",
-          "contracts/http/openapi.yaml": "a7f284b97816a4a37a53256bdea00b0affa26bd18d152faf4f80dec7223c8499",
-          "contracts/modules.yaml": "11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7",
-          "contracts/ops/backup-restore.md": "8737f483da5b776b506853dbbab5d2938bd08ba1a09481d2bd129c86e64ef7c3",
+          "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+          "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7",
+          "contracts/data/identity.md": "71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd",
+          "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+          "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+          "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+          "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+          "contracts/ops/backup-restore.md": "826655daa469e3e8e2fbd54263f13be78f4e9a17fd490524a3b07f894989ad4f",
           "contracts/ops/cli-acp-probe.md": "d78f546fdfbeff0388c4d89171179082da6477aea0bdfcd7c85e995fa3f0909b",
           "contracts/ops/collector-probe.md": "03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1",
-          "contracts/ops/deployment.md": "7e1c03776b4c8be20f596a0317ea1c79429cf4ecaa78fadc1f0ec3e5158088f5",
+          "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
           "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
-          "contracts/ops/secrets.md": "2ed96d93ecdbb74fd825e952abd85541ddecfe25cfd1c08efd739d708c165d48",
-          "contracts/ports.yaml": "93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e",
-          "contracts/reporting/selection.md": "cc62af2bd476c51efa9b156bae66be6dae3a0bcd712eb79cd1d4ba3a3d5c2fc0",
-          "contracts/reporting/time-and-tags.md": "7a3a3845707e6160c52601f25baf16190be1ecee3933b94755acb808e6f075e0",
-          "contracts/retry-policy.yaml": "5e083230e2cc5db481736adcf189a6cf8e302ebdf45cad614582731698cf06d5",
+          "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+          "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+          "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+          "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+          "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
           "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
-          "contracts/schemas/ingest-batch.schema.json": "3c00a33a20da6600e9db10f971d3b646390107201b1800678247e2b7a85d90fc",
+          "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
           "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
-          "contracts/schemas/report.schema.json": "a7c7255a5bae703b0bdcd1ba761153dbce686b5766b05dfbaa1606392338d07b",
+          "contracts/schemas/report.schema.json": "8bf6bc9ccd6040c06f4ba709ea638e647ab8349e1bac4f26cd6049df76b7ba60",
           "contracts/schemas/saved-snapshot.schema.json": "1178d314deb8dfdfbe24a9bd4645fd0fd34424fa1db0c237971b3dba3705ce3c",
-          "contracts/schemas/target.schema.json": "436cb97bf04386595b72e0b4ca98034fe4d17256333ec3875a9892b583b44583",
+          "contracts/schemas/target.schema.json": "d1ce487d2e4ba24b094f702b38a5fcac517443981fe8faea36472089124dc0fd",
           "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
-          "contracts/state/analysis.yaml": "bf961c0fdb36d98613791ac537370b5ca07746b18e8a27f7cf79c0eb953b9f3f",
-          "contracts/state/delivery.yaml": "9fcccc25fed432a895b15e9b98787d7294dd298d9209e9b0f2c7f801e1579626",
-          "contracts/state/report.yaml": "2b22c27df302c7fbf733b352ad41390a1d407ac98cfa7b1a816cf3580349aba0",
-          "contracts/state/run.yaml": "c92e7c4e6fc6dce8a0280e64a182c1463a1e7a4b07d3c26f8036e37fd34579ec",
-          "contracts/state/storage.yaml": "f67e78f528a13b768b97ab72f55542ac9bac439b8f5472e8e03247b41dae72c2",
+          "contracts/state/analysis.yaml": "06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce",
+          "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807",
+          "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+          "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+          "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
           "contracts/telegram/commands.yaml": "fc1a18dac332ea51e63721536d6a47b1d5a3048ed408af24ae787a91874e3556",
           "contracts/telegram/delivery.md": "cb3a4b30a26f2a5ca5cf9d11359b84ce5612c003dfe51c3acbdbba5d7fde226c",
-          "contracts/ui/screens.yaml": "db78678cba7e46b33669596f02963e1eac5e65804c6f9a997bf22d72ba6bc296",
-          "precode/baseline.json": "e4c3f4563e04293c319bf746b371bc67857115b7070d14a9771de3238e8683a7",
-          "precode/requirements.csv": "132ce59b160d9cc20294e45f33082e27d69c4b3182bdc9c1b1864fd0adeaf0e6"
+          "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+          "precode/baseline.json": "e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b",
+          "precode/requirements.csv": "fbe59d0eaf73ff69281515fc2d03c2673c7dfa3aaa57f110b2ecba079f0c52e8"
         },
         "implementation_revision": null
       },
@@ -198,11 +199,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -215,8 +216,8 @@
           "exit_code": 0
         },
         "observed": {
-          "checks": 22,
-          "pass": 22,
+          "checks": 24,
+          "pass": 24,
           "fail": 0,
           "blocked": 0,
           "violations": 0,
@@ -226,30 +227,30 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report",
           "redaction_note_vi": "Không có secret trong corpus; báo cáo là kết quả lint tài liệu."
         },
         {
-          "path": "evidence/runs/numbers-20260907T023000Z.json",
-          "sha256": "9383037b72eb429a283ad6fd32ea933dd5790fc1d05b20a3117b919dcf7a75db",
-          "bytes": 14209,
+          "path": "evidence/runs/numbers-20260907T052513Z.json",
+          "sha256": "8883ceb2c5c67c93b7ab184893196d89de8352dfdf022a6ad2950226df006064",
+          "bytes": 23880,
           "kind": "json_report",
           "redaction_note_vi": "Đầu ra bộ sinh số của review.md (F-A2R2-03): mọi khóa được review trích dẫn phân giải được trong file này."
         },
         {
-          "path": "evidence/runs/cr_summary-20260907T023000Z.json",
-          "sha256": "b3f651ef3208c53424e72ff3220eb546e18240b38e2fdfe6d73a4f1b7cb234e8",
-          "bytes": 2091,
+          "path": "evidence/runs/cr_summary-20260907T052513Z.json",
+          "sha256": "401a4c222b6d336d57fc8e3ff05f1cfbaba4b3412353a4cedd7d2bedb164fe85",
+          "bytes": 2307,
           "kind": "json_report",
           "redaction_note_vi": "Đầu ra bộ sinh số của review.md (F-A2R2-03): mọi khóa được review trích dẫn phân giải được trong file này."
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 168,
+        "sample_size": 210,
         "not_checked_vi": [
           "E0 only. Nothing here proves that any code exists or that any guard runs (SRC-PLAN §14.2).",
           "Reference checks find dangling references, not missing ones: a relationship nobody wrote down cannot be detected.",
@@ -283,7 +284,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-01-parse",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -292,9 +293,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/ports.yaml": "93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e",
-          "contracts/data/entities.yaml": "c2ceeafd1b78705941f368bfe73f67cf097ffad8179c7455b2d4eeda571b5a1e"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+          "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7"
         },
         "implementation_revision": null
       },
@@ -321,11 +322,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-01-parse",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-01-parse",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -345,9 +346,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -380,7 +381,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-02-metaschema",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -389,7 +390,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
           "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
           "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
         },
@@ -418,11 +419,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-02-metaschema",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-02-metaschema",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -442,9 +443,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -477,7 +478,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-03-fixture-schema",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -486,8 +487,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/schemas/ingest-batch.schema.json": "3c00a33a20da6600e9db10f971d3b646390107201b1800678247e2b7a85d90fc",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
           "contracts/schemas/saved-snapshot.schema.json": "1178d314deb8dfdfbe24a9bd4645fd0fd34424fa1db0c237971b3dba3705ce3c"
         },
         "implementation_revision": null
@@ -515,11 +516,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-03-fixture-schema",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-03-fixture-schema",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -539,9 +540,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -574,7 +575,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-04-operation-refs",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -583,8 +584,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/ports.yaml": "93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684"
         },
         "implementation_revision": null
       },
@@ -611,11 +612,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-04-operation-refs",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-04-operation-refs",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -635,9 +636,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -669,7 +670,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-05-error-code-refs",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -678,8 +679,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/errors.yaml": "b63eef7abd4cee328581e5e06cbc8314e60e52e03468dbe6acea42a0a843ad26"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f"
         },
         "implementation_revision": null
       },
@@ -706,11 +707,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-05-error-code-refs",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-05-error-code-refs",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -730,9 +731,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -764,7 +765,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-04-b-prose-op-tokens",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -773,7 +774,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a"
         },
         "implementation_revision": null
       },
@@ -800,11 +801,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-04b-prose-op-tokens",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-04b-prose-op-tokens",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -813,26 +814,26 @@
         "statement_vi": "Single source of the rule: contracts/ports.yaml conventions.prose_token_rule_vi. A backticked `<a>.<b>` must resolve to an operation of ports.yaml OR an entity.column of entities.yaml; tokens whose first segment is neither a known operation domain nor a known entity name (file paths, YAML structural keys, hosts, library idioms) are ignored. This check reports the operation half. E0-04 reads structured fields only; this reaches the sentences, where F-A2R1-01 lived.",
         "expected": {
           "violations": 0,
-          "items_checked": 284
+          "items_checked": 285
         },
         "observed": {
           "violations": 0,
-          "items_checked": 284,
+          "items_checked": 285,
           "first_violations": []
         }
       },
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 284,
+        "sample_size": 285,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào."
         ],
@@ -856,7 +857,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-04-c-prose-column-tokens",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -865,7 +866,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a"
         },
         "implementation_revision": null
       },
@@ -892,11 +893,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-04c-prose-column-tokens",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-04c-prose-column-tokens",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -916,9 +917,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -948,7 +949,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-04-d-prose-error-tokens",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -957,7 +958,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a"
         },
         "implementation_revision": null
       },
@@ -984,11 +985,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-04d-prose-error-tokens",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-04d-prose-error-tokens",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -997,26 +998,26 @@
         "statement_vi": "A backticked SCREAMING_SNAKE token must be a code in contracts/errors.yaml or a word in the tool's STATUS_VOCABULARY — which covers the baseline §3 status/claim vocabularies and the protocol.md message types (Coordinator ruling, FIX7 wave). This is how F-A2R1-06 (SAVE_ALREADY_EXISTS) was found.",
         "expected": {
           "violations": 0,
-          "items_checked": 154
+          "items_checked": 160
         },
         "observed": {
           "violations": 0,
-          "items_checked": 154,
+          "items_checked": 160,
           "first_violations": []
         }
       },
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 154,
+        "sample_size": 160,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào."
         ],
@@ -1040,7 +1041,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-06-requirement-refs",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1049,8 +1050,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "precode/requirements.csv": "132ce59b160d9cc20294e45f33082e27d69c4b3182bdc9c1b1864fd0adeaf0e6"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "precode/requirements.csv": "fbe59d0eaf73ff69281515fc2d03c2673c7dfa3aaa57f110b2ecba079f0c52e8"
         },
         "implementation_revision": null
       },
@@ -1077,11 +1078,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-06-requirement-refs",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-06-requirement-refs",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1090,26 +1091,26 @@
         "statement_vi": "regex-extracted REQ-* tokens over all in-scope files are a subset of the registry",
         "expected": {
           "violations": 0,
-          "items_checked": 2248
+          "items_checked": 2363
         },
         "observed": {
           "violations": 0,
-          "items_checked": 2248,
+          "items_checked": 2363,
           "first_violations": []
         }
       },
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 2248,
+        "sample_size": 2363,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào."
         ],
@@ -1135,7 +1136,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-07-id-refs",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1144,9 +1145,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "contracts/data/invariants.md": "9def66cd6e918077a96a730327646c0040acd02a6a4c29135b28e5281e64b36d"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c"
         },
         "implementation_revision": null
       },
@@ -1173,11 +1174,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-07-id-refs",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-07-id-refs",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1186,26 +1187,26 @@
         "statement_vi": "SC ids resolve in acceptance/scenarios.yaml; I ids in SRC-PLAN §7 plus invariants.md; B01..B17; ADR ids to a file in precode/adr/; AMD ids to a section of decision-register.md",
         "expected": {
           "violations": 0,
-          "items_checked": 3030
+          "items_checked": 3262
         },
         "observed": {
           "violations": 0,
-          "items_checked": 3030,
+          "items_checked": 3262,
           "first_violations": []
         }
       },
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 3030,
+        "sample_size": 3262,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào."
         ],
@@ -1232,7 +1233,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-08-contract-header",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1241,9 +1242,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/modules.yaml": "11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7",
-          "precode/adr/README.md": "44b9d01b60984ecedb715cfb3c82fdcb7f09e78aa13646e581a750686a0c269d"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+          "precode/adr/README.md": "e57d08b94da683d7c5be11cce46a942330381ae21c44f09210547f4497597f3f"
         },
         "implementation_revision": null
       },
@@ -1270,11 +1271,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-08-contract-header",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-08-contract-header",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1294,9 +1295,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1329,7 +1330,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-09-state-lint",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1338,12 +1339,12 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/state/run.yaml": "c92e7c4e6fc6dce8a0280e64a182c1463a1e7a4b07d3c26f8036e37fd34579ec",
-          "contracts/state/analysis.yaml": "bf961c0fdb36d98613791ac537370b5ca07746b18e8a27f7cf79c0eb953b9f3f",
-          "contracts/state/report.yaml": "2b22c27df302c7fbf733b352ad41390a1d407ac98cfa7b1a816cf3580349aba0",
-          "contracts/state/delivery.yaml": "9fcccc25fed432a895b15e9b98787d7294dd298d9209e9b0f2c7f801e1579626",
-          "contracts/state/storage.yaml": "f67e78f528a13b768b97ab72f55542ac9bac439b8f5472e8e03247b41dae72c2"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+          "contracts/state/analysis.yaml": "06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce",
+          "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+          "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807",
+          "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849"
         },
         "implementation_revision": null
       },
@@ -1370,11 +1371,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-09-state-lint",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-09-state-lint",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1394,9 +1395,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1433,7 +1434,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-10-a-denied-edge-scenario",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1442,9 +1443,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/modules.yaml": "11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -1471,11 +1472,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-10a-denied-edge-scenario",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-10a-denied-edge-scenario",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1495,9 +1496,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1530,7 +1531,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-10-b-denied-edge-oracle",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1539,8 +1540,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/modules.yaml": "11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457"
         },
         "implementation_revision": null
       },
@@ -1567,11 +1568,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-10b-denied-edge-oracle",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-10b-denied-edge-oracle",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1591,9 +1592,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1626,7 +1627,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-11-a-no-orphan",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1635,9 +1636,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/traceability.csv": "cef95b2fc487e39bd84b5c5f89f8aacb4fe4f0d716bae8f8d5df734a9d62bf94",
-          "precode/requirements.csv": "132ce59b160d9cc20294e45f33082e27d69c4b3182bdc9c1b1864fd0adeaf0e6"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/traceability.csv": "82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4",
+          "precode/requirements.csv": "fbe59d0eaf73ff69281515fc2d03c2673c7dfa3aaa57f110b2ecba079f0c52e8"
         },
         "implementation_revision": null
       },
@@ -1664,11 +1665,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-11a-no-orphan",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-11a-no-orphan",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1688,9 +1689,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1723,7 +1724,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-11-b-invariant-polarity",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1732,9 +1733,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "contracts/data/invariants.md": "9def66cd6e918077a96a730327646c0040acd02a6a4c29135b28e5281e64b36d"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c"
         },
         "implementation_revision": null
       },
@@ -1761,11 +1762,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-11b-invariant-polarity",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-11b-invariant-polarity",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1785,9 +1786,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -1820,7 +1821,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-12-forbidden-strings",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1829,9 +1830,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/retry-policy.yaml": "5e083230e2cc5db481736adcf189a6cf8e302ebdf45cad614582731698cf06d5",
-          "contracts/reporting/selection.md": "cc62af2bd476c51efa9b156bae66be6dae3a0bcd712eb79cd1d4ba3a3d5c2fc0"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+          "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4"
         },
         "implementation_revision": null
       },
@@ -1858,39 +1859,39 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-12-forbidden-strings",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-12-forbidden-strings",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
       },
       "oracle": {
-        "statement_vi": "structured fields: `status`/`claim_ceiling`/`completion_claim` values are checked exactly. Free text: occurrences are reported when the line carries no negation and no vocabulary context.",
+        "statement_vi": "After OD-20260907-01: `ACCEPTED` / `RATIFIED` / `CONTRACT_READY` are permitted only in a file that carries `ratification_ref: OD-20260907-01`, or anywhere under precode/ (the register and the ADRs are where the ratification is recorded). `CONTRACT_READY` is additionally confined to the four ratified scopes — a file outside them may not claim it however it is annotated — eligibility is the explicit allowlist in precode/gates.yaml, so a file not named there is ineligible by default. Claims ABOVE CONTRACT_READY are forbidden THROUGHOUT THE SCANNED SCOPE (contracts, acceptance, precode, evidence): no code exists. `agent-tasks/` is NOT scanned by this tool; the cards there use `claim_ceiling` with a different meaning (the ceiling the ordered work may reach) and are counted in a note below rather than silently omitted. `TBD` remains forbidden as a value, and `CLOSED` as a status.",
         "expected": {
           "violations": 0,
-          "items_checked": 702
+          "items_checked": 713
         },
         "observed": {
           "violations": 0,
-          "items_checked": 702,
+          "items_checked": 713,
           "first_violations": []
         }
       },
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 702,
+        "sample_size": 713,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào."
         ],
@@ -1908,7 +1909,7 @@
       },
       "claim": {
         "supports_label": "DRAFT_FOR_REVIEW",
-        "scope_vi": "No asserted TBD, no status CLOSED/ACCEPTED, no claim above DRAFT_FOR_REVIEW",
+        "scope_vi": "Ratified vocabulary is used only where the Owner ratified it; nothing claims more",
         "not_established_vi": [
           "E0 không chứng minh code hay dịch vụ ngoài."
         ]
@@ -1916,8 +1917,8 @@
     },
     {
       "schema_version": "0.1.0",
-      "evidence_id": "EV-E0-13-coverage-windows",
-      "created_at": "2026-09-07T02:30:04Z",
+      "evidence_id": "EV-E0-12-b-ratification-refs",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -1926,8 +1927,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "6584abee3fdb83ff04be11f9e4992e8650e60095a7fc7d058d5c5177e4dfdfa9"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a"
         },
         "implementation_revision": null
       },
@@ -1954,11 +1954,104 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-13-coverage-windows",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-12b-ratification-refs",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
+        "exit_code": 0,
+        "attempts": 1,
+        "error_classification": null
+      },
+      "oracle": {
+        "statement_vi": "A file whose claim_ceiling is CONTRACT_READY must carry `ratification_ref` naming OD-20260907-01 IN ITS PARSED CONTRACT HEADER (front-matter, top-level key, or `x-contract`) — a prose mention does not count (F-A2R5-03 mutation M6b) — and precode/owner-decisions.md must exist and contain that id. The eligible set is the explicit allowlist in precode/gates.yaml. A ceiling raised on a citation that does not resolve, or on a sentence, is a claim with no authority behind it.",
+        "expected": {
+          "violations": 0,
+          "items_checked": 50
+        },
+        "observed": {
+          "violations": 0,
+          "items_checked": 50,
+          "first_violations": []
+        }
+      },
+      "result": "PASS",
+      "artifacts": [
+        {
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
+          "kind": "json_report"
+        }
+      ],
+      "limitations": {
+        "mock_or_live": "none",
+        "sample_size": 50,
+        "not_checked_vi": [
+          "Kiểm tĩnh; không chứng minh hành vi runtime nào."
+        ],
+        "unresolved_issue_refs": []
+      },
+      "invalidation": {
+        "invalidated_by_paths": [],
+        "invalidated_by_rule_ids": [
+          "INV-06",
+          "INV-08"
+        ]
+      },
+      "claim": {
+        "supports_label": "DRAFT_FOR_REVIEW",
+        "scope_vi": "Every CONTRACT_READY file cites a ratification that resolves to the Owner's record",
+        "not_established_vi": [
+          "E0 không chứng minh code hay dịch vụ ngoài."
+        ]
+      }
+    },
+    {
+      "schema_version": "0.1.0",
+      "evidence_id": "EV-E0-13-coverage-windows",
+      "created_at": "2026-09-07T05:25:17Z",
+      "producer_principal": "worker-W6",
+      "producer_role": "Worker",
+      "review_type": "SELF_VALIDATION",
+      "evidence_level": "E0",
+      "baseline": {
+        "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+        "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+        "contract_hashes": {
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1"
+        },
+        "implementation_revision": null
+      },
+      "environment": {
+        "os": "Linux 7.0.0-30-generic (x86_64)",
+        "runtimes": {
+          "python": "3.12.3",
+          "PyYAML": "6.0.1",
+          "jsonschema": "4.10.3"
+        },
+        "provider": null,
+        "model": null,
+        "embedding_generation_id": null,
+        "network_access": false
+      },
+      "inputs": {
+        "scenario_ids": [],
+        "requirement_ids": [],
+        "invariant_ids": [],
+        "fixtures": [],
+        "seed": null,
+        "clock": null,
+        "protocol_version": null
+      },
+      "execution": {
+        "kind": "command",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-13-coverage-windows",
+        "working_directory": "…/scratchpad/w6 (ngoài repo)",
+        "manual_procedure": null,
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -1978,9 +2071,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -2012,7 +2105,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-14-fixture-actor-edge",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2021,9 +2114,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/ports.yaml": "93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e",
-          "contracts/modules.yaml": "11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+          "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457"
         },
         "implementation_revision": null
       },
@@ -2050,11 +2143,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-14-fixture-actor-edge",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-14-fixture-actor-edge",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2074,9 +2167,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -2109,7 +2202,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-15-fixture-field-existence",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2118,8 +2211,8 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "contracts/data/entities.yaml": "c2ceeafd1b78705941f368bfe73f67cf097ffad8179c7455b2d4eeda571b5a1e"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7"
         },
         "implementation_revision": null
       },
@@ -2146,11 +2239,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-15-fixture-field-existence",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-15-fixture-field-existence",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2159,11 +2252,11 @@
         "statement_vi": "for each table name under given.rows / expected.rows, every object key is either (a) a declared field of that entity in contracts/data/entities.yaml, (b) an annotation whose key starts with '_', or (c) a column carrying an in-file `pending_cr: CR-…` marker. No per-package allowlist (ruling R4-01).",
         "expected": {
           "violations": 0,
-          "items_checked": 1884
+          "items_checked": 1964
         },
         "observed": {
           "violations": 0,
-          "items_checked": 1884,
+          "items_checked": 1964,
           "first_violations": [],
           "per_directory": {
             "ai": {
@@ -2215,9 +2308,9 @@
               "files": 13,
               "files_with_rows": 3,
               "files_without_rows": 10,
-              "columns_checked": 151,
+              "columns_checked": 231,
               "unresolved": 0,
-              "annotations_skipped": 29,
+              "annotations_skipped": 77,
               "verdict": "PASS"
             },
             "reporting": {
@@ -2253,15 +2346,15 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
       "limitations": {
         "mock_or_live": "none",
-        "sample_size": 1884,
+        "sample_size": 1964,
         "not_checked_vi": [
           "Kiểm tĩnh; không chứng minh hành vi runtime nào.",
           "Hai thư mục (collection, recovery) trả NOT_APPLICABLE_FREEFORM: chúng nêu oracle bằng văn xuôi, không bằng rows.<entity>[], nên check này KHÔNG đo được chúng. 0 unresolved ở đó nghĩa là 'không đo được', không phải 'sạch'."
@@ -2288,7 +2381,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E0-16-scenario-catalogue",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2297,9 +2390,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "contracts/errors.yaml": "b63eef7abd4cee328581e5e06cbc8314e60e52e03468dbe6acea42a0a843ad26"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f"
         },
         "implementation_revision": null
       },
@@ -2326,11 +2419,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-16-scenario-catalogue",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-16-scenario-catalogue",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2350,9 +2443,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -2384,8 +2477,8 @@
     },
     {
       "schema_version": "0.1.0",
-      "evidence_id": "EV-E0-17-declared-deviations",
-      "created_at": "2026-09-07T02:30:04Z",
+      "evidence_id": "EV-E0-18-purge-set-agreement",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2394,9 +2487,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "precode/baseline.json": "e4c3f4563e04293c319bf746b371bc67857115b7070d14a9771de3238e8683a7",
-          "precode/review.md": "db747393f184b2ef4d40e5956cee7648201aadee6197c517797065c19f72e061"
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a"
         },
         "implementation_revision": null
       },
@@ -2423,11 +2514,105 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-17-declared-deviations",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-18-purge-set-agreement",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
+        "exit_code": 0,
+        "attempts": 1,
+        "error_classification": null
+      },
+      "oracle": {
+        "statement_vi": "contracts/data/entities.yaml `TXN-purge-all.tables` is the authoritative enumeration (OD-20260907-01 item 24). The three sets must be pairwise disjoint and cover `entities` exactly. Any artefact that enumerates five or more entity names inside a purge-context span must yield a set EQUAL to one of the three. No artefact may still mark the purge scope undecided (OWNER_DECISION_REQUIRED / PROV-PC00-01 / PROV-PC01-03) except on a line that also names the ratification or the finding that closed it.",
+        "expected": {
+          "violations": 0,
+          "items_checked": 17
+        },
+        "observed": {
+          "violations": 0,
+          "items_checked": 17,
+          "first_violations": []
+        }
+      },
+      "result": "PASS",
+      "artifacts": [
+        {
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
+          "kind": "json_report"
+        }
+      ],
+      "limitations": {
+        "mock_or_live": "none",
+        "sample_size": 17,
+        "not_checked_vi": [
+          "Kiểm tĩnh; không chứng minh hành vi runtime nào."
+        ],
+        "unresolved_issue_refs": []
+      },
+      "invalidation": {
+        "invalidated_by_paths": [],
+        "invalidated_by_rule_ids": [
+          "INV-06",
+          "INV-08"
+        ]
+      },
+      "claim": {
+        "supports_label": "DRAFT_FOR_REVIEW",
+        "scope_vi": "The ratified data.purge_all sets partition the entities and every artefact agrees",
+        "not_established_vi": [
+          "E0 không chứng minh code hay dịch vụ ngoài."
+        ]
+      }
+    },
+    {
+      "schema_version": "0.1.0",
+      "evidence_id": "EV-E0-17-declared-deviations",
+      "created_at": "2026-09-07T05:25:17Z",
+      "producer_principal": "worker-W6",
+      "producer_role": "Worker",
+      "review_type": "SELF_VALIDATION",
+      "evidence_level": "E0",
+      "baseline": {
+        "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+        "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+        "contract_hashes": {
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "precode/baseline.json": "e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b",
+          "precode/review.md": "1da31eb0559cc11fa1daafba258763975b86318bdc634fa31679cedc60a499bc"
+        },
+        "implementation_revision": null
+      },
+      "environment": {
+        "os": "Linux 7.0.0-30-generic (x86_64)",
+        "runtimes": {
+          "python": "3.12.3",
+          "PyYAML": "6.0.1",
+          "jsonschema": "4.10.3"
+        },
+        "provider": null,
+        "model": null,
+        "embedding_generation_id": null,
+        "network_access": false
+      },
+      "inputs": {
+        "scenario_ids": [],
+        "requirement_ids": [],
+        "invariant_ids": [],
+        "fixtures": [],
+        "seed": null,
+        "clock": null,
+        "protocol_version": null
+      },
+      "execution": {
+        "kind": "command",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-17-declared-deviations",
+        "working_directory": "…/scratchpad/w6 (ngoài repo)",
+        "manual_procedure": null,
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2447,9 +2632,9 @@
       "result": "PASS",
       "artifacts": [
         {
-          "path": "evidence/runs/E0-20260907T023000Z.json",
-          "sha256": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "bytes": 39265,
+          "path": "evidence/runs/E0-20260907T052513Z.json",
+          "sha256": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "bytes": 43244,
           "kind": "json_report"
         }
       ],
@@ -2482,7 +2667,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-PC09-02",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2491,9 +2676,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "acceptance/traceability.csv": "cef95b2fc487e39bd84b5c5f89f8aacb4fe4f0d716bae8f8d5df734a9d62bf94",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "acceptance/traceability.csv": "82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4",
           "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
         },
         "implementation_revision": null
@@ -2524,8 +2709,8 @@
         "command": "PYTHONDONTWRITEBYTECODE=1 python3 w6/validate_index.py",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2533,12 +2718,11 @@
       "oracle": {
         "statement_vi": "Mọi bản ghi trong evidence/index.json validate được với evidence/manifest.schema.json, 0 lỗi.",
         "expected": {
-          "records_invalid": 0,
-          "records_total": 58
+          "records_invalid": 0
         },
         "observed": {
           "records_invalid": 0,
-          "records_total": 58
+          "records_total": null
         }
       },
       "result": "PASS",
@@ -2568,7 +2752,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-PC09-03",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2577,9 +2761,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "acceptance/traceability.csv": "cef95b2fc487e39bd84b5c5f89f8aacb4fe4f0d716bae8f8d5df734a9d62bf94",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "acceptance/traceability.csv": "82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4",
           "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
         },
         "implementation_revision": null
@@ -2607,11 +2791,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # check E0-11a-no-orphan",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # check E0-11a-no-orphan",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2663,7 +2847,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-PC09-04",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2672,9 +2856,9 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "evidence/runs/E0-20260907T023000Z.json": "11cf8db96cd8ad28f819de883f8edc83b850e2e6d6d2b616716e382bbb7849cb",
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b",
-          "acceptance/traceability.csv": "cef95b2fc487e39bd84b5c5f89f8aacb4fe4f0d716bae8f8d5df734a9d62bf94",
+          "evidence/runs/E0-20260907T052513Z.json": "57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a",
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+          "acceptance/traceability.csv": "82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4",
           "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
         },
         "implementation_revision": null
@@ -2702,11 +2886,11 @@
       },
       "execution": {
         "kind": "command",
-        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T023000Z.json   # checks E0-16-scenario-catalogue + E0-11b-invariant-polarity",
+        "command": "PYTHONDONTWRITEBYTECODE=1 python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py --repo /mnt/virtual/repo/xcrawl --json-out /mnt/virtual/repo/xcrawl/evidence/runs/E0-20260907T052513Z.json   # checks E0-16-scenario-catalogue + E0-11b-invariant-polarity",
         "working_directory": "…/scratchpad/w6 (ngoài repo)",
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:00Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:14Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": 0,
         "attempts": 1,
         "error_classification": null
@@ -2757,7 +2941,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-01-collection-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2765,7 +2949,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -2800,8 +2984,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -2834,7 +3018,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-01-collection-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2842,7 +3026,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -2877,8 +3061,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -2911,7 +3095,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-01-collection-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2919,7 +3103,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -2954,8 +3138,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -2988,7 +3172,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-01-collection-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -2996,7 +3180,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3031,8 +3215,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3065,7 +3249,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-02-identity-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3073,7 +3257,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3108,8 +3292,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3142,7 +3326,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-02-identity-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3150,7 +3334,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3185,8 +3369,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3219,7 +3403,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-02-identity-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3227,7 +3411,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3262,8 +3446,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3296,7 +3480,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-02-identity-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3304,7 +3488,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3339,8 +3523,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3373,7 +3557,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-03-reporting-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3381,7 +3565,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3419,8 +3603,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3453,7 +3637,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-03-reporting-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3461,7 +3645,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3499,8 +3683,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3533,7 +3717,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-03-reporting-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3541,7 +3725,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3579,8 +3763,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3613,7 +3797,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-03-reporting-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3621,7 +3805,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3659,8 +3843,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3693,7 +3877,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-04-ai-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3701,7 +3885,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3735,8 +3919,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3769,7 +3953,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-04-ai-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3777,7 +3961,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3811,8 +3995,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3845,7 +4029,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-04-ai-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3853,7 +4037,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3887,8 +4071,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3921,7 +4105,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-04-ai-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -3929,7 +4113,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -3963,8 +4147,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -3997,7 +4181,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-05-telegram-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4005,7 +4189,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4043,8 +4227,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4077,7 +4261,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-05-telegram-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4085,7 +4269,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4123,8 +4307,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4157,7 +4341,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-05-telegram-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4165,7 +4349,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4203,8 +4387,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4237,7 +4421,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-05-telegram-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4245,7 +4429,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4283,8 +4467,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4317,7 +4501,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-06-recovery-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4325,7 +4509,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4363,8 +4547,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4397,7 +4581,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-06-recovery-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4405,7 +4589,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4443,8 +4627,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4477,7 +4661,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-06-recovery-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4485,7 +4669,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4523,8 +4707,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4557,7 +4741,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-06-recovery-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4565,7 +4749,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4603,8 +4787,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4637,7 +4821,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-07-admin-and-boundary-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4645,7 +4829,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4681,8 +4865,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4715,7 +4899,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-07-admin-and-boundary-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4723,7 +4907,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4759,8 +4943,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4793,7 +4977,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-07-admin-and-boundary-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4801,7 +4985,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4837,8 +5021,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4871,7 +5055,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-07-admin-and-boundary-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4879,7 +5063,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4915,8 +5099,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -4949,7 +5133,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E1-08-end-to-end-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -4957,7 +5141,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -4988,8 +5172,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -5022,7 +5206,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E2-08-end-to-end-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -5030,7 +5214,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -5061,8 +5245,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -5095,7 +5279,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E3-08-end-to-end-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -5103,7 +5287,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -5134,8 +5318,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null
@@ -5168,7 +5352,7 @@
     {
       "schema_version": "0.1.0",
       "evidence_id": "EV-E4-08-end-to-end-not-run",
-      "created_at": "2026-09-07T02:30:04Z",
+      "created_at": "2026-09-07T05:25:17Z",
       "producer_principal": "worker-W6",
       "producer_role": "Worker",
       "review_type": "SELF_VALIDATION",
@@ -5176,7 +5360,7 @@
         "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
         "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
         "contract_hashes": {
-          "acceptance/scenarios.yaml": "c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b"
+          "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3"
         },
         "implementation_revision": null
       },
@@ -5207,8 +5391,8 @@
         "command": null,
         "working_directory": null,
         "manual_procedure": null,
-        "started_at": "2026-09-07T02:30:04Z",
-        "ended_at": "2026-09-07T02:30:04Z",
+        "started_at": "2026-09-07T05:25:17Z",
+        "ended_at": "2026-09-07T05:25:17Z",
         "exit_code": null,
         "attempts": 0,
         "error_classification": null

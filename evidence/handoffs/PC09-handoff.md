@@ -1030,3 +1030,308 @@ làm artefact của `EV-PC09-01`.
 - **lease_released_at (UTC):** 2026-09-07T02:34Z. `LEASE-PC09-e7` nhả tại đây; `worker-W6` không
   ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §N1) và lease fencing ≥ 8.
 - **Claim:** `DRAFT_FOR_REVIEW`, không nâng.
+
+---
+
+# ADDENDUM — PKT-PC09-FIX7 (phê chuẩn của Owner: `OD-20260907-01`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-FIX7` · worker `worker-W6` · authority `AUTH-COORD-PC09-FIX7` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC09-e8` (**fencing 8**) |
+| ratification_ref | `OD-20260907-01` |
+| status | `DONE_WITH_CONCERNS` · completion_claim **`DRAFT_FOR_REVIEW`** (bản review này; xem O5 về trần theo phạm vi của hợp đồng) |
+| started / lease_released (UTC) | 2026-09-07T04:05Z / 2026-09-07T04:47Z |
+| next actor | `Coordinator` |
+| E0 | **23 check · 23 PASS · 0 FAIL · 0 BLOCKED · 0 vi phạm · exit 0** — `evidence/runs/E0-20260907T044549Z.json` |
+| source SHA-256 | kiểm trước khi bắt đầu và trước khi bàn giao: `spec-v0.2.md` `d35e1f2d…`, `pre-code-plan-v0.1.md` `f65bb046…` — khớp `precode/baseline.json` cả hai lần |
+
+## O1. Changes (MODIFY / CREATE)
+
+| Path | After (sha256) | Bytes |
+| --- | --- | --- |
+| `evidence/tools/e0_check.py` | `25df46a6ac04355041850985c1dcdc46d988cc2cbc770b19ba5e52bc7fd000e7` | 112197 |
+| `evidence/tools/README.md` | `f2f83201a631f0dc27b519b533638f090d1483bcf3d12f8fea091c13b2a1d88c` | 29160 |
+| `acceptance/scenarios.yaml` | `c831a6953f13eae5fe77be362c6e3e7e8f0423285973766eacf5a604da54831b` | 167895 |
+| `acceptance/traceability.csv` | `82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4` | 90363 |
+| `precode/gates.yaml` | `3ddc3b990c154bb94e9cacd68d8a87105403ef0b6a25a7e1ad17c751f4584650` | 35957 |
+| `precode/review.md` | `cf105f25b3a586cdeb68760f0e9a12d559042198a10c2ede1d655fc93f41cf4f` | 114496 |
+| `evidence/index.json` | `d11fc051e30c04fd4e51bd7f4a361e5c76346eed58b819bfed45a1b75f0a5835` | 199435 |
+| `evidence/runs/E0-20260907T044549Z.json` (CREATE) | `296e3d4b3d4f9c468f27061d41b9678f012748c8a677a6c384d7f7f43d0fb061` | — |
+| `evidence/runs/numbers-20260907T044549Z.json` (CREATE) | `210789ff718cae7842fb7cb796af1dde4271386524bfb8103335fcb9bb178df9` | — |
+| `evidence/runs/cr_summary-20260907T044549Z.json` (CREATE) | `1b6834af5b844f9129e0cf705fc475813b8bbdb105ad0375262fecb179dac43c` | — |
+
+Ba artefact `…023000Z` và `…044102Z` của các lần chạy trước đã được gỡ khỏi `evidence/runs/`;
+`evidence/index.json` không còn tham chiếu nào tới chúng. Không file nào ngoài danh sách trên bị
+ghi. Không lệnh `git` nào làm thay đổi trạng thái. Không mạng. Không subagent. Không
+`__pycache__`/`.pyc` trong repo (đã kiểm).
+
+## O2. `E0-12` viết lại + `E0-12b` mới (`CR-PC01-13`)
+
+`E0-12` không còn là lệnh cấm phẳng "không gì vượt `DRAFT_FOR_REVIEW`" — sau phê chuẩn câu hỏi
+đúng là *phạm vi nào được, dựa vào đâu*. Nay nó hỏi ba câu: file có nằm trong bốn phạm vi đã phê
+chuẩn không (danh sách **không đủ điều kiện** viết cứng: `contracts/http/`, `contracts/ai/`,
+`contracts/ui/`, `contracts/telegram/`, bốn schema chưa phê chuẩn, các thư mục fixture tương ứng;
+trong `contracts/ops/` chỉ `deployment.md` đủ điều kiện); có `ratification_ref` không; và
+`ratification_ref` đó có **phân giải được** không. Hai câu sau là check mới **`E0-12b`**: nó đòi
+`OD-20260907-01` **và** đòi `precode/owner-decisions.md` tồn tại trên đĩa, nên một trích dẫn chép
+sai hoặc trỏ tới file đã bị xóa sẽ **fail** thay vì im lặng qua cửa. Nhãn trên `CONTRACT_READY`
+vẫn bị cấm tuyệt đối trong phạm vi quét.
+
+**Negative self-test** (bản sao ở scratch, không bao giờ trong repo), ba khiếm khuyết tiêm vào:
+`CONTRACT_READY` trong phạm vi không đủ điều kiện (`contracts/ai/tasks.yaml`); `CONTRACT_READY` bị
+gỡ mất `ratification_ref` (`contracts/state/run.yaml`); một claim vượt trần
+(`contracts/errors.yaml`). **Cả ba đều bị bắt** (7 vi phạm trên hai check). Bản sạch: 0.
+
+**Hai lần nới rộng có chủ ý, ghi ra thay vì để im:** `evidence/coordination/` thêm vào
+`COORDINATION_RECORD_PREFIXES` (các file đó *thuật lại* từ vựng claim, không tự tuyên bố), và
+`ACCEPTED_WORKING_VALUE`/`RATIFIED`/`PROVISIONAL` thêm vào `STATUS_VOCABULARY` theo
+`owner-decisions.md` §4. Cả hai được đọc từng trường hợp trước khi nới.
+
+## O3. Một lỗ trong chính cửa kiểm của tôi — `CR-PC09-14` (mới)
+
+Khi đọc header task card tôi thấy **18 card khai `claim_ceiling: IMPLEMENTATION_VERIFIED`** (một
+card `LIVE_FEASIBILITY_VERIFIED`) — nhãn mà `E0-12` cấm tuyệt đối. Chúng không bị bắt vì
+**`agent-tasks/` nằm ngoài `SCAN_DIRS`** (`contracts`, `acceptance`, `precode`, `evidence`).
+
+Đọc kỹ thì đây **không** phải vi phạm: trong card, `claim_ceiling` nghĩa là *trần mà công việc
+được giao có thể đạt tới* (SRC-PLAN §2), không phải tuyên bố về card. Nhưng oracle của `E0-12` nói
+"forbidden everywhere" trong khi phép đo chỉ với tới bốn thư mục — **đúng lớp lỗi mà mọi finding
+audit của gói này đều thuộc về**, lần thứ hai sau `E0-11b`/`F-A2R1-10`. Xử lý:
+
+1. Oracle của `E0-12` sửa lại để nói đúng phạm vi quét và nêu tên `agent-tasks/` là ngoài phạm vi.
+2. `E0-12` **đếm và in ra** mọi nhãn vượt trần trong `agent-tasks/` như một note trong bản ghi
+   chạy — có mặt trong bằng chứng, không phải vắng mặt im lặng.
+3. **`CR-PC09-14` → Coordinator:** hoặc đổi tên khóa trong card, hoặc mở rộng `SCAN_DIRS`. Tôi
+   **không** tự mở rộng: nó đổi nghĩa của mọi lần chạy trước và kéo một thư mục do gói khác sở hữu
+   vào phạm vi mà không có ruling.
+
+## O4. Traceability, gates, review
+
+- **`acceptance/traceability.csv`** — bỏ override `BLOCKED_B<nn>` (blocker nay `RATIFIED`). Kết
+  quả: **COVERED 172 · PARTIAL 62 · DEFERRED_P1 6 · OUT_OF_SCOPE 6 · ORPHAN 0 · BLOCKED_B 0**
+  (COVERED tăng từ 90). Mỗi dòng mang ghi chú `AMD-B<nn> RATIFIED (OD-20260907-01)`; dòng `KC`
+  mang thêm *"phê chuẩn không thay thế được phép đo"*.
+- **`precode/gates.yaml`** — G0/G1/G2 **MET** (`ratified_by: OD-20260907-01`, danh sách chặn rỗng);
+  G3 **PARTIALLY_MET** với danh sách KC tường minh (REQ-A6, `CR-PC07-04`, REQ-OQ03, REQ-A5,
+  REQ-A1/A7, REQ-A2/A3/A4) và câu nói rõ B01–B17 **không còn** là lý do; G4 **PARTIALLY_MET**
+  (G4-X6 đạt nhờ phê chuẩn, G4-X7 còn lại); G5 **NOT_MET** — G5-X1/X2/X3 đạt, **G5-X4 mới** (chưa
+  có layout repo cho stack B) không đạt; SP1 **NOT_MET** với `ratification_note_vi` ghi rằng
+  **`REQ-OQ01` không còn chặn SP1** (D09 đã xác nhận, ĐX → XN) — chỉ còn *việc chạy*. G6/G7
+  `NOT_APPLICABLE_YET`. Thêm `MET` vào từ vựng trạng thái và một `ratification_note_vi` cấp file.
+- **`precode/review.md`** — viết lại §1, §2, §3 (thêm §3.6 `E0-12`/`E0-12b`, §3.7
+  `Check.finalize()`), §4.1 (7 report, cột Verdict chép nguyên văn), §5 (B01–B17 sau phê chuẩn),
+  §6.1, §9 (bảng module đánh giá lại), §9.1 (epoch, đủ điều kiện card, `CR-PC09-14`), §10 (đã chốt
+  / còn chờ), §11 (DoR), §12 (tuyên bố theo phạm vi), §13 (thêm hai giới hạn). Cổng tự kiểm 8 mục
+  chạy sau lần sửa cuối: **CONSISTENT**.
+
+**`CR-PC09-13` (mới) → W1/PC00.** `REQ-OQ01` và `REQ-OQ02` vẫn `ĐX` với ghi chú `PROVISIONAL`
+trong `precode/requirements.csv`, trong khi `OD-20260907-01` mục 1 và mục 3 đã trả lời cả hai —
+và ghi chú của OQ02 còn nói "Option A" trong khi Owner chọn **B**. File không nằm trong grant ghi
+của tôi; tôi **không sửa** và báo số **đo được trên đĩa** (P0: XN 140 · ĐX 42 · UQ 37 · KC 15).
+
+## O5. `precode/baseline.json` — điều kiện đã đạt, tôi **không** sửa
+
+W1 đặt `claim_ceiling.by_scope` của bốn phạm vi thành **`CONTRACT_READY_PENDING_E0`**, nghĩa là
+đủ điều kiện về quyết định, chờ W6 chạy lại E0 trên epoch mới. **Lần chạy đóng gói ở trên chính là
+điều kiện đó và nó sạch** (23/23, 0 vi phạm). Nhưng `precode/baseline.json` **không** nằm trong
+MODIFY grant của `PKT-PC09-FIX7`, và chỉ thị của Coordinator ở đợt này là để giá trị đó cho W1.
+`CR-PC00-18` lại giao việc finalise cho W6. Tôi giải mâu thuẫn bằng cách **không ghi** và báo cáo:
+điều kiện E0 đã đạt; việc chuyển `CONTRACT_READY_PENDING_E0` → `CONTRACT_READY` cần một packet cấp
+grant cho file đó (W1 hoặc tôi). Tôi không nâng nhãn bằng suy diễn, và không ghi ngoài grant.
+
+Trạng thái đo được trên đĩa: **21 file khai `CONTRACT_READY`** với `ratification_ref` phân giải
+được (`E0-12b` kiểm 22 mục, 0 vi phạm); **110 file giữ `DRAFT_FOR_REVIEW`**.
+
+## O6. Mối lo còn lại
+
+1. **Không bản sửa nào của đợt này được xác minh độc lập** (protocol §8). Áp đặc biệt cho
+   `E0-12b`: một check do tôi viết, tự xác nhận rằng các `ratification_ref` do gói khác viết là
+   hợp lệ, chưa ai ngoài tôi chạy. `F-A2R4-01` (LOW, của tôi) đã sửa ở đợt này, vẫn `FIX_PROPOSED`.
+2. **Phê chuẩn là thẩm quyền, không phải bằng chứng.** 84 dòng độ phủ đổi trạng thái và bảy module
+   lên `READY_FOR_CARD` mà **không một byte hành vi nào được quan sát**. E1–E4 `NOT_RUN` toàn bộ.
+3. **Ranh giới phạm vi phê chuẩn sống trong một danh sách đường dẫn viết cứng**, không trong cây
+   hợp đồng. Nó đúng hôm nay và sẽ **sai im lặng** vào lần đầu ai đó thêm file vào
+   `contracts/schemas/`. `CR-PC01-13` + `CR-PC02-22` + `CR-PC10-07` nên đi cùng nhau lên vòng Owner
+   kế tiếp.
+4. **`agent-tasks/` ngoài phạm vi E0** (`CR-PC09-14`), và **SC54/SC55/SC56 chưa card nào trích**
+   (53/56) — độ trễ pin, thuộc PC10.
+5. **Con số "8 card trong phạm vi phê chuẩn" không có nghĩa là nền hợp đồng của 8 card đó đã
+   `CONTRACT_READY`.** Tiêu chí nguyên văn cho **0**; con số 8 đến từ một tiêu chí thay thế mà W7
+   đã khai rõ. Ghi lại ở đây để nó không bị đọc rộng hơn.
+6. `CR-PC07-10` còn OPEN; `E0-06`/`E0-07` vẫn không quét văn xuôi trong `evidence/handoffs/`;
+   41/86 fixture ngoài tầm cửa kiểm cột (`CR-PC02-18` ACCEPTED_AS_LIMITATION).
+7. `REQ-OQ03` vẫn `OWNER_DECISION_REQUIRED` (chặn M3); 15 yêu cầu vẫn `KC`; chưa có repo triển
+   khai cho stack B. **`NOT_READY_FOR_PRODUCT_CODE` cho toàn hệ thống** giữ nguyên.
+
+## O7. Trạng thái bàn giao
+
+- **next actor:** `Coordinator`. Cần ruling cho `CR-PC09-13`, `CR-PC09-14` và cho việc finalise
+  `precode/baseline.json` (O5).
+- **lease_released_at (UTC):** 2026-09-07T04:47Z. `LEASE-PC09-e8` (fencing 8) nhả tại đây;
+  `worker-W6` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §O1) và lease
+  fencing ≥ 9.
+- **Claim:** `DRAFT_FOR_REVIEW` cho bản review và cho gói này. Trần `CONTRACT_READY` áp cho **file
+  hợp đồng trong bốn phạm vi đã phê chuẩn**, không cho hệ thống, và không cho bất kỳ phát biểu nào
+  về hành vi khi chạy.
+
+---
+
+# ADDENDUM — PKT-PC09-FIX8 (sau `A2-R5` FAIL)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-FIX8` · worker `worker-W6` · authority `AUTH-COORD-PC09-FIX8` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC09-e9` (**fencing 9**) |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| lease_released_at (UTC) | 2026-09-07T05:26Z |
+| next actor | `Coordinator` → freeze epoch 9 → `A2-R6` scoped |
+| E0 | **24 check · 24 PASS · 0 FAIL · 0 BLOCKED · 0 vi phạm · exit 0** — `evidence/runs/E0-20260907T052513Z.json` |
+| Pin bytes | `baseline_hashes` **136/136 khớp bytes trên đĩa** sau khi bàn giao (kiểm lại bằng sha256 từng entry). Đây là điều `F-A2R5-02` nói đã hỏng ở FIX7 |
+| source SHA-256 | `spec-v0.2.md` `d35e1f2d…`, `pre-code-plan-v0.1.md` `f65bb046…` — khớp baseline trước khi bắt đầu và trước khi bàn giao |
+
+## P1. Changes
+
+| Path | After (sha256) | Bytes |
+| --- | --- | --- |
+| `evidence/tools/e0_check.py` | `9fd52a447801fb4f66d3f9f098e39cebeb375bdc5d92d4d2543260456d961c8c` | 126200 |
+| `evidence/tools/README.md` | `07252f218ab2d71576644bf190398dd06e59c78d637f79ad024ac76abd214861` | 32946 |
+| `acceptance/scenarios.yaml` | `09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3` | 171739 |
+| `acceptance/traceability.csv` | `82f7fb466847f28778d520838015c20517df4e123c241c78c8aefa2b34b5caa4` | 90363 (không đổi ở đợt này) |
+| `precode/gates.yaml` | `b5d9a79f84c65fb3e2b14845eb488e086be6d85354d779fff216e0de9246696e` | 40340 |
+| `precode/review.md` | `1da31eb0559cc11fa1daafba258763975b86318bdc634fa31679cedc60a499bc` | 125319 |
+| `evidence/index.json` | `8abd9a9d8eef8f87dbd5711624432c29289b989dfea7b0c33cfddb8a88ddbbc4` | 203891 |
+| `evidence/runs/E0-20260907T052513Z.json` (CREATE) | `57fcace1260114f88c1208e0a05148a818c9754430dcd1019ba6b1e3be63f49a` | — |
+| `evidence/runs/numbers-20260907T052513Z.json` (CREATE) | `8883ceb2c5c67c93b7ab184893196d89de8352dfdf022a6ad2950226df006064` | — |
+| `evidence/runs/cr_summary-20260907T052513Z.json` (CREATE) | `401a4c222b6d336d57fc8e3ff05f1cfbaba4b3412353a4cedd7d2bedb164fe85` | — |
+
+Artefact của lần chạy trước đã gỡ; `evidence/index.json` không còn tham chiếu nào tới chúng.
+Không file ngoài danh sách bị ghi. Không `git` mutation, không mạng, không subagent, không
+`__pycache__`/`.pyc` (đã kiểm).
+
+## P2. `F-A2R5-01` — SC44 nay khẳng định phạm vi đã phê chuẩn
+
+Oracle của SC44 từng ghi phạm vi loại trừ là `OWNER_DECISION_REQUIRED` **sau khi** Owner đã trả
+lời — nên corpus vừa báo quyết định đã chốt vừa báo còn treo, và một người đọc fixture sẽ dựng
+một test không khẳng định gì về danh sách giữ lại. Nay oracle kiểm **đủ ba tập**, không kiểm mẫu:
+**37 bảng về 0 hàng · 21 bảng không đổi một hàng · 2 bảng never_purged** (`schema_migration` không
+đổi, `data_deletion_audit` **tăng đúng 1 hàng**), cộng bốn điều mà bản cũ không nói:
+
+- Owner **vẫn đăng nhập được** sau purge — hệ quả REQ-D05 mà Owner được cảnh báo trước khi trả lời,
+  nay là một phép kiểm chứ không phải một lời hứa.
+- Số hàng `backup_snapshot`/`backup_manifest`/`restore_record` không đổi **và** không file backup
+  nào trên đĩa bị xóa/sửa.
+- Ba tập rời nhau và hợp lại **đúng bằng** danh sách entity — 37 + 21 + 2 = 60.
+- **Oracle công bố:** hộp thoại xác nhận phải NÓI rằng dữ liệu đã xóa vẫn còn trong backup; thiếu
+  câu đó là FAIL.
+
+Khi đối chiếu, bản ruling lúc đó ghi tiêu đề "purged (36)" nhưng liệt kê 36 tên rồi nêu thêm
+`telegram_link_attempt` trong văn xuôi. 37 + 21 + 2 = 60 = đúng số entity, ba tập rời nhau và phủ
+kín — nên tôi dùng **37** và **báo lại chênh lệch thay vì tự làm tròn**; Coordinator đã sửa ruling
+thành 37 (`CR-PC05-07`). Trong `scenarios.yaml`, `OWNER_DECISION_REQUIRED` chỉ còn xuất hiện đúng
+**một** lần, trong `notes_vi`, như lịch sử của chính finding này.
+
+## P3. `E0-18` mới — cửa kiểm mà sự vắng mặt của nó gây ra `F-A2R5-01`
+
+`E0-18-purge-set-agreement`: (a) ba tập trong `entities.yaml` `TXN-purge-all` phải **rời nhau đôi
+một và phủ kín** `entities` — một bảng thêm sau này mà không được phân loại **FAIL ở đây** thay vì
+rơi im lặng vào nhóm "không oracle nào khẳng định"; (b) không artefact nào trong tám artefact của
+cuộc hội thoại purge được còn gọi phạm vi là chưa quyết, trừ trên dòng (hoặc dòng liền kề, vì YAML
+gấp dòng theo độ rộng chứ không theo nghĩa) có đánh dấu **lịch sử** hoặc gọi tên phê chuẩn;
+(c) một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền.
+
+Khi tôi chạy nó lần đầu, nó **FAIL với 4 vi phạm thật** trong `contracts/http/openapi.yaml` và
+`acceptance/fixtures/recovery/l-…json` — đúng hai artefact `F-A2R5-01` nêu tên. Tôi **không sửa
+file của gói khác**; tôi chờ cổng, và W2/W4 đã đóng chúng trước lần chạy đóng gói.
+
+**Điều `E0-18` KHÔNG làm, ghi ra thay vì để một PASS ngụ ý.** Bản đầu của tôi so **tập hợp các
+liệt kê trong văn xuôi**: nó cho 24 vi phạm, khoảng 20 là **sai** — bất kỳ đoạn nào nhắc "purge"
+gần năm tên bảng đều dính, và `entities.yaml` dính chỉ vì nó chứa mọi tên bảng. Tôi **gỡ** phần đó
+thay vì nới ngưỡng cho tới khi nó im: một check ồn dạy người đọc bỏ qua đầu ra của chính nó, và đó
+là thiệt hại lâu hơn một lỗ hổng đã được ghi ra. **Liệt kê purge trong văn xuôi vì thế vẫn chưa
+được đối chiếu tự động** (`evidence/tools/README.md` §5h, `review.md` §3.8).
+
+## P4. `F-A2R5-03` — cửa phê chuẩn của tôi vượt được bằng một câu văn
+
+Auditor thử **M6b**, đột biến tôi đã không nghĩ ra: chuyển `ratification_ref` **ra khỏi** header,
+để lại một dòng văn xuôi nhắc chuỗi đó. Cả hai check **PASS**, và `E0-12b` chỉ đếm ít đi một mục —
+file **rời khỏi tập được kiểm** thay vì bị báo. Oracle thật của tôi là *"chuỗi xuất hiện đâu đó và
+phân giải được"*, không phải *"header hợp đồng mang nó"*. Ba đột biến tôi tự chọn ở FIX7 đều là
+*xoá* hoặc *đặt sai chỗ*; không cái nào là *giữ nguyên bề mặt, đổi chỗ chứa*.
+
+Đã sửa: `ratification_ref_of()` **chỉ** đọc header đã parse (front-matter, khóa YAML top-level,
+`x-contract`, `info.x-contract`), **không còn regex dự phòng**. Eligibility chuyển từ **denylist
+trong mã** sang **allowlist tường minh trong dữ liệu** — `precode/gates.yaml` →
+`ratified_contract_scopes`, trích `OD-20260907-01`, nêu đích danh từng file và hai thư mục fixture
+(`identity/`, `reporting/`) cùng lý do. Mặc định nay là **KHÔNG đủ điều kiện**; mở rộng phạm vi
+phê chuẩn là một lần sửa hợp đồng, không phải một lần sửa công cụ. Nếu allowlist không đọc được
+hoặc không trích phê chuẩn, cả hai check **`BLOCKED`** — không bao giờ PASS sạch trên một luật
+không thi hành được.
+
+**Self-test âm, 5 đột biến, 2 lượt** (`selftest.py` trong scratch; kết quả ghi ở README §5b):
+
+| Lượt | Đột biến | Kết quả |
+| --- | --- | --- |
+| A | **M5** `CONTRACT_READY` trong phạm vi ngoài allowlist (`contracts/ai/tasks.yaml`) | **CAUGHT** |
+| A | **M6b** `ratification_ref` chuyển ra prose (`contracts/state/storage.yaml`) | **CAUGHT** (ở FIX7: MISSED) |
+| A | **M6c** gỡ hẳn `ratification_ref` (`contracts/state/report.yaml`) | **CAUGHT** |
+| A | **M7** claim vượt trần (`contracts/errors.yaml`) | **CAUGHT** |
+| B | **M8** allowlist không còn trích `OD-20260907-01` | **cả hai check `BLOCKED`** |
+
+M8 **phải** chạy lượt riêng: một check đã `BLOCKED` không báo vi phạm nào, nên chạy chung nó
+**che** cả bốn đột biến kia và lượt chạy trông như bốn lần trượt. Tôi biết vì lần chạy đầu đúng
+như vậy — và script nay in từng lần tiêm rồi thoát khác 0 nếu một token đích vắng mặt.
+
+## P5. Hai lần công cụ của tôi nghiêm hơn ruling — sửa theo ruling, không theo ý tôi
+
+Khi allowlist mới bật lên, E0 cho **2 FAIL / 15 vi phạm** không phải do lỗi nội dung:
+
+1. `E0-08` báo 14 fixture `identity/` thiếu header. W3 vừa thêm một `x-contract` **nhỏ** (chỉ
+   trường phê chuẩn) theo ruling `F-A2R5-04`; mã của tôi coi "có `x-contract`" là nhánh **độc
+   quyền** đòi đủ 14 trường, trong khi oracle công bố là *"`x-contract` **HOẶC** README liệt kê
+   file theo tên"*. Một check phạt đúng bản sửa mà nó yêu cầu là một check sai. Đã sửa để mã khớp
+   oracle, và ghi note nêu tên từng file có header một phần.
+2. `E0-12` báo `contracts/ui/screens.yaml` dùng `ACCEPTED` không có `ratification_ref`. Thực tế
+   W3 đặt `ratification_ref` **ngay cạnh** `status: ACCEPTED` trên cùng một node — provenance
+   **tốt hơn** một trường cấp file, vì nó nói mục nào được phê chuẩn. Đã sửa: một `status` cấp mục
+   hợp lệ khi node của chính nó mang ref. `CONTRACT_READY` **giữ nguyên** luật header-only: đó là
+   tuyên bố file nói về chính nó.
+
+Cả hai là **sửa để khớp ruling đã công bố**, không phải nới để hết FAIL — và cả hai được ghi ở đây
+để người xác minh kiểm lại chính xác điểm đó.
+
+## P6. `F-A2R5-02` và `F-A2R5-06`
+
+- **`-02`:** lần chạy đóng gói đặt **sau** cổng chờ `PKT-PC02-FIX11` (05:12Z) và `PKT-PC10-FIX11`
+  (05:55Z theo dòng ký của W7). Sau khi bàn giao tôi hash lại **từng** entry: **136/136 khớp**.
+  `precode/review.md` nay trích lần chạy **theo đăng ký** (`EV-PC09-01`) chứ không theo tên file
+  có dấu thời gian — một tên có dấu thời gian trong văn bản tự làm chính nó cũ mỗi lần chạy lại,
+  đúng vòng lặp mà finding này mô tả.
+- **`-06`:** `honesty_note_vi` nay nói đúng: **7 AUDIT_REPORT** nằm **trong** repo tại
+  `evidence/audits/`, **nguyên vẹn từng byte** (tôi so sha256 từng file với bản gốc: 7/7 MATCH),
+  và **vẫn không** được đăng ký thành evidence record — vì một Worker không được ghi bản ghi bằng
+  chứng thay cho Auditor. Hai con số được nêu tách bạch
+  (`independent_audit_reports_archived_in_repo` = 7 · `independent_audit_records_in_repo` = 0) và
+  số báo cáo **đếm từ thư mục**, không viết tay.
+
+## P7. Mối lo còn lại
+
+1. **Không bản sửa nào của đợt này được xác minh độc lập** (protocol §8). `A2-R5` kết luận **FAIL**
+   cho PC09 và cả bốn finding nặng là của tôi; "24/24 sạch" ở trên là con số của phía sửa, chạy
+   bằng công cụ do phía sửa viết.
+2. **Liệt kê purge trong văn xuôi chưa được đối chiếu tự động** (P3). Một artefact viết sai một tên
+   bảng giữa một câu văn vẫn lọt.
+3. **`agent-tasks/` vẫn ngoài `SCAN_DIRS`** (`CR-PC09-14`, PARKED): `E0-12` nay khai đúng phạm vi
+   và **đếm + in ra** phần chênh, nhưng 18 card khai nhãn vượt trần vẫn không được check nào phủ.
+4. **Allowlist vẫn cần người thêm tay.** Nó đã rời khỏi mã nguồn và mặc định đã đảo về an toàn,
+   nhưng ranh giới phê chuẩn vẫn không nằm trong cây hợp đồng (`CR-PC01-13`, `CR-PC02-22`).
+5. `F-A2R5-05` (ba schema thiếu câu NOT_RUN) và `-07` (manifest bỏ `agent_profile/`) **không** thuộc
+   grant của tôi — W3/W5 và Coordinator.
+6. `REQ-OQ03` vẫn `OWNER_DECISION_REQUIRED`; 15 yêu cầu vẫn `KC`; E1–E4 `NOT_RUN` toàn bộ; chưa có
+   repo triển khai. **`NOT_READY_FOR_PRODUCT_CODE`** giữ nguyên.
+
+## P8. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-07T05:26Z. `LEASE-PC09-e9` (fencing 9) nhả tại đây;
+  `worker-W6` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §P1) và lease
+  fencing ≥ 10.
+- **Claim:** `DRAFT_FOR_REVIEW`. Trần `CONTRACT_READY` áp cho **file hợp đồng trong allowlist đã
+  phê chuẩn**, không cho hệ thống, và không cho bất kỳ phát biểu nào về hành vi khi chạy.

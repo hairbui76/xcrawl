@@ -1036,3 +1036,267 @@ Gói này không phát sinh CR mới. Còn mở từ trước: `CR-PC00-15` (W7 
 - **next actor:** `Coordinator` — rehash `precode/README.md` và hai README mới; nếu muốn, đưa `evidence/audits/` và `evidence/coordination/` vào epoch kế tiếp với role `EVIDENCE`.
 - **lease_released_at (UTC):** 2026-09-07T02:38Z. `LEASE-PC00-e10` (fencing 10) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 11.
 - **Claim:** `DRAFT_FOR_REVIEW`. `NOT_READY_FOR_PRODUCT_CODE`; B01–B17 vẫn `OPEN`; cả bảy báo cáo audit vẫn giữ nguyên finding của chúng.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX10 (phê chuẩn của Owner: `OD-20260907-01`)
+
+## J1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX10` · worker `worker-W1` · authority `AUTH-COORD-PC00-FIX10` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC00-e11` (**fencing 11**) |
+| mode | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T04:15Z / 2026-09-07T04:24Z · lease expires 2026-09-08T00:00Z (`date -u` trước lần ghi cuối: 2026-09-07T04:22Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T04:24Z |
+| input ràng buộc | `…/scratchpad/packets/OWNER-DECISIONS-20260907.md` — biên bản của Owner, **chuyển ngữ nguyên nội dung, không diễn giải lại** |
+
+Đây là gói đầu tiên của PC00 chạy dưới một **authority Owner mới** (`AUTH-OWNER-20260907-02`) thay vì `AUTH-OWNER-20260906-01`.
+
+## J2. Đã làm gì (7 việc theo packet)
+
+**1 · Tạo `precode/owner-decisions.md`.** Biên bản `OD-20260907-01` đầy đủ: định danh (issuer, `evidence_ref` = session `session_017QmDJtMqD9o1z79waqSB9W`, authority phát sinh), **cả 25 hàng chép nguyên**, từ vựng trạng thái mới, và hai mục PC00 viết thêm: §5 "những gì quyết định này **không** làm" và §6 ghi chú về ba mục dễ bị đọc rộng hơn văn bản. Không hàng nào bị tóm tắt hay diễn giải lại.
+
+**2 · `decision-register.md`.** B01–B17: `PROVISIONAL` → **`RATIFIED (OD-20260907-01)`** ở bảng tổng hợp §1 và ở cả 17 mục §2. 14 amendment → **`ACCEPTED (OD-20260907-01)`**. §8: `PROV-PC00-02` và `PROV-PC00-04` → ACCEPTED (mục 25); `PROV-PC04-01..09` (mục 22) và `PROV-PC08-01..05` (mục 23) → ACCEPTED. §0 có bảng từ vựng mới và ba dòng nêu rõ điều **không** đổi. §4 (bảng P0 còn ĐX) ghi bốn dòng đã promote và nói rõ mười bốn dòng còn lại **vẫn ĐX**. §5 và §6 ghi kết quả cho OQ và cho `F-PC00-01`/`F-PC00-02`.
+
+**Không suy rộng.** `PROV-PC03-01..06`, `PROV-PC09-01..03`, `PROV-PC10-01..03`, `PROV-PC00-03`, `PROV-PC00-05`, `PROV-PC00-06` **không** được biên bản nêu tên, nên **vẫn `PROVISIONAL`**. §8 nay nói thẳng quy tắc đó: *"mục nào được `OD-20260907-01` nêu tên thì nay là ACCEPTED; mục nào không được nêu thì vẫn PROVISIONAL — không suy rộng."*
+
+**3 · ADR.** Chín ADR (`0001`–`0005`, `0007`–`0010`) → `status: accepted`, thêm `ratified_by`, `ratified_at`, `evidence_ref`, và một banner ở mục "Trạng thái"; **lập luận cũ giữ nguyên bên dưới** để truy vết. `ADR-0008` từ `provisional-accepted` cũng lên `accepted`.
+
+**`ADR-0006` viết lại thành phương án B.** Bảng phân bổ ngôn ngữ (collector/worker/embedding/backend ở Python, web app ở TypeScript, ranh giới là HTTP API đã có hợp đồng), mục **Hệ quả** tách rõ hai vế: *phải viết lại* = §3 và §8 của 18 card cộng phần mô tả cây thư mục của `precode/README.md`; ***không* phải viết lại** = toàn bộ `contracts/**`, `acceptance/**`, `requirements.csv`, `decision-register.md`, `gates.yaml`, các ADR khác. Bảng phương án ghi A là **bị Owner bác**, C không chọn vì rủi ro nằm đúng ở embedding local (`REQ-D59`, `REQ-A3`).
+
+**4 · `requirements.csv`.** Đúng bốn dòng đổi trạng thái `ĐX` → `XN`: `REQ-D08`, `REQ-D09`, `REQ-D42`, `REQ-D50`, mỗi dòng mang ghi chú `Ratified OD-20260907-01` kèm số mục. **242 dòng còn lại không đổi một ký tự trạng thái** — kiểm bằng script: `REQ-D53` và `REQ-D22` vẫn `ĐX`.
+
+**5 · `owner-decision-request.md`.** Banner `✅ ANSWERED 2026-09-07` ở đầu, trỏ về biên bản, nêu mục duy nhất chưa trả lời (`REQ-OQ03`) và nói rõ nội dung bên dưới **không** được viết lại. Phiếu trả lời cuối file đã điền đủ, gồm cả `Stack: B ← KHÔNG phải A như khuyến nghị`.
+
+**6 · `agent_profile/registry.json`.** `open_product_blockers: []`; thêm `ratified_product_blockers` (B01–B17) và `ratification_evidence`. Đã so sánh JSON đã parse trước/sau: **hai khóa được thêm, không khóa nào bị xóa, không khóa nào khác đổi giá trị**. `product_status` **giữ nguyên** `NOT_READY_FOR_PRODUCT_CODE` — biên bản không đổi nó.
+
+**7 · `baseline.json`.** Anchor `OD-20260907-01` trong `source_anchors.PROJECT.owner_decisions` (nguồn, authority, evidence, danh sách được phê chuẩn, danh sách **không** được quyết, bốn promotion, lựa chọn stack). `claim_ceiling` từ một chuỗi thành **object theo phạm vi**: bốn phạm vi `A2-R4` nêu là đủ điều kiện → `CONTRACT_READY_PENDING_E0`; sáu phạm vi còn lại → `DRAFT_FOR_REVIEW`, kèm `blocked_by_kc_vi` nói vì sao (`REQ-A6` còn KC; `REQ-A5` + `REQ-OQ03`; 18 card cần viết lại). `finalised_by: W6`.
+
+## J3. Ba điều tôi **không** làm, có chủ đích
+
+1. **Không đóng finding audit nào.** Phê chuẩn một quyết định sản phẩm không phải disposition của một finding (`protocol.md` §8). Ghi rõ ở §5 biên bản và ở §0 register.
+2. **Không đổi trạng thái mục `KC` nào.** `REQ-A1`…`REQ-A7` nguyên trạng; `REQ-AC16` vẫn `BLOCKED` cho tới khi một probe CLI/ACP đạt (mục 15). Biên bản tự nói buổi phỏng vấn không tạo bằng chứng runtime.
+3. **Không nâng `claim_ceiling` lên `CONTRACT_READY` thật.** Dùng `CONTRACT_READY_PENDING_E0` — đủ điều kiện về quyết định, còn chờ W6 chạy lại E0 trên epoch mới. Nâng thẳng sẽ là nâng nhãn bằng suy diễn.
+
+## J4. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/owner-decisions.md` | **CREATE** | ABSENT | `c5d411e561d464cbb6a05b42938dd11b4925506b12b72736ab46b354ba9ad994` (12373) |
+| `precode/decision-register.md` | MODIFY | `212441a429420d1cc11cdc4a9c79a11648e45e1b92278a08f77a9779943ad15d` (97899) | `5e73fc4eb914d4bc75dc0d76f3268992b3a9a847db419cdf2f0bee3341dc86ab` (101505) |
+| `precode/baseline.json` | MODIFY | `e4c3f4563e04293c319bf746b371bc67857115b7070d14a9771de3238e8683a7` (97620) | `b1ba31e87199433766ad49cc4bd40882a331c2b00d6e92033a5707172ba6c598` (100146) |
+| `precode/requirements.csv` | MODIFY | `132ce59b160d9cc20294e45f33082e27d69c4b3182bdc9c1b1864fd0adeaf0e6` (69366) | `63aa6b273def1e1eaeb6a45b0ee083a06ca9e2bec4ca8bd7fe733dd2f0d10480` (69651) |
+| `precode/owner-decision-request.md` | MODIFY | `91182f46766f82c74994dd7f3b86c2b77984599100b43884259bd2b6b9cf1073` (54917) | `9995b5ecc8b7a902ee5b10891ba4ea2fbbebe21521705415f41a7b48c947b6b4` (56332) |
+| `precode/adr/README.md` | MODIFY | `44b9d01b60984ecedb715cfb3c82fdcb7f09e78aa13646e581a750686a0c269d` (6490) | `e57d08b94da683d7c5be11cce46a942330381ae21c44f09210547f4497597f3f` (7503) |
+| `precode/adr/ADR-0006-stack-option-a.md` | MODIFY (viết lại) | `a7b0b558a308f699018f1b695cb4585e3cc3ab6bcb86cf298a05fde6ace6b20b` (4516) | `f875dbb8ef847aa2de0c8105d7356c6c3d7529b2b615f3b903a00ee5cd782f26` (8053) |
+| `precode/adr/ADR-0001-topology-and-placement.md` | MODIFY | `277eb556cff950193ca55cecd0ef0d06dca279a4d376c5c8e889a48ebf60c09c` (5717) | `9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039` (6161) |
+| `precode/adr/ADR-0002-run-state-model-split.md` | MODIFY | `5ed7b2c429ef7e060140f8b6bbaa71b761b482134aaac155ad32d64bef34b8c0` (4924) | `70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8` (5368) |
+| `precode/adr/ADR-0003-delivery-unknown-state.md` | MODIFY | `1cb86d8db85c4350dc1eaf6b0822908030219d326c65a8fbec321066d2aab2a0` (5105) | `567828c11049d26993cbeee0d0bd6c157d9938263ec69c5a05fa045da3ceb0e3` (5549) |
+| `precode/adr/ADR-0004-tag-freeze-point.md` | MODIFY | `64c0793eeca31b6ac0606813adac96fa483e01eb4b81eaef950edfff16fd3194` (5459) | `4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f` (5903) |
+| `precode/adr/ADR-0005-backup-method.md` | MODIFY | `7830500f824c84683d81f2458d7280483d105c4a221f738b083c6fcb7fcbeead` (5013) | `889de2812a8736e328eb7823a82e2b5dab1f46aee13257bfcfedd08d4668bd5c` (5457) |
+| `precode/adr/ADR-0007-timezone-handling.md` | MODIFY | `334abf600467fba70e7797113956c99406acb3617b2da6f3ccce56f8f5786ed7` (4843) | `fbb464c22df45248895107a3f38e85f700e9cdecd9a722eaa9f2a4b028995e44` (5287) |
+| `precode/adr/ADR-0008-analysis-key-and-generation.md` | MODIFY | `c08f8670b19e8a0758062988570701ccb96f6d4beefac7b4d80ed6906b95c5f1` (5228) | `bbf649f5e9239d0de28c24255469ce0498f9f108bfdd45ada2ddeac859b8f1c5` (5660) |
+| `precode/adr/ADR-0009-identity-alias-target-union.md` | MODIFY | `a8e57390663d6dc3778ff8036ca4032a91da25f0b85844bd094f393e34f6b5ef` (5701) | `67844f12e4fe77a6a25b443a8fe84d053fbcfc9c30649296f55efc41befa4ee1` (6145) |
+| `precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md` | MODIFY | `734766c889edbbb0dce94dca92b7da04a9c0b6721536addaeaac3ee6c783a291` (5962) | `aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317` (6406) |
+| `agent_profile/registry.json` | MODIFY | `3d5fc4d876d537706ee354553df0b1b73733326756109b44ccf9931df0f107a3` (3675) | `fd9d6d25f3ebf7e2f0dbbb269f3d72ce944edd9ba4c2b7552963b37b71383135` (3784) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `e9a7b622cdd431d88f04d601fd72da99524860e28d85e6c07982215eb317649e` | *(file này)* |
+
+**1 CREATE + 16 MODIFY + 1 APPEND.** `precode/source/*` không sửa; rehash sau khi xong khớp pin. Không chạm `contracts/`, `acceptance/`, `agent-tasks/`, `precode/review.md`, `precode/README.md`, `evidence/audits/`, `evidence/coordination/`, handoff gói khác. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+**Lần đầu PC00 ghi dưới `agent_profile/`.** Các packet trước cấm tuyệt đối. Packet này cấp tường minh và có parent là một Owner authority mới. Tôi giữ diff nhỏ nhất có thể (hai khóa thêm, một mảng thành rỗng), xác minh bằng cách so sánh **JSON đã parse** trước/sau chứ không chỉ đọc diff văn bản, và giữ bản gốc ở scratch dir để đối chiếu.
+
+## J5. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T04:22Z / 2026-09-07T04:22Z · **exit code 0** · **248 assertion, 248 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1`.
+- **`EV-PC00-04` đã được sửa theo packet.** Trước đây nó khẳng định 17 blocker ở `PROVISIONAL`; nay khẳng định cả 17 ở **`RATIFIED (OD-20260907-01)`** và register phải trỏ về biên bản cùng authority. Hai kiểm tra cũ đã lỗi thời cũng được thay: `ACCEPTED` nay **hợp lệ nhưng chỉ khi kèm decision id** (nhãn trần bị FAIL), còn **`CLOSED` vẫn bị cấm tuyệt đối**.
+- **`EV-PC00-08` mới (33 assertion):** biên bản có đủ decision id/authority/evidence và **đúng 25 hàng liên tục**; ghi rõ phạm vi không được quyết; 10 ADR `accepted` với `ratified_by` + `evidence_ref`; `ADR-0006` là phương án B và nói rõ hợp đồng không đổi; đúng bốn REQ được promote và `REQ-D53`/`REQ-D22` vẫn `ĐX`; banner + phiếu trả lời; registry đúng ba thay đổi và `product_status` **không** đổi; `claim_ceiling` là object với **đúng bốn** phạm vi đủ điều kiện; anchor biên bản ghi `REQ-OQ03` chưa được quyết.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. Việc Owner phê chuẩn **không** tạo bằng chứng kỹ thuật nào.
+
+## J6. Unresolved và CR
+
+| ID | Gửi tới | Nội dung |
+| --- | --- | --- |
+| `CR-PC00-16` | Coordinator | `precode/adr/ADR-0006-stack-option-a.md` nay chứa **phương án B**. Tên file sai nội dung. Đổi tên là rename (DELETE + CREATE) cần grant riêng, và sẽ làm đứt liên kết ở 18 card cùng chỉ mục ADR — nên tôi **không** tự làm. Đã ghi `filename_note_vi` trong front-matter và một dòng cảnh báo ở đầu file. Đề nghị gộp việc đổi tên vào cùng lượt PC10 viết lại card. |
+| `CR-PC00-17` | Coordinator → PC10 | 18 card phải viết lại **§3 (đường dẫn) và §8 (lệnh build/test)** theo stack B; `PROV-PC10-01` (layout theo A) **không còn hiệu lực**. `precode/README.md` cũng có phần mô tả cây thư mục theo A — ngoài grant gói này. |
+| `CR-PC00-18` | Coordinator → W6 | `claim_ceiling` mới là object theo phạm vi với giá trị **`CONTRACT_READY_PENDING_E0`**, không phải `CONTRACT_READY`. W6 finalise sau khi chạy lại E0. Ba phạm vi bị chặn bởi `KC` được ghi kèm lý do. |
+| `CR-PC00-15` | W7 | Vẫn mở và **rộng hơn**: nay `baseline.json` (`b1ba31e8…`), `decision-register.md` (`5e73fc4e…`), `requirements.csv` (`63aa6b27…`), 10 ADR và `adr/README.md` đều đổi hash. |
+| `CR-PC00-13` | Coordinator | Vẫn mở (`REQ-S8.4-01` là bản ghi lịch sử trong `requirements.csv`). |
+| `PROV-PC00-01` | — | **Đã giải** (mục 24): `data.purge_all` chỉ xóa dữ liệu nghiên cứu; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup không bị xóa**. |
+| `REQ-OQ03` | Owner | **Vẫn `OWNER_DECISION_REQUIRED`**, vẫn chặn M3. |
+
+**Concern:**
+1. **Sáu nhóm `PROV-*` không được biên bản nêu tên vẫn `PROVISIONAL`** (`PROV-PC03-*`, `PROV-PC09-*`, `PROV-PC10-*`, `PROV-PC00-03/-05/-06`). Nếu Coordinator cho rằng mục 22/23 có ý bao cả `PROV-PC03-*` (tham số retry/lease) thì cần một dòng làm rõ — tôi không suy rộng thay Owner.
+2. **`PROV-PC10-01` nay mâu thuẫn với quyết định stack**: nó vẫn nằm ở §8.7 register như một giả định layout theo A. Tôi giữ nguyên vì §8.7 là bản ghi lịch sử và việc thay layout thuộc PC10; nhưng nếu để lâu, nó là đúng loại "văn xuôi cũ" mà `F-A2R1-*` từng phạt. → `CR-PC00-17`.
+3. **`ADR-0006` giữ tên file cũ** — xem `CR-PC00-16`. Đây là mâu thuẫn tên/nội dung duy nhất tôi cố ý để lại.
+4. Biên bản **không** nâng `product_status`; tôi giữ `NOT_READY_FOR_PRODUCT_CODE`. Nếu Coordinator muốn đổi, đó là quyết định riêng cần căn cứ riêng — phê chuẩn quyết định sản phẩm không đồng nghĩa hợp đồng đã sẵn sàng để code.
+
+## J7. Trạng thái bàn giao (FIX10)
+
+- **next actor:** `Coordinator` — rehash 17 file ở §J4; giao PC10 (`CR-PC00-17`) và W6 (`CR-PC00-18`).
+- **lease_released_at (UTC):** 2026-09-07T04:24Z. `LEASE-PC00-e11` (fencing 11) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §J4) và lease fencing ≥ 12.
+- **Claim:** `DRAFT_FOR_REVIEW` cho gói này. Bốn phạm vi đủ điều kiện mang `CONTRACT_READY_PENDING_E0` trong `baseline.json`, **chưa** phải `CONTRACT_READY`. `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; B01–B17 nay **RATIFIED**, `REQ-OQ03` vẫn mở.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX11 (`CR-PC09-13` và `CR-PC00-18`)
+
+## K1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX11` · worker `worker-W1` · authority `AUTH-COORD-PC00-FIX11` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC00-e12` (**fencing 12**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` cho gói này |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T04:48Z / 2026-09-07T04:52Z · lease expires 2026-09-08T00:00Z (`date -u` trước lần ghi cuối: 2026-09-07T04:50Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T04:52Z |
+
+## K2. `CR-PC09-13` — hai dòng OQ và dọn chữ "Option A"
+
+**`REQ-OQ01` và `REQ-OQ02`: `ĐX` → `XN`**, ghi chú bắt đầu bằng `ĐÃ TRẢ LỜI` và dẫn đúng số mục của biên bản:
+
+- `REQ-OQ01` — mục 1: Owner xác nhận profile riêng của dự án; `REQ-D09` đã lên `XN`; M0/SP1 không còn bị chặn bởi **câu hỏi này** (probe A1 vẫn `NOT_RUN` — hai chuyện khác nhau).
+- `REQ-OQ02` — mục 3: Owner chọn **stack B (Python workers + TypeScript web)**; khuyến nghị A của đặc tả **không** được chọn; hợp đồng không đổi; 18 card phải viết lại §3 và §8. Nhãn `PROVISIONAL` và chữ `Option A` đã biến mất khỏi ghi chú.
+
+**Sweep "Option A" / "Python toàn bộ" trên toàn `precode/`.** Kết quả 10 chỗ, tôi phân loại chứ không dọn mù:
+
+| Chỗ | Phân loại | Xử lý |
+| --- | --- | --- |
+| `decision-register.md` §5 hàng `REQ-OQ02` — *"Option A — Python toàn bộ"* ở cột **giá trị đang dùng** | **Sai thực tế** — trình bày A như lựa chọn | **Đã sửa** thành "**ĐÃ TRẢ LỜI** — B: Python workers + TypeScript web (mục 3); khuyến nghị A của đặc tả bị bác". Hàng `REQ-OQ01` cũng cập nhật |
+| `requirements.csv` `REQ-OQ02.notes` | Sai thực tế | **Đã sửa** (ở trên) |
+| `requirements.csv` `REQ-OQ02.text_vi`, `REQ-S6.3-01.text_vi` | **Trích nguyên văn nguồn** — SRC-SPEC §13.1 và §6.3 thật sự khuyến nghị A | **Giữ nguyên.** Sửa chúng là làm sai bản ghi yêu cầu. Thay vào đó `REQ-S6.3-01.notes` nay nói rõ: đây là khuyến nghị của đặc tả, **không** phải lựa chọn cuối; Owner đã chọn B nên khuyến nghị này bị bác; trạng thái giữ `ĐX` vì hàng nguồn là một đề xuất **chưa được chọn** |
+| `baseline.json` anchor §13.1 hàng 2 | Trích nguyên văn nguồn, sinh tự động | Giữ nguyên |
+| `owner-decision-request.md` §Stack (câu hỏi và ba phương án) | Bản ghi câu hỏi đã đặt; banner `ANSWERED` đã ở đầu file | Giữ nguyên; ngoài grant gói này |
+| `ADR-0006` mục Bối cảnh và bảng phương án | Lịch sử, packet cho phép tường minh | Giữ nguyên |
+| `review.md` | Chính là nơi phát hiện ra `CR-PC09-13` | Ngoài grant; PC09 xử lý |
+
+**Phạm vi `data.purge_all` — không còn `OWNER_DECISION_REQUIRED`.** Ba chỗ trong `decision-register.md` §8 vẫn mô tả nó như đang bị chặn:
+
+- `PROV-PC00-01` nay mở đầu bằng **`ĐÃ GIẢI — ACCEPTED (OD-20260907-01) mục 24`** với đúng nội dung Owner chốt (chỉ xóa dữ liệu nghiên cứu; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup không bị xóa**; `MOD-data-admin-service` được gỡ chặn). Lập luận cũ được giữ lại bên dưới dưới nhãn **(Lịch sử)**, không xóa.
+- `PROV-PC00-03` phần "vẫn chặn" → "**từng bị chặn — nay đã giải**", và xác nhận rằng danh sách ứng viên PC08 từng nêu chính là tập được giữ lại.
+- `requirements.csv` `REQ-S7.3-05.notes` bỏ cụm `PROV-PC00-01 (OWNER_DECISION_REQUIRED)`, thay bằng nội dung quyết định.
+
+**`REQ-OQ03` không bị chạm.** Nó vẫn `ĐX` với `OWNER_DECISION_REQUIRED` trong ghi chú, và `EV-PC00-08` nay khẳng định điều đó bằng một assertion riêng để không ai dọn nhầm nó cùng lượt.
+
+## K3. `CR-PC00-18` — nâng trần claim của bốn phạm vi
+
+E0 đóng cửa `E0-20260907T044549Z` đạt **23/23**, nên bốn phạm vi `A2-R4` nêu là đủ điều kiện chuyển từ `CONTRACT_READY_PENDING_E0` sang **`CONTRACT_READY`** thật: `boundaries_and_rights`, `data_and_identity`, `workflow_and_state`, `reporting_and_time`. Sáu phạm vi còn lại giữ `DRAFT_FOR_REVIEW` với lý do đã ghi (`REQ-A6` còn `KC`; `REQ-A5` + `REQ-OQ03`; 18 card chờ viết lại theo B).
+
+`claim_ceiling` nay mang `e0_run_ref: "E0-20260907T044549Z"` và `e0_result: "23/23 PASS"` — nhãn có con trỏ tới lần chạy sinh ra nó, không phải một khẳng định trần.
+
+Tôi thêm một `scope_note_vi` mà packet không yêu cầu, vì `CONTRACT_READY` là nhãn dễ bị đọc rộng nhất trong cả bộ: *"`CONTRACT_READY` ở đây chỉ nói về tính nhất quán tĩnh của hợp đồng (mức E0). Nó **không** nói gì về code, về dịch vụ thật, hay về chất lượng sản phẩm: E1–E4 vẫn `NOT_RUN` và `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`."* `EV-PC00-08` khẳng định câu đó tồn tại.
+
+## K4. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/requirements.csv` | MODIFY | `63aa6b273def1e1eaeb6a45b0ee083a06ca9e2bec4ca8bd7fe733dd2f0d10480` (69651) | `fbe59d0eaf73ff69281515fc2d03c2673c7dfa3aaa57f110b2ecba079f0c52e8` (70393) |
+| `precode/baseline.json` | MODIFY | `b1ba31e87199433766ad49cc4bd40882a331c2b00d6e92033a5707172ba6c598` (100146) | `e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b` (100474) |
+| `precode/decision-register.md` | MODIFY | `5e73fc4eb914d4bc75dc0d76f3268992b3a9a847db419cdf2f0bee3341dc86ab` (101505) | `1883fec33f56873a426394a99d3fc6c5ec43c456a936c52733cad6c047f06262` (102430) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `cec51107ecd407963382a65d2b8cddf71f87fdc93d477e60b908c0bb5f620765` | *(file này)* |
+
+**3 MODIFY + 1 APPEND.** `precode/adr/*`, `owner-decisions.md`, `owner-decision-request.md`, `agent_profile/registry.json` **không** đổi ở gói này. `precode/source/*` không sửa; rehash sau khi xong khớp pin. Không chạm `contracts/`, `acceptance/`, `agent-tasks/`, `precode/review.md`, `precode/README.md`, `precode/gates.yaml`, `evidence/audits/`, `evidence/coordination/`. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+**⚠ Cả `baseline.json` và `decision-register.md` đều được task card pin theo hash** — cả hai vừa đổi. Giá trị cần pin: `baseline.json` = `e0405a1b…` (100474), `decision-register.md` = `1883fec3…` (102430), `requirements.csv` = `fbe59d0e…` (70393). Thuộc `CR-PC00-15` (W7 re-pin một lượt).
+
+## K5. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T04:50Z / 2026-09-07T04:50Z · **exit code 0** · **259 assertion, 259 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1`.
+- **11 assertion mới trong `EV-PC00-08`:** `e0_run_ref` và `e0_result` đúng; `scope_note_vi` nêu `NOT_READY_FOR_PRODUCT_CODE`; **không còn giá trị `PENDING_E0` nào**; đúng bốn phạm vi ở `CONTRACT_READY`; `REQ-OQ01`/`REQ-OQ02` là `XN` kèm ghi chú ratified và **không còn** nhãn `PROVISIONAL`; ghi chú OQ02 **không còn** trình bày `Option A` là lựa chọn; **`REQ-OQ03` giữ nguyên** `OWNER_DECISION_REQUIRED`; `PROV-PC00-01` ghi rõ đã giải bằng mục 24 và backup không bị xóa; bảng câu hỏi mở §5 không còn chữ `Option A`.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. `CONTRACT_READY` ở đây là kết luận **mức E0**, dựa trên lần chạy `E0-20260907T044549Z` do W6 thực hiện — **không phải** bằng chứng do gói này tạo ra.
+
+## K6. Unresolved
+
+Gói này không phát sinh CR mới.
+
+| ID | Trạng thái |
+| --- | --- |
+| `CR-PC09-13` | **Đã giải** ở gói này |
+| `CR-PC00-18` | **Đã giải** ở gói này |
+| `CR-PC00-15` | Còn mở — W7 re-pin; danh sách hash mới ở §K4 |
+| `CR-PC00-16` | Còn mở — `ADR-0006` giữ tên file cũ trong khi nội dung là phương án B |
+| `CR-PC00-17` | Còn mở — PC10 viết lại §3/§8 của 18 card theo stack B; `precode/README.md` còn mô tả cây thư mục theo A |
+| `CR-PC00-13` | Còn mở — `REQ-S8.4-01` là bản ghi lịch sử, gate báo `[INFO]` |
+| `CR-PC00-06` | Còn mở — anchor tồn tại không chứng minh scenario đã có fixture |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+
+## K7. Trạng thái bàn giao (FIX11)
+
+- **next actor:** `Coordinator` — rehash ba file ở §K4; giao W7 re-pin.
+- **lease_released_at (UTC):** 2026-09-07T04:52Z. `LEASE-PC00-e12` (fencing 12) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §K4) và lease fencing ≥ 13.
+- **Claim:** bốn phạm vi nay `CONTRACT_READY` **ở mức E0**, có `e0_run_ref`. `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`; `REQ-OQ03` vẫn mở.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX12 (packaging đợt hai: hồ sơ tới epoch 9)
+
+## L1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX12` · worker `worker-W1` · authority `AUTH-COORD-PC00-FIX12` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC00-e13` (**fencing 13**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T05:33Z / 2026-09-07T05:36Z · lease expires 2026-09-08T04:00Z (`date -u` trước lần ghi cuối: 2026-09-07T05:34Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T05:36Z |
+| scope | Lưu vĩnh viễn hồ sơ phát sinh **sau** `PKT-PC00-FIX9`: hai AUDIT_REPORT, hai manifest, biên bản Owner, hai ruling, hai packet audit, và bản ledger mới |
+
+## L2. Đã thêm gì
+
+**10 file chép nguyên văn**, tất cả `cmp`-verified byte-identical.
+
+| Đích | File | Là gì |
+| --- | --- | --- |
+| `evidence/audits/` | `A2-R5-report.md` | AUDIT_REPORT xác minh các thay đổi do Owner phê chuẩn — `FC-W4` **epoch 8** (epoch phê chuẩn) |
+| | `A2-R6-report.md` | Re-review có phạm vi của `F-A2R5-01..07` — `FC-W4` **epoch 9**, vòng audit cuối của phiên |
+| | `FC-W4e8-manifest.txt`, `FC-W4e9-manifest.txt` | Hai manifest tương ứng |
+| `evidence/coordination/` | `OWNER-DECISIONS-20260907.md` | **Biên bản quyết định của Owner** — bản gốc do Coordinator phát, nguồn của `precode/owner-decisions.md` |
+| | `FIX-R5-rulings.md` | Ruling sau `A2-R5` |
+| | `PURGE-LIST-ruling.md` | Ruling chốt danh sách loại trừ của `data.purge_all` |
+| | `A2-ratification-verify-packet.md`, `A2-r6-packet.md` | Hai packet audit của vòng 5 và 6 |
+| | `coordinator-ledger.md` | **Thay** bản chép ở `PKT-PC00-FIX9` |
+
+Tổng hai thư mục: **50 file** (`evidence/audits/` 19, `evidence/coordination/` 31), trong đó 47 là bản sao nguyên văn và 3 là chỉ mục/ledger.
+
+**Về việc thay `coordinator-ledger.md`.** Đây là file duy nhất trong hai thư mục bị **ghi đè** thay vì thêm mới. Bản cũ (`a8a7d319…`) dừng ở epoch 7; bản mới (`0369031b…`) chạy tới epoch 9. Cả hai README ghi rõ hash của bản bị thay và lý do, để một người đọc về sau không tưởng lịch sử bị viết lại lặng lẽ. Ngoài file đó, **không** bản sao nào đã có bị chạm.
+
+## L3. Hai README đã cập nhật
+
+- **Con số và chuỗi epoch.** `evidence/audits/README.md` nay nói **chín** AUDIT_REPORT (`auditor-A1` ×3, `auditor-A2` ×6) và **chín** manifest, kèm chuỗi đầy đủ `FC-W1` 1 → `FC-W2` 2 → `FC-W3` 3 → `FC-W4` 4…9, trong đó epoch 8 được đánh dấu là **epoch phê chuẩn của Owner** và epoch 9 là **epoch cuối được audit**.
+- **Ghi chú vị trí trong chuỗi bằng chứng** đổi mốc từ epoch 7 sang **epoch 9**: những bản ghi này ra đời **sau** lần freeze mà `A2-R6` đã audit, nên nằm **ngoài mọi candidate manifest đã được audit** — `protocol.md` §6, một báo cáo không nằm trong snapshot nó ký. Thêm một đoạn nói rõ thư mục được bổ sung **hai lần** (FIX9 tới epoch 7, FIX12 tới epoch 9) và lần này có một file bị thay.
+- **Chuỗi thẩm quyền.** `evidence/coordination/README.md` nay nêu **hai** authority Owner: `AUTH-OWNER-20260906-01` (cho phép phiên soạn tài liệu) và `AUTH-OWNER-20260907-02` (phê chuẩn 25 quyết định), và phân biệt `OWNER-DECISIONS-20260907.md` là **văn bản ràng buộc** chứ không phải một ruling.
+- Mỗi hàng chỉ mục mang `sha256` và `bytes` **tính sau khi chép**, nên một bản sao bị sửa sẽ lệch chỉ số.
+
+## L4. Changes
+
+| Path | Op | Sau |
+| --- | --- | --- |
+| `evidence/audits/` | 4 CREATE | 19 file; `README.md` = `4e527ba0846c7f0f129256ccad58c32cbc04d7017275dc720769da359be9905d` (6558) |
+| `evidence/coordination/` | 5 CREATE + 1 REPLACE (`coordinator-ledger.md`) | 31 file; `README.md` = `907fc734411ce70f87c41c6ab193b59217aba2fe2e24391fda29ee365cd8755c` (9445) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `e45f49585634ac40f76645c6caa60ee6aa7e9cc05af268a72bcbc61759aceda1` → *(file này)* |
+
+`sha256`/`bytes` của **từng** bản sao nằm trong hai README, không lặp lại ở đây.
+
+Không file nào của `precode/` đổi ở gói này: `baseline.json` (`e0405a1b…`), `decision-register.md` (`1883fec3…`), `requirements.csv` (`fbe59d0e…`), `owner-decisions.md`, `owner-decision-request.md`, `adr/*` giữ nguyên giá trị FIX11. `agent_profile/registry.json` không đổi. `precode/source/*` không sửa; rehash sau khi xong khớp pin. Không chạm `contracts/`, `acceptance/`, `agent-tasks/`, `precode/review.md`, `precode/README.md`, handoff gói khác. **Không sửa một byte nào trong scratchpad nguồn.** Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+## L5. Evidence
+
+- **Chép và kiểm:** ghi lại `sha256` nguồn **trước** khi chép (`src_fix12.sha`), `cp -p` 10 file, rồi `cmp` **toàn bộ** 47 bản sao của cả hai thư mục (không chỉ 10 file mới) — **47/47 byte-identical**. Kiểm lại lần thứ hai trước handoff.
+- **`validate.py`:** **exit code 0**, **259 assertion, 259 PASS, 0 FAIL**, chạy 2026-09-07T05:34Z. Không assertion nào đổi: gói packaging không chạm file mà `EV-PC00-01..08` kiểm; chạy lại để chứng minh **không có hồi quy**.
+- Tất cả là `SELF_VALIDATION`, producer `worker-W1`.
+- **`NOT_RUN`:** không có audit độc lập nào cho chính hai thư mục này; E1–E4 vẫn `NOT_RUN`. Bản sao giống nguồn **không** chứng minh nội dung của chúng đúng — chỉ chứng minh chúng chưa bị sửa.
+
+## L6. Unresolved
+
+Gói này không phát sinh CR mới. Còn mở: `CR-PC00-15` (W7 re-pin; `baseline.json` `e0405a1b…`, `decision-register.md` `1883fec3…`, `requirements.csv` `fbe59d0e…`), `CR-PC00-16` (`ADR-0006` giữ tên file cũ), `CR-PC00-17` (18 card viết lại §3/§8 theo stack B; `precode/README.md` còn mô tả cây thư mục theo A), `CR-PC00-13`, `CR-PC00-06`, và `REQ-OQ03` vẫn `OWNER_DECISION_REQUIRED`.
+
+**Một quan sát.** Sau gói này, hai thư mục lưu trữ đã bắt kịp epoch cuối được audit. Nếu còn epoch nào nữa thì chúng lại tụt hậu, và mỗi lần bắt kịp là một lần ghi đè `coordinator-ledger.md`. Nếu Coordinator dự kiến còn nhiều vòng, nên chốt một quy ước: hoặc ledger được đánh phiên bản theo epoch (`coordinator-ledger-e9.md`), hoặc chấp nhận rằng chỉ bản mới nhất được giữ và lịch sử nằm trong git. Hiện tại tôi theo cách thứ hai vì packet nói "replace", và ghi rõ hash bản bị thay trong README.
+
+## L7. Trạng thái bàn giao (FIX12)
+
+- **next actor:** `Coordinator` — rehash hai README; nếu có epoch mới, đưa `evidence/audits/` và `evidence/coordination/` vào với role `EVIDENCE`.
+- **lease_released_at (UTC):** 2026-09-07T05:36Z. `LEASE-PC00-e13` (fencing 13) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 14.
+- **Claim:** `DRAFT_FOR_REVIEW` cho gói này. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0 theo `E0-20260907T044549Z`; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.

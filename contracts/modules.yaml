@@ -3,7 +3,7 @@
 
 contract_id: CT-arch-modules
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: architecture owner
 source_refs:
   - SRC-SPEC §6.1
@@ -57,7 +57,15 @@ scope: >
 verification: >
   E0 self-validation: YAML parse + script kiểm chéo với contracts/ports.yaml (operation tồn tại hai chiều, module
   tồn tại, không trùng operation_id, mọi forbidden edge có lý do, đủ 10 denied case). Không có evidence E1–E4.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratification_note_vi: >
+  Owner phê chuẩn B01–B17 ngày 2026-09-07 (OD-20260907-01, authority AUTH-OWNER-20260907-02).
+  A2-R4 tuyên bố phạm vi "Boundaries and rights" đủ điều kiện CONTRACT_READY khi có phê chuẩn.
+  `CONTRACT_READY` khẳng định **bộ hợp đồng đủ trường, không còn quyết định chặn, ví dụ hợp lệ và
+  bất hợp lệ đã được kiểm** (SRC-PLAN §2) — nó **không** khẳng định gì về runtime: E1–E4 vẫn NOT_RUN,
+  chưa có code, chưa có probe. Các mục còn phụ thuộc KC mang `kc_dependency` riêng và không hạ trần
+  của file.
 
 default_deny:
   rule_vi: >
@@ -476,7 +484,11 @@ modules:
       (1) chỉ hai operation này, (2) chỉ thao tác **xóa** — không sửa, không tạo, (3) phạm vi giữ lại được liệt kê
       tường minh trong contracts/ports.yaml (`preserved_vi`). Danh sách bảng cascade cuối cùng do PC02 chốt
       (CR-PC01-05); quy trình vận hành `maintenance` do PC08 chốt.
-    status: PROVISIONAL
+    status: ACCEPTED
+    ratification_ref: OD-20260907-01
+    ratification_note_vi: >
+      OD-20260907-01 mục 24 chốt phạm vi `data.purge_all` (chỉ dữ liệu nghiên cứu), nên module này không còn bị
+      chặn. Ngoại lệ repository-scope của nó giữ nguyên như mô tả ở `cross_scope_note_vi`.
     audit_refs: [F-A1R1-04, R-04]
 
   - id: MOD-data-store
@@ -1011,7 +1023,7 @@ denied_cases:
     forbidden_edge_ref: FE-16
     invariant_refs: [I11]
     scenario_refs: [SC17, SC49]
-    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+    note_vi: "CAPABILITY_DENIED đã được đăng ký trong contracts/errors.yaml; CR-PC01-01 khép lại."
 
   - id: NC-05
     case_vi: Collector ghi SQLite
@@ -1025,7 +1037,7 @@ denied_cases:
     forbidden_edge_ref: FE-05
     invariant_refs: [I01, I02]
     scenario_refs: [SC21, SC49]
-    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+    note_vi: "CAPABILITY_DENIED đã được đăng ký trong contracts/errors.yaml; CR-PC01-01 khép lại."
 
   - id: NC-06
     case_vi: Telegram adapter đổi cấu hình
@@ -1056,7 +1068,7 @@ denied_cases:
     forbidden_edge_ref: FE-19
     invariant_refs: [I11]
     scenario_refs: [SC17, SC49]
-    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+    note_vi: "CAPABILITY_DENIED đã được đăng ký trong contracts/errors.yaml; CR-PC01-01 khép lại."
 
   - id: NC-08
     case_vi: Research connector điều khiển Chrome
@@ -1084,7 +1096,7 @@ denied_cases:
       sang phục vụ `FE-20`.
     invariant_refs: [I11]
     scenario_refs: [SC11, SC49]
-    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+    note_vi: "CAPABILITY_DENIED đã được đăng ký trong contracts/errors.yaml; CR-PC01-01 khép lại."
 
   - id: NC-09
     case_vi: Scheduler gửi digest
@@ -1607,35 +1619,42 @@ mutation_ownership:
 topology_decisions:
   - id: TD-01
     decision_vi: "D08 — Collector không ghi trực tiếp SQLite; đẩy qua API có xác thực."
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B12, ADR-0001]
     realized_by: [ingest.submit_batch, ingest.commit_checkpoint, FE-05, NC-05]
   - id: TD-02
     decision_vi: "D42 — Analysis worker (bước LLM) chạy trên máy cá nhân, cùng chỗ với collector."
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B12, ADR-0001]
     realized_by: [MOD-analysis-worker, MOD-ai-adapter, analysis.claim_task]
   - id: TD-03
     decision_vi: "D50 — Model embedding chạy ở server, chỉ local, không API/CLI."
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B12, ADR-0001]
     realized_by: [MOD-embedding-service, embedding.generate_vectors, FE-22]
   - id: TD-04
     decision_vi: "D09 — Chrome profile riêng của dự án, không dùng profile mặc định."
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B12, ADR-0001]
-    blocking_note_vi: "REQ-OQ01 chặn M0; PC01 chỉ ghi nhận topology, không tự promote D09 sang XN."
+    blocking_note_vi: >
+      REQ-OQ01 **đã được trả lời** (OD-20260907-01 mục 1: profile riêng của dự án); D09 ĐX → XN và M0 không còn bị
+      chặn bởi quyết định này. Probe A1 vẫn `NOT_RUN` — đó là chuyện khác: quyết định đã có, bằng chứng thì chưa.
     realized_by: [EXT-chrome-profile, MOD-x-collector]
   - id: TD-05
     decision_vi: >
       Đường vào của analysis là **task từ server sau ingest commit**; edge collector → analysis worker của
       SRC-SPEC §6.2 bị gỡ.
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B12, ADR-0001]
     realized_by: [analysis.enqueue_tasks, analysis.get_task_input, FE-07, FE-08]
   - id: TD-06
@@ -1643,22 +1662,26 @@ topology_decisions:
       Secret theo từng task: worker chỉ nhận credential ngắn hạn của provider gắn với task đang giữ lease; adapter
       CLI/ACP chạy với tool/file/network bị khóa ngoài inference; provider không kiểm chứng được cô lập thì adapter
       giữ trạng thái disabled.
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_owner: Owner
+    ratification_ref: OD-20260907-01
     decision_refs: [B13]
     realized_by: [secret.issue_task_credential, secret.revoke_task_credential, ai.run_inference_task, NC-04, NC-07]
 
 unresolved_refs:
   - id: PROV-PC01-01
     topic_vi: Mã lỗi CAPABILITY_DENIED cho từ chối ở mức capability tiến trình/mạng/tool.
-    status: PROVISIONAL
+    status: ACCEPTED
+    resolution_vi: "Đã đăng ký trong contracts/errors.yaml (28 mã); CR-PC01-01 khép lại."
     change_request: CR-PC01-01
     target_package: PC03 (contracts/errors.yaml)
   - id: PROV-PC01-02
     topic_vi: >
       Hủy liên kết Telegram đặt là **hành động trong app** (telegram.unlink), không phải lệnh chat thứ tư — dung hòa
       D37 (ĐX) với D36 (XN, đúng ba lệnh) và B10.
-    status: PROVISIONAL
+    status: ACCEPTED
+    resolution_vi: "OD-20260907-01 mục 13: B10 (a) — resume trong app, đúng ba lệnh, unlink là hành động app."
+    ratification_ref: OD-20260907-01
     change_request: CR-PC01-02
     target_package: PC07 (contracts/telegram/commands.yaml)
   - id: PROV-PC01-03
@@ -1673,8 +1696,13 @@ unresolved_refs:
       khi `storage.health = maintenance`, thu hồi lease trước khi xóa, không tự resume dispatcher.
       Phần còn **chưa** giải: `data.purge_all.exclusions_vi` — "toàn bộ" loại trừ những gì (settings, secrets,
       credential đăng nhập, telegram_link, schema_migration). PC01 đề xuất danh sách đó nhưng **không** tự quyết.
-    status: OWNER_DECISION_REQUIRED
-    owner_decision_scope_vi: "Chỉ danh sách loại trừ của data.purge_all; hai operation còn lại không bị chặn."
+    status: ACCEPTED
+    resolution_vi: >
+      OD-20260907-01 mục 24: phạm vi `data.purge_all` là **chỉ dữ liệu nghiên cứu**. Ba tập bảng theo ruling
+      CR-PC05-06 + CR-PC05-07 (`PURGE-LIST-ruling.md`), phủ đúng 60 entity: **xóa 37**,
+      **giữ 21** (`owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`), **không bao giờ xóa 2** (`schema_migration`, `data_deletion_audit`).
+      **Backup không bị xóa.** Không còn phần nào của REQ-S7.3-05 ở trạng thái OWNER_DECISION_REQUIRED.
+    ratification_ref: OD-20260907-01
     target_package: PC02 (cascade/referential integrity) · PC08 (quy trình maintenance) · PC09 (scenario)
     audit_refs: [F-A1R1-04, R-04]
 
@@ -1684,12 +1712,21 @@ unresolved_refs:
       **ngoại lệ duy nhất** với quy tắc repository port theo phạm vi bảng (DC-SRV-01), giới hạn ở thao tác xóa.
       Nếu Owner/Coordinator muốn đặt hai operation này vào một module đã có (ví dụ MOD-data-store) thì cần packet
       sửa, vì điều đó thay đổi câu "data-store chỉ là nơi lưu".
-    status: PROVISIONAL
+    status: ACCEPTED
+    resolution_vi: >
+      Module được giữ; OD-20260907-01 mục 24 chốt phạm vi operation nó sở hữu. Đây là quyết định kiến trúc trong
+      phạm vi ủy quyền, không phải một câu hỏi còn treo với Owner.
+    ratification_ref: OD-20260907-01
     target_package: PC08
     audit_refs: [F-A1R1-04, R-04]
   - id: PROV-PC01-04
     topic_vi: >
       MOD-backup-cli được đặt ra để tách actor "backup operator" khỏi session owner; spec không mô tả giao diện
       backup. Nếu Owner muốn thao tác backup trong app thì phải thêm edge và auth scope mới.
-    status: PROVISIONAL
+    status: ACCEPTED
+    resolution_vi: >
+      OD-20260907-01 mục 14 phê chuẩn B11 với backup/restore là quy trình có khóa side effect và operator là vai
+      riêng; MOD-backup-cli giữ nguyên. Việc có thêm giao diện backup trong app hay không là một yêu cầu **mới**,
+      không phải một quyết định còn treo.
+    ratification_ref: OD-20260907-01
     target_package: PC08

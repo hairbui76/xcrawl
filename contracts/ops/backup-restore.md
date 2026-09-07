@@ -283,11 +283,40 @@ Thuộc PC03 (`storage.yaml` `T-ST-01`/`T-ST-02`); phần vận hành liên quan
 - Hệ quả phải nói với Owner: sau khi purge, dữ liệu vẫn tồn tại trong các bản backup cho tới khi những bản đó bị
   xóa theo retention hoặc bị xóa thủ công. Nếu ý định của Owner là "xóa hẳn", phải xóa cả artifact backup — đó là
   một thao tác riêng, có chủ đích, ghi vào `secret_audit`/vận hành.
-- Danh sách **loại trừ** của `data.purge_all` vẫn là **`OWNER_DECISION_REQUIRED`** (`PROV-PC01-03`). File này
-  không giải quyết nó.
+- Danh sách giữ lại của `data.purge_all` **đã chốt** (OD-20260907-01 mục 24) — xem §8.1 ngay dưới.
 - `data.purge_all` chỉ chạy ở `storage.health = maintenance`; `maintenance` cũng là cửa sổ khuyến nghị để tạo
   snapshot **trước** khi purge — nhưng đó là lựa chọn của Operator, không phải bước tự động (một snapshot tự động
   trước purge sẽ mâu thuẫn với ý định "xóa hẳn").
+
+
+## 8.1 Phạm vi `data.purge_all` — **ĐÃ CHỐT** (OD-20260907-01 mục 24)
+
+Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`. Ba tập phủ đúng 60 entity, không chồng lấn:
+
+- **Xóa — 37 bảng:** post/work và liên kết, identity alias/conflict/merge audit,
+  work_label, analysis và các bảng phụ thuộc, embedding_generation, tag_vector, report/report_item,
+  emerging_direction, các ledger coverage/pending/backfill/first_announced/rescan, Saved, delivery và outbox,
+  run/assignment/assignment_lease/checkpoint/ingest_receipt, source_fetch_log, telegram_update_log, và
+  `telegram_link_attempt` (bộ đếm rate-limit — dữ liệu vận hành, không phải cấu hình; CR-PC05-07).
+- **Giữ lại theo quyết định của Owner — 21 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`.
+- **Không bao giờ xóa — 2 bảng:** `schema_migration`, `data_deletion_audit`. `schema_migration` là cấu trúc kho; `data_deletion_audit` giữ vĩnh viễn
+  theo tham số PC08 đã phê chuẩn, và chính lần purge này ghi thêm một hàng vào đó.
+
+**Backup KHÔNG bị xóa.** `backup_snapshot`, `backup_manifest`, `restore_record` nằm trong nhóm giữ, và artifact
+backup trên đĩa cũng không bị chạm. Hệ quả phải nói với người dùng **trong chính hộp thoại xác nhận**:
+
+> Dữ liệu vừa xóa **vẫn còn trong các bản backup** cho tới khi những bản đó hết hạn theo retention (§2) hoặc bị
+> xóa bằng tay. Nếu ý định là xóa hẳn, phải xóa cả artifact backup — đó là một thao tác riêng.
+
+Lý do Owner giữ nhóm trên: xóa credential đăng nhập sẽ khóa chính chủ nhà ra ngoài app (REQ-D05 cấm signup và cấm
+quên-mật-khẩu tự động); xóa tag là xóa **subscription** của người dùng (lớp 2 của SRC-SPEC §8.1), không phải dữ
+liệu nghiên cứu; xóa `worker_registration` sẽ buộc đăng ký lại collector dù bảng đó không chứa dữ liệu nghiên cứu
+nào; xóa cấu hình biến "xóa dữ liệu" thành "cài lại từ đầu". Sau purge, hệ thống vẫn đăng nhập được, vẫn có tag,
+lịch, provider và collector đã đăng ký để chạy đợt kế tiếp.
+
+**Lịch sử:** trước ratification, phạm vi này là `OWNER_DECISION_REQUIRED` (`PROV-PC01-03` / `PROV-PC00-01`); và
+bản `TXN-purge-all` đầu tiên tự mâu thuẫn (`schedule_occurrence` ở cả hai tập, `worker_registration` và
+`data_deletion_audit` bị xếp nhầm vào nhóm xóa) — sửa bằng ruling CR-PC05-06.
 
 ## 9. "Tôi khôi phục về được thời điểm nào, và mất gì?"
 

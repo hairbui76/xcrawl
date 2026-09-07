@@ -3,8 +3,8 @@
 # Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
 
 contract_id: CT-state-run
-version: 0.5.0
-status: draft
+version: 0.6.0
+status: accepted
 owner_role: workflow contract owner
 source_refs:
   - SRC-PLAN §5.1
@@ -82,7 +82,38 @@ verification: >-
   enum đã khai; mọi event có ≥1 hàng; mọi trạng thái không terminal có ≥1 hàng đi ra; trạng thái terminal không
   có hàng đi ra; reachability từ `queued` tới mọi trạng thái; mọi `error_codes` tồn tại trong contracts/errors.yaml;
   mọi `operation_id` được trích dẫn tồn tại trong contracts/ports.yaml.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratification:
+  authority: AUTH-OWNER-20260907-02
+  decision_id: OD-20260907-01
+  ratified_at: 2026-09-07
+  evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W — Owner phỏng vấn từng mục; bản ghi ở scratchpad/packets/OWNER-DECISIONS-20260907.md"
+  scope_eligibility: "A2-R4 tuyên bố phạm vi \"Workflow and state\" đủ điều kiện CONTRACT_READY."
+  accepted_vi: >-
+    Owner đã phê chuẩn B01–B17 và các amendment tương ứng. Mọi quyết định trước đây mang nhãn PROVISIONAL trong
+    file này mà thuộc danh sách đó nay là `ACCEPTED (OD-20260907-01)`. Cụ thể với gói này: AMD-B02 (mô hình bốn
+    trường của run), AMD-B03 (`delivery.state = unknown`, không tự retry), AMD-B05 (không ingest trùng theo x_post_id),
+    AMD-B07 (analysis key + generation), AMD-B08 (một IANA timezone; giá trị `Asia/Ho_Chi_Minh` được xác nhận),
+    AMD-B10 (resume chỉ trong app), AMD-B11 (snapshot nhất quán + khóa side effect), AMD-B17 (chỉ mục đã chọn,
+    partial kèm pending list), cùng hai thay đổi kỹ thuật: mã `CSRF_REJECTED` và resume-từ-`blocked` có
+    `unblock_reason` bắt buộc. Một lần tự chạy lại từ `unknown_attempt` cũng đã được Owner chấp nhận.
+  measurement_pending_vi: >-
+    Owner chấp nhận các giá trị dưới đây là GIÁ TRỊ LÀM VIỆC, nhưng chúng vẫn cần đo trước khi được gọi là
+    đúng: giới hạn mỗi đợt 200 bài / 1800 giây (REQ-OQ05, đo sau M0). Chúng KHÔNG hạ trần của file: một con số
+    đã được Owner chấp nhận và có đường đo rõ ràng thì hợp đồng vẫn kiểm được. Từng mục mang cờ
+    `measurement_pending` tại chỗ.
+  still_kc_vi: >-
+    KHÔNG mục nào ở đây khiến file mất tư cách CONTRACT_READY, nhưng phải nói ra: nhịp gọi và yêu cầu định danh
+    thật của arXiv/OpenAlex vẫn là `KC` (REQ-A6) — bốn giá trị trong `research_connector_rate_limit` cố ý để
+    trống, chỉ có một sàn an toàn tự đặt. Module research connector do đó KHÔNG được coi là CONTRACT_READY;
+    đó là phạm vi của PC05, không phải của file này. Ngoài ra REQ-A1/A5/A7 vẫn KC và mọi bằng chứng runtime
+    (E1–E4) vẫn `NOT_RUN`.
+  tuning_values_vi: >-
+    Các con số kỹ thuật thuần túy (lease TTL, heartbeat, backoff, timeout inference, probe storage) vẫn mang
+    `status: PROVISIONAL`. Chúng nằm trong phạm vi ủy quyền kỹ thuật, đổi được bằng cấu hình mà không cần
+    amendment, và KHÔNG phải quyết định sản phẩm chờ Owner. Nhãn PROVISIONAL ở đó nghĩa là "chưa hiệu chỉnh
+    bằng dữ liệu thật", không phải "chưa được phê chuẩn".
 
 # ---------------------------------------------------------------------------
 # 1. Enum (SRC-PLAN §8.1, AMD-B02 — dùng nguyên văn)
@@ -898,8 +929,13 @@ schedule_model:
   timezone:
     setting_key: schedule_timezone
     value: "Asia/Ho_Chi_Minh"
-    status: PROVISIONAL
-    owner_confirmation_required: true
+    status: "ACCEPTED (OD-20260907-01)"
+    owner_confirmation_required: false
+    ratified_vi: >-
+      Owner XÁC NHẬN `Asia/Ho_Chi_Minh` ngày 2026-09-07 (OD-20260907-01 mục 4). Giá trị này KHÔNG còn là giá
+      trị tạm. Hệ quả: `Asia/Ho_Chi_Minh` hiện không có DST, nên hai quy tắc DST-01/DST-02 dưới đây ĐÚNG nhưng
+      CHƯA kích hoạt với cấu hình hiện tại — chúng được giữ vì đổi timezone là đổi cấu hình, không phải đổi
+      hợp đồng, và một quy tắc DST chỉ viết khi cần sẽ được viết vội.
     rule_vi: >-
       MỘT IANA timezone duy nhất lưu trong `settings`, do Owner xác nhận (AMD-B08 nguyên văn: "Hệ thống lưu một
       IANA timezone duy nhất trong Settings, do Owner xác nhận (giá trị tạm: `Asia/Ho_Chi_Minh`)"). Timezone chỉ
@@ -912,7 +948,7 @@ schedule_model:
       - "So sánh hai timestamp mà không quy về UTC."
       - "Dùng thời gian của worker làm `discovered_at` (SRC-PLAN §9.1: dùng giờ server chấp nhận lần đầu)."
   slots:
-    values_ref: "contracts/retry-policy.yaml §budgets.schedule_slots_default (08:00, 20:00 local, PROVISIONAL, REQ-OQ06)"
+    values_ref: "contracts/retry-policy.yaml §budgets.schedule_slots_default (08:00, 20:00 local — ACCEPTED (OD-20260907-01) mục 20)"
   earliest_run_semantics:
     decision_refs: [REQ-D13]
     rule_vi: >-

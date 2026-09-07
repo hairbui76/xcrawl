@@ -317,13 +317,18 @@ Phần thuộc file này:
 
 - Cụm từ xác nhận được lưu dưới dạng **hash** (`purge_challenge.phrase_hash`), không lưu bản rõ; tối đa một
   challenge hiệu lực tại một thời điểm (PC02 `ux_purge_challenge_active`).
-- Danh sách **loại trừ** — `settings`, `secret_ref` / `task_credential` / `secret_audit`, `owner` + credential đăng
-  nhập, `telegram_link`, `schema_migration` — vẫn ở trạng thái **`OWNER_DECISION_REQUIRED`**
-  (`PROV-PC01-03`). File này **không** giải quyết nó; nó chỉ ghi hệ quả vận hành: nếu Owner quyết định purge **có**
-  xóa credential đăng nhập thì phải có một đường đặt lại credential tại chỗ, nếu không chủ nhà tự khóa mình ra
-  ngoài app.
-- Purge **không** chạm tới backup artifact đã tạo. Xóa dữ liệu khỏi các bản backup cũ là thao tác riêng — xem
-  `backup-restore.md` §8 — bảng `data_deletion_audit` của PC02 ghi rõ đây là điều nó **không** bảo đảm.
+- Phạm vi **đã chốt** (OD-20260907-01 mục 24). Ba tập bảng theo ruling CR-PC05-06 + CR-PC05-07 (`PURGE-LIST-ruling.md`),
+  phủ đúng 60 entity và không chồng lấn: **xóa 37** bảng dữ liệu nghiên cứu và vận hành;
+  **giữ 21**: `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`; **không bao giờ xóa 2**: `schema_migration`, `data_deletion_audit`.
+  Nhóm secret nằm trong nhóm giữ: `secret_ref`, `task_credential`, `secret_audit` **được giữ** — purge **không**
+  làm mất API key, và `owner` + `session` cũng được giữ nên chủ nhà **không** tự khóa mình ra ngoài app. Đây chính
+  là rủi ro mà bản trước của mục này nêu ra; Owner đã chọn phương án loại bỏ nó.
+- Nhật ký `secret_audit` được giữ **có chủ đích**: xóa audit cùng lúc với xóa dữ liệu sẽ làm mất bằng chứng kiểm
+  toán về việc ai đã chạm secret (I11).
+- Purge **không** chạm tới backup artifact đã tạo (`backup_snapshot`, `backup_manifest`, `restore_record` đều
+  nằm trong nhóm giữ lại). Hộp thoại xác nhận **phải nói rõ** rằng dữ liệu vừa xóa **vẫn còn trong các bản
+  backup** cho tới khi chúng hết hạn theo retention hoặc bị xóa bằng tay; xóa hẳn là một thao tác riêng — xem
+  `backup-restore.md` §8 và §8.1.
 
 ## 10. Những gì file này **không** quyết định
 

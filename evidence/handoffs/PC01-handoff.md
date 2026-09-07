@@ -1277,3 +1277,188 @@ tạo thêm một vi phạm**. Cần W1 định nghĩa `SC57`, hoặc `E0-07` b�
 | `E0-07` / `SC57` — ngoài phạm vi PC01; và cơ chế "báo lỗi tạo thêm lỗi" đã lặp lại lần thứ hai. Đề nghị `E0-07` loại trừ `evidence/handoffs/**` khỏi tập quét citation, hoặc yêu cầu handoff trích id chưa định nghĩa dưới dạng không-token. | OPEN |
 | Bài học lặp lại | Đây là lần thứ ba một quy tắc do PC01 tự viết bị chính PC01 áp dụng thiếu (`FE-20`/`FE-21`, `NC-28`, nay `event_type`). Cả ba lần, cách phát hiện là **một phép kiểm so nội dung giữa hai artefact**, không phải đọc lại. Gate nay kiểm cả ba mặt: cạnh↔case↔event, callee-ownership, và event_type. | — |
 | Kế thừa | `PROV-PC01-01…-06`, `CR-PC01-05/-06/-11`. Mọi fixture vẫn `NOT_RUN`. | — |
+
+---
+
+# ADDENDUM — PKT-PC01-FIX13 (ratification → CONTRACT_READY)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC01-FIX13` · authority `AUTH-COORD-PC01-FIX13` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC01-e14` (fencing 14) |
+| expires_at | 2026-09-08T00:00Z |
+| trigger | Owner phê chuẩn B01–B17 (`OD-20260907-01`); A2-R4 tuyên bố phạm vi "Boundaries and rights" đủ điều kiện |
+| status | `DONE_WITH_CONCERNS` · completion_claim **`CONTRACT_READY`** (lần đầu vượt `DRAFT_FOR_REVIEW`) |
+| started/finished (UTC) | 2026-09-07T04:15Z / 2026-09-07T04:19Z |
+| next actor | `Coordinator` · lease_released_at 2026-09-07T04:19Z |
+
+## N.1 Hash mới — **cả bốn file card-pinned**
+
+| Path | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- |
+| `contracts/modules.yaml` | `11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7` / 105642 | **`6092c061fe72f51d27b0f11196493d5efe8e8aece11722ea0b824898d1ec1315`** / 108266 |
+| `contracts/capabilities.yaml` | `fae5891cff5ff25757f168d8182111fa4fc6b49f6b851ac7cc07105fef952cf7` / 45672 | **`17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7`** / 47177 |
+| `contracts/ports.yaml` | `93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e` / 126182 | **`65cf636f86dccea83563026df1f7e0ce9b5c5231601001227aca078e930e2ca5`** / 127754 |
+| `contracts/ops/deployment.md` | `7e1c03776b4c8be20f596a0317ea1c79429cf4ecaa78fadc1f0ec3e5158088f5` / 17759 | **`33591b91e3fdee6f34088d85dfd0cb0343680f0888e4ef3dd3bcb6d6decbfa16`** / 18997 |
+| `evidence/handoffs/PC01-handoff.md` | `96773e7c81ae7d52294a4a0c808840ac5ad70f1a49b014cc43d5a912439721a7` / 106203 | ghi ở thông điệp bàn giao |
+
+Sources không đổi (04:15Z và 04:18Z).
+
+## N.2 Trần được nâng — và nó **không** có nghĩa gì
+
+Cả bốn file: `status: draft → accepted`, `claim_ceiling: DRAFT_FOR_REVIEW → CONTRACT_READY`,
+`ratification_ref: OD-20260907-01`, kèm `ratification_note_vi` nói thẳng điều mà nhãn này **không** khẳng định:
+
+> `CONTRACT_READY` = hợp đồng đủ trường, không còn quyết định chặn, ví dụ hợp lệ và bất hợp lệ đã được kiểm
+> (SRC-PLAN §2). Nó **không** nói gì về runtime: E1–E4 vẫn `NOT_RUN`, chưa có code, chưa có probe, chưa có drill.
+
+Ghi câu đó vào **trong** file là có chủ đích: một người đọc `accepted` sau này rất dễ hiểu thành "đã chạy được".
+
+Từ PROVISIONAL sang ACCEPTED: 6 `topology_decisions` (TD-01…TD-06 — D08/D42/D50/D09 và việc gỡ cạnh COL→AW),
+5 `unresolved_refs` (`PROV-PC01-01/-02/-03/-04/-06`), `linking_exception CAP-B09`, ba mã lỗi
+(`CSRF_REJECTED`, `CAPABILITY_DENIED`, `CONFLICT` — cả ba đã có trong `contracts/errors.yaml`),
+`MOD-data-admin-service`, và `save.export` (hoãn P1 do Owner xác nhận). Sau khi sửa, chuỗi "PROVISIONAL" xuất hiện
+**0 lần** trong cả bốn file.
+
+## N.3 `data.purge_all` — phạm vi đã chốt
+
+`exclusions_status: OWNER_DECISION_REQUIRED → ACCEPTED`, và danh sách được viết ra thay vì mô tả bằng đề xuất
+(OD-20260907-01 mục 24):
+
+- **Bị xóa (chỉ dữ liệu nghiên cứu):** post, work, analysis, vector/embedding, work_label, report + report_item,
+  emerging_direction, Saved (`saved_item` + `saved_snapshot`), delivery, các ledger coverage/backfill/pending/
+  first_announced, run và assignment.
+- **Giữ lại:** `owner` + credential đăng nhập và `session`; `secret_ref`/`task_credential`/`secret_audit`;
+  `telegram_link`; `provider_config` + `provider_test_result`; `settings` (gồm lịch); `schema_migration`;
+  và bộ `tag`/`tag_alias`/`tag_exclusion`/`tag_config_version`.
+- **Artifact backup không bị xóa** — xóa chúng là thao tác vận hành riêng.
+
+Kèm `exclusions_rationale_vi` ghi lý do của Owner: xóa credential đăng nhập sẽ khóa chính chủ nhà ra ngoài app
+(REQ-D05 cấm signup và cấm quên-mật-khẩu tự động), và xóa cấu hình biến "xóa dữ liệu" thành "gỡ cài đặt". Sau
+purge, hệ thống vẫn đăng nhập được và vẫn đủ cấu hình để chạy đợt mới.
+
+## N.4 Một sự thật đã lỗi thời được sửa
+
+`deployment.md` §11 vẫn ghi *"stack là Option A PROVISIONAL"*. Owner chọn **phương án B — worker Python + web
+TypeScript** (mục 3). Đã sửa, kèm câu quan trọng cho người đọc: **ranh giới module và hợp đồng trong file này
+không đổi theo lựa chọn đó** — chúng độc lập framework từ đầu; chỉ đường dẫn build/test trong task card của PC10
+phải viết lại. Nếu không sửa, một file mang nhãn `accepted` sẽ khẳng định sai một quyết định vừa được phê chuẩn.
+
+## N.5 Phụ thuộc KC còn lại — có ghi, không hạ trần
+
+| Mục | `kc_dependency` |
+| --- | --- |
+| `capabilities.yaml` → `ai_providers` trong registration payload | REQ-A5 / REQ-S13.2-02: điều khoản từng nhà cho CLI/ACP phải đọc, và cô lập tool/file/network phải kiểm chứng, **trước** khi bật adapter. `policy_reviewed`/`isolation_verified` mặc định false ⇒ adapter `disabled`. AC-16 vẫn **BLOCKED** cho tới khi có probe (OD mục 15) |
+| `deployment.md` §6 bốn ngưỡng readiness (30/90/900/1800 s) | REQ-A1: hiệu chỉnh sau probe A1 (SP1). Ghi rõ **provenance**: đây là tham số cấu hình do PC01 chọn, **chưa bao giờ** nằm trong bản hỏi Owner — nên `OD-20260907-01` không nói gì về chúng, và không cần nói |
+| `deployment.md` §3 ba cổng | Mặc định cấu hình, không phải hằng số nghiệp vụ (binding loopback của Chrome vẫn là ràng buộc bảo mật, không đổi) |
+
+Cả ba là phụ thuộc **của một mục**, không phải của file: hợp đồng đã đủ trường, có số, có đơn vị, có lý do.
+
+## N.6 Gate
+
+| Gate | Kết quả |
+| --- | --- |
+| `…/w2/validate_pc01_v2.py` | **exit 0**, `== NO FAILURES ==`; set-comparison entity↔owner: forward **0**, mismatch **0**, reverse **0** |
+| `…/w2/gate_fixtures.py` (bijection + callee-ownership + event_type) | **exit 0** — 36 · 36 · 36, violations **0** |
+| `…/w2/scan_tokens.py` | **exit 0** — 0 token không giải được |
+| `evidence/tools/e0_check.py` | `E0-08` 142/0, `E0-10a` 36/0, `E0-10b` 36/0, `E0-14` 448/0 — **PASS**. Tổng: PASS 16, FAIL 3 |
+
+**`E0-12-forbidden-strings` FAIL 37 là do bộ kiểm còn mang luật cũ, không phải do file sai.** Oracle của nó là
+baseline §3 *trước* phê chuẩn: "không `ACCEPTED`, không claim trên `DRAFT_FOR_REVIEW` trong phiên này".
+`AUTH-OWNER-20260907-02` đã thay đổi chính luật đó cho bốn phạm vi A2-R4 nêu tên, và packet này **chỉ thị** đặt
+`CONTRACT_READY`/`accepted`. Vi phạm rơi vào cả `contracts/data/entities.yaml` của PC02 — tức mọi gói đã ratify
+đều bị. → `CR-PC01-13` gửi W6: `E0-12` phải đọc trần từ `ratification_ref`/authority thay vì hằng số.
+Tôi **không** hạ trần để làm gate xanh: điều đó sẽ mâu thuẫn với chỉ thị của packet và với quyết định của Owner.
+
+`E0-06`/`E0-07` FAIL nằm ở `evidence/coordination/*` và handoff của W1 (`REQ-S8.4-01`, `SC57`) — ngoài phạm vi
+PC01. Một trong các lần trích `SC57` là **báo cáo của chính tôi** ở addendum trước; đây là lần thứ ba cơ chế
+"báo lỗi tạo thêm lỗi" xuất hiện.
+
+## N.7 Concerns
+
+| ID | Nội dung | Trạng thái |
+| --- | --- | --- |
+| `CR-PC01-13` (mới → W6) | `E0-12` phải nhận biết ratification: đọc trần cho phép từ `ratification_ref`/authority của file, thay vì cấm cứng `ACCEPTED` và `CONTRACT_READY`. Hiện 37 vi phạm là **false positive** trên các file đã được Owner phê chuẩn. | OPEN |
+| **PC10 re-pin** | Cả bốn file đổi hash (§N.1). Ngoài ra task card của PC10 phải viết lại đường dẫn build/test cho **stack B** (OD mục 3) — hợp đồng không đổi, chỉ card đổi. | OPEN |
+| AC-16 vẫn BLOCKED | Không phải vì hợp đồng thiếu, mà vì cần probe CLI/ACP (`isolation_verified`, `policy_reviewed`). Ghi trong `kc_dependency`. | OPEN |
+| REQ-OQ03 | Provider/model vẫn `OWNER_DECISION_REQUIRED` (OD mục 21); chặn M3, **không** chặn phạm vi này. | OPEN |
+| Điều `CONTRACT_READY` **không** chứng minh | Chưa dòng code nào, chưa probe nào, chưa drill nào. 36 cạnh bị cấm vẫn `NOT_RUN`; 10 denied case vẫn chưa được thi hành lần nào. Nhãn nói về **hợp đồng**, không về **hệ thống**. | — |
+
+---
+
+# ADDENDUM — PKT-PC01-FIX14
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC01-FIX14` · authority `AUTH-OWNER-20260907-02` · lease `LEASE-PC01-e15` (fencing 15) |
+| expires_at | 2026-09-08T04:00Z |
+| trigger | `F-A2R5-04` (vị trí phạm vi của deployment.md) + `F-A2R5-01` (đồng bộ danh sách purge), correction `CR-PC05-06`/`CR-PC05-07` |
+| status | `DONE_WITH_CONCERNS` · completion_claim `CONTRACT_READY` |
+| started/finished (UTC) | 2026-09-07T05:05Z / 2026-09-07T05:13Z |
+| next actor | `Coordinator` · lease_released_at 2026-09-07T05:13Z |
+
+## O.1 Hash mới — **cả ba file card-pinned**
+
+| Path | Op | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `contracts/ops/deployment.md` | MODIFY | `33591b91e3fdee6f34088d85dfd0cb0343680f0888e4ef3dd3bcb6d6decbfa16` / 18997 | **`dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936`** / 19568 |
+| `contracts/ports.yaml` | MODIFY | `65cf636f86dccea83563026df1f7e0ce9b5c5231601001227aca078e930e2ca5` / 127754 | **`c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684`** / 128850 |
+| `contracts/modules.yaml` | MODIFY | `6092c061fe72f51d27b0f11196493d5efe8e8aece11722ea0b824898d1ec1315` / 108266 | **`cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457`** / 108721 |
+| `evidence/handoffs/PC01-handoff.md` | MODIFY (append) | `235375a7833174f147571c3ad3fad1e0d622b01ff50c05380633e9f85f2e9361` / 114993 | ghi ở thông điệp bàn giao |
+
+Sources không đổi (05:05Z và 05:12Z).
+
+## O.2 F-A2R5-04 — deployment.md thuộc phạm vi "Boundaries and rights"
+
+Header của `contracts/ops/deployment.md` nay mang hai trường **đọc được bằng máy**, thay cho một comment nguồn:
+
+```yaml
+scope_membership: "Boundaries and rights"
+scope_membership_ruling_vi: >
+  Coordinator ruling (post-A2-R5, F-A2R5-04): file này thuộc phạm vi 1 cùng modules.yaml, capabilities.yaml và
+  ports.yaml — vị trí chạy của module và định nghĩa readiness LÀ hợp đồng ranh giới, không phải tài liệu vận hành
+  phụ. Vì vậy nó được nâng trần cùng ba file kia và chịu cùng phép kiểm.
+```
+
+Đặt ở header là điều kiện để `E0-12` (sau khi W6 sửa theo `F-A2R5-03`) đọc được tư cách phạm vi thay vì phải suy
+đoán từ đường dẫn.
+
+## O.3 F-A2R5-01 — văn bản purge trong ports.yaml/modules.yaml khớp danh sách chuẩn
+
+Packet yêu cầu "verify … matches the 20-table list verbatim (fix if not)". Kiểm bằng script: **không khớp** —
+`ports.yaml` liệt kê `schema_migration` (không thuộc nhóm giữ) và thiếu bảy bảng (`telegram_link_code`,
+`schedule_occurrence`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`,
+`purge_challenge`). Đã sửa.
+
+Trong lúc sửa, phép đối chiếu phát hiện nguồn được chỉ định **tự mâu thuẫn**: `TXN-purge-all` của `entities.yaml`
+đặt `schedule_occurrence` ở **cả hai** tập và bỏ sót hai bảng, nên 60 entity không được phủ. Coordinator ra
+`CR-PC05-06` rồi `CR-PC05-07`. Bản cuối dùng trong cả `ports.yaml` và `modules.yaml`:
+
+- **xóa 37** · **giữ 21** · **không bao giờ xóa 2** (`schema_migration`, `data_deletion_audit`) — tổng **60**,
+  không chồng lấn, kiểm bằng script.
+- `worker_registration` chuyển sang nhóm **giữ**: đăng ký collector là **cấu hình**, không chứa dữ liệu nghiên
+  cứu; xóa nó buộc đăng ký lại collector mà chẳng xóa được gì thuộc phạm vi Owner muốn xóa.
+- `telegram_link_attempt` thuộc nhóm **xóa**: bộ đếm rate-limit là dữ liệu vận hành.
+
+`ports.yaml` nói rõ nguồn chuẩn là ruling, và rằng nó **sao chép** chứ không suy diễn lại.
+
+## O.4 Gate
+
+| Gate | Kết quả |
+| --- | --- |
+| `…/w2/validate_pc01_v2.py` | **exit 0**, `== NO FAILURES ==`; set-comparison entity↔owner 0/0/0 |
+| `…/w2/gate_fixtures.py` (bijection + callee-ownership + event_type) | **exit 0** — 36 · 36 · 36, violations 0 |
+| `…/w2/scan_tokens.py` | **exit 0** |
+| `…/w3/fixture_field_gate.py`, `…/w3/check_actor_edges_all.py` | **exit 0** cả hai |
+| `evidence/tools/e0_check.py` | `E0-10b` 36/0, `E0-14` 448/0; tổng PASS 16 / FAIL 3 |
+
+Ba FAIL đều **ngoài phạm vi PC01**: `E0-08` (14 vi phạm ở `acceptance/fixtures/identity/*` — W3 đang sửa header
+theo F-A2R5-04), `E0-12` (chưa có allowlist ratification — W6, `F-A2R5-03`), `E0-06`/`E0-07` (`REQ-S8.4-01` và
+`SC57` trong `evidence/coordination/*` và handoff của W1).
+
+## O.5 Concerns
+
+| Nội dung | Trạng thái |
+| --- | --- |
+| **PC10 re-pin**: ba file đổi hash (§O.1). | OPEN |
+| Cho tới khi W3 land `PKT-PC02-FIX11`, `entities.yaml` vẫn mang bản `TXN-purge-all` mâu thuẫn, còn `ports.yaml`/`modules.yaml` mang bản đã sửa. Lệch này là **có chủ đích**; sau khi W3 land nên chạy một phép so tập giữa hai nơi. | OPEN |
+| "Copy, do not re-derive" đúng về nguyên tắc nhưng nguồn được chỉ định lại sai — và thứ phát hiện ra là một **bất biến kiểm được** (ba tập phải phủ đúng 60 entity, không chồng lấn), không phải việc đọc kỹ. Một danh sách "sao chép nguyên văn" vẫn cần một bất biến như vậy. | — |

@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0001
 title: Topology và nơi chạy từng module
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B12]
 source_refs: [SRC-SPEC §3.1, SRC-SPEC §3.2, SRC-SPEC §6.1, SRC-SPEC §6.2, SRC-SPEC §6.4, SRC-PLAN §3, SRC-PLAN §6, SRC-PLAN §6.1]
 requirement_refs: [REQ-D06, REQ-D08, REQ-D09, REQ-D42, REQ-D50, REQ-D11, REQ-D32, REQ-S6.1-01, REQ-S6.1-02, REQ-S6.1-03, REQ-S6.2-01, REQ-S6.4-02, REQ-S6.4-03, REQ-OQ01]
@@ -35,6 +38,8 @@ SRC-PLAN §6 yêu cầu một bảng ranh giới quyền với **default deny**:
 7. Mọi edge không nằm trong `contracts/modules.yaml` bị cấm (default deny) và phải có negative case.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Owner phải chốt hai điểm: (a) xác nhận D09 — đây chính là REQ-OQ01 và nó **chặn M0**; (b) chấp nhận xóa cạnh `COL --> AW`. Trạng thái chỉ đổi khi có quyết định của Owner kèm authority ref.
 

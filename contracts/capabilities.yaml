@@ -3,7 +3,7 @@
 
 contract_id: CT-arch-capabilities
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: architecture owner
 source_refs:
   - SRC-SPEC §6.1
@@ -52,7 +52,15 @@ scope: >
 verification: >
   E0 self-validation: YAML parse; mọi `auth_scope` dùng trong contracts/ports.yaml phải có định nghĩa ở đây; mọi
   operation liệt kê trong `allowed_operations` phải tồn tại trong ports.yaml. Không có evidence E1–E4.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratification_note_vi: >
+  Owner phê chuẩn B01–B17 ngày 2026-09-07 (OD-20260907-01, authority AUTH-OWNER-20260907-02).
+  A2-R4 tuyên bố phạm vi "Boundaries and rights" đủ điều kiện CONTRACT_READY khi có phê chuẩn.
+  `CONTRACT_READY` khẳng định **bộ hợp đồng đủ trường, không còn quyết định chặn, ví dụ hợp lệ và
+  bất hợp lệ đã được kiểm** (SRC-PLAN §2) — nó **không** khẳng định gì về runtime: E1–E4 vẫn NOT_RUN,
+  chưa có code, chưa có probe. Các mục còn phụ thuộc KC mang `kc_dependency` riêng và không hạ trần
+  của file.
 
 principles:
   - id: CAP-P1
@@ -420,7 +428,8 @@ actors:
         expected_error_code: UNAUTHORIZED_COMMAND
     linking_exception:
       id: CAP-B09
-      status: PROVISIONAL
+      status: ACCEPTED
+      ratification_ref: OD-20260907-01 (mục 12 — B09 (a) ngoại lệ liên kết hẹp)
       rule_vi: >
         Ngoại lệ hẹp duy nhất cho chat chưa liên kết: một tin nhắn **đúng định dạng mã liên kết** được đối chiếu với
         các mã chưa hết hạn và chưa dùng. Mọi nội dung khác từ chat chưa liên kết bị bỏ im lặng. Mã dùng một lần;
@@ -462,8 +471,8 @@ actors:
     filesystem_scope: none
     tool_scope: none
     note_vi: >
-      Hủy liên kết là **hành động trong app** (telegram.unlink), không phải lệnh chat — PROVISIONAL, xem
-      PROV-PC01-02.
+      Hủy liên kết là **hành động trong app** (telegram.unlink), không phải lệnh chat — **ACCEPTED**
+      (OD-20260907-01 mục 13: B10 (a), đúng ba lệnh, unlink trong app).
 
   - id: ACT-delivery-dispatcher
     name_vi: Dispatcher outbox (tiến trình nội bộ server thực hiện việc gửi ra ngoài)
@@ -778,6 +787,12 @@ worker_capability_registration:
       description_vi: >
         Đây là **nguồn sự thật duy nhất** cho biết đường CLI/ACP có dùng được hay không, vì server không probe được
         CLI trên máy cá nhân. settings.test_provider chỉ thử được đường API key.
+      kc_dependency: >
+        REQ-A5 / REQ-S13.2-02 (KC): điều khoản của từng nhà cho đường CLI/ACP phải được đọc, và cô lập tool/file/
+        network phải được kiểm chứng, **trước** khi bật một adapter. Hai điều đó cần bằng chứng runtime chưa tồn
+        tại (`policy_reviewed`, `isolation_verified` đều mặc định false ⇒ adapter `disabled`, B13/ADR-0010).
+        Đây là phụ thuộc **của một mục**, không hạ trần của file: hợp đồng đã đủ trường và đã nói rõ trạng thái
+        mặc định là tắt. AC-16 vẫn BLOCKED cho tới khi có probe (OD-20260907-01 mục 15).
     - field: capabilities.embedding_supported
       type: boolean
       required: true
@@ -820,7 +835,7 @@ worker_capability_registration:
     - id: WR-05
       rule_vi: >
         Trạng thái "collector online" hiển thị cho người dùng do server tính từ heartbeat gần nhất theo ngưỡng
-        PROVISIONAL trong contracts/ops/deployment.md, không lấy trực tiếp từ `capabilities.collector_online`.
+        ngưỡng cấu hình trong contracts/ops/deployment.md §6, không lấy trực tiếp từ lời khai của worker.
 
 zero_api_key_path:
   requirement_ref: REQ-AC16

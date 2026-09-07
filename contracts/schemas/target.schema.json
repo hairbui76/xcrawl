@@ -6,23 +6,62 @@
   "x-contract": {
     "contract_id": "CT-schema-target",
     "version": "0.1.0",
-    "status": "draft",
+    "status": "accepted",
+    "ratification_ref": "OD-20260907-01",
     "owner_role": "data contract owner",
-    "source_refs": ["SRC-PLAN §9.1", "SRC-PLAN §5.1", "SRC-SPEC §7.1", "SRC-SPEC §3.2 D33", "SRC-SPEC §3.5 D17"],
-    "requirement_refs": ["REQ-D17", "REQ-D33", "REQ-AC07", "REQ-AC12", "REQ-AC13"],
-    "decision_refs": ["B06", "B15"],
-    "invariant_refs": ["I03", "I08"],
-    "producers": ["MOD-identity-service", "MOD-ingest-service"],
-    "consumers": ["MOD-web-ui", "MOD-backend-api", "MOD-report-service", "MOD-saved-service", "MOD-telegram-adapter", "MOD-analysis-service", "MOD-analysis-worker"],
-    "dependencies": ["contracts/data/entities.yaml", "contracts/data/identity.md"],
+    "source_refs": [
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §5.1",
+      "SRC-SPEC §7.1",
+      "SRC-SPEC §3.2 D33",
+      "SRC-SPEC §3.5 D17"
+    ],
+    "requirement_refs": [
+      "REQ-D17",
+      "REQ-D33",
+      "REQ-AC07",
+      "REQ-AC12",
+      "REQ-AC13"
+    ],
+    "decision_refs": [
+      "B06",
+      "B15"
+    ],
+    "invariant_refs": [
+      "I03",
+      "I08"
+    ],
+    "producers": [
+      "MOD-identity-service",
+      "MOD-ingest-service"
+    ],
+    "consumers": [
+      "MOD-web-ui",
+      "MOD-backend-api",
+      "MOD-report-service",
+      "MOD-saved-service",
+      "MOD-telegram-adapter",
+      "MOD-analysis-service",
+      "MOD-analysis-worker"
+    ],
+    "dependencies": [
+      "contracts/data/entities.yaml",
+      "contracts/data/identity.md"
+    ],
     "scope": "Hình dạng wire và fixture của một target. Không mô tả bảng vật lý — cột và ràng buộc nằm ở entities.yaml.",
     "verification": "EV-PC02-01 check_schema Draft 2020-12; EV-PC02-02 mọi target object trong acceptance/fixtures/identity/ validate theo schema này.",
-    "claim_ceiling": "DRAFT_FOR_REVIEW"
+    "claim_ceiling": "CONTRACT_READY",
+    "runtime_evidence": "NOT_RUN",
+    "runtime_evidence_note_vi": "Bằng chứng runtime là NOT_RUN: E1 (contract test bằng fixture), E2 (fault injection), E3 (live), E4 (review nội dung) đều CHƯA chạy. Chưa có code, và SQLite chưa từng được yêu cầu ép các ràng buộc mô tả ở đây (partial index, generated column, CHECK). CONTRACT_READY nói bộ hợp đồng đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0 — không nói code chạy được (SRC-PLAN §2, §14.2)."
   },
   "type": "object",
   "oneOf": [
-    { "$ref": "#/$defs/work_target" },
-    { "$ref": "#/$defs/post_target" }
+    {
+      "$ref": "#/$defs/work_target"
+    },
+    {
+      "$ref": "#/$defs/post_target"
+    }
   ],
   "$defs": {
     "ulid": {
@@ -45,8 +84,14 @@
       "type": "string",
       "description": "arXiv base ID đã chuẩn hóa theo identity.md §2.2, KHÔNG kèm hậu tố phiên bản. Kiểu mới `YYMM.NNNNN` hoặc kiểu cũ `archive[.CC]/YYMMNNN`.",
       "oneOf": [
-        { "type": "string", "pattern": "^[0-9]{4}\\.[0-9]{4,5}$" },
-        { "type": "string", "pattern": "^[a-z-]+(\\.[A-Z]{2})?/[0-9]{7}$" }
+        {
+          "type": "string",
+          "pattern": "^[0-9]{4}\\.[0-9]{4,5}$"
+        },
+        {
+          "type": "string",
+          "pattern": "^[a-z-]+(\\.[A-Z]{2})?/[0-9]{7}$"
+        }
       ]
     },
     "arxiv_version_label": {
@@ -59,41 +104,83 @@
       "description": "Định danh canonical đã biết của một work. Vắng mặt hoàn toàn là hợp lệ: work có thể tồn tại trước khi metadata về (metadata_state = 'none').",
       "additionalProperties": false,
       "properties": {
-        "doi": { "$ref": "#/$defs/doi_canonical" },
-        "arxiv_base": { "$ref": "#/$defs/arxiv_base_canonical" }
+        "doi": {
+          "$ref": "#/$defs/doi_canonical"
+        },
+        "arxiv_base": {
+          "$ref": "#/$defs/arxiv_base_canonical"
+        }
       }
     },
     "alias_identifier": {
       "type": "object",
       "description": "Một định danh đã quan sát được, canonical hoặc alias, kèm provenance bắt buộc (identity.md §7).",
       "additionalProperties": false,
-      "required": ["id_scheme", "id_value_normalized", "id_value_raw", "evidence_source", "confidence"],
+      "required": [
+        "id_scheme",
+        "id_value_normalized",
+        "id_value_raw",
+        "evidence_source",
+        "confidence"
+      ],
       "properties": {
         "id_scheme": {
           "type": "string",
-          "enum": ["doi", "arxiv", "openalex", "pmid", "landing_url"],
+          "enum": [
+            "doi",
+            "arxiv",
+            "openalex",
+            "pmid",
+            "landing_url"
+          ],
           "description": "Chỉ `doi` và `arxiv` là canonical; còn lại là alias-only."
         },
-        "id_value_normalized": { "type": "string", "minLength": 1, "maxLength": 2048 },
-        "id_value_raw": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "id_value_normalized": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "id_value_raw": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
         "evidence_source": {
           "type": "string",
-          "enum": ["post_link", "arxiv_api", "openalex_api", "manual_owner"],
+          "enum": [
+            "post_link",
+            "arxiv_api",
+            "openalex_api",
+            "manual_owner"
+          ],
           "description": "Không có giá trị suy luận AI: AI không được tạo bằng chứng identity (B15)."
         },
         "confidence": {
           "type": "string",
-          "enum": ["asserted_by_source", "confirmed_by_two_sources", "owner_confirmed"],
+          "enum": [
+            "asserted_by_source",
+            "confirmed_by_two_sources",
+            "owner_confirmed"
+          ],
           "description": "Ba mức rời rạc, không phải điểm xác suất — MVP không đoán."
         },
         "evidence_ref": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "post_id": { "$ref": "#/$defs/ulid" },
-            "api_endpoint": { "type": "string", "maxLength": 2048 },
-            "retrieved_at": { "$ref": "#/$defs/timestamp_utc_ms" },
-            "response_hash": { "$ref": "#/$defs/sha256" }
+            "post_id": {
+              "$ref": "#/$defs/ulid"
+            },
+            "api_endpoint": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "retrieved_at": {
+              "$ref": "#/$defs/timestamp_utc_ms"
+            },
+            "response_hash": {
+              "$ref": "#/$defs/sha256"
+            }
           }
         }
       }
@@ -112,16 +199,34 @@
       "title": "Target nhánh work",
       "description": "Công trình có canonical identity. `post_id` bị cấm ở nhánh này (exactly-one).",
       "additionalProperties": false,
-      "required": ["kind", "work_id"],
+      "required": [
+        "kind",
+        "work_id"
+      ],
       "properties": {
-        "kind": { "const": "work" },
-        "work_id": { "$ref": "#/$defs/ulid" },
-        "target_key": { "type": "string", "pattern": "^work:[0-9A-HJKMNP-TV-Z]{26}$" },
-        "canonical": { "$ref": "#/$defs/canonical_identifiers" },
-        "work_version_label": { "$ref": "#/$defs/arxiv_version_label" },
+        "kind": {
+          "const": "work"
+        },
+        "work_id": {
+          "$ref": "#/$defs/ulid"
+        },
+        "target_key": {
+          "type": "string",
+          "pattern": "^work:[0-9A-HJKMNP-TV-Z]{26}$"
+        },
+        "canonical": {
+          "$ref": "#/$defs/canonical_identifiers"
+        },
+        "work_version_label": {
+          "$ref": "#/$defs/arxiv_version_label"
+        },
         "identity_state": {
           "type": "string",
-          "enum": ["active", "merged", "quarantined"],
+          "enum": [
+            "active",
+            "merged",
+            "quarantined"
+          ],
           "description": "Consumer phải loại `merged` bằng resolve_work() và phải xử lý `quarantined` riêng (identity.md §5)."
         }
       }
@@ -131,11 +236,21 @@
       "title": "Target nhánh post (mục chỉ có post)",
       "description": "Post không dẫn tới work nào (REQ-D33). `work_id` và `canonical` bị cấm ở nhánh này.",
       "additionalProperties": false,
-      "required": ["kind", "post_id"],
+      "required": [
+        "kind",
+        "post_id"
+      ],
       "properties": {
-        "kind": { "const": "post" },
-        "post_id": { "$ref": "#/$defs/ulid" },
-        "target_key": { "type": "string", "pattern": "^post:[0-9A-HJKMNP-TV-Z]{26}$" },
+        "kind": {
+          "const": "post"
+        },
+        "post_id": {
+          "$ref": "#/$defs/ulid"
+        },
+        "target_key": {
+          "type": "string",
+          "pattern": "^post:[0-9A-HJKMNP-TV-Z]{26}$"
+        },
         "x_post_id": {
           "type": "string",
           "pattern": "^[0-9]{1,25}$",
@@ -143,7 +258,12 @@
         },
         "identity_resolution": {
           "type": "string",
-          "enum": ["pending", "resolved_linked", "resolved_post_only", "conflict"],
+          "enum": [
+            "pending",
+            "resolved_linked",
+            "resolved_post_only",
+            "conflict"
+          ],
           "description": "Chỉ `resolved_post_only` mới là target post hợp lệ để Save/summary; `pending` chưa phải target."
         }
       }

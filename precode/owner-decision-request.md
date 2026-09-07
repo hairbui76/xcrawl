@@ -23,6 +23,18 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # OWNER_DECISION_REQUEST — Research Radar Pre-code
 
+> # ✅ ANSWERED 2026-09-07 — xem `precode/owner-decisions.md`
+>
+> Owner đã trả lời toàn bộ bản yêu cầu này bằng biên bản **`OD-20260907-01`** (authority
+> `AUTH-OWNER-20260907-02`, evidence `session_017QmDJtMqD9o1z79waqSB9W`). B01–B17 nay `RATIFIED`;
+> các amendment và ADR tương ứng `ACCEPTED`. **Một mục duy nhất chưa được trả lời:** `REQ-OQ03`
+> (provider và model) vẫn `OWNER_DECISION_REQUIRED` và vẫn chặn M3.
+>
+> File này được **giữ nguyên** làm bản ghi câu hỏi đã đặt ra; phiếu trả lời ở cuối file đã được điền.
+> Nội dung các mục bên dưới **không** được viết lại — chúng phản ánh tình trạng lúc hỏi, không phải
+> tình trạng hiện tại. Trạng thái hiện tại sống ở `precode/owner-decisions.md` và
+> `precode/decision-register.md`.
+
 > **Đây là một REQUEST, không phải một grant.** Tài liệu này không tạo authority, không tạo write lease
 > và không hàm ý chấp nhận. Một quyết định của Owner chỉ có hiệu lực khi được ghi thành authority hoặc
 > amendment riêng, có evidence ref thật. Chừng nào chưa có, B01–B17 vẫn là `OPEN` trong
@@ -397,35 +409,40 @@ Hai mâu thuẫn dưới đây **không** nằm trong B01–B17. PC00 đã chọ
 ## Phiếu trả lời gợi ý
 
 ```text
-B01: (a) publish  | (b) lúc gửi  | khác: ______
-B02: (a) bốn trường | (b) enum phẳng
-B03: (a) unknown, không auto-retry | (b) auto-retry | (c) không retry
-B04: (a) sổ coverage riêng | (b) suy từ report
-B05: (a) không ingest trùng | (b) không đọc lại
-B06: (a) alias + target union | (b) giữ §7.1
-B07: (a) analysis key + generation | (b) một hàng cho một work
-B08: (a) một IANA timezone | (b) theo browser        Giá trị: ____________
-B09: (a) ngoại lệ hẹp cho mã | (b) nhập chat ID trong app
-B10: (a) resume trong app, 3 lệnh | (b) thêm lệnh thứ tư
-B11: (a) snapshot nhất quán | (b) copy file           RPO: ____  RTO: ____
-B12: D09 profile riêng? (có/không)   ·  Xóa cạnh COL→AW? (có/không)
-B13: (a) secret theo task + mặc định disabled | (b) bật hết
-B14: (a) insufficient_evidence | (b) luôn hiện top-N
-B15: (a) thu hẹp phạm vi | (b) giữ tuyệt đối
-B16: (a) ba loại phát biểu | (b) giữ AC-11
-B17: (a) theo §10.1 | (b) theo §2.1
-Stack: A | B | C
-OQ mặc định: xác nhận cả bảng? (có/không)  ·  OQ03 provider+model: ____________
-F-PC00-01: hủy liên kết trong app? (có/không)
-F-PC00-02: hoãn export Saved sang P1? (có/không)
-data.purge_all: (a) chỉ dữ liệu nghiên cứu | (b) tất cả trừ tài khoản | (c) tất cả
-   Giữ lại cụ thể: ________________________________________
-   Có xóa cả backup không? (có/không)
-PC04 tham số báo cáo: xác nhận cả 8 mục? (có/không)  ·  sửa mục nào: ____________
-   Kỳ rỗng: (b) giữ hàng aborted [PC04 khuyến nghị] | (a) không hàng nào
-PC08 vận hành: RPO ____ h · RTO ____ h · phiên đăng nhập ____ h · retention backup: ________
-CSRF_REJECTED là mã lỗi riêng: chấp nhận? (có/không)
-run.resume từ blocked (Owner mở chặn, bắt buộc ghi lý do): chấp nhận? (có/không)
+── ĐÃ TRẢ LỜI 2026-09-07 · OD-20260907-01 · AUTH-OWNER-20260907-02 ──
+B01: (a) publish                                    ✅
+B02: (a) bốn trường                                 ✅
+B03: (a) unknown, không auto-retry                  ✅
+B04: (a) sổ coverage riêng                          ✅
+B05: (a) không ingest trùng                         ✅
+B06: (a) alias + target union                       ✅
+B07: (a) analysis key + generation                  ✅
+B08: (a) một IANA timezone     Giá trị: Asia/Ho_Chi_Minh   ✅
+B09: (a) ngoại lệ hẹp cho mã                        ✅
+B10: (a) resume trong app, 3 lệnh                   ✅
+B11: (a) snapshot nhất quán    RPO: 24 h  RTO: 2 h  ✅
+B12: D09 profile riêng? CÓ     ·  Xóa cạnh COL→AW? CÓ      ✅
+B13: (a) secret theo task + mặc định disabled       ✅  (AC-16 vẫn BLOCKED tới khi probe đạt)
+B14: (a) insufficient_evidence                      ✅  (D53 vẫn ĐX ở phần hiệu chỉnh tham số)
+B15: (a) thu hẹp phạm vi                            ✅
+B16: (a) ba loại phát biểu                          ✅
+B17: (a) theo §10.1                                 ✅
+Stack: B  (Python workers + TypeScript web)         ✅  ← KHÔNG phải A như khuyến nghị
+OQ mặc định: xác nhận cả bảng? CÓ
+   OQ03 provider+model: CHƯA QUYẾT ĐỊNH — vẫn OWNER_DECISION_REQUIRED, chặn M3
+F-PC00-01: hủy liên kết trong app? CÓ               ✅
+F-PC00-02: hoãn export Saved sang P1? CÓ            ✅
+data.purge_all: (a) chỉ dữ liệu nghiên cứu          ✅
+   Giữ lại cụ thể: đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch
+   Có xóa cả backup không? KHÔNG
+PC04 tham số báo cáo: xác nhận cả 8 mục? CÓ  ·  sửa mục nào: (không)
+   Kỳ rỗng: (b) giữ hàng aborted                    ✅
+PC08 vận hành: RPO 24 h · RTO 2 h · phiên đăng nhập 12 h
+   retention backup: 14 ngày + 8 tuần + hằng tháng vô thời hạn
+CSRF_REJECTED là mã lỗi riêng: CÓ                   ✅
+run.resume từ blocked (bắt buộc ghi lý do): CÓ      ✅
 ```
+
+**Ba điều biên bản KHÔNG làm** (chép lại để không ai đọc rộng hơn): `REQ-OQ03` vẫn mở và vẫn chặn M3; mọi mục `KC` vẫn `KC` vì buổi phỏng vấn không tạo bằng chứng runtime nào; và không finding audit nào bị đóng.
 
 Trả lời một phần vẫn hữu ích: mỗi mục được chốt sẽ gỡ đúng phạm vi ghi ở dòng "Phạm vi bị chặn" của mục đó.

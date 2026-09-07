@@ -6,7 +6,7 @@ owner_role: implementation planning owner
 template_ref: agent-tasks/TEMPLATE.md
 milestone: M1 → M6
 gate: G5
-stack_decision: ADR-0006 (Option A / Python) — PROVISIONAL, status proposed
+stack_decision: ADR-0006 (Option B — Python workers + TypeScript web) — ACCEPTED (OD-20260907-01)
 claim_ceiling: IMPLEMENTATION_VERIFIED
 owner_modules: [MOD-saved-service]
 scenario_refs: [SC12, SC13, SC48, SC32, SC49]
@@ -19,11 +19,11 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 # TC-saved-snapshot — Save là snapshot bất biến
 
-> **Chưa được phép code.** Card này là tài liệu giao việc ở trạng thái `DRAFT_FOR_REVIEW`. Nó chỉ trở thành lệnh thi công sau khi G5 pass và Owner ra lệnh bắt đầu. Stack (Option A / Python) là **PROVISIONAL** theo `precode/adr/ADR-0006-stack-option-a.md`; mọi đường dẫn ở §3 và mọi lệnh ở §8 có điều kiện *"nếu ADR-0006 được chấp nhận"*.
+> **Chưa được phép code.** Card này là tài liệu giao việc ở trạng thái `DRAFT_FOR_REVIEW`. Nó chỉ trở thành lệnh thi công sau khi G5 pass và Owner ra lệnh bắt đầu. **Stack đã được Owner chốt: Option B — Python cho worker/server, TypeScript cho web UI** (`OD-20260907-01`, REQ-OQ02 đã trả lời). Phân chia ngôn ngữ là **ACCEPTED**; riêng **đường dẫn cụ thể** ở §3 và **lệnh** ở §8 vẫn `PROVISIONAL` cho tới khi có repo triển khai thật, và framework vẫn `PROVISIONAL` trừ khi ADR-0006 nêu tên.
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-FCW4f-20260907`** (thay `PC10-PIN-FCW4e-20260907`; các epoch cũ hơn: `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Hash dưới đây được **tính lại trực tiếp trên repo**; thay đổi duy nhất so với `FCW4e` là `contracts/modules.yaml` (năm denied case thêm `event_type`; không oracle nào của card bị ảnh hưởng). **Card là nguồn chuẩn của tên epoch**; mọi file khác khẳng định pin hiện hành phải đọc tên từ đây, không chép tay (finding `F-A2R1-03`). Trước khi bắt đầu, chạy `sha256sum` trên **mọi** dòng dưới đây. Lệch một dòng ⇒ card `STALE`, DỪNG (`precode/change-control.md` §5, quy tắc `INV-06`/`INV-09` của `precode/gates.yaml`).
+**Pin epoch: `PC10-PIN-OD01c-20260907`** (thay `PC10-PIN-OD01b-20260907`; các epoch cũ hơn: `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau wave lan truyền hậu A2-R5 (`FIX-R5-rulings.md`): phạm vi `data.purge_all` đã phê chuẩn được chép nhất quán vào mọi artefact, và hai thư mục fixture `identity/`, `reporting/` lên `CONTRACT_READY`. Hash dưới đây tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG (`precode/change-control.md` §5, `INV-06`/`INV-09`).
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -32,24 +32,24 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
-| `precode/baseline.json` | `e4c3f4563e04293c319bf746b371bc67857115b7070d14a9771de3238e8683a7` | 97620 |
-| `precode/decision-register.md` | `212441a429420d1cc11cdc4a9c79a11648e45e1b92278a08f77a9779943ad15d` | 97899 |
-| `contracts/modules.yaml` | `11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7` | 105642 |
-| `contracts/capabilities.yaml` | `fae5891cff5ff25757f168d8182111fa4fc6b49f6b851ac7cc07105fef952cf7` | 45672 |
-| `contracts/ports.yaml` | `93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e` | 126182 |
-| `contracts/errors.yaml` | `b63eef7abd4cee328581e5e06cbc8314e60e52e03468dbe6acea42a0a843ad26` | 62269 |
-| `contracts/retry-policy.yaml` | `5e083230e2cc5db481736adcf189a6cf8e302ebdf45cad614582731698cf06d5` | 41620 |
-| `contracts/data/entities.yaml` | `c2ceeafd1b78705941f368bfe73f67cf097ffad8179c7455b2d4eeda571b5a1e` | 221041 |
+| `precode/baseline.json` | `e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b` | 100474 |
+| `precode/decision-register.md` | `1883fec33f56873a426394a99d3fc6c5ec43c456a936c52733cad6c047f06262` | 102430 |
+| `contracts/modules.yaml` | `cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457` | 108721 |
+| `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
+| `contracts/ports.yaml` | `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684` | 128850 |
+| `contracts/errors.yaml` | `640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f` | 65180 |
+| `contracts/retry-policy.yaml` | `d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5` | 46995 |
+| `contracts/data/entities.yaml` | `766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7` | 228394 |
 | `contracts/schemas/saved-snapshot.schema.json` | `1178d314deb8dfdfbe24a9bd4645fd0fd34424fa1db0c237971b3dba3705ce3c` | 16298 |
-| `contracts/data/invariants.md` | `9def66cd6e918077a96a730327646c0040acd02a6a4c29135b28e5281e64b36d` | 27782 |
-| `contracts/data/identity.md` | `62fd06635c5e29a955f40cc1d56bea9d4dde9d444607fe7c07da5164993468ce` | 20576 |
-| `contracts/http/openapi.yaml` | `a7f284b97816a4a37a53256bdea00b0affa26bd18d152faf4f80dec7223c8499` | 227691 |
-| `contracts/ui/screens.yaml` | `db78678cba7e46b33669596f02963e1eac5e65804c6f9a997bf22d72ba6bc296` | 47481 |
+| `contracts/data/invariants.md` | `7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c` | 27816 |
+| `contracts/data/identity.md` | `71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd` | 20610 |
+| `contracts/http/openapi.yaml` | `28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92` | 231705 |
+| `contracts/ui/screens.yaml` | `e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074` | 51212 |
 | `contracts/telegram/commands.yaml` | `fc1a18dac332ea51e63721536d6a47b1d5a3048ed408af24ae787a91874e3556` | 24834 |
-| `precode/adr/ADR-0009-identity-alias-target-union.md` | `a8e57390663d6dc3778ff8036ca4032a91da25f0b85844bd094f393e34f6b5ef` | 5701 |
-| `acceptance/fixtures/identity/README.md` | `a6beae39f431a06104ff797094c79d51b21736a74908271b355bdeb2cf8209e5` | 11369 |
-| `acceptance/fixtures/identity/d-concurrent-save-app-telegram.json` | `a9b5b041f41407066722861a04ce347513cb65d949e11774fd33c340d3d08b8d` | 7733 |
-| `acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json` | `2cbbe8c91a24ab9dfe46c8396e3a63b5372005b3186d314d41d09ced613188c2` | 8943 |
+| `precode/adr/ADR-0009-identity-alias-target-union.md` | `67844f12e4fe77a6a25b443a8fe84d053fbcfc9c30649296f55efc41befa4ee1` | 6145 |
+| `acceptance/fixtures/identity/README.md` | `ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14` | 12611 |
+| `acceptance/fixtures/identity/d-concurrent-save-app-telegram.json` | `2b5e250ee3c21cd62e3cd87b42939cc0ed00b7d5167ab43ab67958477432b4ae` | 9604 |
+| `acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json` | `c2fd418bf32e5870b304508443144e6637355b81526c393a2f0ead3f445900c5` | 10801 |
 | `acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json` | `3630edc83719ada07cae9b39f5da7ad8d1894379509c96bb1128cf958ca6ea0b` | 3462 |
 | `acceptance/fixtures/telegram/j-concurrent-save-app-telegram.json` | `1df94cec7d7b44998cd07ebb5fd6d493f4d33327f7b3190aa6f0929137b8ff5b` | 8124 |
 | `acceptance/fixtures/telegram/k-save-then-source-deleted.json` | `8a27e20ffb5611374b3ff566b78e95fe0e3f621fc05bd4787a2f29c94a82b434` | 7373 |
@@ -88,7 +88,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 4. Hợp đồng nền: `contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/capabilities.yaml`, `contracts/errors.yaml`, `contracts/retry-policy.yaml`, `contracts/data/entities.yaml`.
 5. Fixture bắt buộc: `acceptance/fixtures/identity/README.md`, `acceptance/fixtures/identity/d-concurrent-save-app-telegram.json`, `acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json`, `acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json`, `acceptance/fixtures/telegram/j-concurrent-save-app-telegram.json`, `acceptance/fixtures/telegram/k-save-then-source-deleted.json`, `acceptance/fixtures/telegram/neg-saved-snapshot-missing-content-hash.json`, `acceptance/fixtures/telegram/neg-saved-snapshot-bad-hash-format.json`, `acceptance/fixtures/telegram/neg-saved-snapshot-item-without-snapshot.json`, `acceptance/fixtures/telegram/neg-saved-snapshot-target-both-ids.json`, `acceptance/fixtures/telegram/neg-saved-snapshot-summary-missing-limitation.json`, `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `acceptance/fixtures/recovery/k-delete-target-preserves-saved.json`.
 
-## §3. Write set — PROVISIONAL (chỉ đúng nếu ADR-0006 được chấp nhận)
+## §3. Write set — layout theo Stack B (ACCEPTED); đường dẫn cụ thể còn PROVISIONAL
 
 Mọi file **không** nằm trong bảng này là **read-only**. Toàn bộ `contracts/`, `acceptance/`, `precode/` là read-only với card này: phát hiện sai ⇒ change request, không tự sửa.
 
@@ -101,7 +101,7 @@ Mọi file **không** nằm trong bảng này là **read-only**. Toàn bộ `con
 | `tests/integration/test_concurrent_save.py` | app + Telegram đồng thời |
 | `tests/integration/test_snapshot_survives_delete.py` | bài gốc bị xóa, restart, restore |
 
-Nếu Owner chọn Option B hoặc C ở ADR-0006, **chỉ bảng này và §8 phải viết lại**; §2, §4, §5, §6, §7 không đổi vì hợp đồng độc lập framework.
+**Quy ước ngôn ngữ (ACCEPTED, `OD-20260907-01`):** `server/`, `collector/`, `worker/`, `probe/` là **Python**; `web/` là **TypeScript**. Layout TypeScript dùng chung một quy ước cho mọi card có phần web — xem `agent-tasks/README.md` §5.3. Đường dẫn còn `PROVISIONAL` vì chưa có repo triển khai; đổi đường dẫn **chỉ** sửa bảng này và §8, không chạm §2/§4/§5/§6/§7 — hợp đồng độc lập framework.
 
 ## §4. Consumes / produces
 
@@ -221,6 +221,8 @@ Error envelope bắt buộc: `code`, `scope`, `retry_class`, `message_safe`, `co
 
 **Tối đa: `IMPLEMENTATION_VERIFIED`.**
 
+**Ngoài phạm vi đã phê chuẩn.** Read set của card này chạm `contracts/telegram/commands.yaml` — phạm vi còn mang KC. Card **không** đủ điều kiện nâng lý do trần claim; các điểm dừng KC ở §10 (REQ-A5/REQ-A6, `CR-PC07-04`, SP1, REQ-OQ03) **giữ nguyên**. Ngoài ra 4 file hợp đồng trong read set vẫn khai `claim_ceiling: DRAFT_FOR_REVIEW`: `contracts/http/openapi.yaml`, `contracts/schemas/saved-snapshot.schema.json`, `contracts/telegram/commands.yaml`, `contracts/ui/screens.yaml`.
+
 Mẫu claim bắt buộc (SRC-PLAN §14.3): claim + baseline (spec hash + contract version/hash + implementation revision) + requirements covered + evidence manifest IDs + observed result + **not established** + open issues + review type. Không được viết "independent audit passed"; tự kiểm là `SELF_VALIDATION`.
 
 ## §10. Stop-and-report
@@ -228,8 +230,8 @@ Mẫu claim bắt buộc (SRC-PLAN §14.3): claim + baseline (spec hash + contra
 | ID | Điều kiện dừng |
 | --- | --- |
 | `SG-01` | `save.export` tồn tại trong `contracts/ports.yaml` nhưng MVP **hoãn** export (`F-PC00-02`). Không hiện nút export; nếu packet yêu cầu, DỪNG và hỏi. |
-| `SG-02` | Danh sách loại trừ của `data.purge_all` là `OWNER_DECISION_REQUIRED` (`PROV-PC00-01`). Card này **không** được hiện thực `data.purge_all`. |
-| `SG-STACK` | ADR-0006 (Option A / Python) vẫn `proposed`. Mọi đường dẫn ở §3 và mọi lệnh ở §8 là **PROVISIONAL**. Nếu Owner chọn B hoặc C, DỪNG và trả card về Coordinator để viết lại §3/§8; hợp đồng ở §2 không đổi. |
+| `SG-02` | `data.purge_all` **đã được Owner chốt** (`OD-20260907-01` mục 24): xóa **chỉ dữ liệu nghiên cứu**; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup KHÔNG bị xóa**. `PROV-PC00-01`/`PROV-PC01-03` đã giải. Card này vẫn **không** hiện thực `data.purge_all` (ngoài scope), nhưng nếu chạm tới thì phải theo đúng danh sách giữ lại đó. |
+| `SG-STACK` | Stack đã chốt: **Option B** (`OD-20260907-01`) — `server/`, `collector/`, `worker/`, `probe/` là Python; `web/` là TypeScript. Phân chia ngôn ngữ **không** còn là điểm dừng. Nhưng **đường dẫn cụ thể** ở §3 và **lệnh** ở §8 vẫn PROVISIONAL cho tới khi có repo triển khai, và **framework chưa được chốt** trừ khi ADR-0006 nêu tên. Cần chọn framework/thư viện ⇒ DỪNG và raise CR; không tự chọn. |
 | `SG-G5` | Card này chưa được phép code. Chỉ bắt đầu sau khi G5 pass **và** Owner ra lệnh bắt đầu bằng văn bản (SRC-PLAN §12; `precode/README.md` §7). |
 | `SG-PC09` | File của PC09 (`acceptance/scenarios.yaml`, `acceptance/traceability.csv`, `precode/gates.yaml`, `precode/review.md`, `evidence/manifest.schema.json`, `evidence/index.json`) **cố ý không được pin hash** ở §0 vì PC09-FIX1 chạy song song với PC10-FIX1. Chúng được dẫn bằng **đường dẫn + SC id**. Trước khi code, đọc bản mới nhất của `acceptance/scenarios.yaml`; nếu oracle ở đó mâu thuẫn với §8 → DỪNG, raise CR, **không** sửa oracle. |
 | `SG-DENY` | Nghĩa vụ default-deny áp dụng cho **mọi** card: mọi cạnh trong 36 `forbidden_edges` của `contracts/modules.yaml` chạm tới module của card phải bị từ chối bằng đúng mã của bảng ranh giới R5-01 (§5). Sai mã cũng là FAIL, không chỉ sai hành vi. Oracle: `SC49` + `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`. |

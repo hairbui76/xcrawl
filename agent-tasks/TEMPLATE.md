@@ -52,7 +52,7 @@ Chưa đủ bốn điều kiện thì card tồn tại như tài liệu review, 
 
 *Bảng hash là hợp đồng của card. Không viết "latest", không viết "bản mới nhất".*
 
-**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-FCW4f-20260907; epoch cũ ví dụ PC10-PIN-FCW4e-20260907>`
+**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-OD01c-20260907; epoch cũ ví dụ PC10-PIN-OD01b-20260907>`
 
 *Card là nguồn chuẩn của tên epoch. File nào khác khẳng định pin hiện hành thì phải đọc tên từ card, không
 chép tay — finding `F-A2R1-03`; EV-PC10-01 phép kiểm (k) ép điều này bằng máy.* — nói rõ hash được **tính lại trực tiếp** hay **chép từ
@@ -98,8 +98,10 @@ ADR → hợp đồng nghiệp vụ → hợp đồng nền (`ports.yaml`, `modu
 *SRC-PLAN §15.3: đường dẫn source/test cụ thể **sau khi chọn stack**; file contract dùng chung mặc định
 read-only.*
 
-> **PROVISIONAL nếu ADR-0006 chưa được chấp nhận.** Ghi rõ điều kiện `"nếu ADR-0006 (Option A / Python)
-> được chấp nhận"`. Nếu Owner chọn Option B hoặc C thì **chỉ §3 và §8** phải viết lại.
+> **Stack đã chốt: Option B** — Python cho `server/`, `collector/`, `worker/`, `probe/`; TypeScript cho
+> `web/` (`OD-20260907-01` mục 3; ADR-0006 `accepted`). Phân chia ngôn ngữ là **ACCEPTED**. Vẫn
+> `PROVISIONAL`: **đường dẫn cụ thể** (chưa có repo triển khai) và **framework** (ADR-0006 không nêu tên —
+> cần chọn thì DỪNG và raise CR). Layout đầy đủ ở `agent-tasks/README.md` §5.3. Đổi layout chỉ sửa §3 và §8.
 
 | Đường dẫn | Vai trò |
 | --- | --- |

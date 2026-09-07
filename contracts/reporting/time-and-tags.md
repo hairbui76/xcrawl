@@ -1,7 +1,7 @@
 ---
 contract_id: CT-reporting-time-and-tags
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: reporting contract owner
 source_refs:
   - "SRC-SPEC §3.4 C03/D-tag, D23, D24"
@@ -48,15 +48,34 @@ verification: >-
   E0 SELF_VALIDATION ở gói PC04: EV-PC04-01 (schema báo cáo + fixture), EV-PC04-03 (mọi
   operation_id/entity được trích dẫn có tồn tại), EV-PC04-04 (coverage nối liền, nửa mở).
   E1–E4 đều `NOT_RUN` — chưa có code, chưa có dữ liệu thật.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratified_by: AUTH-OWNER-20260907-02
+ratified_at: "2026-09-07"
+ratification_scope: >-
+  A2-R4 tuyên bố phạm vi "Reporting and time" đủ điều kiện `CONTRACT_READY`; Owner phê chuẩn
+  B01–B17 và 8 tham số của PC04 cộng phương án kỳ rỗng (b) (OD-20260907-01 mục 22).
+  PROV-PC04-01..09 nay là `ACCEPTED (OD-20260907-01)` với tư cách **giá trị làm việc**.
+ratification_limits: >-
+  Owner phê chuẩn GIÁ TRỊ LÀM VIỆC, KHÔNG phải kết quả hiệu chỉnh. Hai thứ vẫn chưa được đo và
+  KHÔNG được đọc là đã kiểm chứng: (1) ngưỡng similarity giữ nguyên
+  `threshold_calibration_state: uncalibrated` cho tới khi REQ-A2 chạy; (2) mọi tham số mật độ
+  giữ nguyên cổng REQ-A4. `CONTRACT_READY` ở đây nghĩa là NGỮ NGHĨA và ORACLE đã đóng, không
+  nghĩa là các con số đã được chứng minh là tốt.
 ---
 
 # Thời gian, tag và coverage của tầng báo cáo
 
-> **Trạng thái quyết định.** Mọi quyết định trong file này gắn nhãn `PROVISIONAL` theo
-> baseline §5 (Coordinator ruling dưới `AUTH-OWNER-20260906-01`). B01, B04, B08, B14, B17 vẫn
-> **OPEN** trong `agent_profile/registry.json`; phê chuẩn thuộc Owner qua OWNER_DECISION_REQUEST.
-> Không mục nào trong file này được đọc là `CLOSED` hay `ACCEPTED`.
+> **Trạng thái quyết định — ĐÃ PHÊ CHUẨN.** Owner đã phê chuẩn B01–B17 và 8 tham số của PC04
+> cộng phương án kỳ rỗng (b) trong `OD-20260907-01` (authority `AUTH-OWNER-20260907-02`,
+> 2026-09-07). Các quyết định trước đây gắn nhãn `PROVISIONAL` trong file này — B01, B04, B08,
+> B14, B17 và `PROV-PC04-01..09` — nay đọc là **`ACCEPTED (OD-20260907-01)`**.
+>
+> **Phạm vi của việc phê chuẩn.** Owner chấp nhận các **giá trị làm việc**, không chấp nhận một
+> kết quả đo nào. Cụ thể, hai mục vẫn chưa được kiểm chứng và **không** được trình bày như đã
+> kiểm chứng: N = 7 ngày cho backfill (§6.1) là giá trị Owner chọn chứ không phải giá trị đo
+> được, và mọi tham số mật độ vẫn nằm sau cổng REQ-A4 (xem `selection.md` §8.2). `CONTRACT_READY`
+> ở đây nghĩa là **ngữ nghĩa và oracle đã đóng**, không nghĩa là các con số đã được chứng minh.
 
 ## 0. Cách đọc và cách một mục ở đây bị làm sai
 
@@ -124,7 +143,8 @@ vẫn vào kỳ của thứ Ba, vì **ngày đăng không quyết định** — 
 transaction ingest** (entities.yaml → `post.ingest_sequence`, `work.ingest_sequence`). Nó là
 **thứ tự tổng có thẩm quyền**; `discovered_at` là nhãn thời gian đọc được của thứ tự đó.
 
-Quy tắc ghép bắt buộc (`PROVISIONAL`, **CR-PC04-03** gửi PC02 để ghi vào entities.yaml):
+Quy tắc ghép bắt buộc (`ACCEPTED (OD-20260907-01)`; **CR-PC04-03** đã được PC02-FIX3 ghi vào `entities.yaml` →
+`conventions` → `clock_trust`):
 
 > Server cấp `ingest_sequence` và `discovered_at` từ **cùng một lần đọc đồng hồ** dưới cùng một
 > khóa cấp phát, và **kẹp đơn điệu** (`monotonic clamp`): nếu đồng hồ tường trả về giá trị nhỏ
@@ -145,7 +165,8 @@ theo sequence là xác định).
 ## 2. Timezone của owner: chỉ để dán nhãn, không để tính
 
 `owner.timezone_iana` là **một** IANA timezone do Owner xác nhận; giá trị tạm `Asia/Ho_Chi_Minh`
-(`PROVISIONAL`, B08 / AMD-B08 / ADR-0007; Owner phải xác nhận).
+(`ACCEPTED (OD-20260907-01)`, B08 / AMD-B08 / ADR-0007). Owner **đã xác nhận** giá trị này
+(OD-20260907-01 mục 4); nó không còn là giá trị tạm.
 
 Được phép dùng timezone owner cho:
 
@@ -176,7 +197,7 @@ khác. Khác một byte trong `content_hash` là FAIL.
 
 ### 3.1 Quyết định
 
-`PROVISIONAL` theo AMD-B01 / ADR-0004: **bộ tag đang hiệu lực tại transaction publish của báo
+`ACCEPTED (OD-20260907-01)` theo AMD-B01 / ADR-0004: **bộ tag đang hiệu lực tại transaction publish của báo
 cáo quyết định nội dung báo cáo.** Cụm "thời điểm gửi" trong SRC-SPEC §3.4 hàng `C03/D-tag`
 được đọc lại là "thời điểm publish report". Delivery (gửi Telegram) **không bao giờ** làm đổi
 nội dung đã publish.
@@ -218,8 +239,8 @@ Ngân sách do PC03 sở hữu; PC04 **dùng lại**, không đặt tên riêng:
 
 | Tham số (`contracts/retry-policy.yaml`) | Giá trị | Đơn vị | Trạng thái |
 | --- | --- | --- | --- |
-| `report_build_rebuild_attempts` | 2 | rebuilds_total_per_run | `PROVISIONAL` |
-| `report_build_stale_after` | xem retry-policy.yaml | — | `PROVISIONAL` |
+| `report_build_rebuild_attempts` | 2 | rebuilds_total_per_run | `PROVISIONAL` — PC03 sở hữu |
+| `report_build_stale_after` | xem retry-policy.yaml | — | `PROVISIONAL` — PC03 sở hữu |
 
 Hành vi theo `contracts/state/report.yaml` T-RP-03: build chuyển `status = 'aborted'`, rebuild
 là một `report_build_id` **mới** với version tag mới. Hết ngân sách → run kết thúc với
@@ -251,7 +272,7 @@ Abort **không** tạo hàng coverage: coverage chỉ tiến tại commit publis
 
 ### 4.1 Quyết định
 
-`PROVISIONAL` theo AMD-B04: **sổ coverage (`coverage_window`) là nguồn chuẩn, độc lập với danh
+`ACCEPTED (OD-20260907-01)` theo AMD-B04: **sổ coverage (`coverage_window`) là nguồn chuẩn, độc lập với danh
 sách report hiển thị.** Kỳ rỗng vẫn ghi một hàng coverage nhưng **không** sinh digest (REQ-D57).
 Sổ `pending_item_ledger` và sổ `backfill_ledger` độc lập với con trỏ kỳ.
 
@@ -351,7 +372,8 @@ Hai builder cùng chạy cho cùng predecessor:
 
 Mã lỗi: **`CONFLICT`** — đã đăng ký trong `contracts/errors.yaml` với
 `operations: [report.publish, embedding.activate_generation, tag.freeze_config_version]` và
-`retry_budget_ref: cas_conflict_retries` (giá trị 3, `PROVISIONAL`). Ngân sách này thuộc PC03;
+`retry_budget_ref: cas_conflict_retries` (giá trị 3, `PROVISIONAL` — PC03 sở hữu, trạng thái do
+PC03 đổi). Ngân sách này thuộc PC03;
 PC04 dùng lại. Không dùng `IDEMPOTENCY_CONFLICT`: đó là "cùng key khác payload", còn đây là
 "predecessor đã bị chiếm". Bên thua bắt buộc **đọc lại predecessor mới** trước mỗi lần thử lại
 (`retry-policy.yaml` → `cas_conflict_retries` → `precondition_vi`).
@@ -377,7 +399,8 @@ PC03 hỏi PC04 (chủ sở hữu tầng báo cáo) chọn giữa hai phương �
 | (a) | **Không** có hàng `report` nào; chỉ `coverage_window(report_id = NULL)` + `run.outcome = 'empty'` | `aborted` chỉ còn nghĩa "build thất bại" |
 | (b) | Có hàng `report(status = 'aborted')` kèm **lý do tường minh** `abort_reason = 'empty_period'` | `aborted` mang hai nghĩa, phân biệt bằng `abort_reason` |
 
-**Quyết định (`PROVISIONAL`): (b), với `abort_reason` bắt buộc.** Đây là chỗ PC04 **không**
+**Quyết định (`ACCEPTED (OD-20260907-01)`): (b), với `abort_reason` bắt buộc.** Owner đã chọn
+phương án (b) (OD-20260907-01 mục 22), tức đã **giải quyết** điểm PC04 **không**
 theo khuyến nghị của Coordinator (Coordinator khuyên (a)); lý do kỹ thuật cụ thể như sau, và
 quyết định này dễ đảo — xem cuối mục.
 
@@ -562,8 +585,8 @@ thống **không** tự bỏ; không có timeout nào biến pending thành aban
 
 | Tham số | Giá trị | Đơn vị | Trạng thái | Lý do |
 | --- | --- | --- | --- | --- |
-| `backfill_days` (N) | 7 | ngày | `PROVISIONAL` (REQ-OQ04, baseline §5 OQ defaults) | Con số đề xuất trong SRC-SPEC §13.1 hàng 4; Owner trả lời, không chặn |
-| `backfill_max_extension` | 30 | ngày | `PROVISIONAL` | Trần cứng để một giá trị N nhập nhầm không kéo lùi biên coverage vô hạn |
+| `backfill_days` (N) | 7 | ngày | `ACCEPTED (OD-20260907-01)` (REQ-OQ04) | Owner đã chấp nhận N = 7 (OD-20260907-01 mục 20/22) như **giá trị làm việc**; đây là lựa chọn của Owner, không phải một giá trị đo được |
+| `backfill_max_extension` | 30 | ngày | `ACCEPTED (OD-20260907-01)` | Trần cứng để một giá trị N nhập nhầm không kéo lùi biên coverage vô hạn |
 
 N được lưu trong `settings['reporting.backfill_days']` và **sao chép** vào
 `backfill_ledger.backfill_days` tại lúc tạo hàng entitlement, để đổi N về sau không viết lại
@@ -583,7 +606,7 @@ ban đầu — ruling chọn dạng nối chuỗi đơn giản hơn và PC04 dù
 `activation_sequence` tăng mỗi lần một tag mang chính `normalized_text` đó chuyển sang
 `state = 'active'` (tạo mới hoặc thêm lại).
 
-**Quy tắc add → remove → re-add (`PROVISIONAL`):** thêm lại một tag đã bỏ **là một activation
+**Quy tắc add → remove → re-add (`ACCEPTED (OD-20260907-01)`):** thêm lại một tag đã bỏ **là một activation
 mới** (`activation_sequence` tăng) nhưng **không** cấp entitlement backfill mới nếu
 `subscription_identity_hash` đó đã tiêu thụ backfill ở một activation trước.
 
@@ -754,7 +777,7 @@ work mới đi theo đường `first_announced_ledger` bình thường.
 
 ### 8.3 Sau identity merge — quyết định đóng CR-PC02-06
 
-`PROVISIONAL`. **Work thắng kế thừa first-announcement sớm nhất trong các work bị hợp nhất; mọi
+`ACCEPTED (OD-20260907-01)`. **Work thắng kế thừa first-announcement sớm nhất trong các work bị hợp nhất; mọi
 hàng còn lại được giữ dưới dạng bằng chứng có audit; một report về sau chỉ được hiện work đó
 dưới dạng tham chiếu có ngày, không bao giờ là phát hiện mới.**
 
@@ -804,7 +827,7 @@ arXiv `v1` và `v2` là **một** work với hai `work_version` (identity.md §2
 - Phân tích lại là hợp lệ và tạo `analysis_generation` mới với `reason = 'new_work_version'`
   (entities.yaml `work_version` → `reanalysis_rule`); bản cũ được giữ (REQ-D26).
 
-*Đây là một đọc hiểu `PROVISIONAL`*: SRC-SPEC không nói phiên bản mới có được báo lại như phát
+*Đây là một đọc hiểu `ACCEPTED (OD-20260907-01)`*: SRC-SPEC không nói phiên bản mới có được báo lại như phát
 hiện mới hay không. Phương án ngược lại (coi v2 là phát hiện mới) phá `UNIQUE` của I07 trên
 canonical identity, nên bị bác.
 

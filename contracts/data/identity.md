@@ -1,7 +1,8 @@
 ---
 contract_id: CT-data-identity
 version: 0.1.0
-status: draft
+status: accepted
+ratification_ref: OD-20260907-01
 owner_role: data contract owner
 source_refs:
   - "SRC-SPEC §3.5 D17, D26, D29"
@@ -28,7 +29,7 @@ scope: >-
   `identity_conflict`, thuật toán merge (chọn winner, cái gì được chuyển, cái gì không),
   audit trail, và những gì cố ý KHÔNG làm ở MVP.
 verification: "E0: fixture identity (acceptance/fixtures/identity/) + validate target objects theo target.schema.json. E1–E4: NOT_RUN."
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
 ---
 
 # Canonical identity, alias và merge

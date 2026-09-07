@@ -1263,3 +1263,306 @@ Lệnh tái lập được:
 
 Lease `LEASE-PC02-e9` nhả lúc 2026-09-07T01:52Z. Không lệnh git mutation, không network, không
 file ngoài grant, không `__pycache__`.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX9 (Owner ratification → CONTRACT_READY)
+
+## I1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX9` · authority `AUTH-COORD-PC02-FIX9` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC02-e10` (fencing 10) |
+| worker principal | `worker-W3` · expires_at 2026-09-08T00:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE_WITH_CONCERNS** · completion_claim **`CONTRACT_READY`** trong phạm vi "Data and identity" |
+| ratification | `OD-20260907-01`, evidence_ref: Claude Code session `session_017QmDJtMqD9o1z79waqSB9W`, 2026-09-07 |
+| next actor | Coordinator · `lease_released_at` | 2026-09-07T04:22Z |
+
+`date -u` = 2026-09-07T04:15:18Z (trong hạn); SRC-SPEC `d35e1f2d…`, SRC-PLAN `f65bb046…` khớp baseline §2.
+
+Đây là lần đầu một file của PC02 vượt `DRAFT_FOR_REVIEW`. Căn cứ: A2-R4 tuyên bố phạm vi
+"Data and identity" đủ điều kiện, và Owner đã phê chuẩn B01–B17 từng mục.
+
+## I2. Delta
+
+**1. Header trên 6 file** → `status: accepted`, `ratification_ref: OD-20260907-01`,
+`claim_ceiling: CONTRACT_READY`. YAML top-level cho `entities.yaml`; front-matter cho
+`identity.md`, `invariants.md`, `acceptance/fixtures/identity/README.md`; `x-contract` cho hai
+JSON schema.
+
+**2. Mục `ratification` mới trong `entities.yaml`** ghi lại: 8 mục đã được phê chuẩn (B08 timezone
+`Asia/Ho_Chi_Minh`, B01 tag freeze, B05, B06, B07, B15, backfill N=7, phạm vi purge), 1 giá trị
+`ACCEPTED_WORKING_VALUE`, 8 mục vẫn `PROVISIONAL`, 2 mục vẫn `KC`.
+
+**3. `TXN-purge-all`: danh sách loại trừ đã được quyết định.** Mục
+`excluded_pending_owner_decision` (19 bảng, `OWNER_DECISION_REQUIRED`) được thay bằng
+`retained_by_owner_decision` (**20 bảng**, `status: ACCEPTED`, `decision_ref: OD-20260907-01`),
+mỗi bảng có lý do riêng: `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`,
+`telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`,
+`schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`,
+`source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`.
+Thêm `backup_artifacts_rule`: artifact backup KHÔNG bị đụng, và hộp thoại xác nhận **phải nói
+thẳng** rằng dữ liệu vừa xóa vẫn còn trong backup — xóa khỏi backup là thao tác riêng của PC08.
+Oracle bổ sung: mọi bảng trong danh sách giữ lại có số hàng KHÔNG đổi; `#session` không đổi ⇒
+owner vẫn đăng nhập được ngay sau khi xóa. `OWNER_DECISION_REQUIRED` không còn xuất hiện như
+một trạng thái mở trong file.
+
+**4. PROVISIONAL → ACCEPTED**, nhưng **chỉ ở nơi Owner thực sự đã quyết định**:
+
+| Mục | Trạng thái mới | Căn cứ |
+| --- | --- | --- |
+| B08 timezone `Asia/Ho_Chi_Minh` | **ACCEPTED** | OD mục 4 |
+| B01 tag freeze tại publish transaction | **ACCEPTED** | OD mục 5, AMD-B01 |
+| backfill N = 7 ngày | **ACCEPTED** | OD mục 20, REQ-OQ04 |
+| analysis key không gồm provider/model | **ACCEPTED** | OD mục 11, AMD-B07 |
+| `limits.ingest_batch_max_items` = 200 | **ACCEPTED_WORKING_VALUE** | OD mục 20 (REQ-OQ05) — Owner chấp nhận làm giá trị làm việc, còn phải đo lại sau M0 |
+
+## I3. Điều tôi KHÔNG nâng lên ACCEPTED (và vì sao)
+
+Bảy giới hạn còn lại (`ingest_item_max_text_bytes`, `ingest_batch_max_payload_bytes`,
+`ingest_item_max_media_refs`, `ingest_item_max_referenced_links`,
+`ingest_thread_context_max_posts`, `identity_merge_max_moved_rows`,
+`saved_snapshot_max_payload_bytes`) và retention 30 ngày của `telegram_link_attempt` **giữ
+`PROVISIONAL`**, mỗi mục mang `ratification_note_vi` nói rõ lý do.
+
+Chúng do PC02 tự đề xuất (CR-PC02-04, -05, -17) và **không nằm trong buổi phê chuẩn** — bản ghi
+OD-20260907-01 liệt kê những gì Owner được hỏi, và bảy con số này không có trong đó. Đánh dấu
+chúng ACCEPTED chỉ vì packet nói "PROV wording → ACCEPTED where it appears" sẽ là khai rằng
+Owner đã duyệt một con số họ chưa từng thấy. **CR-PC02-22** đề nghị đưa chúng vào lần hỏi kế
+tiếp; chúng không chặn `CONTRACT_READY` vì đều có giá trị, đơn vị và lý do (baseline §3 "no vagueness").
+
+## I4. Mục còn `KC` trong phạm vi (packet yêu cầu nêu từng mục)
+
+| Mục | Vì sao vẫn KC | Có chặn CONTRACT_READY không |
+| --- | --- | --- |
+| `entities[provider_config].terms_doc_ref` | REQ-A5: điều khoản của từng nhà AI chưa được đọc (Pre-code không có mạng) | **Không.** Đây là điều kiện RUNTIME, không phải khoảng trống hợp đồng: CHECK `ck_provider_config_terms_before_enable` giữ mọi adapter ở `enabled = false` cho tới khi có người đọc thật |
+| `identity.md` §9 non-goals (fuzzy title merge, author+year merge, OCR, undo merge) | KC **theo thiết kế**: cần dữ liệu có nhãn để đánh giá | **Không.** Chúng là non-goal đã tuyên bố, không phải quyết định còn thiếu |
+
+## I5. Hash sau
+
+| Path | sha256 | Bytes |
+| --- | --- | --- |
+| `contracts/data/entities.yaml` | `2bc84950415b7f9813194d2cad4e8abe8759903690be708292d173eb6d019d36` | 227851 |
+| `contracts/data/identity.md` | `71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd` | 20610 |
+| `contracts/data/invariants.md` | `7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c` | 27816 |
+| `contracts/schemas/target.schema.json` | `e6bdcf9e4dc4c6217ab0f79ffa0cf0664084bce012b92e6c8fcc2d6731a0c235` | 8372 |
+| `contracts/schemas/ingest-batch.schema.json` | `872cc3b4a6326b1016da995c92d5a13e88cfdc86efa1e57be25a164d9ff5abc7` | 15443 |
+| `acceptance/fixtures/identity/README.md` | `015ad8695d0df6cede410585fb4061d2d065ad1207b6af9a19ab6e880a49e785` | 11403 |
+
+⚠️ **Card-pin: 18 card** trong `agent-tasks/` pin hash cũ của `entities.yaml` /
+`ingest-batch.schema.json` / `target.schema.json`. Lần này thay đổi **không thêm/bớt cột nào** —
+chỉ header, mục `ratification`, và danh sách purge đã quyết định — nhưng card cũng pin
+`claim_ceiling`, nên W7 cần re-pin trong đợt `PC10-PIN-FCW4d-20260907`. Đáng chú ý: OD mục 3
+đổi stack sang **B (Python worker + TypeScript web)**, nên 18 card còn phải viết lại §3 paths và
+§8 build/test — việc đó thuộc W7, không thuộc packet này.
+
+## I6. Evidence
+
+Chạy 2026-09-07T04:18:19Z → 04:18:26Z:
+
+| Script | Exit | Kết quả |
+| --- | --- | --- |
+| `verify_pc02.py` (6 gate) | **0** | `RESULT: PASS (0 fail)` — 60 entity, 8 transaction |
+| `check_actor_edges.py` | **0** | 60 token ↔ 60 entity, diff rỗng hai chiều |
+| `fixture_field_gate.py` (R4-01, 7 thư mục) | **0** | 0 unresolved |
+| `check_refs_pc01.py` | **0** | mọi MOD id / operation id tồn tại |
+| `prose_token_gate.py` (5 file PC02) | **0** | 51 op + 180 column, 0 vi phạm, 2/2 negative self-test bị bắt |
+
+Hai lần sửa gate trong gói này, cả hai là sửa **gate**, không phải nội dung: (a)
+`verify_pc02.py` hard-code `claim_ceiling == "DRAFT_FOR_REVIEW"` nên chính việc nâng ceiling làm
+nó fail — nay chấp nhận cả `CONTRACT_READY`; (b) mục `ratification` mới của tôi sinh token
+`limits.ingest_*` mà E0-04c đọc thành `entity.column` — đã viết lại thành `limits → …`.
+
+## I7. Điều `CONTRACT_READY` này KHÔNG khẳng định
+
+Theo SRC-PLAN §2: nhãn chỉ nói **bộ hợp đồng đủ trường, không còn quyết định chặn, ví dụ hợp lệ
+và bất hợp lệ đã được kiểm**. Nó **không** nói code chạy được, không nói SQLite thực thi được
+các ràng buộc mô tả (partial index, generated column, CHECK — vẫn chưa ai chạy thử), và không
+nói "0 trùng" đúng ngoài phạm vi canonical identity đã biết (B15). Mọi bằng chứng vẫn là E0
+`SELF_VALIDATION`; E1–E4 vẫn `NOT_RUN`.
+
+## I8. Kết thúc
+
+Lease `LEASE-PC02-e10` nhả lúc 2026-09-07T04:22Z. Không lệnh git mutation, không network, không
+file ngoài grant, không `__pycache__`.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX10 (F-A2R5-04/-05: ceiling của fixture và tuyên bố NOT_RUN)
+
+## J1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX10` · authority `AUTH-OWNER-20260907-02` (OD-20260907-01) · lease `LEASE-PC02-e11` (fencing 11) |
+| worker principal | `worker-W3` · expires_at 2026-09-08T04:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `CONTRACT_READY` (phạm vi "Data and identity") |
+| findings | F-A2R5-04, F-A2R5-05 → `FIX_PROPOSED` |
+| next actor | Coordinator · `lease_released_at` | 2026-09-07T05:12Z |
+
+`date -u` = 2026-09-07T05:05:13Z (trong hạn); nguồn khớp baseline §2.
+
+## J2. Delta (a) — 14 fixture identity lên CONTRACT_READY
+
+Trước gói này README của thư mục claim `CONTRACT_READY` còn 14 file nó lập chỉ mục vẫn ở
+`DRAFT_FOR_REVIEW` — đúng chỗ F-A2R5-04 gọi là "hai file đứng trên mọi file chúng lập chỉ mục".
+Ruling: fixture của hai thư mục đã phê chuẩn là **oracle chấp nhận** của chính phạm vi đó.
+
+Mỗi file nay mang một khối **`x-contract`** (không phải khóa rời rạc) gồm:
+`status: accepted` · `ratification_ref: OD-20260907-01` · `claim_ceiling: CONTRACT_READY` ·
+`eligibility_scope` · `runtime_evidence: NOT_RUN` · `runtime_evidence_note_vi`.
+
+Khóa `claim_ceiling` rời ở cấp gốc đã được **gỡ** và chuyển vào `x-contract`. Lý do: F-A2R5-03
+đòi `ratification_ref` phải đọc được từ **header hợp đồng đã khai** chứ không phải từ văn xuôi
+hay một khóa rải rác; giữ hai chỗ cùng nói về ceiling là mời gọi chúng lệch nhau. README §2 và
+§1b được cập nhật theo hình dạng mới.
+
+## J3. Delta (b) — tuyên bố NOT_RUN trên hai schema
+
+`target.schema.json` và `ingest-batch.schema.json` nhận `x-contract.runtime_evidence: NOT_RUN`
+cùng câu giải thích: E1–E4 chưa chạy, chưa có code, **SQLite chưa từng được yêu cầu ép** các
+ràng buộc mô tả (partial index, generated column, CHECK); `CONTRACT_READY` chỉ nói bộ hợp đồng
+đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0. Cùng câu đó nằm trong 14 fixture.
+
+## J4. Delta phát sinh — quét E0-04c lần đầu trên fixture identity
+
+Các lần chạy prose gate trước chỉ phủ 5 file hợp đồng, chưa phủ fixture. Lần này phủ cả 20
+file và tìm thấy **23** token `<a>.<b>` chưa giải được, cùng lớp với F-A2R5 — không cái nào là
+cột bịa: `given.rows` / `expected.rows` / `expected.hash_oracles` /
+`expected_violation.json_pointer` (cấu trúc fixture), `conventions.hashes` (đường dẫn mục), và
+một `post.mark_source_deleted` sót lại trong `forbidden_effects` của fixture (e). Tất cả đã
+viết lại thành dạng không mơ hồ; **0 còn lại**.
+
+## J5. Hash sau
+
+| Path | sha256 | Bytes |
+| --- | --- | --- |
+| `acceptance/fixtures/identity/README.md` | `ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14` | 12611 |
+| `contracts/schemas/target.schema.json` | `d1ce487d2e4ba24b094f702b38a5fcac517443981fe8faea36472089124dc0fd` | 8915 |
+| `contracts/schemas/ingest-batch.schema.json` | `8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690` | 15986 |
+
+14 file JSON trong `acceptance/fixtures/identity/` đều đổi; hash đầy đủ lấy bằng
+`sha256sum acceptance/fixtures/identity/*.json`. Kiểm tự động: cả 14 file có `x-contract` với
+đủ ba trường `claim_ceiling=CONTRACT_READY`, `ratification_ref=OD-20260907-01`,
+`runtime_evidence=NOT_RUN`.
+
+⚠️ Card-pin: **9** card trong `agent-tasks/` pin hash cũ của hai schema. W7 re-pin trong đợt
+`PC10-PIN-OD01c-20260907`.
+
+## J6. Evidence
+
+Chạy 2026-09-07T05:08:00Z → 05:08:08Z: `verify_pc02.py` **0** · `fixture_field_gate.py` **0**
+(7 thư mục, 0 unresolved) · `check_actor_edges.py` **0** (60 ↔ 60) · `check_refs_pc01.py` **0** ·
+`prose_token_gate.py` trên **20 file PC02** **0** (78 op + 198 column, 0 vi phạm, 2/2 negative
+self-test bị bắt).
+
+## J7. Kết thúc
+
+Lease `LEASE-PC02-e11` nhả lúc 2026-09-07T05:12Z. Không lệnh git mutation, không network, không
+file ngoài grant, không `__pycache__`.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX11 (tập bảng purge có thẩm quyền + header fixture)
+
+## K1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX11` · authority `AUTH-COORD-PC02-FIX11` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC02-e12` (fencing 12) |
+| worker principal | `worker-W3` · expires_at 2026-09-08T04:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `CONTRACT_READY` (data and identity) |
+| next actor | Coordinator · `lease_released_at` | 2026-09-07T05:16Z |
+
+`date -u` = 2026-09-07T05:09:44Z (trong hạn); nguồn khớp baseline §2.
+
+## K2. (1) Ba tập bảng của `TXN-purge-all`
+
+Defect CR-PC05-06: `schedule_occurrence` từng nằm ở **cả hai** tập, còn
+`worker_registration` và `data_deletion_audit` bị xếp vào purged — mâu thuẫn với mục 20/23 đã
+phê chuẩn (giữ lịch; bản ghi xóa giữ vĩnh viễn).
+
+Mục `tables` được viết lại thành ba tập có thẩm quyền, kèm `set_authority_vi` và `counts`:
+
+| Tập | Số bảng | Ghi chú |
+| --- | --- | --- |
+| `purged` | **37** | 36 bảng của ruling **+ `telegram_link_attempt`** — ruling nêu nó purged trong văn xuôi nhưng thiếu trong danh sách; correction 06:05Z của Coordinator (CR-PC05-07) xác nhận 37. Tôi đã dùng 37 từ đầu vì văn xuôi ruling nói rõ, và ghi `telegram_link_attempt_note_vi` tại chỗ |
+| `retained_by_owner_decision` | **21** | 20 bảng cũ **+ `worker_registration`** với lý do được nêu: đăng ký collector và ràng buộc token là **cấu hình**, không chứa dữ liệu nghiên cứu; xóa sẽ buộc đăng ký lại collector |
+| `never_purged` | **2** | `schema_migration` và **`data_deletion_audit`** (bản ghi xóa giữ vĩnh viễn theo tham số PC08 đã phê chuẩn; chính thao tác purge ghi một hàng audit vào đây) |
+
+`schedule_occurrence` nay chỉ nằm ở `retained`. Tổng **37 + 21 + 2 = 60 = toàn bộ entity**.
+
+Đối chiếu tự động với file ruling đã sửa: tập `purged` của entities.yaml **khớp từng phần tử**
+(`ruling − mine = ∅`, `mine − ruling = ∅`).
+
+## K3. EV-PC02-08 — phủ kín và rời nhau
+
+Thêm vào `verify_pc02.py` một assertion đọc thẳng ba tập từ entities.yaml:
+
+```text
+INFO  purged=37 retained=21 never=2 tổng=60 | entities=60
+PASS  phủ kín: mọi entity thuộc đúng một trong ba tập
+PASS  không có tên lạ trong ba tập
+PASS  purged ∩ retained = ∅
+PASS  purged ∩ never_purged = ∅
+PASS  retained ∩ never_purged = ∅
+PASS  tổng ba tập = số entity = 60
+```
+
+Đây là oracle bắt được đúng lớp lỗi CR-PC05-06: một bảng nằm ở hai tập, hoặc một entity không
+nằm ở tập nào, đều làm gate FAIL. Trước gói này không gate nào kiểm điều đó.
+
+## K4. (2) Header của 14 fixture identity
+
+Coordinator cho chọn: hoàn thiện `x-contract` hoặc chuyển lên top-level, oracle ràng buộc là
+`E0-08 = 0` và E0-12b giải được ref. Tôi **hoàn thiện `x-contract`** với đủ **14 trường bắt
+buộc** của baseline §3 (`contract_id`, `version`, `status`, `owner_role`, `source_refs`,
+`requirement_refs`, `decision_refs`, `invariant_refs`, `producers`, `consumers`,
+`dependencies`, `scope`, `verification`, `claim_ceiling`) cộng `ratification_ref`,
+`eligibility_scope`, `runtime_evidence`.
+
+Lý do chọn nhánh này: trước đó 14 fixture chỉ pass E0-08 nhờ **fallback "README có liệt kê
+file"**. Nay mỗi file tự mang header đầy đủ, nên nó pass **bằng chính nội dung của nó** —
+không phụ thuộc một file khác vẫn liệt kê đúng tên nó.
+
+## K5. (3) `screens.yaml` trích tập đã sửa
+
+`ACT-purge-all.scope_authority` nay nêu **37 / 21 / 2** và nói rõ ba tập rời nhau, phủ kín 60
+entity, kiểm bởi EV-PC02-08. `confirmation_dialog` lên **bốn khối nội dung**: thêm
+`never_purged_vi` (phiên bản schema + nhật ký xóa giữ vĩnh viễn). `retained_vi` nêu đích danh
+`schedule_occurrence` và `worker_registration` kèm hệ quả "xóa sẽ buộc đăng ký lại collector".
+`deleted_vi` ghi "37 bảng" và bổ sung sổ quét lại kho, nhật ký gọi nguồn. `forbidden_vi` đổi
+"ba khối" → "bốn khối".
+
+## K6. Hash sau
+
+| Path | sha256 | Bytes |
+| --- | --- | --- |
+| `contracts/data/entities.yaml` | `766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7` | `228394` |
+| `contracts/ui/screens.yaml` | `e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074` | `51212` |
+| `acceptance/fixtures/identity/README.md` | `ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14` | `12611` |
+
+14 file JSON identity đều đổi (header đầy đủ); hash lấy bằng
+`sha256sum acceptance/fixtures/identity/*.json`.
+
+⚠️ Card-pin: **18** card pin hash cũ của `entities.yaml` / `screens.yaml`; W7 re-pin trong
+đợt `PC10-PIN-OD01c-20260907`.
+
+## K7. Evidence
+
+Chạy 2026-09-07T05:12:37Z → 05:12:49Z, tất cả **exit 0**:
+
+| Gate | Kết quả |
+| --- | --- |
+| `verify_pc02.py` (7 gate, gồm **EV-PC02-08** mới) | `PASS (0 fail)` |
+| `verify_pc07.py` (5 gate) | `PASS (0 fail)` |
+| `fixture_field_gate.py` (R4-01, 7 thư mục) | 0 unresolved |
+| `check_actor_edges_all.py` | PASS |
+| `check_refs_pc01.py` | PASS |
+| `prose_token_gate.py` (20 file PC02 + screens.yaml) | 135 op + 229 column, 0 vi phạm |
+| **`evidence/tools/e0_check.py`** (gate chính thức) | **23/23 PASS, 0 FAIL** — gồm `E0-08-contract-header` 142/0, `E0-12b-ratification-refs` 50/0, `E0-12-forbidden-strings` 713/0, `E0-04c` 215/0, `E0-14` 455/0 |
+
+## K8. Kết thúc
+
+Lease `LEASE-PC02-e12` nhả lúc 2026-09-07T05:16Z. Không lệnh git mutation, không network, không
+file ngoài grant, không `__pycache__`.

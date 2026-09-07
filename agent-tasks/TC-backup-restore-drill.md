@@ -6,7 +6,7 @@ owner_role: implementation planning owner
 template_ref: agent-tasks/TEMPLATE.md
 milestone: M8
 gate: G5
-stack_decision: ADR-0006 (Option A / Python) — PROVISIONAL, status proposed
+stack_decision: ADR-0006 (Option B — Python workers + TypeScript web) — ACCEPTED (OD-20260907-01)
 claim_ceiling: IMPLEMENTATION_VERIFIED
 owner_modules: [MOD-backup-service, MOD-backup-cli]
 scenario_refs: [SC26, SC27, SC42, SC43, SC12, SC49, SC44, SC53]
@@ -19,11 +19,11 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 # TC-backup-restore-drill — Backup nhất quán WAL-safe và diễn tập restore có khóa side effect
 
-> **Chưa được phép code.** Card này là tài liệu giao việc ở trạng thái `DRAFT_FOR_REVIEW`. Nó chỉ trở thành lệnh thi công sau khi G5 pass và Owner ra lệnh bắt đầu. Stack (Option A / Python) là **PROVISIONAL** theo `precode/adr/ADR-0006-stack-option-a.md`; mọi đường dẫn ở §3 và mọi lệnh ở §8 có điều kiện *"nếu ADR-0006 được chấp nhận"*.
+> **Chưa được phép code.** Card này là tài liệu giao việc ở trạng thái `DRAFT_FOR_REVIEW`. Nó chỉ trở thành lệnh thi công sau khi G5 pass và Owner ra lệnh bắt đầu. **Stack đã được Owner chốt: Option B — Python cho worker/server, TypeScript cho web UI** (`OD-20260907-01`, REQ-OQ02 đã trả lời). Phân chia ngôn ngữ là **ACCEPTED**; riêng **đường dẫn cụ thể** ở §3 và **lệnh** ở §8 vẫn `PROVISIONAL` cho tới khi có repo triển khai thật, và framework vẫn `PROVISIONAL` trừ khi ADR-0006 nêu tên.
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-FCW4f-20260907`** (thay `PC10-PIN-FCW4e-20260907`; các epoch cũ hơn: `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Hash dưới đây được **tính lại trực tiếp trên repo**; thay đổi duy nhất so với `FCW4e` là `contracts/modules.yaml` (năm denied case thêm `event_type`; không oracle nào của card bị ảnh hưởng). **Card là nguồn chuẩn của tên epoch**; mọi file khác khẳng định pin hiện hành phải đọc tên từ đây, không chép tay (finding `F-A2R1-03`). Trước khi bắt đầu, chạy `sha256sum` trên **mọi** dòng dưới đây. Lệch một dòng ⇒ card `STALE`, DỪNG (`precode/change-control.md` §5, quy tắc `INV-06`/`INV-09` của `precode/gates.yaml`).
+**Pin epoch: `PC10-PIN-OD01c-20260907`** (thay `PC10-PIN-OD01b-20260907`; các epoch cũ hơn: `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau wave lan truyền hậu A2-R5 (`FIX-R5-rulings.md`): phạm vi `data.purge_all` đã phê chuẩn được chép nhất quán vào mọi artefact, và hai thư mục fixture `identity/`, `reporting/` lên `CONTRACT_READY`. Hash dưới đây tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG (`precode/change-control.md` §5, `INV-06`/`INV-09`).
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -32,20 +32,20 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
-| `precode/baseline.json` | `e4c3f4563e04293c319bf746b371bc67857115b7070d14a9771de3238e8683a7` | 97620 |
-| `precode/decision-register.md` | `212441a429420d1cc11cdc4a9c79a11648e45e1b92278a08f77a9779943ad15d` | 97899 |
-| `contracts/modules.yaml` | `11af00fd97a03d5357fc1a72d0e4e61293164f449c3a50e700c03a202e1166c7` | 105642 |
-| `contracts/capabilities.yaml` | `fae5891cff5ff25757f168d8182111fa4fc6b49f6b851ac7cc07105fef952cf7` | 45672 |
-| `contracts/ports.yaml` | `93ba159856a4821ad46d1d05199987f475c8ae5603d8f9200e1418b0e2eab42e` | 126182 |
-| `contracts/errors.yaml` | `b63eef7abd4cee328581e5e06cbc8314e60e52e03468dbe6acea42a0a843ad26` | 62269 |
-| `contracts/retry-policy.yaml` | `5e083230e2cc5db481736adcf189a6cf8e302ebdf45cad614582731698cf06d5` | 41620 |
-| `contracts/data/entities.yaml` | `c2ceeafd1b78705941f368bfe73f67cf097ffad8179c7455b2d4eeda571b5a1e` | 221041 |
-| `contracts/ops/backup-restore.md` | `8737f483da5b776b506853dbbab5d2938bd08ba1a09481d2bd129c86e64ef7c3` | 22659 |
-| `contracts/state/storage.yaml` | `f67e78f528a13b768b97ab72f55542ac9bac439b8f5472e8e03247b41dae72c2` | 27018 |
-| `contracts/http/openapi.yaml` | `a7f284b97816a4a37a53256bdea00b0affa26bd18d152faf4f80dec7223c8499` | 227691 |
-| `contracts/ops/deployment.md` | `7e1c03776b4c8be20f596a0317ea1c79429cf4ecaa78fadc1f0ec3e5158088f5` | 17759 |
-| `precode/adr/ADR-0005-backup-method.md` | `7830500f824c84683d81f2458d7280483d105c4a221f738b083c6fcb7fcbeead` | 5013 |
-| `acceptance/fixtures/recovery/README.md` | `799728748dcc40f5a79ed727cb491c446f8ce5e9eb0b40465d5aad891fbc1f6c` | 10939 |
+| `precode/baseline.json` | `e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b` | 100474 |
+| `precode/decision-register.md` | `1883fec33f56873a426394a99d3fc6c5ec43c456a936c52733cad6c047f06262` | 102430 |
+| `contracts/modules.yaml` | `cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457` | 108721 |
+| `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
+| `contracts/ports.yaml` | `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684` | 128850 |
+| `contracts/errors.yaml` | `640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f` | 65180 |
+| `contracts/retry-policy.yaml` | `d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5` | 46995 |
+| `contracts/data/entities.yaml` | `766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7` | 228394 |
+| `contracts/ops/backup-restore.md` | `826655daa469e3e8e2fbd54263f13be78f4e9a17fd490524a3b07f894989ad4f` | 25858 |
+| `contracts/state/storage.yaml` | `a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849` | 29908 |
+| `contracts/http/openapi.yaml` | `28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92` | 231705 |
+| `contracts/ops/deployment.md` | `dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936` | 19568 |
+| `precode/adr/ADR-0005-backup-method.md` | `889de2812a8736e328eb7823a82e2b5dab1f46aee13257bfcfedd08d4668bd5c` | 5457 |
+| `acceptance/fixtures/recovery/README.md` | `982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8` | 12235 |
 | `acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json` | `e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838` | 4194 |
 | `acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json` | `4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c` | 3455 |
 | `acceptance/fixtures/recovery/d-wal-unsafe-copy-detected.json` | `64d11f5541826f64888a29b4fcc97af020715370a3d5237bfc9d371b4367a804` | 3048 |
@@ -53,7 +53,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 | `acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json` | `3630edc83719ada07cae9b39f5da7ad8d1894379509c96bb1128cf958ca6ea0b` | 3462 |
 | `acceptance/fixtures/boundary/README.md` | `6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba` | 10598 |
 | `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json` | `5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0` | 31529 |
-| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | `e144d0ce7b26f45825c8b1c72621d925336dd5b0ac8acbee77a48d05e1fd8bed` | 7790 |
+| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | `9cd382e270e581b1b4ea69ac78f9ddb7730d215d34fadf6ce537a4e1f0dc053a` | 20786 |
 | `acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json` | `90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94` | 7808 |
 
 **Cố ý KHÔNG pin hash** (PC09 sở hữu; PC09-FIX1 chạy song song — dẫn bằng đường dẫn + SC id, theo ruling của Coordinator về `CR-PC10-01`): `acceptance/scenarios.yaml`, `acceptance/traceability.csv`, `precode/gates.yaml`, `precode/review.md`, `evidence/manifest.schema.json`, `evidence/index.json`, và `evidence/tools/e0_check.py`. Đọc bản mới nhất của chúng ngay trước khi bắt đầu; PC10 **không** chạy `e0_check.py`.
@@ -82,7 +82,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 4. Hợp đồng nền: `contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/capabilities.yaml`, `contracts/errors.yaml`, `contracts/retry-policy.yaml`, `contracts/data/entities.yaml`.
 5. Fixture bắt buộc: `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json`, `acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json`, `acceptance/fixtures/recovery/d-wal-unsafe-copy-detected.json`, `acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json`, `acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json`, `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json`.
 
-## §3. Write set — PROVISIONAL (chỉ đúng nếu ADR-0006 được chấp nhận)
+## §3. Write set — layout theo Stack B (ACCEPTED); đường dẫn cụ thể còn PROVISIONAL
 
 Mọi file **không** nằm trong bảng này là **read-only**. Toàn bộ `contracts/`, `acceptance/`, `precode/` là read-only với card này: phát hiện sai ⇒ change request, không tự sửa.
 
@@ -96,7 +96,7 @@ Mọi file **không** nằm trong bảng này là **read-only**. Toàn bộ `con
 | `tests/integration/test_wal_unsafe_detected.py` | bản copy không WAL-safe bị từ chối |
 | `tests/integration/test_restore_side_effect_lock.py` | 0 tin gửi trước khi đối soát xong |
 
-Nếu Owner chọn Option B hoặc C ở ADR-0006, **chỉ bảng này và §8 phải viết lại**; §2, §4, §5, §6, §7 không đổi vì hợp đồng độc lập framework.
+**Quy ước ngôn ngữ (ACCEPTED, `OD-20260907-01`):** `server/`, `collector/`, `worker/`, `probe/` là **Python**; `web/` là **TypeScript**. Layout TypeScript dùng chung một quy ước cho mọi card có phần web — xem `agent-tasks/README.md` §5.3. Đường dẫn còn `PROVISIONAL` vì chưa có repo triển khai; đổi đường dẫn **chỉ** sửa bảng này và §8, không chạm §2/§4/§5/§6/§7 — hợp đồng độc lập framework.
 
 ## §4. Consumes / produces
 
@@ -218,6 +218,8 @@ Error envelope bắt buộc: `code`, `scope`, `retry_class`, `message_safe`, `co
 
 **Tối đa: `IMPLEMENTATION_VERIFIED`.**
 
+**Ngoài phạm vi đã phê chuẩn.** Read set của card này chạm `contracts/ops/backup-restore.md` — phạm vi còn mang KC. Card **không** đủ điều kiện nâng lý do trần claim; các điểm dừng KC ở §10 (REQ-A5/REQ-A6, `CR-PC07-04`, SP1, REQ-OQ03) **giữ nguyên**. Ngoài ra 2 file hợp đồng trong read set vẫn khai `claim_ceiling: DRAFT_FOR_REVIEW`: `contracts/http/openapi.yaml`, `contracts/ops/backup-restore.md`.
+
 Mẫu claim bắt buộc (SRC-PLAN §14.3): claim + baseline (spec hash + contract version/hash + implementation revision) + requirements covered + evidence manifest IDs + observed result + **not established** + open issues + review type. Không được viết "independent audit passed"; tự kiểm là `SELF_VALIDATION`.
 
 ## §10. Stop-and-report
@@ -225,9 +227,9 @@ Mẫu claim bắt buộc (SRC-PLAN §14.3): claim + baseline (spec hash + contra
 | ID | Điều kiện dừng |
 | --- | --- |
 | `SG-01` | `CR-PC08-05` còn OPEN: `ENT-restore-record` **không có** trường xác nhận của Operator (`operator_acknowledged_at` / `operator_acknowledgement_ref`) trong khi mệnh đề 7 của `reconciliation_complete` đòi nó. Không tự thêm cột; DỪNG và raise CR. |
-| `SG-02` | Danh sách loại trừ của `data.purge_all` vẫn `OWNER_DECISION_REQUIRED` (`PROV-PC00-01`). Không hiện thực purge trong card này. |
+| `SG-02` | `data.purge_all` **đã được Owner chốt** (`OD-20260907-01` mục 24): chỉ dữ liệu nghiên cứu; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup KHÔNG bị xóa** — điều này trực tiếp chạm card backup. Vẫn không hiện thực purge trong card này. |
 | `SG-03` | Không chạy restore trên dữ liệu thật khi chưa có Owner go-ahead và chưa có khóa side effect. |
-| `SG-STACK` | ADR-0006 (Option A / Python) vẫn `proposed`. Mọi đường dẫn ở §3 và mọi lệnh ở §8 là **PROVISIONAL**. Nếu Owner chọn B hoặc C, DỪNG và trả card về Coordinator để viết lại §3/§8; hợp đồng ở §2 không đổi. |
+| `SG-STACK` | Stack đã chốt: **Option B** (`OD-20260907-01`) — `server/`, `collector/`, `worker/`, `probe/` là Python; `web/` là TypeScript. Phân chia ngôn ngữ **không** còn là điểm dừng. Nhưng **đường dẫn cụ thể** ở §3 và **lệnh** ở §8 vẫn PROVISIONAL cho tới khi có repo triển khai, và **framework chưa được chốt** trừ khi ADR-0006 nêu tên. Cần chọn framework/thư viện ⇒ DỪNG và raise CR; không tự chọn. |
 | `SG-G5` | Card này chưa được phép code. Chỉ bắt đầu sau khi G5 pass **và** Owner ra lệnh bắt đầu bằng văn bản (SRC-PLAN §12; `precode/README.md` §7). |
 | `SG-PC09` | File của PC09 (`acceptance/scenarios.yaml`, `acceptance/traceability.csv`, `precode/gates.yaml`, `precode/review.md`, `evidence/manifest.schema.json`, `evidence/index.json`) **cố ý không được pin hash** ở §0 vì PC09-FIX1 chạy song song với PC10-FIX1. Chúng được dẫn bằng **đường dẫn + SC id**. Trước khi code, đọc bản mới nhất của `acceptance/scenarios.yaml`; nếu oracle ở đó mâu thuẫn với §8 → DỪNG, raise CR, **không** sửa oracle. |
 | `SG-DENY` | Nghĩa vụ default-deny áp dụng cho **mọi** card: mọi cạnh trong 36 `forbidden_edges` của `contracts/modules.yaml` chạm tới module của card phải bị từ chối bằng đúng mã của bảng ranh giới R5-01 (§5). Sai mã cũng là FAIL, không chỉ sai hành vi. Oracle: `SC49` + `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`. |

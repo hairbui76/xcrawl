@@ -1,7 +1,8 @@
 ---
 contract_id: CT-data-invariants
 version: 0.1.0
-status: draft
+status: accepted
+ratification_ref: OD-20260907-01
 owner_role: data contract owner
 source_refs:
   - "SRC-PLAN §7 (bảng invariant I01–I15)"
@@ -28,7 +29,7 @@ scope: >-
 verification: >-
   E0 (đã chạy trong gói này): fixture parse + target schema validation + kiểm tham chiếu
   entity. E1 (contract test bằng fixture), E2 (fault injection), E3/E4: NOT_RUN.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
 ---
 
 # Invariant dữ liệu

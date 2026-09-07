@@ -117,16 +117,19 @@ traceability_csv_contract_header:
 
 # Readiness review — baseline Pre-code Research Radar
 
-Người viết: `worker-W6` (PC09, verification owner) · Ngày: 2026-09-07 (bản PC09-FIX2, sau đợt
-FIX6 và audit A2-R1) · Claim: `DRAFT_FOR_REVIEW`
+Người viết: `worker-W6` (PC09, verification owner) · Ngày: 2026-09-07 (bản PC09-FIX7, **sau khi
+Owner phê chuẩn `OD-20260907-01`**) · Claim: `DRAFT_FOR_REVIEW` cho bản review này;
+**`CONTRACT_READY` cho bốn phạm vi hợp đồng** — xem §12
 
 > **Mọi con số trong bản này được SINH RA, không được chép tay.** Bộ sinh là
 > `derive_numbers.py` (đọc thẳng artefact và lần chạy E0 đã đăng ký) và `crtable.py` (quét toàn
 > repo tìm CR id), chạy từ thư mục scratch của Worker.
 >
 > **Đầu ra của chúng nằm TRONG candidate**, cạnh lần chạy E0 mà chúng mô tả:
-> `evidence/runs/numbers-20260907T023000Z.json` và
-> `evidence/runs/cr_summary-20260907T023000Z.json`. Mỗi con số
+> hai artefact `numbers-…` và `cr_summary-…` trong `evidence/runs/`, đăng ký làm artefact của
+> bản ghi `EV-PC09-01` trong `evidence/index.json` (trích **theo đăng ký**, không theo dấu thời
+> gian: một tên file có dấu thời gian trong văn bản này sẽ tự làm chính nó cũ mỗi lần chạy lại —
+> đúng vòng lặp mà `F-A2R5-02` mô tả). Mỗi con số
 > dưới đây ghi kèm **khóa** của nó trong file thứ nhất — ví dụ `coverage.COVERED`,
 > `partial_p0_breakdown`, `dor5` — nên người đọc candidate mở được đúng chỗ con số đến từ, thay
 > vì phải tin một tên file không phân giải được (`F-A2R2-03`).
@@ -144,47 +147,42 @@ lập. Nó tổng hợp và đối chiếu. Mọi con số đến từ một l�
 
 ## 1. Kết luận một đoạn
 
-Bộ hợp đồng đã đủ hình dạng để đọc và để phản biện — mọi con số sau đây kèm khóa nguồn trong
-`numbers.json`: **246** yêu cầu nguyên tử (`requirements`), **85** operation (`operations`),
-**99** cạnh được phép và **36** cạnh bị cấm (`allowed_edges`, `forbidden_edges`) — cả 36 nay có
-mã lỗi đã pin VÀ một sự kiện quét khớp nội dung — **60** entity (`entities`), **67** transition
-trên năm máy trạng thái (`transitions_counted`, khớp `E0-09.items_checked`), **28** mã lỗi
-(`error_codes`), **86** fixture trên **9** thư mục (`fixtures`, `fixture_directories`, đếm từ
-đĩa), **56** scenario có oracle (`scenarios`) và **0** scenario thiếu fixture
-(`scenarios_missing_fixture`). Không yêu cầu P0 nào ở trạng thái XN hay UQ còn mồ côi
-(`coverage.ORPHAN` = 0); mỗi invariant I01–I17 nay có một scenario được khai `positive` **và**
-một được khai `negative` — `mixed` không còn được tính cho cực nào.
+**Owner đã phê chuẩn `OD-20260907-01` ngày 2026-09-07.** Cả 17 blocker B01–B17 chuyển từ
+`PROVISIONAL` sang `RATIFIED`; stack được chọn (**phương án B — Python worker + TypeScript web**,
+không phải phương án A mà kế hoạch khuyến nghị); phạm vi `data.purge_all` được chốt; timezone,
+mốc freeze tag, mô hình trạng thái run, `delivery.unknown`, khóa analysis, ngoại lệ liên kết
+Telegram, backup nhất quán, secret theo task và cả 8 tham số báo cáo đều được chấp nhận. Đây là
+thay đổi lớn nhất kể từ khi gói này bắt đầu: nền của baseline không còn là đề xuất.
 
-**Lần chạy E0 của bản này: 22 check, 22 PASS, 0 FAIL, 0 vi phạm** (`e0`, run
-`evidence/runs/E0-20260907T023000Z.json`). Bộ check tăng 19 → 20 → **22**: `E0-04b` được thêm ở đợt FIX6 theo ruling F-A2R1-01, rồi **tách
-làm ba** ở đợt FIX7 theo ruling "E0-04b design" — `E0-04b` (operation), `E0-04c` (cột),
-`E0-04d` (mã lỗi). Cả ba nay PASS. Việc một check mới tìm ra lỗi ngay khi được bật là kết quả mong đợi, không phải
-hồi quy — và việc nó trở về 0 sau khi các gói sở hữu sửa nội dung (chứ không sau khi ai đó nới
-check) là cách một cửa kiểm nên kết thúc.
+Bộ hợp đồng: **246** yêu cầu nguyên tử (`requirements`), **85** operation, **99** cạnh được phép và
+**36** cạnh bị cấm, **60** entity, **67** transition, **28** mã lỗi, **86** fixture trên **9**
+thư mục, **56** scenario có oracle, **0** thiếu fixture. Độ phủ: **`COVERED` 172**, `PARTIAL` 62,
+`DEFERRED_P1` 6, `OUT_OF_SCOPE` 6, **`ORPHAN` 0** — và **không còn dòng `BLOCKED_B*` nào**
+(`coverage`), vì phê chuẩn đã chốt văn bản cam kết của cả 84 dòng từng chờ nó.
 
-Nhưng nó vẫn **chưa** là một baseline có thể tuyên bố `CONTRACT_READY` ở bất kỳ phạm vi nào, vì
-ba lý do độc lập nhau, không lý do nào là ý kiến, và **không lý do nào một Worker gỡ được**:
+**Lần chạy E0 của bản này: 24 check, 24 PASS, 0 FAIL, 0 vi phạm** (`e0`). Bộ check tăng lên 24:
+`E0-12` được viết lại
+thành một cửa **phạm vi** thay vì một lệnh cấm, và `E0-12b` mới kiểm rằng mọi file tuyên bố
+`CONTRACT_READY` đều trích một phê chuẩn phân giải được (§3.6).
 
-1. **B01–B17 vẫn `OPEN`** trong `agent_profile/registry.json`. Mọi phương án giải chúng mang nhãn
-   `PROVISIONAL` và chờ Owner. 84 trong 246 dòng registry có văn bản cam kết sẽ đổi nếu Owner phê
-   chuẩn amendment tương ứng.
-2. **Chưa có xác minh độc lập trên epoch chứa các bản sửa FIX4 và FIX5.** A1 đã audit ba epoch;
-   **A2 — auditor độc lập cuối — chưa chạy** (xem §4.1). Theo protocol §8, người viết bản sửa
-   không được là người xác minh chính bản sửa đó, nên "19/19 PASS" ở đây là con số của phía sửa,
-   không phải một verdict độc lập.
-3. **Không có một byte bằng chứng runtime nào.** E1–E4 là `NOT_RUN` ở cả 53 scenario. Chưa có
-   code, chưa gọi provider AI, chưa chạy collector, chưa gửi Telegram, chưa drill restore.
-4. **Hai mục `KC` chặn cứng hai module:** `REQ-A6` (nhịp gọi arXiv/OpenAlex) và `CR-PC07-04`
-   (giới hạn định dạng Telegram). Cả hai đòi đọc tài liệu bên ngoài mà phiên này không có mạng để
-   đọc; không ruling nào thay thế được việc đó.
+**21 file hợp đồng nay mang `claim_ceiling: CONTRACT_READY`** trong bốn phạm vi Owner đã phê
+chuẩn; **110 file giữ `DRAFT_FOR_REVIEW`** (`contract_ready_count`, `draft_for_review_count`).
 
-Điều **đã** đạt và đáng ghi: E0 nay **22/22 check PASS, 0 vi phạm, exit 0**, và mọi FAIL của ba
-đợt trước đều được đóng bằng cách **sửa nội dung hợp đồng** — không lần nào bằng cách nới một
-check. Đó là điều kiện cần cho G4, không phải điều kiện đủ.
+Điều **chưa** đạt, và không phê chuẩn nào thay thế được:
 
-Trạng thái dự án giữ nguyên `NOT_READY_FOR_PRODUCT_CODE`.
+1. **15 yêu cầu vẫn `KC`** (`kc_count`) — chúng đòi dữ liệu từ thế giới bên ngoài: nhịp gọi
+   arXiv/OpenAlex, giới hạn định dạng Telegram, điều khoản từng nhà AI, độ ổn định thu thập X,
+   ngưỡng embedding, chất lượng mật độ vector. Owner phê chuẩn **văn bản**; phép đo vẫn phải chạy.
+2. **`REQ-OQ03` (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED`** — Owner chọn hoãn
+   (mục 21). Chặn M3.
+3. **Không có một byte bằng chứng runtime nào.** E1–E4 `NOT_RUN` ở cả 56 scenario. Chưa có code,
+   chưa gọi provider, chưa chạy collector, chưa gửi Telegram, chưa drill restore.
+4. **Chưa có repo triển khai.** Stack B đã chọn nhưng chưa có cây thư mục nào; card mô tả đường
+   dẫn *sẽ* tồn tại.
 
----
+Trạng thái dự án: **`NOT_READY_FOR_PRODUCT_CODE` cho toàn hệ thống**, nhưng bốn phạm vi hợp đồng
+nay `CONTRACT_READY` — nghĩa là đủ để bắt đầu viết code trong đúng phạm vi đó khi Owner yêu cầu,
+không phải đủ để tuyên bố sản phẩm chạy được.
 
 ## 2. Độ phủ yêu cầu
 
@@ -192,26 +190,27 @@ Trạng thái dự án giữ nguyên `NOT_READY_FOR_PRODUCT_CODE`.
 
 | coverage_status | Số dòng | Nghĩa |
 | --- | ---: | --- |
-| `COVERED` | 90 | Có ít nhất một hợp đồng trích dẫn VÀ ít nhất một scenario phủ |
-| `PARTIAL` | 60 | Có hợp đồng nhưng chưa có scenario, hoặc ngược lại, hoặc chỉ được phủ bằng một cổng |
-| `BLOCKED_B01..B17` | 84 | Văn bản cam kết đổi nếu Owner phê chuẩn amendment tương ứng |
+| `COVERED` | 172 | Có ít nhất một hợp đồng trích dẫn VÀ ít nhất một scenario phủ |
+| `PARTIAL` | 62 | Có hợp đồng nhưng chưa có scenario, hoặc ngược lại, hoặc chỉ được phủ bằng một cổng |
+| `BLOCKED_B01..B17` | 0 | **Không còn dòng nào**: `OD-20260907-01` phê chuẩn cả 17 blocker, nên không dòng nào còn chờ một quyết định để biết văn bản cam kết của mình |
 | `DEFERRED_P1` | 6 | Hoãn sau MVP theo SRC-SPEC §2.2 |
 | `OUT_OF_SCOPE` | 6 | Ngoài phạm vi theo SRC-SPEC §2.3 |
 | **`ORPHAN`** | **0** | — |
 
-Phân bố của 84 dòng `BLOCKED`: B01 8 · B02 8 · B03 7 · B04 6 · B05 6 · B07 7 · B08 7 · B09 5 ·
-B10 6 · B11 6 · B12 4 · B15 6 · B16 3 · B17 5. Ba blocker **không** sinh amendment văn bản (B06,
-B13, B14) nên các dòng của chúng giữ trạng thái độ phủ bình thường, với blocker ghi ở cột notes —
-đúng như `precode/decision-register.md` §3 khai.
+84 dòng từng mang `BLOCKED_B*` nay trở về độ phủ đo được của chính chúng: phần lớn thành
+`COVERED` (172, tăng từ 90), phần còn lại `PARTIAL` vì thiếu scenario hoặc thiếu trích dẫn hợp
+đồng — **không phải** vì thiếu quyết định. Cột `notes` của mỗi dòng ghi blocker tương ứng là
+`RATIFIED (OD-20260907-01)`, và dòng nào có status `KC` mang thêm một câu: *phê chuẩn không thay
+thế được phép đo*.
 
-**37 dòng `PARTIAL` là P0 với status XN hoặc UQ** (`partial_p0_xn_uq`). Ruling R5-03 đóng đúng "nhóm
+**38 dòng `PARTIAL` là P0 với status XN hoặc UQ** (`partial_p0_xn_uq`). Ruling R5-03 đóng đúng "nhóm
 thật", và PC09-FIX1 bổ sung `requirement_refs` phía scenario cho phần còn lại của nhóm đó. Phân
-loại 37 dòng còn lại (`partial_p0_breakdown`):
+loại 38 dòng còn lại (`partial_p0_breakdown`):
 
 | Nhóm | Số dòng | Vì sao PARTIAL | Đề xuất |
 | --- | ---: | --- | --- |
 | Chỉ có cổng (`gate-only`) | 8 | Bảy dòng mốc `REQ-S13-01..08` cộng một chỉ tiêu thành công. Là mốc quy trình / chỉ tiêu nhiều tuần, không phải hành vi kiểm được bằng một scenario | **Giữ PARTIAL là đúng.** Chúng được phủ bằng cổng G5/G6/G7. Ép thành COVERED bằng một scenario giả sẽ là làm đẹp con số |
-| Chỉ có hợp đồng (`contract-only`) | 19 | Hợp đồng mô tả, chưa scenario nào khẳng định. Gồm `REQ-S1.4-01`, `-02` (chỉ tiêu tuần, đo ở E4) và `REQ-S4-10` (màu sắc/visual design **cố ý chưa chốt** — một quyết định KHÔNG chốt thì không có gì để test) | Phần lớn hợp lý. Gói sở hữu có thể bổ sung scenario, nhưng đây **không** phải khiếm khuyết chặn cổng |
+| Chỉ có hợp đồng (`contract-only`) | 20 | Hợp đồng mô tả, chưa scenario nào khẳng định. Gồm `REQ-S1.4-01`, `-02` (chỉ tiêu tuần, đo ở E4) và `REQ-S4-10` (màu sắc/visual design **cố ý chưa chốt** — một quyết định KHÔNG chốt thì không có gì để test) | Phần lớn hợp lý. Gói sở hữu có thể bổ sung scenario, nhưng đây **không** phải khiếm khuyết chặn cổng |
 | Chỉ có scenario (`scenario-only`) | 10 | Scenario khẳng định hành vi nhưng chưa file hợp đồng nào trích `REQ-` tương ứng — ví dụ `REQ-S5.5-01`/`-02` (hai ví dụ thời gian của SRC-SPEC §5.5) được SC05/SC06 phủ đầy đủ | Gói sở hữu thêm `requirement_refs`; rẻ và không đổi hành vi |
 
 Nhóm đã đóng ở đợt này: `REQ-S4-01`, `-08`, `-09`, `REQ-S5.1-01..03`, `REQ-S5.3-01`, `-03`,
@@ -229,12 +228,18 @@ lập lần đầu (`REQ-S5.1-01..05`, bốn dòng XN). SC50–SC53 cộng rulin
 
 ## 3. Kết quả E0 — chạy thật, FAIL còn lại được báo nguyên vẹn
 
-Công cụ: `evidence/tools/e0_check.py` (**20 check**, tăng từ 19). Run:
-`evidence/runs/E0-20260907T023000Z.json`, đăng ký ở `evidence/index.json` bản ghi `EV-PC09-01`.
-`baseline_hashes` gồm 168 file quét được (`evidence/runs/` đã bị loại khỏi phạm vi quét —
-xem §3.5).
+Công cụ: `evidence/tools/e0_check.py` (**24 check**, quét 210 file trong bốn thư mục
+`contracts`, `acceptance`, `precode`, `evidence` — `agent-tasks/` **không** nằm trong phạm vi quét,
+xem §9.1). Lần chạy đóng gói được đăng ký ở
+`evidence/index.json` bản ghi `EV-PC09-01`. `baseline_hashes` gồm các file quét được
+(`evidence/runs/` đã bị loại khỏi phạm vi quét — xem §3.5).
 
-**22 PASS · 0 FAIL · 0 vi phạm** (`e0` trong `numbers.json`).
+**Hai file nhất thiết đổi sau lần chạy mà chúng trích dẫn:** chính `precode/review.md` (nó phải
+viết ra kết quả) và `evidence/index.json` (nó phải đăng ký artefact). `baseline_hashes` vì thế ghi
+bytes của hai file đó **trước** bước cuối. Đây là vòng lặp không tránh được, không phải một khoảng
+lệch bị giấu; mọi file hợp đồng, fixture và scenario khác trong bản ghi là bytes cuối cùng.
+
+**24 PASS · 0 FAIL · 0 vi phạm** (`e0` trong `numbers.json`).
 
 ### 3.1 Check mới: `E0-04b-prose-op-tokens` — lớp lỗi mà E0 trước đây không thấy
 
@@ -349,6 +354,96 @@ Phân bố polarity sau đợt này: positive 12 · negative 21 · mixed 23
 - **Không có validator OpenAPI 3.1** trong môi trường và packet cấm cài. `openapi.yaml` chỉ được
   kiểm như YAML cộng toàn vẹn tham chiếu; tuân thủ đặc tả là `NOT_RUN`.
 
+### 3.6 `E0-12` viết lại: từ một lệnh cấm thành một cửa phạm vi
+
+Trước phê chuẩn, `E0-12-forbidden-strings` làm một việc đơn giản: **không file nào** được mang
+`claim_ceiling` cao hơn `DRAFT_FOR_REVIEW`. Nó đúng khi chưa có phê chuẩn nào, và sai ngay khi có
+một phê chuẩn — vì lúc đó câu hỏi không còn là *có được tuyên bố cao hơn không* mà là *phạm vi nào
+được, và dựa vào đâu*. Theo `CR-PC01-13`, check nay hỏi ba câu:
+
+1. File có nằm trong một trong bốn phạm vi Owner đã phê chuẩn không? Danh sách **không đủ điều
+   kiện** được viết cứng trong công cụ: `contracts/http/`, `contracts/ai/`, `contracts/ui/`,
+   `contracts/telegram/`, bốn schema chưa phê chuẩn (`worker-assignment`, `ingest-receipt`,
+   `analysis-result`, `saved-snapshot`), và các thư mục fixture tương ứng. `contracts/ops/` chỉ có
+   `deployment.md` đủ điều kiện.
+2. Nếu có: file có trích một `ratification_ref` không?
+3. `ratification_ref` đó có **phân giải được** không — đúng `OD-20260907-01` **và**
+   `precode/owner-decisions.md` phải tồn tại trên đĩa?
+
+Câu 2 và 3 là check mới `E0-12b-ratification-refs`. Nó tồn tại vì một `claim_ceiling` cao hơn mà
+không trỏ về biên bản nào là một lời tự phong; kiểm cả sự tồn tại của biên bản khiến một
+`ratification_ref` chép sai hoặc trỏ tới file đã bị xóa **fail**, chứ không im lặng qua cửa.
+Mọi claim cao hơn `CONTRACT_READY` (`IMPLEMENTATION_VERIFIED` trở lên) vẫn bị cấm tuyệt đối: chưa
+có một dòng code nào.
+
+Đã chạy **negative self-test** trên bản sao ở scratch, tiêm ba khuyết tật: `CONTRACT_READY` trong
+phạm vi không đủ điều kiện (`contracts/ai/tasks.yaml`), `CONTRACT_READY` bị gỡ mất
+`ratification_ref` (`contracts/state/run.yaml`), và một claim vượt trần (`contracts/errors.yaml`).
+**Cả ba đều bị bắt.** Bản sạch cho 0 vi phạm.
+
+Hai điều tôi đã phải nới rộng, ghi ở đây thay vì để im: `evidence/coordination/` được thêm vào
+danh sách tiền tố "bản ghi điều phối" (các file đó *thuật lại* từ vựng claim nên không phải là
+tuyên bố của chính chúng), và `ACCEPTED_WORKING_VALUE` / `RATIFIED` / `PROVISIONAL` được thêm vào
+từ vựng trạng thái hợp lệ theo `owner-decisions.md` §4. Cả hai là nới rộng có chủ ý sau khi đọc
+từng trường hợp một, không phải làm ngơ cho một FAIL.
+
+### 3.7 `Check.finalize()` — một check qua cửa mà không kiểm gì thì không phải PASS
+
+Khi viết lại `E0-10b` tôi làm `E0-10a` thoái hoá về `items_checked: 0` **trong khi vẫn báo PASS**.
+Không có gì trong công cụ phát hiện điều đó. Nay mọi check chạy qua `Check.finalize()`: PASS với 0
+mục kiểm được chuyển thành **`BLOCKED`**. Đây là cùng một lớp lỗi với mọi finding của audit trong
+gói này — một phát biểu đúng nhưng không có gì bắt nó phải đúng.
+
+### 3.8 `E0-18` mới — cửa kiểm mà sự vắng mặt của nó gây ra `F-A2R5-01`
+
+Quyết định có hậu quả lớn nhất mà Owner đưa ra là phạm vi `data.purge_all`. Nó được áp đúng ở
+`ports.yaml` và `entities.yaml`, và **không** được áp ở sáu artefact khác — trong đó có SC44, oracle
+nghiệm thu của chính thao tác đó. Không check nào thấy, vì **không check nào so sánh những gì các
+artefact nói về purge**. `E0-18-purge-set-agreement` làm hai việc:
+
+1. **Toàn vẹn phân hoạch.** Ba tập trong `entities.yaml` `TXN-purge-all` phải **rời nhau đôi một**
+   và **phủ kín** danh sách entity: 37 xóa + 21 giữ + 2 never_purged = **60 = tổng số entity**.
+   Một bảng thêm vào sau này mà không được phân loại sẽ **FAIL ở đây**, thay vì lặng lẽ rơi vào
+   nhóm "không được oracle nào khẳng định" — đó chính là cách fixture `l` từng chỉ nêu 8 trong 20
+   bảng và tự nhận là không khẳng định gì.
+2. **Không artefact nào còn gọi phạm vi purge là chưa quyết.** Mọi
+   `OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03` trong một đoạn có nhắc purge phải
+   nằm trên một dòng (hoặc dòng liền kề, vì YAML gấp dòng theo độ rộng chứ không theo nghĩa) có
+   đánh dấu **lịch sử** hoặc gọi tên phê chuẩn đã đóng nó. Đây là điều đã bắt được cả sáu artefact
+   nếu nó tồn tại trước đó.
+3. Cộng: một danh sách purge **có cấu trúc** ở bất kỳ artefact nào khác phải **bằng đúng** tập có
+   thẩm quyền.
+
+**Điều `E0-18` KHÔNG làm, ghi ra thay vì để một PASS ngụ ý.** Bản đầu tiên tôi viết có so **tập
+hợp các liệt kê trong văn xuôi**: nó cho 24 vi phạm mà khoảng 20 là sai — bất kỳ đoạn nào nhắc
+"purge" gần năm tên bảng đều dính, và `entities.yaml` dính chỉ vì nó tồn tại. Một check ồn còn tệ
+hơn không có check: nó dạy người đọc bỏ qua đầu ra của chính nó. Tôi đã **gỡ** phần đó. Liệt kê
+trong văn xuôi vì thế **vẫn chưa được đối chiếu tự động** — giới hạn này nằm ở §13, không nấp sau
+một PASS.
+
+### 3.9 `F-A2R5-03`: cửa phê chuẩn của tôi vượt được bằng một câu văn
+
+Ở FIX7 tôi dựng `E0-12`/`E0-12b` để canh ranh giới phê chuẩn, chạy self-test âm với ba đột biến,
+và báo "cả ba đều bị bắt". Auditor thử một đột biến thứ tư mà tôi đã không nghĩ tới — **M6b**:
+chuyển `ratification_ref` **ra khỏi** header và để lại một dòng văn xuôi nhắc chuỗi đó. Cả hai
+check **PASS**, và `E0-12b` chỉ đơn giản đếm ít đi một mục: file **rời khỏi tập được kiểm** thay vì
+bị báo. Oracle thật của tôi hoá ra là *"chuỗi xuất hiện ở đâu đó và phân giải được"*, không phải
+*"header hợp đồng mang nó"*.
+
+Đã sửa ở hai chỗ: `ratification_ref_of()` nay **chỉ** đọc header đã parse (front-matter, khóa
+YAML top-level, `x-contract`, `info.x-contract`) và **không còn regex dự phòng** trên văn bản; và
+eligibility chuyển từ **denylist trong mã** sang **allowlist tường minh trong dữ liệu**
+(`precode/gates.yaml` → `ratified_contract_scopes`, trích `OD-20260907-01`). Polarity cũ mặc định
+*đủ điều kiện* cho mọi file mới dưới `contracts/` hay `acceptance/` — đó là nguyên nhân trực tiếp
+của `F-A2R5-04`. Nay mặc định là **không đủ điều kiện**, và mở rộng phạm vi phê chuẩn là một lần
+sửa hợp đồng, không phải một lần sửa công cụ.
+
+Self-test âm nay có **năm** đột biến, chạy hai lượt (§5b của `evidence/tools/README.md`): M5, M6b,
+M6c, M7 ở lượt A — **cả bốn bị bắt**; M8 (allowlist không còn trích phê chuẩn) ở lượt B — **cả hai
+check chuyển `BLOCKED`**, không PASS. M8 phải tách riêng: một check đã `BLOCKED` không báo vi phạm
+nào, nên nếu chạy chung nó sẽ **che** cả bốn đột biến kia và lượt chạy trông như bốn lần trượt.
+Tôi biết điều đó vì lần chạy đầu đúng như vậy.
+
 ---
 
 
@@ -360,17 +455,29 @@ Mọi mục khác của bản này trỏ về đây thay vì nhắc lại. `F-A2
 được viết ở bốn chỗ và ba chỗ không được quét lại khi nó đổi; kỷ luật `numbers.json` áp cho *số*
 nay áp cho cả *trạng thái*.
 
-**6 AUDIT_REPORT độc lập đã chạy** (`audit_reports`, `audit_reports_count` — đếm từ đĩa):
-`A1-R1` (FAIL), `A1-R2` (FAIL), `A1-R3` (FAIL), `A2-R1` (FAIL cho PC09), `A2-R2` (PASS tổng thể), `A2-R3` (xác minh bản sửa FIX9).
+**8 AUDIT_REPORT độc lập đã chạy**: `A1-R1`, `A1-R2`, `A1-R3`, `A2-R1`, `A2-R2`, `A2-R3`,
+`A2-R4`, `A2-R5`. Bảy bản đầu đã được lưu vào repo tại `evidence/audits/`, **nguyên vẹn từng
+byte** so với bản gốc (đã kiểm bằng sha256 từng file); `A2-R5` còn ở thư mục scratch của
+Coordinator tại thời điểm bản này. Chúng **không** được đăng ký thành evidence record — một
+Worker không được ghi bản ghi bằng chứng thay cho Auditor — nên `evidence/index.json` nêu **hai**
+con số: `independent_audit_reports_archived_in_repo` = 7 và `independent_audit_records_in_repo`
+= 0 (`F-A2R5-06`: câu cũ nói "ba báo cáo, NGOÀI repo, không đăng ký" và đã sai ở hai mệnh đề đầu).
 
-| Vòng | Phạm vi | Verdict | Finding |
+Cột **Verdict** dưới đây chép **đúng từ verdict** của mục "Overall verdict" trong chính bản
+AUDIT_REPORT tương ứng — không tóm tắt, không diễn giải. `F-A2R4-01` phát ra vì dòng `A2-R3` từng
+để một mô tả *phạm vi* vào ô *verdict*; sửa bằng cách lấy từ nguồn, cùng kỷ luật đã áp cho tên
+epoch và cho số đã render.
+
+| Vòng | Phạm vi | Verdict (chép từ report) | Finding |
 | --- | --- | --- | --- |
 | `A1-R1` | FC-W1 epoch 1 (PC00–PC02) | FAIL | 9 (4 MAJOR, 5 MINOR) — tất cả **VERIFIED** ở R2 |
 | `A1-R2` | FC-W2 epoch 2 (+PC03, PC04) | FAIL | 6 (3 MAJOR, 3 MINOR) — tất cả **VERIFIED** ở R3 |
 | `A1-R3` | FC-W3 epoch 3 (+PC05–PC08) | FAIL | 5 (1 MAJOR, 4 MINOR) — `FIX_PROPOSED`, xác minh ở A2-R1 |
 | `A2-R1` | FC-W4 epoch 4 | **FAIL cho PC09** | 11 (2 MAJOR, 3 MEDIUM, 4 LOW, 2 INFO) |
 | `A2-R2` | epoch 5 | **PASS tổng thể** | 10 VERIFIED · 1 PARTIAL · 0 NOT_VERIFIED; **4 finding LOW mới**, cả bốn thuộc PC09 |
-| `A2-R3` | epoch 6 (chỉ diff bản sửa) | xác minh bản sửa FIX9 | 3 VERIFIED · 2 PARTIAL · 0 NOT_VERIFIED; **3 finding LOW mới** (`F-A2R3-01..03`), cả ba thuộc PC09 và đã sửa ở đợt FIX10 |
+| `A2-R3` | epoch 6 (chỉ diff bản sửa FIX9) | **PASS** (scoped, ceiling `DRAFT_FOR_REVIEW`) | 3 VERIFIED · 2 PARTIAL · 0 NOT_VERIFIED; **3 finding LOW mới** (`F-A2R3-01..03`), cả ba thuộc PC09 và đã sửa ở đợt FIX10 |
+| `A2-R4` | epoch 7 (`F-A2R3-01..03` + fix diff) | **PASS** (scoped, ceiling `DRAFT_FOR_REVIEW`) | 4/4 VERIFIED · 0 PARTIAL · 0 NOT_VERIFIED; **1 finding LOW mới** (`F-A2R4-01`), thuộc PC09 |
+| `A2-R5` | epoch 8 — toàn bộ đợt phê chuẩn | **FAIL** (scoped, ceiling `DRAFT_FOR_REVIEW`) | 7 finding mới: 1 MAJOR (`-01`), 3 MEDIUM (`-02`, `-03`, `-04`), 3 LOW (`-05`, `-06`, `-07`). Verdict theo gói: 10 gói PASS, **PC09 FAIL** |
 
 **Hai MAJOR của A2-R1 đều là lỗi của tôi và cùng một hình dạng:** một điều đúng được viết ra rồi
 không được biến thành thứ tự động kiểm được. `F-A2R1-01` — chín id operation không tồn tại trong
@@ -399,10 +506,43 @@ khiếm khuyết mỗi loại vào bản sao và xác nhận ba check mới khô
 | `F-A2R3-02` | Lệnh `grep` được công bố làm nguồn thật ra trả **bảy** tên epoch, không phải một | Lệnh công bố nay là chính quy tắc mà bộ sinh áp dụng (`card_pin_command`), và nó trả **đúng một** giá trị — đã chạy để kiểm |
 | `F-A2R3-03` | Hai placeholder định dạng chưa được thay thế ngay ở câu mở đầu §4.1 — một dòng "được sinh" mà vẫn ship kèm placeholder thì chưa thật sự được sinh | Đã render từ `audit_reports`; và cổng tự kiểm nay **quét placeholder chưa thay** trên toàn file, nên lớp lỗi này không thể lặp im lặng |
 
-**Lượt xác minh đang chờ:** bốn finding trên là `FIX_PROPOSED`; A2 chưa kiểm lại bản sửa của
-chính đợt này. Theo protocol §8 tôi không được tự xác minh bản sửa của mình, nên "22/22 PASS,
-0 vi phạm" ở §3 là **con số của phía sửa, chạy bằng công cụ do phía sửa viết** — bằng chứng cần
-được kiểm, không phải một verdict.
+### A2-R5 — verdict FAIL, và cả bốn finding nặng là của PC09
+
+`A2-R5` là vòng audit đầu tiên soi **toàn bộ** đợt phê chuẩn. Kết luận: phê chuẩn được chép lại
+trung thành và áp dụng đúng **ở nơi nó được định tuyến tới**, nhưng không được quét cho **mọi nơi
+nó chạm tới**. Mười gói PASS; **PC09 FAIL** — và cả bốn finding nặng đều nằm trong deliverable của
+tôi. Trạng thái xử lý ở đợt FIX8 này:
+
+| Finding | Sev | Nội dung | Đã làm ở FIX8 |
+| --- | --- | --- | --- |
+| `F-A2R5-01` | **MAJOR** | Phạm vi `data.purge_all` đã phê chuẩn được áp ở hai hợp đồng và **không** được áp ở sáu artefact — một trong số đó là **SC44, chính oracle nghiệm thu** của thao tác này. Corpus đồng thời báo quyết định *đã chốt* và *còn treo* | SC44 viết lại: oracle nay khẳng định **đủ ba tập** (37 xóa · 21 giữ · 2 never_purged) thay vì né tránh, cộng oracle công bố về backup và một phép kiểm Owner vẫn đăng nhập được. **`E0-18` mới** biến quy tắc chung thành cửa kiểm máy (§3.8) |
+| `F-A2R5-02` | MEDIUM | Lần chạy E0 đóng gói **không pin đúng bytes nó chứng nhận**: 2 trong 136 hash lệch, vì `PKT-PC00-FIX11` land sau khi tôi chạy | Lần chạy đóng gói của FIX8 đặt **sau** cổng chờ mọi packet nội dung của đợt (`PKT-PC02-FIX11`, `PKT-PC10-FIX11`), và tôi so `baseline_hashes` với bytes trên đĩa trước khi bàn giao |
+| `F-A2R5-03` | MEDIUM | Cửa phê chuẩn **thoả mãn được bằng một câu văn**: M6b chuyển `ratification_ref` ra khỏi header, để lại một dòng prose — cả hai check vẫn PASS, file chỉ **rời khỏi tập được kiểm**. Và eligibility là **denylist** trong khi ruling nói allowlist | `ratification_ref` nay **chỉ** đọc từ header đã parse (front-matter / khóa top-level / `x-contract`), không còn regex trên văn bản. Eligibility thành **allowlist tường minh** nằm trong `precode/gates.yaml` `ratified_contract_scopes`, không nằm trong mã. M6b thêm vào self-test và **bắt được** (§3.9) |
+| `F-A2R5-04` | MEDIUM | Ba file `CONTRACT_READY` nằm ngoài bốn phạm vi — hệ quả trực tiếp của polarity denylist | Ruling đưa `ops/deployment.md` và hai thư mục fixture `identity/`, `reporting/` vào phạm vi; allowlist nêu **đích danh** từng file/thư mục, kèm lý do. Một file mới nay **không đủ điều kiện** cho tới khi có người cố ý thêm |
+| `F-A2R5-06` | LOW | `honesty_note_vi` của `evidence/index.json` đã thành sai: "ba báo cáo, ngoài repo" | Sửa; số báo cáo **đếm từ thư mục**, và hai con số (7 lưu trữ / 0 đăng ký) được nêu tách bạch cùng lý do |
+| `F-A2R5-05`, `-07` | LOW | Ba schema thiếu câu NOT_RUN; manifest bỏ sót `agent_profile/` | Không thuộc grant của tôi — W3/W5 và Coordinator |
+
+**Điều tôi muốn người đọc thấy rõ nhất về vòng này.** Cả bốn finding nặng có **cùng một hình
+dạng**, và đó là hình dạng đã lặp lại suốt gói này: *một điều đúng được viết ra, rồi không có gì
+bắt nó phải tiếp tục đúng.* `F-A2R5-01` là bản nặng nhất của nó — không phải vì ai viết sai, mà vì
+**không tồn tại cửa kiểm nào so sánh những gì các artefact NÓI về purge**. `E0-18` được thêm chính
+xác để lấp chỗ đó. `F-A2R5-03` thì chỉ ra rằng cửa kiểm tôi vừa dựng ở FIX7 để canh phê chuẩn có
+thể vượt qua bằng một câu văn — nghĩa là ở FIX7 tôi đã báo "23/23 sạch" bằng một cửa mà chính tôi
+chưa thử phá đúng cách. Bài học không phải "sửa M6b" mà là: **một cửa kiểm mới chưa bị tấn công
+thì chưa phải bằng chứng.**
+
+**`F-A2R4-01` — LOW, của tôi — đã sửa ở đợt trước.** Nội dung: cột *Verdict* của bảng trên mang một
+mô tả phạm vi ("xác minh bản sửa FIX9") ở dòng `A2-R3` thay vì verdict thật, trong khi A2-R3 kết
+luận **PASS**. Đây là mục §4.1 — chính chỗ bản này khai là nguồn duy nhất cho trạng thái audit —
+nên một ô không phải verdict ở đây tệ hơn ở nơi khác. Đã sửa bằng cách **chép từ report**, và ghi
+rõ trong tiêu đề cột rằng đó là điều đang xảy ra. `F-A2R4-01` là `FIX_PROPOSED`; tôi không đóng nó.
+
+**Lượt xác minh đang chờ.** A2 chưa kiểm lại bản sửa của chính đợt này — bao gồm `E0-12`/`E0-12b`,
+bảng module viết lại sau phê chuẩn, và tuyên bố theo phạm vi ở §12. Theo protocol §8 tôi không
+được tự xác minh bản sửa của mình, nên "**24/24 PASS, 0 vi phạm**" ở §3 là **con số của phía sửa,
+chạy bằng công cụ do phía sửa viết** — bằng chứng cần được kiểm, không phải một verdict. Điều này
+áp **đặc biệt** cho `E0-12b`: một check do tôi viết, tự xác nhận rằng các `ratification_ref` do
+các gói khác viết là hợp lệ, chưa từng được ai ngoài tôi chạy.
 
 
 ### 4.2 Hai mươi finding của A1 — trạng thái
@@ -437,56 +577,69 @@ cho tới khi A2 xác minh.
 
 ---
 
-## 5. Rà soát lại B01–B17
+## 5. Rà soát lại B01–B17 — sau phê chuẩn
 
-Cả 17 blocker **vẫn `OPEN`** trong `agent_profile/registry.json`. Bảng dưới ghi: phương án
-`PROVISIONAL` đã được hiện thực hoá tới đâu trong hợp đồng, và điều gì còn thiếu.
+Cả 17 blocker nay **`RATIFIED (OD-20260907-01)`** trong `precode/decision-register.md` §1–§2, và
+`agent_profile/registry.json` có `open_product_blockers: []`. Bảng dưới ghi điều **còn lại** sau
+phê chuẩn — vì phê chuẩn chốt *văn bản cam kết*, không tạo ra *bằng chứng*.
 
-| ID | Phương án PROVISIONAL đã hiện thực hoá ở đâu | Hiện thực hoá đầy đủ? | Điều còn thiếu |
-| --- | --- | --- | --- |
-| B01 | Freeze tag tại transaction publish; `report.tag_config_version_id` bất biến. `time-and-tags.md` §4, ADR-0004, AMD-B01, SC05/SC19 | **Đủ** | Owner phê chuẩn AMD-B01 (đọc lại "thời điểm gửi" của C03 thành "thời điểm publish") |
-| B02 | Tách `phase/status/outcome/stop_reason`; bảng ánh xạ 13 dòng. `state/run.yaml`, ADR-0002, AMD-B02, SC03/SC15 | **Đủ** — A1 xác minh 13/13 dòng verbatim | Owner phê chuẩn AMD-B02 (AC-03 đọc lại) |
-| B03 | Thêm `delivery.unknown`, không auto-retry. `state/delivery.yaml`, ADR-0003, AMD-B03, SC14 | **Đủ** | Owner phê chuẩn AMD-B03 (AC-14 đọc lại: "không có lần gửi lặp tự động" thay cho "không có tin nào bị gửi hai lần") |
-| B04 | Coverage ledger độc lập; kỳ rỗng vẫn ghi coverage. `time-and-tags.md` §4.7, AMD-B04, SC08/SC22 | **Đủ, nhưng có một lựa chọn trái khuyến nghị** | PC04 chọn phương án (b) — giữ hàng `report(status='aborted', abort_reason='empty_period')` — thay cho khuyến nghị (a) của Coordinator, với lý do idempotency cụ thể (`coverage_window` không có khóa idempotency). Coordinator/Owner cần xác nhận hoặc bác; đường đảo đã được ghi |
-| B05 | Cam kết là "không ingest trùng theo `x_post_id`", không phải "không đọc lại". AMD-B05, SC21 | **Đủ ở mức hợp đồng** | Độ ổn định thật của con trỏ feed chỉ đo được bằng probe SP1. REQ-A1 vẫn `KC` |
-| B06 | Identity + alias + work version + target tagged union. `identity.md`, ADR-0009, SC07/SC23/SC29/SC30 | **Đủ** | Không có amendment văn bản; Owner vẫn cần phê chuẩn vì nó định nghĩa phần còn thiếu của D17 |
-| B07 | Một kết quả hợp lệ mỗi `analysis_key` + generation. ADR-0008, AMD-B07, `state/analysis.yaml`, SC06/SC28 | **Đủ** | Owner phê chuẩn AMD-B07 (nghĩa của "một lần" trong D25) |
-| B08 | Một IANA timezone trong Settings; UTC RFC 3339 mili giây + ingest sequence. ADR-0007, AMD-B08, SC02/SC34 | **Đủ ở mức cơ chế** | **Owner phải xác nhận múi giờ thật.** `Asia/Ho_Chi_Minh` là giá trị tạm; nó không có DST nên hai quy tắc DST-01/DST-02 chưa kích hoạt. Đổi múi giờ ⇒ dựng lại mọi fixture lịch của PC03 và PC04 (INV-10) |
-| B09 | Ngoại lệ hẹp cho chuỗi khớp định dạng mã. AMD-B09, `commands.yaml`, SC18/SC47 | **Đủ** — bộ đếm rate-limit nay có bảng thật (`telegram_link_attempt`) | Owner phê chuẩn AMD-B09; ba con số (định dạng, hạn 15 phút, 5 lần/giờ) là PROVISIONAL |
-| B10 | `status` chỉ đọc; `run-now` không vượt `needs_user`; resume trong app; không lệnh thứ tư. AMD-B10, SC45 | **Đủ**, và được mở rộng: `run.resume` nay cũng cho `blocked` với `unblock_reason` bắt buộc (`PROV-PC00-04`) | Owner phê chuẩn AMD-B10 và `PROV-PC00-04` (chạm câu §5.4 bước 5 Owner đã đọc) |
-| B11 | Online Backup API / `VACUUM INTO` + manifest + restore drill có khóa side effect. ADR-0005, AMD-B11, SC27/SC42/SC43/SC53 | **Đủ ở mức runbook** | **Chưa drill nào chạy.** Runbook là thiết kế, không phải bằng chứng (`backup-restore.md` §5.7). RPO 24 h / RTO 2 h là PROVISIONAL |
-| B12 | Topology chốt; cạnh `COL→AW` bị gỡ. ADR-0001, AMD-B12, FE-07/FE-08, SC49 | **Gần đủ** | FE-08 — cạnh bị gỡ — nằm trong 26 cạnh **không có oracle mã lỗi** (CR-PC09-02). Và **REQ-OQ01 (xác nhận D09) vẫn CHẶN M0** |
-| B13 | Secret theo từng task, TTL ngắn; CLI không tool/file/network ngoài inference; không cô lập được thì không bật. ADR-0010, `providers.yaml`, SC16/SC17 | **Đủ ở mức chính sách** | Chưa adapter nào qua probe. REQ-A5 (`KC`) — điều khoản từng nhà — chưa đọc. Mọi adapter `enabled=false`. **AC-16 hiện là `BLOCKED`, không phải `FAIL`** |
-| B14 | Thuật toán mật độ đầy đủ, có ví dụ số tái lập được. `selection.md` §8, SC08/SC50 | **Đủ ở mức thuật toán** | Bảy tham số đều PROVISIONAL và cổng là REQ-A4 (`KC`, cần 3–4 kỳ thật, hiện có 0 kỳ). Thiếu dữ liệu ⇒ `insufficient_evidence`, **không** được gọi là "hướng nổi" |
-| B15 | "0 trùng" thu hẹp về canonical identity đã biết; `identity_conflict` đếm riêng. AMD-B15, SC07/SC23 | **Đủ** | Owner phê chuẩn AMD-B15 (thu hẹp một chỉ tiêu ở SRC-SPEC §1.4 mà Owner đã đọc) |
-| B16 | Ba loại phát biểu `author_claim`/`source_verified`/`ai_inference`; `comparator: unknown`. AMD-B16, `grounding.md`, SC11 | **Đủ** | Owner phê chuẩn AMD-B16 (AC-11 đọc lại). Rubric groundedness chưa chạy (E4) |
-| B17 | Summary cho mục **được builder chọn**; `quality: partial` + pending list. AMD-B17, SC22 | **Đủ** | Owner phê chuẩn AMD-B17 (thu hẹp "cho mọi mục" của §2.1 mục 6) |
+| ID | Mục trong `OD-20260907-01` | Còn lại sau phê chuẩn |
+| --- | --- | --- |
+| B01 | 5 — freeze tại publish | Không còn gì ở mức hợp đồng. Bằng chứng chạy thật: `NOT_RUN` (SC05/SC19) |
+| B02 | 6 — bốn trường trạng thái, câu chữ AC-03 | Không còn gì ở mức hợp đồng. 13/13 dòng ánh xạ đã được A1 xác minh verbatim |
+| B03 | 7 — `delivery.unknown`, câu chữ AC-14 | Không còn gì ở mức hợp đồng. SC14 `NOT_RUN` |
+| B04 | 8 + 22 — sổ coverage riêng, **phương án (b)** cho kỳ rỗng | Owner chấp nhận đúng lựa chọn trái khuyến nghị mà PC04 đã ghi đường đảo. Ngưỡng vẫn `uncalibrated` cho tới A2 |
+| B05 | 9 — không ingest trùng theo post ID, câu chữ AC-04 | **REQ-A1 vẫn `KC`**: độ ổn định con trỏ feed chỉ đo được bằng probe SP1, chưa chạy |
+| B06 | 10 — alias + phiên bản + target union | Không có amendment văn bản; mô hình dữ liệu bổ sung ACCEPTED. `ADR-0009` accepted |
+| B07 | 11 — analysis key + generation | Không còn gì ở mức hợp đồng |
+| B08 | 4 — một IANA timezone, **`Asia/Ho_Chi_Minh` được xác nhận** | Rủi ro lớn nhất của bản trước đã tắt: fixture lịch của PC03/PC04 **giữ nguyên**, không phải dựng lại (INV-10 không kích hoạt) |
+| B09 | 12 — ngoại lệ hẹp cho mã liên kết | Ba con số (định dạng, hạn 15 phút, 5 lần/giờ) nay là **giá trị làm việc được chấp nhận**, không còn `PROVISIONAL` chờ ai |
+| B10 | 13 + 25 — ba lệnh, resume trong app, resume-từ-`blocked` có lý do bắt buộc | `PROV-PC00-02` và `PROV-PC00-04` accepted. Không còn gì ở mức hợp đồng |
+| B11 | 14 + 23 — snapshot nhất quán + manifest + drill; RPO 24 h / RTO 2 h | **Chưa drill nào chạy.** Runbook là thiết kế, không phải bằng chứng. Đây là khoảng cách lớn nhất còn lại của B11 |
+| B12 | 1 + 2 — profile Chrome riêng; bỏ cạnh `COL→AW` | **`REQ-OQ01` đã được trả lời; D09 không còn chặn M0/SP1.** Probe SP1 vẫn `NOT_RUN` — đó là điều duy nhất còn lại |
+| B13 | 15 — secret theo phạm vi, tool CLI tắt, disabled-until-verified | **AC-16 vẫn `BLOCKED`** theo đúng lời phê chuẩn, cho tới khi một probe đạt. **REQ-A5 (`KC`)** — điều khoản từng nhà — chưa đọc. Mọi adapter `enabled=false` |
+| B14 | 16 — `insufficient_evidence` khi thiếu dữ liệu | **D53 vẫn `ĐX`-trong-P0 ở phần hiệu chỉnh tham số.** Cổng là **REQ-A4 (`KC`)**: cần 3–4 kỳ thật, hiện có 0 kỳ |
+| B15 | 17 — chỉ số có phạm vi + đếm `identity_conflict` | Không còn gì ở mức hợp đồng |
+| B16 | 18 — ba loại phát biểu + `comparator: unknown`, câu chữ AC-11 | Rubric groundedness chưa chạy (E4) |
+| B17 | 19 — chỉ mục được chọn, `partial` kèm pending list | Không còn gì ở mức hợp đồng |
 
-**Đánh giá tổng:** không blocker nào bị bỏ quên và không blocker nào bị tự đóng. 14 blocker có
-amendment văn bản đã soạn đủ sáu trường; ba blocker (B06, B13, B14) bổ sung định nghĩa còn thiếu
-mà không sửa câu chữ nào. Điểm cần chú ý nhất khi Owner đọc: **B08** (chọn sai múi giờ thì phải
-dựng lại toàn bộ fixture lịch), **B12** (D09 chặn M0), **B13** (có thể làm một adapter bị tắt hẳn)
-và **B14** (có thể làm khối "hướng đang nổi" trả `insufficient_evidence` thay vì một danh sách).
+**Đánh giá tổng.** Trước phê chuẩn, cột "điều còn thiếu" của mười bốn dòng là *một chữ ký*. Nay
+không dòng nào chờ chữ ký. Điều còn lại rơi đúng vào hai loại: **phép đo chưa chạy** (B05, B11,
+B12, B13, B14, B16) và **hiệu chỉnh tham số cần dữ liệu thật** (B04, B14). Không loại nào phê
+chuẩn giải quyết được, và tôi ghi rõ điều đó ở đây để bản này không bị đọc thành "đã xong".
+
+Một điểm cần nói thẳng: **Owner chọn stack B, trái với phương án A mà `ADR-0006` đã khuyến nghị.**
+Quyết định đó hợp lệ và tôi không đánh giá lại nó, nhưng nó có giá: §3 (đường dẫn) và §8 (lệnh
+build/test) của **cả 18 task card** phải viết lại, và trước khi việc đó xong thì không có mô tả
+đúng nào về nơi code sẽ nằm. Hợp đồng **không** đổi theo stack — đó là lý do bốn phạm vi vẫn có
+thể lên `CONTRACT_READY`.
 
 ---
 
 ## 6. Sổ ĐX / KC — rà soát
 
-### 6.1 Các mục P0 còn `ĐX` — không được tự promote
+### 6.1 Các mục P0 còn `ĐX` — và một mâu thuẫn tôi tìm thấy khi đo lại
 
-46 trong 234 dòng P0 mang status `ĐX` (đề xuất của người phỏng vấn, người dùng chưa chọn). Hai
-dòng đáng chú ý vì chúng nằm trong danh mục MVP mà vẫn chưa được xác nhận:
+**42** trong 234 dòng P0 mang status `ĐX` (giảm từ 46: D08, D09, D42, D50 đã lên `XN` với ghi chú
+`Ratified OD-20260907-01`). Phân bố P0 hiện tại, đếm từ `precode/requirements.csv`:
+**XN 140 · ĐX 42 · UQ 37 · KC 15**.
 
-- **`REQ-D09`** (Chrome profile riêng của dự án). Là câu hỏi mở số 1 của SRC-SPEC §13.1 và **chặn
-  M0**. Toàn bộ topology của PC01 và protocol probe của PC05 mô tả theo D09 nhưng **không** promote
-  nó. Nếu Owner từ chối, `collector-probe.md` và một phần `deployment.md` phải viết lại.
-- **`REQ-D53`** (khối "hướng đang nổi" tính từ mật độ vector, vào MVP). Là mục P0 số 7 nhưng status
-  `ĐX`. PC04 định nghĩa đầy đủ thuật toán nhưng **không** promote. Nếu Owner bỏ khối này khỏi MVP,
-  `selection.md` §8 và SC08/SC50 thu hẹp đáng kể.
+- **`REQ-D09` nay là `XN`.** Đây là thay đổi có ảnh hưởng lớn nhất trong mục này: D09 từng **chặn
+  M0**, và bản review trước liệt kê nó đứng đầu. Owner chọn **profile riêng của dự án**
+  (`OD-20260907-01` mục 1), nên `collector-probe.md` và `deployment.md` **không** phải viết lại.
+- **`REQ-D53` vẫn `ĐX`** — đúng như phê chuẩn nói (mục 16: "D53 vẫn ĐX-trong-P0 chỉ ở phần hiệu
+  chỉnh tham số"). Khối "hướng đang nổi" vẫn trong MVP về mặt thuật toán, nhưng bảy tham số của
+  nó chỉ chốt được sau khi REQ-A4 có dữ liệu. **PC09 không promote nó.**
 
-Các dòng `ĐX` khác (D08, D11, D12, D15, D16, D18, D21, D22, D23, D26, D33, D37, D38, D40, D42,
-D43, D44, D50, D53…) đều đã được hiện thực hoá trong hợp đồng với nhãn giữ nguyên. **PC09 không
-promote dòng nào.**
+**Mâu thuẫn cần một CR, không phải một lần sửa lén.** `REQ-OQ01` và `REQ-OQ02` vẫn mang status
+`ĐX` trong `precode/requirements.csv`, với ghi chú `PROVISIONAL: … cần Owner xác nhận`. Nhưng
+`OD-20260907-01` mục 1 trả lời đúng OQ01 (profile riêng) và mục 3 trả lời đúng OQ02 (stack **B**,
+không phải Option A mà ghi chú của OQ02 đang nói). Hai dòng này nay **nói sai về thực tế**.
+`precode/requirements.csv` không nằm trong grant ghi của PC09, nên tôi **không sửa** — phát ra
+**`CR-PC09-13`** (chủ sở hữu: W1/PC00): cập nhật status và ghi chú của `REQ-OQ01`, `REQ-OQ02` theo
+mục 1 và mục 3, và kiểm lại xem còn dòng `PROVISIONAL` nào khác đã bị phê chuẩn vượt qua. Cho tới
+khi CR đó đóng, các con số P0 ở trên là số **đo được trên đĩa**, không phải số **đúng theo phê
+chuẩn** — và tôi báo số đo được.
 
 ### 6.2 Các mục `KC` — cần kiểm chứng, có cổng
 
@@ -498,7 +651,7 @@ promote dòng nào.**
 | `REQ-A2` | Ngưỡng embedding tách được bài khớp tag | G7-X5 + §7.1 dưới đây | `NOT_RUN`; ngưỡng `0.8000` mang nhãn `PROVISIONAL_BOOTSTRAP` và `threshold_calibration_state='uncalibrated'` |
 | `REQ-A3` | Model đa ngôn ngữ đủ tốt trên thuật ngữ khoa học | §7.2 | `NOT_RUN` |
 | `REQ-A4` | Mật độ vector phát hiện được hướng nổi thật | G7 + §7.3 | `NOT_RUN`; cần 3–4 kỳ, hiện 0 |
-| `REQ-A5` | Điều khoản từng nhà AI cho đường CLI/ACP | `cli-acp-probe.md` §6 | `NOT_RUN`; mọi adapter `enabled=false` |
+| `REQ-A5` | Điều khoản từng nhà AI cho đường CLI/ACP | `cli-acp-probe.md` §6 | `NOT_RUN`; mọi adapter `enabled=false`. Phê chuẩn mục 15 **giữ nguyên** `AC-16 BLOCKED` cho tới khi một probe đạt |
 | `REQ-A6` | Nhịp gọi arXiv và yêu cầu của OpenAlex | G3-X5 | `NOT_RUN`; bốn giá trị `PLACEHOLDER_KC` = null, sàn thận trọng `min_interval_ms = 3000` |
 | `REQ-A7` | X có thể hạn chế tài khoản dù người dùng tự giải CAPTCHA | — | **Không kiểm chứng được trước.** Xử lý bằng điều kiện dừng rõ ràng (SC04), không bằng một lời hứa |
 | `REQ-D34` | Nhịp gọi arXiv/OpenAlex — đọc tài liệu chính thức | như REQ-A6 | `NOT_RUN` |
@@ -509,6 +662,11 @@ promote dòng nào.**
 | `REQ-S10.2-06` | Điều khoản provider trước khi bật CLI/ACP | như REQ-A5 | `NOT_RUN` |
 | `REQ-S13.2-01` | Đọc tài liệu arXiv/OpenAlex khi triển khai | như REQ-A6 | `NOT_RUN` |
 | `REQ-S13.2-02` | Đọc điều khoản từng nhà AI trước khi bật CLI/ACP | như REQ-A5 | `NOT_RUN` |
+
+**Phê chuẩn không chạm vào bảng này.** Cả 15 dòng vẫn `KC` sau `OD-20260907-01`, và đó là kết
+quả đúng: Owner phê chuẩn được văn bản cam kết, không phê chuẩn được nhịp gọi của arXiv hay chất
+lượng của một model embedding. Mọi dòng `KC` trong `acceptance/traceability.csv` nay mang thêm một
+câu ở cột `notes`: *phê chuẩn không thay thế được phép đo*.
 
 **Không giá trị `KC` nào bị bịa.** `research_connector_rate_limit` giữ bốn `null` với
 `status: PLACEHOLDER_KC`; PC05 tự ghi rằng research connector **không được** coi là `CONTRACT_READY`
@@ -621,19 +779,27 @@ hai CR còn `OPEN` và thuộc gói khác:
 **Ba CR của đợt FIX6 đã được xử lý ở FIX7:** `CR-PC09-09` (`SAVE_ALREADY_EXISTS`) — W2/W3 gỡ hai
 chỗ nhắc trong prose hợp đồng, lịch sử ở lại handoff; `CR-PC09-10` (sáu tên cột không tồn tại) —
 W3 thêm sáu cột thật và W5 sửa hai đoạn prose; `CR-PC09-11` (tên operation cũ trong ghi chú
-fixture) — W5 viết lại ghi chú. Cả ba là `FIX_PROPOSED`, chờ A2 xác minh.
+fixture) — W5 viết lại ghi chú. `CR-PC09-12` (8 tham chiếu cột mà `E0-04c` soi tới lần đầu, §3.2)
+cũng đã được các gói sở hữu đóng. Cả bốn là `FIX_PROPOSED`, chờ A2 xác minh.
 
-**Một CR mới: `CR-PC09-12`** — 8 tham chiếu cột không phân giải được mà bản tách `E0-04c` soi tới
-lần đầu (§3.2); chủ sở hữu là W2, W3 và W4 theo từng file.
+**CR mới của đợt này:**
 
-Bối cảnh, ba CR của đợt trước: **`CR-PC09-09`**
-(`SAVE_ALREADY_EXISTS` chưa đăng ký, → W3/W2), **`CR-PC09-10`** (sáu tên cột không tồn tại được
-gọi trong văn xuôi của tám file hợp đồng, → gói sở hữu từng file), **`CR-PC09-11`** (ghi chú
-fixture `reporting/n-…` viết hai tên operation cũ dưới dạng token, → W5).
+| CR | Nội dung | Ai | Trạng thái |
+| --- | --- | --- | --- |
+| `CR-PC09-13` | `REQ-OQ01` và `REQ-OQ02` vẫn `ĐX` với ghi chú `PROVISIONAL` trong `precode/requirements.csv`, trong khi `OD-20260907-01` mục 1 và mục 3 đã trả lời cả hai | W1 (PC00) | **ĐÃ ĐÓNG bởi `PKT-PC00-FIX11`** — A2-R5 xác nhận D08/D09/D42/D50 → XN và sổ yêu cầu khớp phê chuẩn |
+| `CR-PC09-14` | Khóa `claim_ceiling` mang hai nghĩa (file tự tuyên bố / trần của công việc được giao); `agent-tasks/` ngoài `SCAN_DIRS` nên 18 card khai nhãn vượt trần mà không check nào thấy | Coordinator | **PARKED** — `E0-12` nay khai đúng phạm vi quét và **đếm + in ra** phần chênh; mở rộng `SCAN_DIRS` cần một ruling, không phải một quyết định của Worker |
+| `CR-PC01-13` | `E0-12` phải thành cửa **phạm vi** thay vì lệnh cấm phẳng, kèm kiểm `ratification_ref` phân giải được | W6 — làm ở FIX7 (§3.6), **siết lại ở FIX8** sau `F-A2R5-03` (§3.9) | **FIX_PROPOSED** |
+| `CR-PC05-06` / `CR-PC05-07` | `TXN-purge-all` từng xếp `schedule_occurrence` vào **cả hai** tập và xóa `worker_registration`/`data_deletion_audit`, trái mục 20/23; và bản ruling đầu đếm "purged (36)" trong khi văn xuôi của chính nó nêu thêm `telegram_link_attempt` | Coordinator + W3 | **ĐÃ ĐÓNG** — tập đúng là **37 · 21 · 2 = 60**, rời nhau và phủ kín; `E0-18` kiểm điều đó mỗi lần chạy |
+| `CR-PC02-22` | Bốn schema chưa phê chuẩn (`worker-assignment`, `ingest-receipt`, `analysis-result`, `saved-snapshot`) nằm cạnh ba schema đã phê chuẩn trong cùng thư mục; ranh giới không nằm trong cấu trúc thư mục | W2 | **OPEN** → vòng Owner kế tiếp. Đã **giảm nhẹ** ở FIX8: ranh giới nay là allowlist tường minh trong `precode/gates.yaml`, không còn là danh sách viết cứng trong công cụ |
 
-Một CR bị **mở lại**: **`CR-PC04-11`** — `event_order` của SC52 nay trích hai
-operation authoritative `embedding.start_generation_rebuild` và `embedding.activate_generation`
-(xem §3.3).
+`CR-PC01-13` và `CR-PC02-22` cùng chỉ về một chỗ yếu: **phạm vi phê chuẩn không nằm trong cây hợp
+đồng.** Ở FIX8 nó ít nhất đã rời khỏi mã nguồn: allowlist nay là dữ liệu trong `precode/gates.yaml`
+trích `OD-20260907-01`, mặc định là **không đủ điều kiện**, và `E0-12`/`E0-12b` **`BLOCKED`** nếu
+không đọc được nó — chứ không báo một PASS sạch trên một luật không thi hành được. Nhưng một file
+mới vẫn cần người thêm tay vào allowlist, nên cả hai vẫn nên lên vòng Owner kế tiếp cùng nhau.
+
+Một CR bị **mở lại**: **`CR-PC04-11`** — `event_order` của SC52 nay trích hai operation
+authoritative `embedding.start_generation_rebuild` và `embedding.activate_generation` (§3.3).
 
 Không CR nào ở trên được PC09 tự đóng; trạng thái đúng là `FIX_PROPOSED` hoặc `OPEN` cho tới khi
 A2 xác minh.
@@ -656,8 +822,8 @@ Bảng dưới **được sinh** bởi `crtable.py`: quét mọi file `.md`/`.ya
 - **OPEN** — mọi trường hợp còn lại.
 - Hai id mang disposition tường minh của Coordinator và được ghi bằng chính disposition đó.
 
-**Tổng: 107 CR** (`evidence/runs/cr_summary-20260907T023000Z.json`) — 90 từ PC00–PC08 (`cr_pc00_pc08_count`), 12 từ PC09, 5 từ
-PC10. Phân bố trạng thái: ACCEPTED_AS_LIMITATION 1 · APPROVED 1 · CLOSED_CLAIMED 21 · OPEN 61 · RULED 23.
+**Tổng: 115 CR** (artefact `cr_summary-…` của `EV-PC09-01`) — 95 từ PC00–PC08, 13 từ PC09,
+7 từ PC10. Phân bố trạng thái: ACCEPTED_AS_LIMITATION 1 · APPROVED 1 · CLOSED_CLAIMED 22 · OPEN 68 · RULED 23.
 
 Hai disposition của Coordinator, ghi rõ vì chúng là quyết định chứ không phải quan sát:
 
@@ -671,172 +837,179 @@ Hai disposition của Coordinator, ghi rõ vì chúng là quyết định chứ 
 
 | CR | Trạng thái | Ghi chú | Xuất hiện ở |
 | --- | --- | --- | --- |
-| `CR-PC00-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `precode/change-control.md`, `precode/decision-register.md` (+1 file) |
-| `CR-PC00-02` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
+| `CR-PC00-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `precode/change-control.md` (+2 file) |
+| `CR-PC00-02` | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md` (+1 file) |
 | `CR-PC00-03` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-04` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
+| `CR-PC00-04` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md` (+1 file) |
 | `CR-PC00-05` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-06` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-07` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
+| `CR-PC00-06` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md` (+1 file) |
+| `CR-PC00-07` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md` (+1 file) |
 | `CR-PC00-08` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
 | `CR-PC00-09` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-10` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-11` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md`, `precode/review.md` |
-| `CR-PC00-12` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/baseline.json`, `precode/decision-register.md` (+1 file) |
-| `CR-PC00-13` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/review.md` |
-| `CR-PC00-14` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/baseline.json`, `precode/review.md` |
+| `CR-PC00-10` | OPEN |  | `evidence/coordination/00-coordination-baseline.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+2 file) |
+| `CR-PC00-11` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/decision-register.md` (+1 file) |
+| `CR-PC00-12` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/baseline.json` (+2 file) |
+| `CR-PC00-13` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/review.md` |
+| `CR-PC00-14` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `precode/baseline.json` (+1 file) |
 | `CR-PC00-15` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/review.md` |
-| `CR-PC01-01` | OPEN |  | `contracts/errors.yaml`, `contracts/modules.yaml`, `contracts/ports.yaml` (+2 file) |
-| `CR-PC01-02` | OPEN |  | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json`, `agent-tasks/TC-scheduler-lease-claim.md` (+7 file) |
-| `CR-PC01-03` | OPEN |  | `contracts/errors.yaml`, `contracts/ports.yaml`, `evidence/handoffs/PC01-handoff.md` (+1 file) |
-| `CR-PC01-05` | OPEN |  | `acceptance/scenarios.yaml`, `contracts/data/entities.yaml`, `contracts/http/openapi.yaml` (+5 file) |
+| `CR-PC00-16` | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `precode/adr/ADR-0006-stack-option-a.md`, `precode/adr/README.md` |
+| `CR-PC00-17` | OPEN |  | `evidence/handoffs/PC00-handoff.md` |
+| `CR-PC00-18` | OPEN |  | `evidence/handoffs/PC00-handoff.md` |
+| `CR-PC01-01` | OPEN |  | `contracts/errors.yaml`, `contracts/modules.yaml`, `contracts/ports.yaml` (+5 file) |
+| `CR-PC01-02` | OPEN |  | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json`, `agent-tasks/TC-scheduler-lease-claim.md` (+11 file) |
+| `CR-PC01-03` | OPEN |  | `contracts/errors.yaml`, `contracts/ports.yaml`, `evidence/audits/A1-R1-report.md` (+3 file) |
+| `CR-PC01-05` | OPEN |  | `acceptance/scenarios.yaml`, `contracts/data/entities.yaml`, `contracts/http/openapi.yaml` (+9 file) |
 | `CR-PC01-06` | OPEN |  | `contracts/modules.yaml`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
-| `CR-PC01-07` | OPEN |  | `contracts/ports.yaml`, `evidence/handoffs/PC01-handoff.md`, `precode/review.md` |
-| `CR-PC01-08` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/ops/secrets.md`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC08-handoff.md` (+1 file) |
-| `CR-PC01-09` | **APPROVED** (Coordinator, A2-R1) | UNAUTHORIZED_COMMAND và RESTORE_UNVERIFIED là mã hợp lệ cho denied case nằm ngoài bảng bốn dòng R5-01 khi đặc tả gọi tên chúng | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+3 file) |
-| `CR-PC01-10` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+2 file) |
-| `CR-PC01-11` | OPEN |  | `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-PC01-12` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC01-handoff.md`, `precode/decision-register.md` (+1 file) |
-| `CR-PC02-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
+| `CR-PC01-07` | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+1 file) |
+| `CR-PC01-08` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/ops/secrets.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC01-09` | **APPROVED** (Coordinator, A2-R1) | UNAUTHORIZED_COMMAND và RESTORE_UNVERIFIED là mã hợp lệ cho denied case nằm ngoài bảng bốn dòng R5-01 khi đặc tả gọi tên chúng | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+8 file) |
+| `CR-PC01-10` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+3 file) |
+| `CR-PC01-11` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+4 file) |
+| `CR-PC01-12` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC01-13` | OPEN |  | `evidence/handoffs/PC01-handoff.md`, `precode/review.md` |
+| `CR-PC02-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
 | `CR-PC02-02` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
 | `CR-PC02-03` | OPEN |  | `contracts/data/entities.yaml`, `contracts/data/invariants.md`, `contracts/schemas/saved-snapshot.schema.json` (+3 file) |
 | `CR-PC02-04` | OPEN |  | `contracts/data/entities.yaml`, `contracts/http/openapi.yaml`, `contracts/schemas/ingest-batch.schema.json` (+2 file) |
 | `CR-PC02-05` | OPEN |  | `agent-tasks/TC-canonical-identity-merge.md`, `contracts/data/entities.yaml`, `contracts/errors.yaml` (+3 file) |
-| `CR-PC02-06` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json`, `agent-tasks/TC-canonical-identity-merge.md`, `agent-tasks/TC-report-coverage-publish-cas.md` (+9 file) |
-| `CR-PC02-07` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/invariants.md`, `contracts/ops/backup-restore.md`, `evidence/handoffs/PC02-handoff.md` (+2 file) |
-| `CR-PC02-08` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/identity/README.md`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-09` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-10` | OPEN |  | `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-11` | OPEN |  | `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-12` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-ingest-idempotent-ack-lost.md`, `contracts/data/entities.yaml`, `contracts/state/run.yaml` (+4 file) |
+| `CR-PC02-06` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json`, `agent-tasks/TC-canonical-identity-merge.md`, `agent-tasks/TC-report-coverage-publish-cas.md` (+13 file) |
+| `CR-PC02-07` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/invariants.md`, `contracts/ops/backup-restore.md`, `evidence/audits/A2-R1-report.md` (+4 file) |
+| `CR-PC02-08` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/identity/README.md`, `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
+| `CR-PC02-09` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
+| `CR-PC02-10` | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
+| `CR-PC02-11` | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
+| `CR-PC02-12` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-ingest-idempotent-ack-lost.md`, `contracts/data/entities.yaml`, `contracts/state/run.yaml` (+8 file) |
 | `CR-PC02-13` | OPEN |  | `acceptance/fixtures/identity/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC02-handoff.md` (+1 file) |
 | `CR-PC02-14` | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
 | `CR-PC02-15` | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-16` | OPEN |  | `contracts/data/entities.yaml`, `contracts/modules.yaml`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC02-16` | OPEN |  | `contracts/data/entities.yaml`, `contracts/modules.yaml`, `evidence/coordination/coordinator-ledger.md` (+3 file) |
 | `CR-PC02-17` | OPEN |  | `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml`, `contracts/telegram/commands.yaml` (+4 file) |
-| `CR-PC02-18` | **ACCEPTED_AS_LIMITATION** (Coordinator, A2-R1) | cửa kiểm cột R4-01 áp cho fixture dạng `rows[]`; các fixture văn xuôi giữ nguyên và được khai là NOT_APPLICABLE_FREEFORM | `evidence/handoffs/PC02-handoff.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+1 file) |
-| `CR-PC02-19` | OPEN |  | `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
-| `CR-PC02-20` | OPEN |  | `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
+| `CR-PC02-18` | **ACCEPTED_AS_LIMITATION** (Coordinator, A2-R1) | cửa kiểm cột R4-01 áp cho fixture dạng `rows[]`; các fixture văn xuôi giữ nguyên và được khai là NOT_APPLICABLE_FREEFORM | `evidence/audits/A2-R1-report.md`, `evidence/audits/A2-R2-report.md`, `evidence/audits/A2-R3-report.md` (+7 file) |
+| `CR-PC02-19` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
+| `CR-PC02-20` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `precode/review.md` |
 | `CR-PC02-21` | OPEN |  | `contracts/data/entities.yaml`, `precode/review.md` |
-| `CR-PC03-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ports.yaml`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC01-handoff.md` (+4 file) |
-| `CR-PC03-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-scheduler-lease-claim.md`, `contracts/errors.yaml`, `contracts/ports.yaml` (+9 file) |
-| `CR-PC03-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/run.yaml`, `evidence/handoffs/PC03-handoff.md` (+1 file) |
-| `CR-PC03-04` | OPEN |  | `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+6 file) |
-| `CR-PC03-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ai/tasks.yaml`, `contracts/capabilities.yaml`, `contracts/ports.yaml` (+7 file) |
-| `CR-PC03-06` | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/fixtures/reporting/d-empty-period-coverage-only.json`, `contracts/reporting/time-and-tags.md` (+4 file) |
-| `CR-PC03-07` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/delivery.yaml`, `evidence/handoffs/PC02-handoff.md` (+3 file) |
-| `CR-PC04-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/handoffs/PC02-handoff.md` (+2 file) |
-| `CR-PC04-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+4 file) |
-| `CR-PC04-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/handoffs/PC02-handoff.md` (+2 file) |
-| `CR-PC04-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/reporting/g-concurrent-publishers-cas.json`, `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/ports.yaml` (+6 file) |
+| `CR-PC02-22` | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+2 file) |
+| `CR-PC03-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ports.yaml`, `evidence/coordination/FIX3-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+6 file) |
+| `CR-PC03-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-scheduler-lease-claim.md`, `contracts/errors.yaml`, `contracts/ports.yaml` (+11 file) |
+| `CR-PC03-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/run.yaml`, `evidence/coordination/FIX3-rulings.md` (+3 file) |
+| `CR-PC03-04` | OPEN |  | `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+8 file) |
+| `CR-PC03-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ai/tasks.yaml`, `contracts/capabilities.yaml`, `contracts/ports.yaml` (+9 file) |
+| `CR-PC03-06` | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/fixtures/reporting/d-empty-period-coverage-only.json`, `contracts/reporting/time-and-tags.md` (+7 file) |
+| `CR-PC03-07` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/delivery.yaml`, `evidence/coordination/FIX3-rulings.md` (+4 file) |
+| `CR-PC04-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+4 file) |
+| `CR-PC04-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+6 file) |
+| `CR-PC04-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+3 file) |
+| `CR-PC04-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/reporting/g-concurrent-publishers-cas.json`, `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/ports.yaml` (+8 file) |
 | `CR-PC04-05` | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `contracts/ai/grounding.md`, `contracts/ai/tasks.yaml` (+5 file) |
 | `CR-PC04-06` | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/scenarios.yaml`, `contracts/reporting/time-and-tags.md` (+3 file) |
 | `CR-PC04-07` | OPEN |  | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/reporting/time-and-tags.md`, `contracts/ui/screens.yaml` (+3 file) |
-| `CR-PC04-08` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+6 file) |
-| `CR-PC04-09` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `contracts/state/report.yaml` (+3 file) |
-| `CR-PC04-10` | OPEN |  | `contracts/reporting/time-and-tags.md`, `evidence/handoffs/PC04-handoff.md`, `precode/review.md` |
-| `CR-PC04-11` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC04-handoff.md` (+2 file) |
-| `CR-PC05-01` | OPEN |  | `acceptance/fixtures/collection/README.md`, `acceptance/fixtures/collection/a-feed-layout-changed.json`, `agent-tasks/TC-collector-checkpoint-resume.md` (+10 file) |
+| `CR-PC04-08` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+8 file) |
+| `CR-PC04-09` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `contracts/state/report.yaml` (+5 file) |
+| `CR-PC04-10` | OPEN |  | `contracts/reporting/time-and-tags.md`, `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC04-handoff.md` (+1 file) |
+| `CR-PC04-11` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json`, `acceptance/scenarios.yaml`, `evidence/audits/A2-R1-report.md` (+4 file) |
+| `CR-PC05-01` | OPEN |  | `acceptance/fixtures/collection/README.md`, `acceptance/fixtures/collection/a-feed-layout-changed.json`, `agent-tasks/TC-collector-checkpoint-resume.md` (+11 file) |
 | `CR-PC05-02` | OPEN |  | `contracts/http/openapi.yaml`, `evidence/handoffs/PC05-handoff.md`, `precode/review.md` |
-| `CR-PC05-03` | OPEN |  | `agent-tasks/TC-x-feasibility-probe.md`, `contracts/ops/collector-probe.md`, `evidence/handoffs/PC05-handoff.md` (+5 file) |
-| `CR-PC05-04` | OPEN |  | `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC05-handoff.md`, `precode/review.md` |
-| `CR-PC05-05` | OPEN |  | `contracts/ports.yaml`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC05-handoff.md` (+1 file) |
-| `CR-PC06-01` | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/retry-policy.yaml`, `contracts/state/analysis.yaml` (+4 file) |
-| `CR-PC06-02` | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md` (+3 file) |
-| `CR-PC06-03` | OPEN |  | `agent-tasks/TC-analysis-adapter-validation.md`, `contracts/capabilities.yaml`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC05-03` | OPEN |  | `agent-tasks/TC-x-feasibility-probe.md`, `contracts/ops/collector-probe.md`, `evidence/audits/A2-R2-report.md` (+10 file) |
+| `CR-PC05-04` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC05-handoff.md` (+1 file) |
+| `CR-PC05-05` | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC06-01` | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/retry-policy.yaml`, `contracts/state/analysis.yaml` (+5 file) |
+| `CR-PC06-02` | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md` (+4 file) |
+| `CR-PC06-03` | OPEN |  | `agent-tasks/TC-analysis-adapter-validation.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+3 file) |
 | `CR-PC06-04` | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-analysis-adapter-validation.md`, `evidence/handoffs/PC04-handoff.md` (+4 file) |
 | `CR-PC06-05` | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `evidence/handoffs/PC06-handoff.md`, `precode/review.md` |
 | `CR-PC07-01` | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml` (+4 file) |
-| `CR-PC07-02` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml` (+5 file) |
+| `CR-PC07-02` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml` (+6 file) |
 | `CR-PC07-03` | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `evidence/handoffs/PC07-handoff.md` (+1 file) |
-| `CR-PC07-04` | OPEN |  | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json`, `acceptance/scenarios.yaml` (+12 file) |
+| `CR-PC07-04` | OPEN |  | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json`, `acceptance/scenarios.yaml` (+25 file) |
 | `CR-PC07-05` | OPEN |  | `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml`, `evidence/handoffs/PC07-handoff.md` (+1 file) |
-| `CR-PC07-06` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC04-handoff.md` (+3 file) |
-| `CR-PC07-07` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc51-first-time-setup.json`, `agent-tasks/TC-analysis-adapter-validation.md` (+6 file) |
-| `CR-PC07-08` | OPEN |  | `evidence/handoffs/PC07-handoff.md`, `precode/review.md` |
+| `CR-PC07-06` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/scenarios.yaml`, `evidence/audits/A1-R3-report.md` (+4 file) |
+| `CR-PC07-07` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc51-first-time-setup.json`, `agent-tasks/TC-analysis-adapter-validation.md` (+8 file) |
+| `CR-PC07-08` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `precode/review.md` |
 | `CR-PC07-09` | OPEN |  | `evidence/handoffs/PC07-handoff.md`, `precode/review.md` |
-| `CR-PC07-10` | OPEN |  | `evidence/handoffs/PC07-handoff.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/tools/README.md` (+1 file) |
+| `CR-PC07-10` | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+2 file) |
 | `CR-PC08-01` | OPEN |  | `acceptance/fixtures/recovery/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC00-handoff.md` (+3 file) |
-| `CR-PC08-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backup-restore-drill.md`, `agent-tasks/TC-owner-auth-session.md`, `contracts/capabilities.yaml` (+6 file) |
-| `CR-PC08-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/h-unauthenticated-owner-api.json`, `acceptance/scenarios.yaml`, `contracts/capabilities.yaml` (+12 file) |
-| `CR-PC08-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `acceptance/scenarios.yaml` (+11 file) |
-| `CR-PC08-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `agent-tasks/TC-backup-restore-drill.md`, `contracts/data/entities.yaml` (+4 file) |
-| `CR-PC09-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/handoffs/PC04-handoff.md`, `evidence/handoffs/PC05-handoff.md` (+2 file) |
-| `CR-PC09-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/handoffs/PC09-handoff.md`, `evidence/index.json` (+1 file) |
-| `CR-PC09-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/run.yaml`, `evidence/handoffs/PC03-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+2 file) |
-| `CR-PC09-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/analysis.yaml`, `evidence/handoffs/PC03-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+2 file) |
-| `CR-PC09-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/handoffs/PC09-handoff.md`, `precode/review.md` |
-| `CR-PC09-06` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/handoffs/PC09-handoff.md`, `precode/review.md` |
-| `CR-PC09-07` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/handoffs/PC09-handoff.md`, `evidence/handoffs/PC10-handoff.md`, `precode/change-control.md` (+1 file) |
-| `CR-PC09-08` | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `precode/review.md` |
+| `CR-PC08-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backup-restore-drill.md`, `agent-tasks/TC-owner-auth-session.md`, `contracts/capabilities.yaml` (+7 file) |
+| `CR-PC08-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/h-unauthenticated-owner-api.json`, `acceptance/scenarios.yaml`, `contracts/capabilities.yaml` (+14 file) |
+| `CR-PC08-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `acceptance/scenarios.yaml` (+13 file) |
+| `CR-PC08-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `agent-tasks/TC-backup-restore-drill.md`, `contracts/data/entities.yaml` (+5 file) |
+| `CR-PC09-01` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+4 file) |
+| `CR-PC09-02` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+2 file) |
+| `CR-PC09-03` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/run.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+3 file) |
+| `CR-PC09-04` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/analysis.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+3 file) |
+| `CR-PC09-05` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+1 file) |
+| `CR-PC09-06` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+1 file) |
+| `CR-PC09-07` | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+2 file) |
+| `CR-PC09-08` | OPEN |  | `evidence/audits/A2-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+1 file) |
 | `CR-PC09-09` | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `precode/gates.yaml`, `precode/review.md` |
 | `CR-PC09-10` | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `precode/review.md` |
 | `CR-PC09-11` | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `precode/review.md` |
 | `CR-PC09-12` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC09-handoff.md`, `precode/gates.yaml`, `precode/review.md` |
-| `CR-PC10-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+21 file) |
-| `CR-PC10-02` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-collector-checkpoint-resume.md`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+10 file) |
-| `CR-PC10-03` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/WALKTHROUGH.md`, `contracts/capabilities.yaml`, `evidence/handoffs/PC01-handoff.md` (+2 file) |
+| `CR-PC09-13` | OPEN |  | `precode/review.md` |
+| `CR-PC10-01` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+22 file) |
+| `CR-PC10-02` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-collector-checkpoint-resume.md`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+11 file) |
+| `CR-PC10-03` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/WALKTHROUGH.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+3 file) |
 | `CR-PC10-04` | OPEN |  | `agent-tasks/WALKTHROUGH.md`, `evidence/handoffs/PC10-handoff.md`, `precode/change-control.md` (+1 file) |
-| `CR-PC10-05` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC10-handoff.md`, `precode/review.md` |
+| `CR-PC10-05` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md`, `precode/review.md` |
+| `CR-PC10-06` | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC10-handoff.md` |
+| `CR-PC10-07` | OPEN |  | `evidence/handoffs/PC10-handoff.md`, `precode/review.md` |
 
-## 9. Readiness theo module
+---
 
-Tiêu chí `READY_FOR_CARD`: (a) module có owner, port vào/ra và cạnh bị cấm đã khai; (b) mọi
-operation nó sở hữu có schema, auth, transaction, idempotency, lỗi và scenario; (c) không blocker
-nào còn mở **chạm trực tiếp** vào hành vi của nó; (d) không finding audit nào đang mở trong file
-của nó; (e) mọi tham số bắt buộc có giá trị (không `PLACEHOLDER_KC`); (f) scenario của nó có
-fixture.
+## 9. Readiness theo module — đánh giá lại sau phê chuẩn
 
-Sau đợt FIX5, điều kiện (f) đúng với **mọi** module — không scenario nào còn thiếu fixture — và
-điều kiện (a)/(b) đúng với mọi module. Nhưng điều kiện (c) vẫn **sai với mọi module** vì B01–B17
-đều `OPEN`, và điều kiện (d) vẫn sai — không phải vì A2 chưa chạy, mà vì bốn finding
-`F-A2R2-01…04` của A2-R2 còn `OPEN` và bản sửa cho chúng chưa được xác minh lại (§4.1). Nên
-**không module nào đạt
-`READY_FOR_CARD` vô điều kiện**. Bảng dưới ghi trạng thái **có điều kiện**: mỗi module đạt được gì
-và còn chờ đúng cái gì.
+Tiêu chí `READY_FOR_CARD` giữ nguyên: (a) module có owner, port vào/ra và cạnh bị cấm đã khai;
+(b) mọi operation nó sở hữu có schema, auth, transaction, idempotency, lỗi và scenario; (c) không
+blocker nào còn mở **chạm trực tiếp** vào hành vi của nó; (d) không finding audit nào đang mở
+trong file của nó; (e) mọi tham số bắt buộc có giá trị (không `PLACEHOLDER_KC`); (f) scenario của
+nó có fixture.
 
-| Module | Chạy ở | Trạng thái | Chặn bởi |
+`OD-20260907-01` thay đổi bảng này nhiều hơn bất kỳ đợt nào trước, vì điều kiện **(c)** trước đây
+sai với *mọi* module chỉ vì B01–B17 đều `OPEN`. Nay chúng `RATIFIED`, nên (c) chỉ còn sai ở những
+module bị chặn bởi một `KC` hoặc một quyết định Owner **hoãn** lại. Điều kiện (d) vẫn phụ thuộc
+§4.1 và không dòng nào dưới đây được đọc là closure.
+
+| Module | Chạy ở | Trạng thái | Chặn bởi (sau phê chuẩn) |
 | --- | --- | --- | --- |
-| `MOD-web-ui` | browser | READY_FOR_CARD *(có điều kiện)* | Nâng từ BLOCKED: `ui/sc10-…` và `ui/sc51-…` cấp fixture render, `screens.yaml` nay trích `REQ-S4-01`, `-08`, `-09`, `-10` và `REQ-S5.1-01..03`. Còn chờ B10 (resume) |
-| `MOD-backend-api` | server | READY_FOR_CARD *(có điều kiện)* | Chỉ chờ phê chuẩn B-chung. 54 operation HTTP có wire contract 1:1, `ErrorEnvelope` set-equal `errors.yaml`, CSRF trên mọi owner mutation |
-| `MOD-auth-service` | server | READY_FOR_CARD *(có điều kiện)* | Tham số phiên (Argon2id, idle 12 h, absolute 30 d) là PROVISIONAL, cần Owner |
-| `MOD-settings-service` | server | BLOCKED | B08 (timezone thật), `REQ-OQ03` (provider/model cụ thể — **không có giá trị mặc định**, `OWNER_DECISION_REQUIRED`) |
-| `MOD-tag-service` | server | BLOCKED | B01 (mốc freeze tag), B04 (backfill keyed theo chữ chuẩn hóa), `REQ-OQ04` (N ngày) |
-| `MOD-scheduler` | server | BLOCKED | B08 (timezone quyết định mọi mốc), `REQ-OQ06` (lịch thật). SC34 nay có fixture (`collection/j-…`) nhưng chỉ thực sự kích hoạt nếu Owner chọn múi giờ CÓ DST |
-| `MOD-job-service` | server | BLOCKED | B02 (mô hình trạng thái run), B10 (resume). SC33/SC35 nay có fixture |
-| `MOD-ingest-service` | server | READY_FOR_CARD *(có điều kiện)* | B05 đã có phương án đủ; chờ phê chuẩn AMD-B05 |
-| `MOD-identity-service` | server | READY_FOR_CARD *(có điều kiện)* | B06 và B15 chưa phê chuẩn nhưng đã hiện thực hoá đầy đủ với fixture và oracle |
-| `MOD-research-connector` | server | **BLOCKED (cứng)** | `REQ-A6` `KC`: bốn giá trị rate-limit là `null`/`PLACEHOLDER_KC`. PC05 tự ghi module này **không** được coi là `CONTRACT_READY` cho tới khi chúng được điền. Cần đọc tài liệu ngoài — phiên này không có mạng |
-| `MOD-embedding-service` | server | BLOCKED | `REQ-OQ09` (model cụ thể), `REQ-A3` `KC`. SC52 nay có mặt dương với fixture (`reporting/n-…`) và trích đúng hai operation authoritative |
-| `MOD-analysis-service` | server | READY_FOR_CARD *(có điều kiện)* | B07 chưa phê chuẩn; `PROV-PC03-04` (tự chạy lại một lần từ `unknown_attempt`) cần Owner soi |
-| `MOD-report-service` | server | BLOCKED | B01, B04, B14, B17 đều chạm trực tiếp; tham số mật độ đều PROVISIONAL với cổng `REQ-A4` |
-| `MOD-saved-service` | server | READY_FOR_CARD *(có điều kiện)* | `F-PC00-02` (hoãn export) chờ Owner |
-| `MOD-delivery-service` | server | BLOCKED | B03 (`delivery.unknown` sửa AC-14 — cần Owner duyệt amendment) |
-| `MOD-telegram-adapter` | server | **BLOCKED (cứng)** | `CR-PC07-04`: giới hạn định dạng Telegram vẫn `KC` (không có mạng để đọc Bot API). Chặn `CONTRACT_READY` của `telegram/delivery.md` §3.4. Cộng B03, B09, B10 |
-| `MOD-secret-service` | server | BLOCKED | B13 chưa phê chuẩn; `REQ-A5` `KC` |
-| `MOD-data-admin-service` | server | **BLOCKED (cứng)** | `PROV-PC00-01`/`PROV-PC01-03`: phạm vi **loại trừ** của `data.purge_all` là `OWNER_DECISION_REQUIRED`. SC32/SC44 nay có fixture (`recovery/k-…`, `l-…`) nên CƠ CHẾ đã khóa được — nhưng fixture không khóa được DANH SÁCH LOẠI TRỪ. `CR-PC01-05` (cascade) vẫn mở |
-| `MOD-data-store` | server | READY_FOR_CARD *(có điều kiện)* | Partial UNIQUE index và STORED generated column vẫn là **giả định chưa kiểm trên SQLite thật**; cần E1 sau khi chốt stack |
-| `MOD-backup-service` | server | BLOCKED | B11 chưa phê chuẩn; RPO/RTO PROVISIONAL; **chưa drill nào chạy**. SC53 nay có mặt dương với fixture (`recovery/m-…`) |
-| `MOD-backup-cli` | server | BLOCKED | như trên; `PROV-PC01-04` |
-| `MOD-health-service` | server | READY_FOR_CARD *(có điều kiện)* | Ngưỡng readiness 30/90/900/1800 s là PROVISIONAL, chưa đo thật |
-| `MOD-x-collector` | máy cá nhân | **BLOCKED (cứng)** | `REQ-OQ01` (xác nhận D09) **CHẶN M0**; `REQ-A1` và `REQ-A7` đều `KC`; SP1 chưa chạy |
-| `MOD-analysis-worker` | máy cá nhân | BLOCKED | B13; `REQ-A5` `KC`; mọi adapter `enabled=false` |
-| `MOD-ai-adapter` | máy cá nhân | **BLOCKED (cứng)** | B13: không chứng minh được cô lập tool/file/network thì adapter **không được bật**. Chưa probe nào chạy. **AC-16 là `BLOCKED`, không phải `FAIL`** |
+| `MOD-web-ui` | browser | READY_FOR_CARD *(có điều kiện)* | B10 ratified (mục 13). Còn: §3/§8 của card phải viết lại theo stack B |
+| `MOD-backend-api` | server | READY_FOR_CARD *(có điều kiện)* | Không còn blocker. 54 operation HTTP có wire contract 1:1, `ErrorEnvelope` set-equal `errors.yaml` |
+| `MOD-auth-service` | server | READY_FOR_CARD *(có điều kiện)* | Tham số phiên được Owner chấp nhận (mục 23) |
+| `MOD-settings-service` | server | **BLOCKED** | B08 ratified, nhưng **`REQ-OQ03` Owner hoãn** (mục 21) — provider/model cụ thể vẫn `OWNER_DECISION_REQUIRED`. Chặn M3 |
+| `MOD-tag-service` | server | READY_FOR_CARD *(có điều kiện)* | B01/B04 ratified; `REQ-OQ04` N = 7 ngày được chấp nhận (mục 20) |
+| `MOD-scheduler` | server | READY_FOR_CARD *(có điều kiện)* | B08 ratified với `Asia/Ho_Chi_Minh`; `REQ-OQ06` 08:00/20:00 chấp nhận. Múi giờ không DST ⇒ DST-01/DST-02 chưa kích hoạt |
+| `MOD-job-service` | server | READY_FOR_CARD *(có điều kiện)* | B02/B10 ratified |
+| `MOD-ingest-service` | server | READY_FOR_CARD *(có điều kiện)* | B05 ratified (câu chữ AC-04) |
+| `MOD-identity-service` | server | READY_FOR_CARD *(có điều kiện)* | B06/B15 ratified |
+| `MOD-research-connector` | server | **BLOCKED (cứng)** | `REQ-A6` `KC`: bốn giá trị rate-limit vẫn `null`/`PLACEHOLDER_KC`. Phê chuẩn không đọc hộ tài liệu arXiv/OpenAlex |
+| `MOD-embedding-service` | server | **BLOCKED (cứng)** | `REQ-A3` `KC` và `REQ-OQ09`; mục 20 nói rõ **model chưa đặt cho tới khi đo được** |
+| `MOD-analysis-service` | server | READY_FOR_CARD *(có điều kiện)* | B07 ratified. Còn `PROV-PC03-04` (tự chạy lại một lần từ `unknown_attempt`) — **không** nằm trong 25 mục, vẫn `PROVISIONAL` |
+| `MOD-report-service` | server | **BLOCKED** | B01/B04/B14/B17 ratified, nhưng bảy tham số mật độ có cổng `REQ-A4` (`KC`, 0/3–4 kỳ) và `REQ-D53` vẫn `ĐX` ở phần hiệu chỉnh |
+| `MOD-saved-service` | server | READY_FOR_CARD *(có điều kiện)* | `F-PC00-02` (hoãn export sang P1) được Owner xác nhận (mục 20) |
+| `MOD-delivery-service` | server | READY_FOR_CARD *(có điều kiện)* | B03 ratified (câu chữ AC-14) |
+| `MOD-telegram-adapter` | server | **BLOCKED (cứng)** | `CR-PC07-04`: giới hạn định dạng Telegram vẫn `KC`. B03/B09/B10 đã hết chặn |
+| `MOD-secret-service` | server | **BLOCKED (cứng)** | B13 ratified nhưng `REQ-A5` `KC` — điều khoản từng nhà AI chưa đọc |
+| `MOD-data-admin-service` | server | READY_FOR_CARD *(có điều kiện)* | **Gỡ chặn cứng.** Mục 24 chốt phạm vi `data.purge_all`: chỉ dữ liệu nghiên cứu, giữ đăng nhập/secret/liên kết Telegram/cấu hình provider/lịch, **backup không bị xóa**. Còn `CR-PC01-05` (cascade) mở |
+| `MOD-data-store` | server | READY_FOR_CARD *(có điều kiện)* | Partial UNIQUE index và STORED generated column vẫn là **giả định chưa kiểm trên SQLite thật** — E1 sau khi có repo stack B |
+| `MOD-backup-service` | server | READY_FOR_CARD *(có điều kiện)* | B11 ratified, RPO 24 h / RTO 2 h chấp nhận (mục 23). **Chưa drill nào chạy** — đó là E1+, không phải điều kiện card |
+| `MOD-backup-cli` | server | READY_FOR_CARD *(có điều kiện)* | như trên; `PROV-PC01-04` vẫn `PROVISIONAL` |
+| `MOD-health-service` | server | READY_FOR_CARD *(có điều kiện)* | Ngưỡng readiness 30/90/900/1800 s vẫn PROVISIONAL, chưa đo thật |
+| `MOD-x-collector` | máy cá nhân | **BLOCKED (cứng)** | `REQ-OQ01` **đã được trả lời** (mục 1) — D09 không còn chặn. Còn lại: `REQ-A1` và `REQ-A7` `KC`, SP1 `NOT_RUN` |
+| `MOD-analysis-worker` | máy cá nhân | **BLOCKED (cứng)** | B13 ratified; `REQ-A5` `KC`; mọi adapter `enabled=false` |
+| `MOD-ai-adapter` | máy cá nhân | **BLOCKED (cứng)** | Mục 15 phê chuẩn chính sách **và giữ nguyên `AC-16 BLOCKED`** cho tới khi một probe đạt. Chưa probe nào chạy |
 
-**Tổng, đếm từ chính bảng trên (25 dòng): 9 module `READY_FOR_CARD` có điều kiện, 16 `BLOCKED`,
-trong đó 5 bị chặn cứng** (`module_table_rows`, `module_ready`, `module_blocked`,
-`module_hard_blocked` — parse cơ học từ bảng, không viết cạnh bảng). Bản trước ghi "10 ready / 15
-blocked" trong khi bảng của chính nó nói 9 / 16 (`F-A2R1-02`). Hai thay đổi so với bản FIX1:
+**Tổng, đếm từ chính bảng trên (25 dòng): 16 module `READY_FOR_CARD` có điều kiện, 9 `BLOCKED`,
+trong đó 7 bị chặn cứng** (`module_table_rows`, `module_ready`, `module_blocked`,
+`module_hard_blocked` — parse cơ học từ bảng, không viết cạnh bảng).
 
-- `MOD-web-ui` **BLOCKED → READY_FOR_CARD (có điều kiện)**: lý do chặn của bản trước là thiếu
-  fixture render và bốn dòng `REQ-S4-01`/`-08`/`-09`/`-10` mồ côi; ruling R5-02 và R5-03
-  đóng cả hai.
-- `MOD-data-admin-service` **vẫn chặn cứng** dù nay có đủ fixture — vì cái chặn nó không bao giờ là
-  fixture, mà là một câu hỏi chỉ Owner trả lời được: purge xóa những gì và **không** xóa những gì.
+Thay đổi so với bản trước: **9 ready → 16**. Bảy module lên ready vì blocker của chúng được phê
+chuẩn (`tag`, `scheduler`, `job`, `delivery`, `backup-service`, `backup-cli`, và
+**`data-admin-service`** — module duy nhất trước đây chặn cứng vì một câu hỏi phạm vi, nay có câu
+trả lời). Một module đi ngược: **`MOD-settings-service` và `MOD-embedding-service` chuyển từ
+BLOCKED thường sang lý do rõ ràng hơn** — OQ03 bị hoãn, model embedding chờ đo.
 
-Bốn module chặn cứng còn lại đều chặn vì cùng một loại nguyên nhân — một `KC` cần dữ liệu từ thế
-giới bên ngoài (`REQ-A6`, `CR-PC07-04`, `REQ-A5`+B13, `REQ-OQ01`+`REQ-A1`) — chứ không vì thiếu
-hợp đồng. Không lượng công việc soạn thảo nào gỡ được chúng.
+Điều đáng đọc kỹ nhất: **cả 7 module chặn cứng đều chặn vì một `KC` hoặc một phép đo chưa chạy**
+(`REQ-A6`, `REQ-A3`+`REQ-OQ09`, `CR-PC07-04`, `REQ-A5`×2, `REQ-A1`/`REQ-A7`). Không còn module nào
+chặn vì thiếu quyết định — trừ `MOD-settings-service`, chặn vì Owner **chọn hoãn**. Không lượng
+công việc soạn thảo nào gỡ được nhóm còn lại; chúng cần mạng, tài khoản thật, và thời gian chạy.
 
 ### 9.1 Task card — độ phủ, đo thật
 
@@ -852,13 +1025,42 @@ nêu cả epoch hiện hành lẫn mọi epoch đã bị thay — đọc nó kh�
 (`F-A2R3-02`). Quy tắc đúng: epoch hiện hành là token trong cặp backtick **đầu tiên** của dòng bắt
 đầu bằng `**Pin epoch: `.
 
-Tại thời điểm chạy bản này lệnh đó trả **`PC10-PIN-FCW4f-20260907`**, và **18/18 card khai cùng một epoch**
-(`card_pin_current`, `card_pin_declared`, `card_pin_unanimous`). Bản trước ghi
-`PC10-PIN-FCW4-20260907`, đã bị thay lần lượt bởi `FCW4b`, `FCW4c`, `FCW4d`, `FCW4e` rồi `FCW4f` — `F-A2R1-03` bắt đúng điểm đó, và
+Tại thời điểm chạy bản này lệnh đó trả **`PC10-PIN-OD01c-20260907`**, và **18/18 card khai cùng
+một epoch** (`card_pin_current`, `card_pin_declared`, `card_pin_unanimous`). Chuỗi epoch từ đầu
+gói: `FCW4` → `FCW4b` → `FCW4c` → `FCW4d` → `FCW4e` → `FCW4f` → `OD01` → `OD01c`; hai lần re-pin
+cuối là do phê chuẩn (chuyển toàn bộ card sang stack B) và do đợt sửa `F-A2R5-01`. `F-A2R1-03` bắt đúng điểm này, và
 lý do nó lệch được là vì nó được chép chứ không được đọc. Card trích các file của PC09 **theo
 đường dẫn và SC id, không theo hash** (ruling R5-07) — cách pin đúng, vì `acceptance/scenarios.yaml`
-đổi ở chính đợt này và một hash được pin sẽ lệch ngay. **W7 sẽ re-pin một lần nữa sau gói này**,
-nên giá trị ở trên là giá trị tại thời điểm chạy — lệnh `grep` bên trên luôn là nguồn đúng.
+đổi ở chính đợt này và một hash được pin sẽ lệch ngay.
+
+**Đủ điều kiện phạm vi phê chuẩn — số tôi *đo được* sau khi `PKT-PC10-FIX9` land.** Đếm trên đĩa:
+**8/18 card khai "Phạm vi đã phê chuẩn", 10/18 khai "Ngoài phạm vi đã phê chuẩn" với điểm dừng
+`KC` giữ nguyên**. Mười card kia bị chặn bởi cùng một nhóm file: `contracts/ai/`,
+`contracts/telegram/`, `contracts/ui/screens.yaml`, `contracts/http/openapi.yaml`, ba file
+`contracts/ops/` mang `KC`, và bốn schema chưa phê chuẩn.
+
+**Cần đọc kỹ con số 8 này.** W7 báo cáo rằng tiêu chí **nguyên văn** — *mọi* file trong read set
+mang `claim_ceiling: CONTRACT_READY` — cho ra **0**, không phải 8: trong 143 file có pin chỉ 21
+file đạt, mọi fixture và mọi ADR vẫn `DRAFT_FOR_REVIEW`, và `openapi.yaml` (nằm trong read set của
+15/18 card) cũng vậy. Con số 8 đến từ một tiêu chí **thay thế** — *read set không chạm
+`contracts/ai/`, `contracts/telegram/`, hay file `contracts/ops/` nào ngoài `deployment.md`* — do
+W7 hiện thực để khớp danh sách Coordinator nêu đích danh, và W7 đã ghi rõ sự khác biệt thay vì im
+lặng chọn một trong hai. Tôi lặp lại điều đó ở đây vì §9.1 là chỗ người đọc tra con số này:
+**"8 card trong phạm vi phê chuẩn" không có nghĩa là nền hợp đồng của 8 card đó đã
+`CONTRACT_READY`.** `CR-PC10-07` (→ Coordinator) nêu đúng bước còn thiếu để hai tiêu chí trùng
+nhau. Mỗi card, cả 18, nay tự liệt kê đích danh những file trong read set của nó còn
+`DRAFT_FOR_REVIEW` — nên lời khai của card không thể rộng hơn phép đo của chính nó.
+
+**Một điều tôi tìm thấy khi đọc header card, và không im lặng bỏ qua.** 18 card khai
+`claim_ceiling: IMPLEMENTATION_VERIFIED` (một card khai `LIVE_FEASIBILITY_VERIFIED`) — những nhãn
+mà `E0-12` cấm tuyệt đối. Chúng **không** bị bắt, vì `agent-tasks/` **nằm ngoài `SCAN_DIRS`** của
+`e0_check.py` (`contracts`, `acceptance`, `precode`, `evidence`). Đọc kỹ thì đây không phải một vi
+phạm: trong một card, `claim_ceiling` nghĩa là *trần mà công việc được giao có thể đạt tới*, lấy
+từ SRC-PLAN §2 — không phải một tuyên bố về chính card. Nhưng **một khóa mang hai nghĩa** là đúng
+lớp rủi ro gói này đã gặp bốn lần. Tôi đã làm hai việc: sửa oracle của `E0-12` để nó nói đúng
+phạm vi nó quét thay vì nói "everywhere", và cho `E0-12` **đếm và in ra** các nhãn vượt trần trong
+`agent-tasks/` như một note — có mặt trong bản ghi chạy, không phải vắng mặt im lặng. Đây là
+**`CR-PC09-14`** (→ Coordinator): hoặc đổi tên khóa trong card, hoặc mở rộng `SCAN_DIRS`.
 
 PC10 **không chạy** kiểm tra "mỗi hạng mục P0 (`REQ-P0-01` … `REQ-P0-12`) có ít nhất một card".
 Coordinator giao tôi chạy nó.
@@ -881,40 +1083,60 @@ SC13 phủ đúng hành vi đó. Tôi đã thêm `REQ-P0-08` vào `requirement_r
 xác, không phải độn số), và con số bắc cầu trở thành 12/12.
 
 Hai quan sát phụ, cùng một lần chạy:
-- **53 / 53 scenario được ít nhất một card trích dẫn.** Không scenario nào mồ côi phía card.
+- **53 / 56 scenario được ít nhất một card trích dẫn.** Ba scenario chưa card nào trích là
+  **SC54, SC55, SC56** — chính ba scenario tôi thêm ở đợt FIX6 để cấp cực dương riêng cho I04, I14
+  và I16. Chúng ra đời sau lần pin gần nhất của PC10, nên đây là độ trễ chứ không phải bỏ sót; tôi
+  ghi nó ở đây thay vì làm tròn con số lên 56/56. Việc neo ba scenario này vào card thuộc PC10.
 - Kiểm tra này **nên trở thành một check E0 thường trực** khi `agent-tasks/` ổn định. Tôi không
   thêm nó vào `e0_check.py` ở đợt này vì `agent-tasks/` nằm ngoài read set của packet PC09 gốc và
   PC10 vẫn đang thay đổi; đề nghị Coordinator giao nó cho lượt sau. Đây là `CR-PC09-08`.
 
+---
 
-## 10. Quyết định `PROVISIONAL` đang chờ Owner — danh sách hợp nhất
+## 10. Sau phê chuẩn: cái gì đã chốt, cái gì còn chờ Owner
 
-`precode/owner-decision-request.md` là phiếu trả lời chính thức (24 mục). Bản này **không nhân
-bản** nó; nó chỉ đối chiếu và chỉ ra mục nào chặn cái gì. Nếu hai bản lệch nhau,
-`owner-decision-request.md` thắng.
+`precode/owner-decision-request.md` nay mang banner `ANSWERED 2026-09-07` và phiếu trả lời đã
+điền. `OD-20260907-01` giải **25 mục**. Bản này không nhân bản biên bản; nếu hai bản lệch nhau,
+`precode/owner-decisions.md` thắng.
 
-| Nhóm | ID | Chặn |
+### 10.1 Đã chốt
+
+| Nhóm | Mục | Hiệu lực |
 | --- | --- | --- |
-| **`OWNER_DECISION_REQUIRED` — không có giá trị tạm** | `PROV-PC00-01` / `PROV-PC01-03` (phạm vi loại trừ của `data.purge_all`) | `MOD-data-admin-service`, SC44 |
-| | `REQ-OQ03` (provider và model cụ thể) | `MOD-settings-service`, M3 |
-| **Chặn mốc triển khai** | `REQ-OQ01` (xác nhận D09 — Chrome profile riêng) | **M0**, SP1, `MOD-x-collector` |
-| | `REQ-OQ02` (chọn stack; khuyến nghị A) | **M1**, G5, mọi task card của PC10 |
-| **14 amendment cần phê chuẩn** | `AMD-B01`, `-B02`, `-B03`, `-B04`, `-B05`, `-B07`, `-B08`, `-B09`, `-B10`, `-B11`, `-B12`, `-B15`, `-B16`, `-B17` | 84 dòng registry, G0–G4 |
-| **Ba blocker không có amendment** | B06, B13, B14 | identity model; bật/tắt adapter; khối "hướng đang nổi" |
-| **Quyết định kỹ thuật do PC00 chốt tạm** | `PROV-PC00-02` (`CSRF_REJECTED`), `PROV-PC00-03` (`data.purge_all` hai pha + SC44), `PROV-PC00-04` (`run.resume` từ `blocked`) | `PROV-PC00-04` chạm câu §5.4 bước 5 Owner đã đọc |
-| **Quyết định của PC01** | `PROV-PC01-01` (`CAPABILITY_DENIED`), `-02` (unlink là app action), `-04` (`MOD-backup-cli`), `-05` (caller của `identity.record_alias`), `-06` (`MOD-data-admin-service`) | |
-| **Quyết định của PC02** | 8 giới hạn ingest/snapshot, hai quy tắc chuẩn hóa DOI/arXiv, `analysis_key` không gồm provider/model | `CR-PC02-04`, `CR-PC02-05`, `CR-PC02-17` |
-| **Quyết định của PC03** | `PROV-PC03-01` (DST-01/DST-02), `-04` (`analysis_unknown_attempt_auto_rerun = 1`), 41 ngân sách, `run_now_active_run_policy = coalesce`, `storage.maintenance` | `PROV-PC03-04` là chỗ chính PC03 **xin Auditor soi kỹ**; A1-R2 đã đánh giá là hợp lý nhưng đó là đánh giá kỹ thuật, không phải phê chuẩn của Owner |
-| **Quyết định của PC04** | 8 mục ở handoff §7.3, gồm `PROV-PC04-06` (ngưỡng `0.8000` `PROVISIONAL_BOOTSTRAP`) và `PROV-PC04-09` (kỳ rỗng phương án (b)) | `PROV-PC04-09` **trái khuyến nghị (a) của Coordinator** và cần xác nhận hoặc bác |
-| **Quyết định của PC05** | Thiết kế URL 50 path, ánh xạ mã lỗi → HTTP status, `x-transport-limits`, ngưỡng probe và go/no-go | Ngưỡng GO-2 (challenge ≤ 1 mỗi 5 đợt) là ngưỡng về **trải nghiệm**: cao hơn thì sản phẩm "tự chạy" thành sản phẩm "gọi người" |
-| **Quyết định của PC06** | 8 mục ở handoff §7.3, gồm `confidence` là enum rời rạc, `usage.unknown ⇒ ba trường null`, ngưỡng rubric G1/G2 = 1.00 | |
-| **Quyết định của PC07** | Định dạng/hạn/rate-limit mã liên kết, giờ yên lặng (không có), `telegram_update_max_age` | `CR-PC07-01`, `CR-PC07-05` |
-| **Quyết định của PC08** | Argon2id, phiên 12 h/30 d, token 256 bit, rotation 180 ngày, RPO 24 h / RTO 2 h, retention backup | PC08 khuyến nghị hẹp: "nếu chỉ đổi một thứ thì đổi phiên đăng nhập 12 giờ" |
+| 17 blocker | 1–2, 4–19 | B01–B17 → `RATIFIED`; 14 amendment → `ACCEPTED`; `ADR-0001..0005`, `0007..0010` → accepted |
+| Stack | 3 | **Option B** — Python worker/server + TypeScript web. `ADR-0006` viết lại; **hợp đồng không đổi** |
+| Chrome profile | 1 | `REQ-OQ01` đã trả lời; **D09 không còn chặn M0/SP1** |
+| Timezone | 4 | `Asia/Ho_Chi_Minh` **được xác nhận** — fixture lịch của PC03/PC04 giữ nguyên |
+| Bộ mặc định OQ | 20 | N = 7 ngày; 200 post / 30 phút; 08:00 và 20:00; không có giờ yên lặng; export Saved hoãn P1 |
+| 8 tham số PC04 + kỳ rỗng | 22 | `PROV-PC04-01..09` → giá trị làm việc; **phương án (b)** cho kỳ rỗng được chấp nhận |
+| Tham số PC08 | 23 | RPO 24 h, RTO 2 h, Argon2id, idle 12 h / tuyệt đối 30 ngày, token 180 ngày, audit 365 ngày |
+| Phạm vi `data.purge_all` | 24 | **Chỉ dữ liệu nghiên cứu**; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider, lịch; **backup KHÔNG bị xóa** |
+| Hai thay đổi kỹ thuật | 25 | `CSRF_REJECTED`; `run.resume` từ `blocked` với lý do bắt buộc |
 
-**Hai hệ quả Owner phải biết TRƯỚC khi trả lời `PROV-PC00-01`:** (1) nếu purge xóa credential đăng
-nhập thì Owner có thể tự khóa mình ra ngoài app, vì D05 cấm signup và cấm quên-mật-khẩu tự động;
-(2) dữ liệu đã purge **vẫn còn trong backup** cho tới khi các bản backup đó bị xóa — "xóa toàn bộ"
-không đồng nghĩa "không còn ở đâu nữa".
+Hai hệ quả tôi đã cảnh báo trước khi Owner trả lời mục 24 vẫn đúng và nay là **hành vi đã chốt**,
+không còn là rủi ro: purge **không** động tới credential đăng nhập (nên Owner không tự khóa mình
+ra ngoài), và dữ liệu đã purge **vẫn còn trong backup** cho tới khi các bản backup đó hết hạn
+lưu — "xóa toàn bộ" vẫn không đồng nghĩa "không còn ở đâu nữa".
+
+### 10.2 Còn chờ Owner — danh sách đầy đủ, ngắn hơn nhiều
+
+| ID | Nội dung | Chặn |
+| --- | --- | --- |
+| `REQ-OQ03` | Provider và model AI cụ thể — Owner **chọn hoãn** (mục 21) | `MOD-settings-service`, **M3** |
+| `PROV-PC03-04` | `analysis_unknown_attempt_auto_rerun = 1` — PC03 tự xin Auditor soi kỹ; **không** nằm trong 25 mục | `MOD-analysis-service` (không chặn card) |
+| `PROV-PC01-01`, `-02`, `-04`, `-05`, `-06` | `CAPABILITY_DENIED`, unlink là app action, `MOD-backup-cli`, caller của `identity.record_alias`, `MOD-data-admin-service` | Không mục nào chặn card |
+| Quyết định PC02 | 8 giới hạn ingest/snapshot, hai quy tắc chuẩn hóa DOI/arXiv, `analysis_key` không gồm provider/model | `CR-PC02-04`, `-05`, `-17` |
+| Quyết định PC05 | Thiết kế URL 50 path, ánh xạ mã lỗi → HTTP status, `x-transport-limits`, ngưỡng go/no-go của probe | Ngưỡng GO-2 (challenge ≤ 1 mỗi 5 đợt) là ngưỡng **trải nghiệm**: cao hơn thì sản phẩm "tự chạy" thành sản phẩm "gọi người" |
+| Quyết định PC06 | `confidence` enum rời rạc, `usage.unknown ⇒ ba trường null`, ngưỡng rubric G1/G2 = 1.00 | |
+| Quyết định PC07 | `telegram_update_max_age` và các tham số còn lại | `CR-PC07-01`, `-05` |
+| `CR-PC09-13` | `REQ-OQ01`/`REQ-OQ02` trong `requirements.csv` chưa cập nhật theo mục 1 và mục 3 (§6.1) | Độ chính xác của chính sổ yêu cầu |
+| `CR-PC09-14` | Khóa `claim_ceiling` mang hai nghĩa; `agent-tasks/` ngoài `SCAN_DIRS` của E0 (§9.1) | Độ phủ của chính cửa kiểm claim |
+| `CR-PC01-13`, `CR-PC02-22`, `CR-PC10-07` | Ranh giới phạm vi phê chuẩn hiện chỉ tồn tại trong danh sách đường dẫn của `E0-12`, không trong cây hợp đồng (§8.1) | Nên đưa lên **vòng Owner kế tiếp** |
+
+**Điều thay đổi về chất:** trước phê chuẩn, danh sách này chứa những mục mà **không Worker nào**
+gỡ được và **mọi** module đều dính. Nay chỉ còn **một** mục chặn một mốc — `REQ-OQ03` chặn M3 — và
+phần còn lại là tham số cấp gói mà một vòng Owner ngắn sẽ đóng. Cái chặn dự án hôm nay không còn
+là quyết định; là **phép đo** (§6.2) và **code chưa tồn tại**.
 
 ---
 
@@ -924,79 +1146,94 @@ không đồng nghĩa "không còn ở đâu nữa".
 | --- | --- | --- | --- |
 | 1 | Spec snapshot/hash và registry nguyên tử tồn tại | ✅ | `precode/source/*` byte-identical; 246 dòng registry |
 | 2 | Tất cả XN/UQ/P0 có mapping; ĐX/KC còn lại có trạng thái và gate rõ | ✅ | `acceptance/traceability.csv`, 0 ORPHAN; §6 bảng KC |
-| 3 | B01–B17 được giải hoặc explicit scoped block | ❌ | Cả 17 `OPEN`; phương án đều `PROVISIONAL`. **Không Worker nào gỡ được** |
+| 3 | B01–B17 được giải hoặc explicit scoped block | ✅ | **Cả 17 `RATIFIED` bởi `OD-20260907-01`**; `agent_profile/registry.json` có `open_product_blockers: []`; 14 amendment `ACCEPTED`. Đây là dòng đổi lớn nhất của bản này |
 | 4 | Mỗi module có ownership, port và denied edges; negative cases đủ | ✅ | **36 / 36 cạnh** có denied case với mã lỗi đã pin (ruling R5-01) và một fixture 36 sự kiện |
 | 5 | Mỗi operation có schema, auth, transaction, idempotency, concurrency, error và evidence | ✅ | 85 operation; **0 thiếu `scenario_refs`, 0 thiếu `error_codes`, 0 mutation thiếu khai báo idempotency** (`dor5`, sinh từ `ports.yaml` cùng lượt với các số khác); 54 operation HTTP có wire contract. Năm ngoại lệ mà `F-A2R1-09` nêu tên đã được **đóng** ở FIX6/FIX7: `auth.logout` và `auth.get_session` → SC40/SC51, `save.export` → SC12, `research.get_connector_health` và `health.get_liveness` → `INTERNAL` |
 | 6 | Mỗi mã lỗi có trạng thái đích, điều kiện phục hồi và hành vi bị cấm | ✅ | 28 mã, mỗi mã đủ 10 trường; 28/28 có scenario |
 | 7 | Coverage/backfill/pending/tag version và identity/analysis/Saved có oracle cho race/crash | ✅ | SC08, SC13, SC21, SC22, SC28, SC37, SC38 |
 | 8 | Telegram unknown, CLI capability, backup WAL/restore và secrets không còn mô tả mơ hồ | ⚠️ | Ba trong bốn đủ. **Giới hạn định dạng Telegram vẫn `KC`** (CR-PC07-04) |
 | 9 | AC-01–AC-18 và các SC bổ sung có fixtures/oracles, loại bằng chứng và amended AC đúng nguồn | ✅ | 56 scenario, mỗi cái có oracle, cấp bằng chứng và **ít nhất một fixture**; 86 fixture trên 9 thư mục (`scenarios`, `fixtures`, `fixture_directories`) |
-| 10 | E0 đã chạy thật và có manifest; E1–E4 chưa chạy ghi NOT_RUN | ✅ | `evidence/index.json`; **22/22 PASS, 0 vi phạm, exit 0**; E1–E4 `NOT_RUN` với 32 placeholder tường minh |
-| 11 | Card triển khai pin baseline, paths/stack, contracts và proof obligations | ❌ | 18 card đều pin cùng một epoch — **tên epoch được in ở §9.1 và chỉ ở đó** (`F-A2R3-01`: dòng này từng nhắc lại nó và đã sai ba epoch liên tiếp); **stack vẫn chưa chọn** (`REQ-OQ02`), nên đường dẫn build/test trong card chưa thể đúng |
+| 10 | E0 đã chạy thật và có manifest; E1–E4 chưa chạy ghi NOT_RUN | ✅ | `evidence/index.json`; **24/24 PASS, 0 vi phạm, exit 0**; E1–E4 `NOT_RUN` với 32 placeholder tường minh |
+| 11 | Card triển khai pin baseline, paths/stack, contracts và proof obligations | ⚠️ | **Stack đã chốt (Option B, mục 3)** và 18 card đều pin cùng một epoch — **tên epoch được in ở §9.1 và chỉ ở đó** (`F-A2R3-01`: dòng này từng nhắc lại nó và đã sai ba epoch liên tiếp). Còn thiếu: **chưa có repo triển khai**, nên §3 (đường dẫn) và §8 (lệnh) của card vẫn tự khai `PROVISIONAL`, và framework chưa được `ADR-0006` nêu tên |
 | 12 | Readiness report liệt kê module nào READY/BLOCKED | ✅ | §9 |
 
-**Đếm từ chính bảng trên: 9 ✅, 1 ⚠️, 2 ❌** trên 12 dòng (`dor`, parse cơ học). Bản trước ghi
-"10 đạt, 0 đạt một phần" trong khi bảng của chính nó có một ⚠️ và câu ngay sau đó thừa nhận điều
-đó — `F-A2R1-02`. Dòng #5 quay lại ✅ ở bản này: năm ngoại lệ mà `F-A2R1-09` nêu đã được đóng ở FIX6/FIX7, và danh
-sách ngoại lệ của dòng nay được **sinh từ `ports.yaml`** cùng lượt với các con số khác — nên một
-lỗ hổng được vá sẽ tự đóng dòng, thay vì để lại một cảnh báo cũ (`F-A2R2-02`).
+**Đếm từ chính bảng trên: 10 ✅, 2 ⚠️, 0 ❌** trên 12 dòng (`dor`, parse cơ học).
 
-Hai dòng ❌ (#3 và #11) **không phải việc của một Worker**: một cần Owner phê chuẩn B01–B17, một
-cần Owner chọn stack (`REQ-OQ02`). Dòng ⚠️ duy nhất còn lại (#8) cần đọc tài liệu Bot API — việc
-cần mạng, không cần thêm soạn thảo.
+**Không còn dòng ❌ nào** — lần đầu tiên kể từ khi gói này bắt đầu. Cả hai dòng ❌ cũ đều do phê
+chuẩn đóng: #3 (B01–B17) hoàn toàn, #11 (stack) một nửa.
 
-Con số này đi 7/3/2 → 10/0/2 (sai) → 8/2/2 → **9/1/2**, và mỗi lần nó đổi là vì một dòng của
-bảng đổi. Cổng tự kiểm so dòng tổng với bảng chạy sau **mỗi** lần sửa; nó bắt được đúng lần lệch
-này khi tôi sửa dòng #5 mà quên dòng tổng.
+Hai dòng ⚠️ còn lại nói đúng cùng một điều bằng hai cách: **cái thiếu không phải là quyết định
+nữa.** #8 cần đọc tài liệu Bot API — cần mạng. #11 cần một repo triển khai tồn tại — cần code.
+Không dòng nào gỡ được bằng soạn thảo thêm, và tôi cố ý **không** nâng #11 lên ✅: card mô tả
+đường dẫn *sẽ* tồn tại, và một DoR nói "paths đã pin" trong khi paths tự khai `PROVISIONAL` là
+đúng loại phát biểu mà mọi finding của audit trong gói này đã bắt.
 
----
-
-## 12. Tuyên bố
-
-**Claim của bản này: `DRAFT_FOR_REVIEW`.** Không hơn.
-
-Cụ thể **không** được thiết lập:
-
-- `CONTRACT_READY` cho bất kỳ phạm vi nào — B01–B17 `OPEN`; **A2-R2 PASS tổng thể** nhưng để lại
-  bốn finding LOW `FIX_PROPOSED` mà chưa ai xác minh bản sửa (§4.1); hai module tự khai là chưa
-  sẵn sàng (research connector vì `REQ-A6`, Telegram vì `CR-PC07-04`); . Việc E0 nay đạt **22/22, 0 vi phạm** **không** thay thế được
-  những điều đó: một bộ hợp đồng tự nhất quán vẫn là một bộ hợp đồng chưa được ai độc lập kiểm và
-  chưa chạy dòng code nào;
-- bất kỳ nhãn nào từ `IMPLEMENTATION_VERIFIED` trở lên — chưa có một dòng code nào;
-- bất kỳ khẳng định nào về X, Telegram, provider AI, CLI/ACP hay hành vi SQLite thật — chưa thực
-  thi gì;
-- rằng bản này là một audit độc lập — nó là `SELF_VALIDATION` của chính người viết một phần corpus.
-
-### 12.1 Phát biểu có điều kiện: phạm vi nào thành `CONTRACT_READY`, khi nào
-
-Không phải một lời hứa, mà một danh sách điều kiện đo được. Mỗi dòng chỉ có hiệu lực khi **mọi**
-điều kiện của chính nó đúng.
-
-| Phạm vi | Sẽ đạt `CONTRACT_READY` khi tất cả những điều sau đúng |
-| --- | --- |
-| **Ranh giới và quyền** (`modules.yaml`, `capabilities.yaml`, `ports.yaml`) | (a) ~~`CR-PC09-02`~~ **đã đóng** — cả 36 cạnh có mã lỗi đã pin theo bảng R5-01; (b) Owner phê chuẩn AMD-B12 và B13; (c) `REQ-OQ01` (D09) có câu trả lời; (d) A2 xác nhận trên epoch mới |
-| **Dữ liệu và identity** (`entities.yaml`, `identity.md`, `invariants.md`, `target`/`ingest-batch` schema) | (a) Owner phê chuẩn AMD-B05, AMD-B15 và B06; (b) `CR-PC01-05` đóng (danh sách cascade cho hai thao tác xóa); (c) ~~SC32 có fixture~~ **đã có**; (d) partial UNIQUE index và STORED generated column được kiểm trên SQLite thật (E1) |
-| **Workflow và trạng thái** (`state/*.yaml`, `errors.yaml`, `retry-policy.yaml`) | (a) ~~`CR-PC09-04`~~ **đã đóng** (R5-04); (b) Owner phê chuẩn AMD-B02, AMD-B10 và `PROV-PC03-04`; (c) ~~SC33–SC36 có fixture~~ **đã có** |
-| **Báo cáo và thời gian** (`time-and-tags.md`, `selection.md`, `report.schema.json`) | (a) Owner phê chuẩn AMD-B01, AMD-B04, AMD-B17 và B14; (b) Coordinator/Owner xác nhận hoặc bác `PROV-PC04-09` (kỳ rỗng phương án (b)); (c) `REQ-OQ04` (N ngày) có câu trả lời. **Ghi chú:** phạm vi này đạt `CONTRACT_READY` được ngay cả khi ngưỡng còn `uncalibrated` — hợp đồng đóng không đòi tham số đã hiệu chỉnh; cái bị cấm là **tuyên bố đạt chỉ tiêu §1.4** khi còn `uncalibrated` |
-| **Collector và paper connector** (`openapi.yaml`, `collector-probe.md`, worker/receipt schema) | (a) bốn giá trị `research_connector_rate_limit` được điền từ tài liệu chính thức (`REQ-A6`); (b) `REQ-OQ01` có câu trả lời; (c) Owner chấp nhận ngân sách/stop/go-no-go của SP1; (d) một validator OpenAPI 3.1 chạy sạch trên `openapi.yaml` |
-| **AI và grounding** (`tasks.yaml`, `providers.yaml`, `grounding.md`, `analysis-result.schema.json`) | (a) Owner phê chuẩn AMD-B07, AMD-B16 và B13; (b) `REQ-A5` được giải cho **ít nhất một** provider (đọc điều khoản, ghi lại); (c) ít nhất một adapter qua probe cô lập của `cli-acp-probe.md`. Cho tới đó **AC-16 là `BLOCKED`, không phải `FAIL`** |
-| **App, Save và Telegram** (`screens.yaml`, `commands.yaml`, `telegram/delivery.md`, `saved-snapshot.schema.json`) | (a) `CR-PC07-04` đóng — giới hạn định dạng Telegram được đọc từ tài liệu Bot API và ghi lại (**vẫn mở, cần mạng**); (b) Owner phê chuẩn AMD-B03, AMD-B09, AMD-B10; (c) ~~SC10 có fixture render~~ **đã có**; (d) `CR-PC07-01` có câu trả lời |
-| **Vận hành: secrets, boundary, backup** (`secrets.md`, `internet-boundary.md`, `backup-restore.md`) | (a) Owner trả lời `PROV-PC00-01` (phạm vi loại trừ của purge); (b) Owner chốt RPO/RTO và retention; (c) ~~`CR-PC09-05`~~ **đã đóng** (R5-05); (d) ~~SC44 và SC53 có fixture~~ **đã có**. Một drill restore thật **không** phải điều kiện của `CONTRACT_READY` — nó là điều kiện của G6 |
-
-### 12.2 Điều kiện chung cho MỌI dòng trên
-
-Không phạm vi nào ở trên đạt `CONTRACT_READY` chừng nào:
-
-1. bất kỳ blocker nào trong B01–B17 **chạm vào phạm vi đó** còn `OPEN` trong
-   `agent_profile/registry.json`;
-2. `evidence/tools/e0_check.py` còn thoát với mã khác 0;
-3. còn một finding audit độc lập `OPEN` hoặc `FIX_PROPOSED` trong file thuộc phạm vi đó;
-4. lượt xác minh độc lập trên epoch chứa các bản sửa **chưa** diễn ra — và người xác minh **không
-   được** là người viết bản sửa (protocol §8). **Tại bản này điều kiện 4 sai với MỌI phạm vi:** A2
-   đã chạy trên epoch 4 và kết luận PC09 **FAIL**; bản sửa cho 11 finding của nó chưa được ai độc
-   lập kiểm. Không dòng nào của bảng §12.1 được coi là đã đạt, bất kể các điều kiện riêng của nó.
+Con số này đi 7/3/2 → 10/0/2 (sai) → 8/2/2 → 9/1/2 → **10/2/0**, và mỗi lần nó đổi là vì một dòng
+của bảng đổi. Cổng tự kiểm so dòng tổng với bảng chạy sau **mỗi** lần sửa; nó bắt được đúng lần
+lệch khi tôi sửa dòng #5 mà quên dòng tổng.
 
 ---
+
+## 12. Tuyên bố — theo phạm vi, không còn một giá trị chung
+
+**Claim của chính bản review này: `DRAFT_FOR_REVIEW`.** Nó là `SELF_VALIDATION` của người đã viết
+một phần corpus mà nó đánh giá; không lượng phê chuẩn nào đổi được điều đó.
+
+Trần claim của **hợp đồng** thì nay là một object theo phạm vi (`precode/baseline.json`
+`claim_ceiling.by_scope`), theo `OD-20260907-01` §4. Bốn phạm vi được W1 đặt là
+**`CONTRACT_READY_PENDING_E0`** — nghĩa là đủ điều kiện *về quyết định*, còn chờ một lần chạy E0
+sạch trên epoch mới. **Lần chạy đóng gói của tôi ở đợt này chính là điều kiện đó**, và nó cho
+**24/24 PASS, 0 vi phạm**. Giá trị `CONTRACT_READY_PENDING_E0` → `CONTRACT_READY` là việc của W1:
+`precode/baseline.json` không nằm trong grant ghi của PC09, nên **tôi không sửa nó** — tôi báo
+rằng điều kiện đã đạt và để W1 chốt (CR tới W1 nếu giá trị cần đổi khác đi).
+
+### 12.1 Bốn phạm vi `CONTRACT_READY`
+
+**21 file** khai `claim_ceiling: CONTRACT_READY` với `ratification_ref: OD-20260907-01`
+(`contract_ready_count`), và `E0-12b` xác nhận cả 21 tham chiếu đó **phân giải được** tới một
+`precode/owner-decisions.md` có thật.
+
+| Phạm vi | File | Vì sao đủ điều kiện |
+| --- | --- | --- |
+| **Ranh giới và quyền** | `modules.yaml`, `capabilities.yaml`, `ports.yaml`, `errors.yaml`, `retry-policy.yaml`, `ops/deployment.md` | B12/B13 ratified; `REQ-OQ01` đã trả lời; 36/36 cạnh bị cấm có mã lỗi đã pin; 85 operation đủ trường |
+| **Dữ liệu và định danh** | `data/entities.yaml`, `data/identity.md`, `data/invariants.md`, `schemas/target`, `schemas/ingest-batch`, `fixtures/identity/README.md` | B05/B06/B15 ratified; SC07/SC23/SC29/SC30 có fixture và oracle |
+| **Workflow và trạng thái** | `state/run.yaml`, `state/analysis.yaml`, `state/delivery.yaml`, `state/report.yaml`, `state/storage.yaml` | B01/B02/B03/B07/B10 ratified; 13/13 dòng ánh xạ trạng thái được A1 xác minh verbatim; `E0-09` PASS |
+| **Báo cáo và thời gian** | `reporting/time-and-tags.md`, `reporting/selection.md`, `schemas/report`, `fixtures/reporting/README.md` | B01/B04/B14/B17 ratified; timezone đã xác nhận nên fixture lịch giữ nguyên; 8 tham số PC04 được chấp nhận |
+
+**Điều `CONTRACT_READY` ở đây KHÔNG có nghĩa là.** Nó không nói tham số đã được hiệu chỉnh:
+ngưỡng `0.8000` vẫn `PROVISIONAL_BOOTSTRAP` với `threshold_calibration_state='uncalibrated'`, và
+bảy tham số mật độ vẫn chờ `REQ-A4`. Hợp đồng đóng **không** đòi tham số đã hiệu chỉnh; cái bị cấm
+là tuyên bố **đạt chỉ tiêu §1.4** khi còn `uncalibrated`. Nó cũng không nói code sẽ đúng — nó nói
+bốn phạm vi này đã đủ chặt để bắt đầu viết code trong đúng phạm vi đó, khi Owner ra lệnh.
+
+### 12.2 Bốn phạm vi giữ `DRAFT_FOR_REVIEW` — và lý do của từng phạm vi
+
+**110 file** vẫn `DRAFT_FOR_REVIEW` (`draft_for_review_count`). Lý do **không** phải là thiếu
+quyết định nữa:
+
+| Phạm vi | File chính | Điều còn thiếu — và nó là loại gì |
+| --- | --- | --- |
+| **Collector và nguồn** | `openapi.yaml`, `ops/collector-probe.md`, `schemas/worker-assignment`, `schemas/ingest-receipt` | Bốn giá trị `research_connector_rate_limit` vẫn `null`/`PLACEHOLDER_KC` (`REQ-A6`) — **cần đọc tài liệu arXiv/OpenAlex, cần mạng**. Cộng: chưa có validator OpenAPI 3.1 nào chạy trên 221 KB `openapi.yaml` |
+| **AI và grounding** | `ai/tasks.yaml`, `ai/providers.yaml`, `ai/grounding.md`, `ops/cli-acp-probe.md`, `ops/secrets.md`, `schemas/analysis-result` | `REQ-A5` (`KC`) chưa giải cho **một** provider nào; chưa adapter nào qua probe cô lập; `REQ-OQ03` Owner hoãn. **AC-16 là `BLOCKED`, không phải `FAIL`** |
+| **App, Save và Telegram** | `ui/screens.yaml`, `telegram/commands.yaml`, `telegram/delivery.md`, `schemas/saved-snapshot` | `CR-PC07-04`: giới hạn định dạng Telegram vẫn `KC` — **cần đọc Bot API, cần mạng** |
+| **Vận hành và phục hồi** | `ops/internet-boundary.md`, `ops/backup-restore.md` | Cơ chế đã chốt và RPO/RTO được chấp nhận (mục 23), nhưng **chưa drill restore nào chạy**. Một runbook chưa từng được thực hiện là thiết kế, không phải bằng chứng |
+| **Xác minh và bằng chứng** | `acceptance/*`, `evidence/*`, `precode/*` | Bao gồm chính bản này: `SELF_VALIDATION`, và E1–E4 `NOT_RUN` toàn bộ |
+
+Bốn dòng đầu có cùng một hình dạng: **mỗi phạm vi bị chặn bởi đúng một thứ không thể soạn ra
+được** — một con số phải đọc từ tài liệu bên ngoài, một điều khoản phải đọc từ nhà cung cấp, một
+giới hạn phải đọc từ Bot API, một drill phải chạy. Đó là lý do tôi tin danh sách này đúng: nếu nó
+sai theo hướng dễ dãi, ta sẽ thấy một phạm vi bị chặn bởi thứ gì đó mà thêm vài trang tài liệu là
+gỡ được.
+
+### 12.3 Điều `CONTRACT_READY` không thiết lập, ở bất kỳ phạm vi nào
+
+- Bất kỳ nhãn nào từ `IMPLEMENTATION_VERIFIED` trở lên — **chưa có một dòng code nào**. `E0-12`
+  cấm tuyệt đối bốn nhãn đó và sẽ fail nếu file nào khai chúng.
+- Bất kỳ khẳng định nào về X, Telegram, provider AI, CLI/ACP hay hành vi SQLite thật — chưa thực
+  thi gì. Partial UNIQUE index và STORED generated column vẫn là **giả định chưa kiểm**.
+- Rằng bốn phạm vi kia đã được ai độc lập xác minh **sau** đợt sửa này. A2-R3 xác minh bản FIX9;
+  các thay đổi của FIX10 và của đợt này chưa qua auditor. Theo protocol §8 tôi **không** được tự
+  xác minh chúng, và §4.1 là nơi duy nhất nói trạng thái audit thật.
 
 ## 13. Giới hạn của chính bản review này
 
@@ -1040,9 +1277,9 @@ Không phạm vi nào ở trên đạt `CONTRACT_READY` chừng nào:
    đọc trường có cấu trúc. Mọi danh sách câu văn trong `scenarios.yaml` đều có cùng rủi ro đó.
 8. **Không có validator OpenAPI 3.1**, và packet cấm cài thêm. 221 KB của `openapi.yaml` chưa được
    kiểm tuân thủ đặc tả; một `PASS` ở đây không nói gì về điều đó.
-9. **5 AUDIT_REPORT độc lập nằm ngoài repo** (thư mục scratch của Coordinator: `A1-R1-report.md`, `A1-R2-report.md`, `A1-R3-report.md`, `A2-R1-report.md`, `A2-R2-report.md` —
-   `audit_reports`, đếm từ đĩa). Bản này trích kết luận của chúng; nó không sao chép chúng vào
-   repo và không thay thế chúng. Trạng thái audit được nêu ở **một chỗ duy nhất, §4.1**; mọi mục
+9. **7 AUDIT_REPORT độc lập** (`A1-R1`, `A1-R2`, `A1-R3`, `A2-R1`, `A2-R2`, `A2-R3`, `A2-R4` —
+   `audit_reports`, `audit_reports_count`, đếm từ đĩa ở `evidence/audits/`). Bản này trích **verdict
+   nguyên văn** của chúng; nó không diễn giải lại và không thay thế chúng. Trạng thái audit được nêu ở **một chỗ duy nhất, §4.1**; mọi mục
    khác trỏ về đó thay vì nhắc lại — đó là kỷ luật `numbers.json` áp cho *trạng thái* chứ không
    chỉ cho *số*, theo ràng buộc của `F-A2R2-01`.
 10. **Bốn mục `KC` không giải được trong phiên này vì không có mạng:** `REQ-A5` (điều khoản từng
@@ -1058,6 +1295,15 @@ Không phạm vi nào ở trên đạt `CONTRACT_READY` chừng nào:
    thế báo mọi invariant đã đủ, trong khi ba invariant không có counterexample chuyên dụng. Bất kỳ
    check nào khác trong bộ này cũng có thể mang cùng khuyết tật — tiêu đề rộng hơn phép đo — và
    tôi không có cách phát hiện nó ngoài việc có người đọc từng oracle.
-13. **Thiết kế đánh giá ở §7 chưa được Owner khóa.** Cho tới khi khóa, nó là một đề xuất; một rubric
+13. **Phạm vi phê chuẩn được mã hoá bằng một danh sách đường dẫn viết cứng trong `e0_check.py`,
+   không bằng cây hợp đồng.** `CONTRACT_READY_INELIGIBLE_PREFIXES` và
+   `CONTRACT_READY_INELIGIBLE_FILES` đúng hôm nay và sẽ **sai im lặng** vào lần đầu ai đó thêm một
+   file mới vào `contracts/schemas/` — file mới sẽ mặc định *đủ điều kiện*. Đây là `CR-PC01-13` +
+   `CR-PC02-22` và tôi để nó mở thay vì vá tạm.
+14. **Phê chuẩn là thẩm quyền, không phải bằng chứng.** `OD-20260907-01` làm 84 dòng độ phủ đổi
+   trạng thái và bảy module lên `READY_FOR_CARD` mà **không một byte hành vi nào được quan sát**.
+   Nếu bản này bị đọc nhanh, đó là chỗ dễ hiểu sai nhất: cái đổi là *ai đã cam kết điều gì*, không
+   phải *điều gì đã được chứng minh*. Mọi dòng E1–E4 vẫn `NOT_RUN`.
+15. **Thiết kế đánh giá ở §7 chưa được Owner khóa.** Cho tới khi khóa, nó là một đề xuất; một rubric
    chưa khóa không ngăn được việc chỉnh số sau khi nhìn kết quả — đó chính là điều nó tồn tại để
    ngăn.

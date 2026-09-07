@@ -664,3 +664,90 @@ Nguồn pinned khớp: SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…`.
    `ports.yaml` đổi, openapi nên được sinh lại — hoặc gate prose-token nên chạy trên openapi ngay sau mỗi
    packet PC01. Tôi không tự đặt quy trình đó; nêu để Coordinator quyết.
 3. **Không CR mới.**
+
+---
+
+# ADDENDUM — PKT-PC05-FIX6
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC05-FIX6` (F-A2R5-01 — lan truyền phạm vi purge đã phê chuẩn) |
+| authority_id | `AUTH-COORD-PC05-FIX6` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC05-e7` (**fencing 7**) |
+| worker principal | `worker-W4` · status **DONE** · completion_claim `DRAFT_FOR_REVIEW` |
+| started / lease_released (UTC) | 2026-09-07T05:05Z / 2026-09-07T05:19Z |
+| next actor | Coordinator |
+
+## L1. Changes (MODIFY, baseline = hash sau FIX5)
+
+| Path | Before | After (sha256) | Bytes | Version |
+| --- | --- | --- | --- | --- |
+| `contracts/http/openapi.yaml` | `a7f284b9…` | `28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92` | 227691 → 231705 | 0.2.0 → **0.3.0** |
+
+`claim_ceiling` GIỮ NGUYÊN `DRAFT_FOR_REVIEW` và `status: draft` — phạm vi collector vẫn còn KC (REQ-A6),
+đúng như packet yêu cầu. Không file nào khác bị chạm.
+
+## L2. Cổng chờ (wait gate)
+
+Packet yêu cầu sinh lại SAU khi `PKT-PC01-FIX14` của W2 land. Poll bounded 20 phút:
+**land ở phút ~5**, `ports.yaml` = `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684`.
+Tôi KHÔNG ghi gì trước thời điểm đó.
+
+Đối chiếu ba tập của `ports.yaml` sau FIX14 với `PURGE-LIST-ruling.md`: **khớp hoàn toàn** —
+retained 21/21, purged 37/37, never_purged 2/2, và `OWNER_DECISION_REQUIRED` đã biến mất khỏi operation đó.
+Vì vậy **`CR-PC05-06` và `CR-PC05-07` đóng lại**; không CR mới nào tới PC01.
+Khác biệt duy nhất là CÁCH TRÌNH BÀY, không phải nội dung: `ports.yaml` mô tả tập xóa bằng văn xuôi rút gọn
+("post/work và liên kết", "các ledger coverage/pending/backfill/first_announced/rescan"), còn openapi liệt kê
+đủ 37 tên bảng. Liệt kê đủ là cái ruling yêu cầu ("copy these verbatim") nên tôi giữ bản liệt kê.
+
+## L3. Delta
+
+`data.purge_all` — mô tả nay nêu, lấy nguyên văn từ `PURGE-LIST-ruling.md` (bản đã sửa theo CR-PC05-06/-07):
+
+- **XÓA — 37 bảng**, liệt kê đủ tên, gồm `telegram_link_attempt` (bộ đếm rate limit, giữ 30 ngày — dữ liệu
+  vận hành, không phải cấu hình).
+- **GIỮ LẠI — 21 bảng**, liệt kê đủ, gồm `worker_registration` kèm lý do của ruling (đăng ký/token collector
+  là CẤU HÌNH; xóa nó buộc đăng ký lại collector).
+- **KHÔNG BAO GIỜ XÓA — 2 bảng**: `schema_migration` và `data_deletion_audit` (bản ghi xóa giữ vĩnh viễn theo
+  tham số PC08 đã phê chuẩn; chính lần purge ghi một hàng audit vào đó).
+- **BACKUP KHÔNG BỊ ĐỤNG TỚI**, và hộp thoại xác nhận **phải nói thẳng** rằng dữ liệu vừa xóa **vẫn còn trong
+  các bản backup**; xóa khỏi backup là thao tác vận hành riêng. Đây là điểm Owner được cảnh báo là có hậu quả
+  lớn nhất, nên nó được viết thành một câu bắt buộc của UI chứ không phải một ghi chú.
+- **Hai pha** `request_challenge` → `execute` với cụm từ khớp chính xác; sai/hết hạn ⇒ 422 và challenge bị hủy.
+- **Tiền điều kiện** `storage.health = maintenance`; thu hồi lease và dừng dispatcher TRƯỚC khi xóa; sau khi
+  xong vẫn ở `maintenance`, không tự resume (NC-10).
+- `OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03` chỉ còn **một** lần xuất hiện trong file, và là
+  câu phủ định "nó KHÔNG còn `OWNER_DECISION_REQUIRED` … chỉ còn giá trị LỊCH SỬ" — đúng dạng "as history"
+  mà ruling cho phép.
+
+`data.delete_target` — thêm một câu phân định phạm vi với `data.purge_all` và nêu rõ nó cũng KHÔNG đụng tới
+backup (cùng quy tắc OD-20260907-01 mục 24).
+
+## L4. Evidence
+
+| ID | Kết quả | Exit |
+| --- | --- | --- |
+| `EV-PC05-01` | openapi 3.1.0; 50 path; **54 == 54** op http; 0/31 internal bị lộ; 28 `$ref` resolve | **0** |
+| `EV-PC05-02` | 13 fixture; 67 event khóa `operation`; actor-edge 66/66; 29 body validate; ErrorEnvelope khớp 28 mã | 0 |
+| `EV-PC05-03` | 25 mã lỗi, tất cả có trong `errors.yaml` | 0 |
+| `EV-PC05-04` | probe doc 22644 bytes; 8 tham số đủ value+unit+status+lý do | 0 |
+| `EV-PC05-05` | field-level R4-01: 473 cột / 37 annotation / **0 chưa resolve** | 0 |
+| `EV-PC05-06` | prose token gate: **197** operation (195 → 197), 50 `entity.column`, 72 ngoại lệ, **0 chưa resolve**; 0 mã lỗi lạ | 0 |
+| bổ sung | `evidence/tools/e0_check.py` (PC09, đọc-only): 24 check, PASS 23 · FAIL 1; **0 vi phạm nào thuộc `contracts/http/openapi.yaml`** | 1 |
+
+`SELF_VALIDATION`, 2026-09-07T05:16Z–05:17Z. Nguồn pinned khớp: SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…`.
+
+## L5. Concerns
+
+1. **Card-pinned hash.** `contracts/http/openapi.yaml` được pin trong **15/18** card của PC10; hash đổi
+   `a7f284b9… → 28b3820e…`. Cần vào đợt re-pin `PC10-PIN-OD01c-20260907` của W7 theo thứ tự đã ra.
+2. **`E0-18-purge-set-agreement` (check MỚI) FAIL với 3 vi phạm — tất cả ở
+   `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` (W2), không có vi phạm nào ở file
+   của tôi.** Fixture đó vẫn nói phạm vi purge là `OWNER_DECISION_REQUIRED` / `PROV-PC01-03` trên những dòng
+   không đánh dấu là lịch sử. Đây đúng là artefact mà F-A2R5-01 gọi là oracle chấp nhận; nó nằm trong grant
+   của W2, không phải của tôi.
+3. **Tôi đã ghi sai số phiên bản của openapi ở hai addendum trước.** `PKT-PC05-FIX3` viết
+   "`openapi.yaml` → `0.3.0`" và `PKT-PC05-FIX5` viết "giữ `0.3.0`", nhưng file thực tế mang `0.2.0` suốt từ
+   FIX1: lần bump đó không bao giờ vào bytes. Lỗi ở phía tài liệu, không phải nội dung hợp đồng — nhưng nó là
+   đúng loại "claim đi trước bytes" mà protocol cấm, nên tôi nêu ra thay vì lặng lẽ sửa. Nay file thực sự
+   mang `0.3.0`, khớp với điều hai addendum kia đã khẳng định.
+4. **Không CR mới.** `CR-PC05-06` và `CR-PC05-07` đã được ruling giải quyết và `ports.yaml` đã mang đúng ba tập.

@@ -483,3 +483,140 @@ PC08, và là cùng lớp với `SC54` trước đây.
 | Hai token sai bảng ở §H.2(b) nằm trong oracle của §5.3/§5.6 — chúng **sống sót bốn vòng audit** vì mọi check trước chỉ nhìn trường cấu trúc, không nhìn văn xuôi. Đây là lần thứ hai một lỗi cột lọt qua theo đúng cách đó (lần trước: `ingest_receipt.sequence` trong PC01). Giá trị của `E0-04c` là ở chỗ đó, không phải ở việc dọn dấu backtick. | — |
 | `E0-07` / `SC57` | Ngoài phạm vi; cần W1/PC09. | OPEN |
 | Mọi fixture và drill vẫn `NOT_RUN`. | — |
+
+---
+
+# ADDENDUM — PKT-PC08-FIX4
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC08-FIX4` · authority `AUTH-OWNER-20260907-02` · lease `LEASE-PC08-e5` (fencing 5) |
+| expires_at | 2026-09-08T04:00Z |
+| trigger | `F-A2R5-01` (phạm vi purge chưa lan tới các artefact) + hai correction giữa packet: `CR-PC05-06`, `CR-PC05-07` |
+| status | `DONE` · completion_claim `DRAFT_FOR_REVIEW` |
+| started/finished (UTC) | 2026-09-07T05:05Z / 2026-09-07T05:13Z |
+| next actor | `Coordinator` · lease_released_at 2026-09-07T05:13Z |
+
+## I.1 Hash mới
+
+| Path | Op | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `contracts/ops/secrets.md` | MODIFY | `2ed96d93ecdbb74fd825e952abd85541ddecfe25cfd1c08efd739d708c165d48` / 24387 | **`14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9`** / 25301 |
+| `contracts/ops/backup-restore.md` | MODIFY | `8737f483da5b776b506853dbbab5d2938bd08ba1a09481d2bd129c86e64ef7c3` / 22659 | **`826655daa469e3e8e2fbd54263f13be78f4e9a17fd490524a3b07f894989ad4f`** / 25858 |
+| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | MODIFY | `e144d0ce7b26f45825c8b1c72621d925336dd5b0ac8acbee77a48d05e1fd8bed` / 7790 | **`0f6237668132297cfe9cddfce019d2ec34dde865c72b1b3a6b856985ea158377`** / 19571 |
+| `acceptance/fixtures/recovery/README.md` | MODIFY | `799728748dcc40f5a79ed727cb491c446f8ce5e9eb0b40465d5aad891fbc1f6c` / 10939 | **`982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8`** / 12235 |
+| `evidence/handoffs/PC08-handoff.md` | MODIFY (append) | `db7493aacbb3e0b142e0a498869bf29c1174d42be3ae4590d7d732a998d657d6` / 43840 | ghi ở thông điệp bàn giao |
+
+Sources không đổi. Không chạm file của gói khác.
+
+## I.2 Ba tập bảng — và vì sao chúng đổi hai lần trong một packet
+
+Packet ban đầu nói: sao chép `TXN-purge-all` của `entities.yaml` (20 giữ), **không** suy diễn lại. Tôi làm đúng
+thế, và ngay khi đối chiếu bằng script đã thấy tập đó **tự mâu thuẫn**: `schedule_occurrence` nằm ở **cả**
+`purged` lẫn `retained`, và hai bảng (`schema_migration`, `telegram_link_attempt`) không nằm ở tập nào — tức 60
+entity không được phủ. Coordinator xác nhận và ra `CR-PC05-06`; rồi `CR-PC05-07` bổ sung `telegram_link_attempt`
+vào tập xóa cho đủ 37. Bản cuối dùng trong cả năm artefact:
+
+| Tập | Số | Nội dung |
+| --- | --- | --- |
+| **purged** | **37** | post/work và liên kết, identity alias/conflict/merge audit, work_label, analysis + các bảng phụ thuộc, embedding_generation, tag_vector, report/report_item, emerging_direction, coverage/pending/backfill/first_announced/rescan ledger, Saved, delivery + outbox, run/assignment/assignment_lease/checkpoint/ingest_receipt, source_fetch_log, telegram_update_log, **telegram_link_attempt** |
+| **retained** | **21** | `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, **`worker_registration`** |
+| **never_purged** | **2** | `schema_migration` (cấu trúc kho), `data_deletion_audit` (giữ vĩnh viễn; lần purge **ghi thêm** một hàng vào đây) |
+
+**37 + 21 + 2 = 60**, đúng bằng số entity, không chồng lấn — tôi kiểm bằng script chứ không bằng đọc.
+
+## I.3 Nội dung đã viết
+
+`secrets.md` §9 và `backup-restore.md` §8.1 nay nêu cả ba tập, lý do Owner giữ từng nhóm (xóa credential đăng nhập
+sẽ khóa chủ nhà ra ngoài app theo REQ-D05; tag là **subscription** chứ không phải dữ liệu nghiên cứu; xóa
+`worker_registration` buộc đăng ký lại collector dù bảng đó không chứa dữ liệu nghiên cứu), và **câu bắt buộc cho
+hộp thoại xác nhận**: dữ liệu vừa xóa **vẫn còn trong các bản backup** cho tới khi chúng hết hạn hoặc bị xóa bằng
+tay. Không nói câu đó là để người dùng tin sai rằng dữ liệu đã biến mất hoàn toàn.
+`OWNER_DECISION_REQUIRED` / `PROV-PC01-03` chỉ còn xuất hiện **một lần**, trong mục "Lịch sử" của
+`backup-restore.md` §8.1 — đúng như ruling cho phép.
+
+Fixture `l` nay khẳng định cả ba tập ở dạng `rows` có cấu trúc: 21 + 2 bảng giữ có hàng trong `given` **và**
+`expected` (nên field gate kiểm từng cột — recovery tăng từ 175 lên **231 cột kiểm**), 37 bảng xóa khẳng định
+`COUNT(*) = 0`, và `data_deletion_audit` **tăng đúng một hàng** vì chính lần purge ghi audit của nó.
+
+## I.4 Gate
+
+| Gate | Kết quả |
+| --- | --- |
+| `…/w2/validate_pc08.py` | **exit 0** |
+| `…/w2/prose_gate_pc08.py` (gate của W3, trỏ vào file PC08) | **exit 0** — 0 token không giải được; negative self-test bắt được cả hai id đột biến |
+| `…/w2/gate_fixtures.py` | **exit 0** — unresolved 0, event/edge problem 0 |
+| `…/w3/fixture_field_gate.py` | **exit 0** — recovery 13 file, **231 cột**, 0 chưa giải; TOTAL unresolved 0 |
+| `…/w3/check_actor_edges_all.py` | **exit 0** |
+| `evidence/tools/e0_check.py` | `E0-10b` 36/0, `E0-14` 448/0 |
+
+## I.5 Concerns
+
+| Nội dung | Trạng thái |
+| --- | --- |
+| **PC10 re-pin**: bốn file đổi hash (§I.1). | OPEN |
+| Nguồn chuẩn tạm thời **không** phải `entities.yaml` mà là `PURGE-LIST-ruling.md` — W3 đang ghi ba tập vào `entities.yaml` dưới `PKT-PC02-FIX11`. Cho tới khi việc đó land, artefact của tôi và `entities.yaml` sẽ **lệch**, và lệch một cách có chủ đích: tôi chép bản đã sửa. Sau khi W3 land, nên chạy lại một phép so tập giữa hai nơi. | OPEN |
+| Bài học | Chỉ thị "copy, do not re-derive" là đúng, nhưng nguồn được chỉ định lại sai. Việc đối chiếu bằng script (phủ đủ 60 entity, không chồng lấn) là thứ phát hiện ra — không phải việc đọc kỹ. Một danh sách "copy nguyên văn" vẫn cần một bất biến kiểm được. | — |
+| Fixture vẫn `NOT_RUN` | 13 fixture recovery là dữ liệu vào và oracle; chưa drill nào chạy. | — |
+
+---
+
+# ADDENDUM — PKT-PC08-FIX5
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC08-FIX5` · authority `AUTH-COORD-PC08-FIX5` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC08-e6` (fencing 6) |
+| expires_at | 2026-09-08T04:00Z |
+| trigger | `E0-18-purge-set-agreement` (check mới của W6) báo 3 vi phạm, tất cả trong fixture `l` |
+| status | `DONE` · completion_claim `DRAFT_FOR_REVIEW` |
+| started/finished (UTC) | 2026-09-07T05:18Z / 2026-09-07T05:21Z |
+| next actor | `Coordinator` (W7 đang chờ pin) · lease_released_at 2026-09-07T05:21Z |
+
+## J.1 Hash mới
+
+| Path | Op | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | MODIFY | `0f6237668132297cfe9cddfce019d2ec34dde865c72b1b3a6b856985ea158377` / 19571 | **`9cd382e270e581b1b4ea69ac78f9ddb7730d215d34fadf6ce537a4e1f0dc053a`** / 20786 |
+| `acceptance/fixtures/recovery/README.md` | **NO CHANGE** | `982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8` | đã nêu đúng ba tập ở FIX4; `E0-18` không báo vi phạm nào ở đây |
+
+Sources không đổi.
+
+## J.2 Ba tàn dư — và một cái thứ tư mà chính lần sửa tạo ra
+
+`E0-18` bắt ba dòng còn nói phạm vi purge **chưa được quyết**, trong khi phần thân của fixture đã khẳng định đủ ba
+tập từ FIX4. Chúng là tàn dư của bản trước ratification:
+
+1. `given._exclusions_vi` — "Danh sách LOẠI TRỪ vẫn OWNER_DECISION_REQUIRED (PROV-PC01-03)". Thay bằng
+   `given._purge_scope_vi` nêu đúng ba tập (37 / 21 / 2, phủ 60 entity, không chồng lấn).
+2. `blocked_scope_vi` — nói "không còn phạm vi bị chặn" nhưng vẫn nhắc hai id chưa đóng trong cùng câu. Gỡ; nội
+   dung lịch sử chuyển vào khối `_history` có nhãn rõ ràng, cộng `scope_status: "RATIFIED (OD-20260907-01)"`.
+3. `x-contract.decision_refs` vẫn liệt kê `PROV-PC01-03`. Đổi thành `[R5-02, OD-20260907-01, CR-PC05-06,
+   CR-PC05-07]` — tức các quyết định **đang** chi phối fixture — và thêm `ratification_ref`.
+
+Sửa xong ba cái thì `E0-18` còn **2** vi phạm mới: tôi đã chuyển hai id vào `_history.superseded_decision_refs`
+dưới dạng **danh sách**, nên mỗi id nằm một dòng riêng không mang dấu hiệu lịch sử nào — check đọc theo **dòng**,
+không theo cấu trúc. Sửa lại thành một chuỗi trên một dòng, có cả chữ "Lịch sử" lẫn id ratification:
+
+> `"superseded_decision_refs_vi": "Lịch sử: PROV-PC01-03 và PROV-PC00-01 đã được OD-20260907-01 đóng; chúng không còn nằm trong decision_refs của fixture này."`
+
+Đáng ghi lại: một khối `_history` **đúng về mặt cấu trúc** vẫn trượt check vì check làm việc trên dòng văn bản.
+Không phải lỗi của check — nó bắt đúng thứ nó nhắm: một người đọc `grep` sẽ thấy `PROV-PC01-03` trần trụi và
+không biết nó đã đóng.
+
+## J.3 Gate
+
+| Gate | Kết quả |
+| --- | --- |
+| `evidence/tools/e0_check.py` (copy read-only trong scratch, `--repo`) | **`E0-18-purge-set-agreement` PASS — checked 17, violations 0**; dòng ghi chú của chính check xác nhận "purged 37 · retained 21 · never_purged 2 · union 60 of 60 entities" |
+| `…/w2/validate_pc08.py` | **exit 0** |
+| `…/w2/prose_gate_pc08.py` | **exit 0** |
+| `…/w2/gate_fixtures.py` | **exit 0** |
+| `…/w3/fixture_field_gate.py` · `…/w3/check_actor_edges_all.py` | **exit 0** cả hai |
+
+## J.4 Concerns
+
+| Nội dung | Trạng thái |
+| --- | --- |
+| **W7 pin**: chỉ `l-purge-all-two-phase-and-negatives.json` đổi hash (§J.1); README không đổi. | OPEN |
+| `E0-18` kiểm theo **dòng**, nên một cấu trúc `_history` hợp lệ vẫn có thể trượt nếu id nằm một mình trên dòng. Đây là hành vi đúng cho mục đích của check, nhưng đáng ghi vào `evidence/tools/README.md` để gói khác không mất một vòng như tôi. | OPEN |
+| Fixture vẫn `NOT_RUN`. | — |

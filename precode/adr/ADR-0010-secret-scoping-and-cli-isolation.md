@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0010
 title: Phạm vi secret theo task và cô lập adapter CLI/ACP
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B13]
 source_refs: [SRC-SPEC §3.7, SRC-SPEC §10.2, SRC-SPEC §11.2, SRC-SPEC §11.4, SRC-SPEC §13.2, SRC-SPEC AC-16, SRC-SPEC AC-17, SRC-PLAN §6, SRC-PLAN §6.1, SRC-PLAN §11]
 requirement_refs: [REQ-D41, REQ-D43, REQ-D51, REQ-A5, REQ-S10.2-02, REQ-S10.2-06, REQ-S11.2-01, REQ-S11.4-03, REQ-AC16, REQ-AC17, REQ-S13.2-02, REQ-S13.2-03]
@@ -37,6 +40,8 @@ A5 (KC) yêu cầu đọc điều khoản của từng nhà trước khi bật �
 7. Phiên X và phiên CLI **giữ trên máy cá nhân**; server không bao giờ nhận chúng.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Điểm 3 có thể dẫn tới việc một họ provider bị tắt, ảnh hưởng phạm vi của D41 và D51 — hai quyết định **XN**. Vì vậy Owner phải biết và chấp nhận trước khi PC06 đóng hợp đồng. Nếu Owner yêu cầu bật một adapter chưa kiểm cô lập thì phải ghi `ACCEPTED_RISK` có căn cứ, không được ghi là đã giải quyết.
 

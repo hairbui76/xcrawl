@@ -632,3 +632,100 @@ mù. Nguồn pinned khớp: SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…`. Ngu�
    `run.yaml` để token giải được. `precode/decision-register.md` vẫn giữ câu chữ gốc — đó là văn bản lịch sử và
    không thuộc grant của tôi; nếu Coordinator muốn hai nơi khớp nhau thì cần một packet PC00.
 3. **Không CR mới.**
+
+---
+
+# ADDENDUM — PKT-PC03-FIX6
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC03-FIX6` (ratification) |
+| authority_id | `AUTH-COORD-PC03-FIX6` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC03-e7` (**fencing 7**) |
+| ratification_ref | `OD-20260907-01` |
+| worker principal | `worker-W4` · status **DONE_WITH_CONCERNS** · completion_claim **`CONTRACT_READY`** |
+| started / lease_released (UTC) | 2026-09-07T04:15Z / 2026-09-07T04:22Z |
+| next actor | Coordinator |
+
+Đây là packet ĐẦU TIÊN của gói này nâng trần vượt `DRAFT_FOR_REVIEW`. Cơ sở: Owner phê chuẩn B01–B17 ngày
+2026-09-07 (`OD-20260907-01`, authority `AUTH-OWNER-20260907-02`), và A2-R4 tuyên bố phạm vi
+"Workflow and state" đủ điều kiện. Baseline §3 cũ đặt trần `DRAFT_FOR_REVIEW` cho phiên trước; authority mới
+của Owner thay nó, và packet chỉ đạo tường minh.
+
+## K1. Changes (MODIFY, baseline = hash sau FIX5)
+
+| Path | Before | After (sha256) | Bytes | Version |
+| --- | --- | --- | --- | --- |
+| `contracts/state/run.yaml` | `c92e7c4e…` | `479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27` | 91779 → 95222 | 0.5.0 → 0.6.0 |
+| `contracts/state/analysis.yaml` | `bf961c0f…` | `06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce` | 31981 → 34958 | 0.4.0 → 0.5.0 |
+| `contracts/state/report.yaml` | `2b22c27d…` | `77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f` | 27154 → 30187 | 0.3.0 → 0.4.0 |
+| `contracts/state/delivery.yaml` | `9fcccc25…` | `318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807` | 26652 → 29542 | 0.1.0 → 0.2.0 |
+| `contracts/state/storage.yaml` | `f67e78f5…` | `a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849` | 27018 → 29908 | 0.2.0 → 0.3.0 |
+| `contracts/errors.yaml` | `b63eef7a…` | `640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f` | 62269 → 65180 | 0.3.0 → 0.4.0 |
+| `contracts/retry-policy.yaml` | `5e083230…` | `d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5` | 41620 → 46995 | 0.5.0 → 0.6.0 |
+
+Cả bảy: `status: draft → accepted`, `claim_ceiling: DRAFT_FOR_REVIEW → CONTRACT_READY`,
+`ratification_ref: OD-20260907-01`. **Không chạm** `contracts/http/openapi.yaml` hay bất kỳ file PC05 nào —
+phạm vi collector giữ `DRAFT_FOR_REVIEW` vì còn KC.
+
+## K2. Delta
+
+**Khối `ratification` trong header của cả bảy file** ghi: authority, decision_id, evidence_ref, cơ sở
+A2-R4, và bốn mục phân định rõ — `accepted_vi`, `measurement_pending_vi`, `still_kc_vi`, `tuning_values_vi`.
+
+**Ba mức trạng thái, phân biệt tường minh** (trước đây tất cả gộp làm `PROVISIONAL`):
+
+| Mức | Nghĩa | Ví dụ |
+| --- | --- | --- |
+| `ACCEPTED (OD-20260907-01)` | Owner đã chốt giá trị | `schedule_timezone = Asia/Ho_Chi_Minh`; `schedule_slots_default = 08:00/20:00` |
+| `ACCEPTED (…)` + `measurement_pending` | Owner chấp nhận làm giá trị làm việc, còn phải đo | `per_run_post_limit = 200`, `per_run_duration_limit = 1800` (REQ-OQ05, đo sau M0) |
+| `PROVISIONAL` | Tham số kỹ thuật trong phạm vi ủy quyền, không cần Owner | lease TTL, heartbeat, backoff, timeout inference |
+
+Điểm này quan trọng và trước đây bị mờ: sau ratification, nhãn `PROVISIONAL` còn lại **không** có nghĩa
+"chưa được phê chuẩn" mà là "chưa hiệu chỉnh bằng dữ liệu thật". `retry-policy.yaml §principles RP-05` nay
+nói thẳng điều đó. Thống kê 46 budget: **3** `ACCEPTED`, **2** trong đó mang `measurement_pending`,
+**3** `XN_derived`, **1** `PLACEHOLDER_KC`, **39** `PROVISIONAL` kỹ thuật.
+
+**Mục KC còn lại, nêu tường minh trong header như packet yêu cầu:** `research_connector_rate_limit` —
+nhịp gọi và định danh thật của arXiv/OpenAlex (REQ-A6). Bốn giá trị cố ý để trống. Ratification **không** làm
+nó biến mất: Owner phê chuẩn quyết định sản phẩm, còn hạn mức của một API bên ngoài là **dữ kiện** phải đọc
+từ tài liệu chính thức — không ai chấp nhận thay cho nó được. Mục này thuộc phạm vi PC05.
+
+**Chuyển PROVISIONAL → ACCEPTED tại chỗ:** timezone (run.yaml), schedule slots (retry-policy), kỳ rỗng
+phương án (b) (report.yaml). Hai chỗ nhắc `identity_merge_max_moved_rows` đổi từ "PROVISIONAL" sang "ngưỡng
+an toàn của PC02" — đó là số của PC02, không phải của tôi, nên gọi nó là PROVISIONAL ở đây là gán nhầm chủ.
+
+## K3. Evidence
+
+| ID | Command | Kết quả | Exit |
+| --- | --- | --- | --- |
+| `EV-PC03-15` | `<scratch>/w4/lint_pc03.py` | **PASS** — 7/7 parse; run 27 rows / 8 states reachable; analysis 13/6; report 8/3; delivery 10/7; storage 9/4; codes 28; budgets 46 | **0** |
+| `EV-PC03-16` | `<scratch>/w4/prose_token_gate_w4.py` | **PASS** — **440** operation, **176** `entity.column` (169 → 176), 38 ngoại lệ, **UNRESOLVED = 0** | **0** |
+| `EV-PC03-17` | `<scratch>/w3/prose_token_gate.py` (W3, đọc-only) | **440 / 176 — TRÙNG KHÍT** với gate của tôi | 1 (W3 chưa có lớp ngoại lệ) |
+| `EV-PC03-18` | `evidence/tools/e0_check.py --json-out` | 22 check; trong bảy file của tôi: **đúng 7 vi phạm, tất cả cùng một loại** (`claim_ceiling` vượt trần phiên cũ); **0 vi phạm ở mọi check khác** | 1 |
+
+`SELF_VALIDATION`, 2026-09-07T04:18Z–04:21Z. Nguồn pinned khớp: SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…`.
+
+**Một lỗi tôi tự gây ra và tự bắt được:** khối `ratification` bản đầu viết `AMD-B03 (delivery.unknown, …)` —
+đúng loại token hỏng mà `PKT-PC03-FIX5` vừa dọn, và nó lọt vào cả bảy file. Prose gate bắt ngay
+(UNRESOLVED = 7); đã sửa thành `` `delivery.state = unknown` `` ở cả bảy trước khi đo hash cuối. Ghi lại vì
+nó cho thấy gate đang làm đúng việc của nó, kể cả với người vừa viết ra gate.
+
+## K4. Concerns
+
+1. **`e0_check.py` E0-12 vẫn cưỡng chế trần của phiên CŨ** (`claim 'CONTRACT_READY' exceeds the session
+   ceiling DRAFT_FOR_REVIEW`) và do đó báo FAIL cho đúng thứ packet này chỉ đạo. Đây **không** phải lỗi trong
+   file của tôi: 7 vi phạm là 7 trường `claim_ceiling`, không hơn. Toàn corpus có **14 file** cùng loại —
+   `capabilities.yaml`, `entities.yaml`, `modules.yaml`, `ports.yaml`, ba schema, và bảy file của tôi — tức
+   các Worker khác đang ratify song song và gặp đúng vấn đề. **`evidence/tools/e0_check.py` (PC09) phải được
+   cập nhật để honor `AUTH-OWNER-20260907-02` và danh sách bốn phạm vi A2-R4;** cho tới lúc đó E0-12 sẽ FAIL
+   cho mọi file đã ratify. Tôi không sửa nó — ngoài grant, và một gate tự nới trần cho chính mình là thứ
+   không nên do người bị gate kiểm viết.
+2. **Card-pinned hashes: cả bảy file đổi hash.** `errors.yaml` xuất hiện trong **20** card, `retry-policy.yaml`
+   19, `run.yaml` 7, `storage.yaml` 5, `report.yaml` 4, `delivery.yaml` 3, `analysis.yaml` 2 — **20 card khác
+   nhau**. Cộng với `CR-PC10-01` và `OD-20260907-01` mục 3 (stack đổi sang B ⇒ mọi đường dẫn và lệnh build
+   trong §3/§8 của card phải viết lại), việc re-pin toàn bộ card là bắt buộc và không còn là dọn dẹp.
+3. **Trần CONTRACT_READY áp cho FILE, không phải cho hệ thống.** Bảy file này mô tả workflow/state và đã
+   được phê chuẩn; chúng **không** khẳng định gì về việc code chạy đúng. Mọi bằng chứng runtime (E1–E4) vẫn
+   `NOT_RUN`, probe X vẫn chưa chạy, REQ-A1/A5/A6/A7 vẫn `KC`, và REQ-OQ03 (provider/model) vẫn
+   `OWNER_DECISION_REQUIRED` — chặn M3.
+4. **Không CR mới.**

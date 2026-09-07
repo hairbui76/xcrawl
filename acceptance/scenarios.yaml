@@ -2104,14 +2104,43 @@ scenarios:
       - "4. Pha 2 hợp lệ trong `maintenance` → thu hồi mọi lease, xóa theo phạm vi."
       - "5. Ca âm C: dùng lại cùng `purge_challenge_id`."
     expected_durable_state_vi: >
-      Ca âm A, B, C: KHÔNG hàng nào bị xóa. Ca hợp lệ: dữ liệu trong phạm vi bị xóa; mọi
-      `assignment_lease` `revoked`; một hàng audit ghi lại; danh sách LOẠI TRỪ chưa chốt.
+      Ca âm A, B, C: KHÔNG hàng nào bị xóa — `COUNT(*)` của cả 60 bảng bằng nhau trước và sau.
+      Ca hợp lệ, phân hoạch ba nhóm theo `OD-20260907-01` mục 24 (nguồn liệt kê CÓ THẨM QUYỀN:
+      `contracts/data/entities.yaml` → `transactions[TXN-purge-all].tables`): (a) **37 bảng dữ
+      liệu nghiên cứu về 0 hàng**; (b) **21 bảng giữ lại KHÔNG đổi một hàng nào**; (c) **2 bảng
+      never_purged** — `schema_migration` không đổi, `data_deletion_audit` **tăng đúng 1 hàng**
+      (chính bản ghi của lần purge này). Mọi `assignment_lease` `revoked`. Backup và backup
+      artefact KHÔNG bị chạm.
     oracle_vi: >
-      Ở mỗi ca âm, `COUNT(*)` của mọi bảng trước và sau bằng nhau; ở ca hợp lệ,
-      `COUNT(assignment_lease WHERE state='held') = 0` ngay sau commit;
-      `purge_challenge` chuyển `consumed` và lần dùng thứ hai trả `CONFLICT` hoặc
-      `VALIDATION_ERROR`. Idempotency key là `purge_challenge_id`, nên hai pha nằm trong MỘT
-      operation chứ không sinh operation thứ tư (PROV-PC00-03).
+      Ở mỗi ca âm, `COUNT(*)` của cả 60 bảng trước và sau bằng nhau. Ở ca hợp lệ, kiểm ĐỦ BA TẬP,
+      không kiểm mẫu:
+      (1) `COUNT(*) = 0` cho **37 bảng bị xóa** — post, post_work, work, work_version,
+      identity_alias, identity_conflict, identity_merge_audit, work_label, analysis,
+      analysis_generation, analysis_attempt, analysis_task, embedding_generation, tag_vector,
+      report, report_item, emerging_direction, coverage_window, pending_item_ledger,
+      backfill_ledger, first_announced_ledger, rescan_ledger, saved_item, saved_snapshot,
+      delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run,
+      assignment, assignment_lease, checkpoint, ingest_receipt, source_fetch_log,
+      telegram_update_log, telegram_link_attempt.
+      (2) `COUNT(*)` KHÔNG ĐỔI cho **21 bảng giữ lại** — owner, session, secret_ref,
+      task_credential, secret_audit, telegram_link, telegram_link_code, provider_config,
+      provider_test_result, settings, schedule_occurrence, tag, tag_alias, tag_exclusion,
+      tag_config_version, source_connection, backup_snapshot, backup_manifest, restore_record,
+      purge_challenge, worker_registration; và Owner **vẫn đăng nhập được** sau purge (kiểm bằng
+      một lần đọc phiên thành công trên phiên cũ) — đây là hệ quả REQ-D05 mà Owner được cảnh báo
+      trước khi trả lời.
+      (3) `schema_migration` không đổi; `data_deletion_audit` tăng ĐÚNG 1 hàng.
+      (4) Số hàng của `backup_snapshot`, `backup_manifest`, `restore_record` không đổi VÀ không
+      file backup nào trên đĩa bị xóa hay sửa (so sánh manifest trước/sau).
+      (5) Ba tập rời nhau và hợp lại đúng bằng danh sách entity của `entities.yaml` —
+      37 + 21 + 2 = 60. Một bảng mới thêm vào mà không được phân loại làm oracle này FAIL, chứ
+      không lặng lẽ rơi vào nhóm "không kiểm".
+      (6) Oracle CÔNG BỐ: hộp thoại xác nhận phải nói rằng dữ liệu đã xóa VẪN CÒN trong backup
+      cho tới khi các bản backup đó hết hạn lưu; thiếu câu đó là FAIL.
+      (7) `COUNT(assignment_lease WHERE state='held') = 0` ngay sau commit; `purge_challenge`
+      chuyển `consumed` và lần dùng thứ hai trả `CONFLICT` hoặc `VALIDATION_ERROR`. Idempotency
+      key là `purge_challenge_id`, nên hai pha nằm trong MỘT operation chứ không sinh operation
+      thứ tư (PROV-PC00-03).
     forbidden_effects_vi:
       - "Xóa khi thiếu cụm từ xác nhận đúng."
       - "Xóa ngoài trạng thái `maintenance`."
@@ -2119,17 +2148,28 @@ scenarios:
     evidence_level_required: E2
     mockable_vi: "Offline khi có fixture."
     needs_live_or_human_vi: >
-      **Phạm vi LOẠI TRỪ vẫn `OWNER_DECISION_REQUIRED`** (`PROV-PC00-01` / `PROV-PC01-03`): chưa
-      chốt settings, secrets, credential đăng nhập, `telegram_link` và `schema_migration` có bị
-      xóa hay không. Hai hệ quả Owner phải biết trước khi trả lời: (1) nếu purge xóa credential
-      đăng nhập thì Owner có thể tự khóa mình ra ngoài app, vì REQ-D05 cấm signup và cấm
-      quên-mật-khẩu tự động; (2) dữ liệu đã purge VẪN CÒN trong backup cho tới khi các bản backup
-      đó bị xóa — "xóa toàn bộ" không đồng nghĩa "không còn ở đâu nữa".
+      Không cần quyết định nào nữa. Phạm vi đã được Owner chốt trong `OD-20260907-01` mục 24
+      (**chỉ dữ liệu nghiên cứu**; giữ đăng nhập, secrets, liên kết Telegram, cấu hình provider,
+      lịch; **backup KHÔNG bị xóa**), nên oracle ở trên khẳng định cả ba tập thay vì né tránh
+      chúng. Hai hệ quả từng là cảnh báo trước-quyết-định nay là **hành vi đã chốt và được
+      kiểm**: (1) purge KHÔNG động tới credential đăng nhập, nên Owner không tự khóa mình ra
+      ngoài app dù REQ-D05 cấm signup và cấm quên-mật-khẩu tự động — mục (2) của oracle kiểm đúng
+      điều đó; (2) dữ liệu đã purge VẪN CÒN trong backup cho tới khi các bản backup đó hết hạn
+      lưu — mục (4) và (6) kiểm cả sự thật đó lẫn việc hộp thoại có NÓI ra nó. Chạy thật vẫn
+      `NOT_RUN`: phê chuẩn chốt cam kết, nó không tạo ra bằng chứng.
     status: NOT_RUN
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`recovery/l-…`, ruling R5-02), gồm xác nhận hai pha và các ca
-      âm. Phạm vi vẫn **bị chặn cứng** cho tới khi Owner trả lời `PROV-PC00-01`: fixture khóa được
-      CƠ CHẾ, nó không khóa được DANH SÁCH LOẠI TRỪ mà chỉ Owner mới quyết định.
+      âm. `F-A2R5-01` (MAJOR): oracle của scenario này từng ghi phạm vi loại trừ là
+      `OWNER_DECISION_REQUIRED` **sau khi** Owner đã trả lời, nên corpus vừa báo quyết định đã
+      chốt vừa báo còn treo — và một người đọc fixture sẽ dựng một test không khẳng định gì về
+      danh sách giữ lại. Đã viết lại theo ruling PURGE-LIST (2026-09-07). Khi tôi đối chiếu ba
+      tập với `entities.yaml` thì bản ruling lúc đó ghi "purged (36)" nhưng liệt kê 36 tên rồi
+      nêu thêm `telegram_link_attempt` trong văn xuôi; 37 + 21 + 2 = 60 = đúng số entity, ba tập
+      rời nhau và phủ kín, nên tôi dùng **37** và báo lại chênh lệch — Coordinator đã sửa ruling
+      thành 37 (CR-PC05-07). Nguồn liệt kê có thẩm quyền vẫn là `entities.yaml` `TXN-purge-all`;
+      `E0-18` so bằng TẬP HỢP giữa scenario này và mọi artefact khác nói về purge, nên một lần
+      lệch sẽ FAIL chứ không trôi qua im lặng.
 
   # ------------------------------------------------------------------------------------
   # SC45–SC48 — do PC07 đăng ký (CR-PC07-06; PC09 phân xử: không có va chạm, dải hợp lệ)

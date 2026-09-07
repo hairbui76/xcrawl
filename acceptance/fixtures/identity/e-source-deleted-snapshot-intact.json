@@ -23,6 +23,51 @@
     "SRC-SPEC §12 AC-12"
   ],
   "fixture_format_version": "0.1.0",
+  "x-contract": {
+    "contract_id": "CT-fixture-fx-id-e",
+    "version": "0.1.0",
+    "status": "accepted",
+    "ratification_ref": "OD-20260907-01",
+    "owner_role": "data contract owner",
+    "source_refs": [
+      "SRC-SPEC §3.6 D55",
+      "SRC-SPEC §7.3",
+      "SRC-SPEC §12 AC-12"
+    ],
+    "requirement_refs": [
+      "REQ-D55",
+      "REQ-D58",
+      "REQ-AC12"
+    ],
+    "decision_refs": [
+      "B01"
+    ],
+    "invariant_refs": [
+      "I08",
+      "I17"
+    ],
+    "producers": [
+      "MOD-backend-api"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-identity-service",
+      "MOD-saved-service",
+      "MOD-analysis-service"
+    ],
+    "dependencies": [
+      "contracts/data/entities.yaml",
+      "contracts/data/identity.md",
+      "contracts/data/invariants.md",
+      "contracts/schemas/target.schema.json"
+    ],
+    "scope": "REQ-AC12 và I08(c): snapshot bất biến; xóa nguồn và khởi động lại không đổi content_hash.",
+    "verification": "E0: parse, target-schema validation, wire-schema accept/reject, field-existence R4-01, actor-edge. E1–E4: NOT_RUN.",
+    "claim_ceiling": "CONTRACT_READY",
+    "eligibility_scope": "data and identity (A2-R4); fixture là oracle chấp nhận của phạm vi đã phê chuẩn — ruling F-A2R5-04",
+    "runtime_evidence": "NOT_RUN",
+    "runtime_evidence_note_vi": "Bằng chứng runtime là NOT_RUN: E1 (contract test bằng fixture), E2 (fault injection), E3 (live), E4 (review nội dung) đều CHƯA chạy. Chưa có code, và SQLite chưa từng được yêu cầu ép các ràng buộc mô tả ở đây. CONTRACT_READY nói bộ hợp đồng đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0 — không nói code chạy được (SRC-PLAN §2, §14.2)."
+  },
   "owner_id": "01J0WNER100000000000000000",
   "contract_refs": [
     "contracts/data/entities.yaml",
@@ -30,7 +75,6 @@
     "contracts/data/invariants.md",
     "contracts/schemas/target.schema.json"
   ],
-  "claim_ceiling": "DRAFT_FOR_REVIEW",
   "evidence_status": "NOT_RUN",
   "given": {
     "rows": {
@@ -87,7 +131,7 @@
           "content_hash": {
             "symbolic": "H_Se",
             "computed_by": "sha256(JCS(saved_snapshot.payload))",
-            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml § conventions → hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
           },
           "_payload_contains": [
             "post text",
@@ -126,7 +170,7 @@
       "operation": "ingest.submit_batch",
       "transaction": "TXN-ingest-batch",
       "batch_ref": "$.batch",
-      "description": "Đợt sau quan sát thấy post 1900000000000000030 đã bị xóa trên X. Quan sát đi qua CHÍNH ingest.submit_batch dưới dạng trường source_deleted_observed_at của item — KHÔNG có operation post.mark_source_deleted trong contracts/ports.yaml (ruling Coordinator PKT-PC02-FIX1).",
+      "description": "Đợt sau quan sát thấy post 1900000000000000030 đã bị xóa trên X. Quan sát đi qua CHÍNH ingest.submit_batch dưới dạng trường source_deleted_observed_at của item — KHÔNG có operation một operation riêng trong contracts/ports.yaml (ruling Coordinator PKT-PC02-FIX1).",
       "performed_by": "MOD-ingest-service"
     },
     {
@@ -166,7 +210,7 @@
           "content_hash": {
             "symbolic": "H_Se",
             "computed_by": "sha256(JCS(saved_snapshot.payload))",
-            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml § conventions → hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
           },
           "_note": "Không đổi một byte qua cả ba sự kiện."
         }
@@ -215,7 +259,7 @@
     "Chuyển saved_item sang 'unsaved' vì nguồn biến mất.",
     "Hiển thị Saved là rỗng hoặc lỗi.",
     "Tính lại content_hash.",
-    "Tạo một operation riêng để đánh dấu xóa nguồn (không có post.mark_source_deleted trong ports.yaml).",
+    "Tạo một operation riêng để đánh dấu xóa nguồn — ports.yaml không có operation nào như vậy; quan sát đi qua trường `source_deleted_observed_at` của item ingest.",
     "Ghi đè source_deleted_observed_at đã NOT NULL bằng quan sát muộn hơn.",
     "Tạo hàng post thứ hai cho cùng x_post_id."
   ],

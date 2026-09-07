@@ -91,7 +91,17 @@ verification: >
   `NOT_MET`.
 claim_ceiling: DRAFT_FOR_REVIEW
 
+ratification_note_vi: >
+  Owner đã phê chuẩn `OD-20260907-01` ngày 2026-09-07 (`precode/owner-decisions.md`,
+  `AUTH-OWNER-20260907-02`). B01–B17 chuyển từ `PROVISIONAL` sang `RATIFIED`. Vì vậy một cổng nay
+  có thể đạt **`MET`** chứ không chỉ `MET_PROVISIONAL` — nhưng CHỈ khi mọi điều kiện ra của nó đo
+  được và đã đạt. Phê chuẩn chốt **văn bản cam kết**; nó KHÔNG thay thế một phép đo: mọi mục `KC`
+  vẫn `KC`, và `REQ-OQ03` (provider/model) vẫn `OWNER_DECISION_REQUIRED`.
+
 status_vocabulary:
+  MET: >
+    Mọi điều kiện ra đo được đã đạt, và nền quyết định của cổng đã được Owner phê chuẩn
+    (`OD-20260907-01`). Không còn nhãn `PROVISIONAL` nào chống đỡ kết luận.
   MET_PROVISIONAL: >
     Điều kiện ra đo được đã đạt trên baseline hiện tại, NHƯNG kết luận dựa một phần vào các
     quyết định còn `PROVISIONAL` chờ Owner phê chuẩn. Không phải `MET`.
@@ -100,10 +110,90 @@ status_vocabulary:
   NOT_APPLICABLE_YET: "Cổng thuộc giai đoạn sau; chưa có gì để đo ở giai đoạn Pre-code."
 
 reading_note_vi: >
-  Không cổng nào trong file này được ghi `MET`. Lý do rõ ràng: B01–B17 vẫn `OPEN` trong
-  `agent_profile/registry.json` và mọi phương án giải chúng đều mang nhãn `PROVISIONAL` chờ Owner
-  (baseline §1, §5). `MET_PROVISIONAL` là mức cao nhất mà một Worker được ghi ở phiên này, và nó
-  có nghĩa hẹp: "đo được, đã đạt, nhưng đứng trên nền chưa phê chuẩn".
+  Sau `OD-20260907-01`, ba cổng được ghi `MET` (G0, G1, G2): điều kiện ra của chúng đo được, đã
+  đạt, và nền quyết định của chúng đã được Owner phê chuẩn. Trước phê chuẩn, `MET_PROVISIONAL` là
+  mức cao nhất một Worker được ghi, vì B01–B17 còn `OPEN`. Câu đó không còn đúng và đã được thay —
+  ghi lại ở đây để lịch sử không bị xoá. Các cổng còn lại KHÔNG lên `MET` vì chúng cần một phép
+  đo chưa chạy, không vì thiếu một chữ ký.
+
+# ---------------------------------------------------------------------------------------------
+# Phạm vi được phê chuẩn cho `claim_ceiling: CONTRACT_READY` — DỮ LIỆU, không phải chú thích mã.
+#
+# `evidence/tools/e0_check.py` (`E0-12`, `E0-12b`) ĐỌC khối này. Ruling F-A2R5-03: danh sách phải
+# là một **allowlist tường minh** nằm trong một file dữ liệu trích `OD-20260907-01`, để một file
+# mới thêm vào `contracts/` hay `acceptance/` là **KHÔNG đủ điều kiện** cho tới khi có người cố ý
+# thêm nó vào đây. Trước đó danh sách là một denylist trong mã nguồn, và mọi file mới mặc định
+# **đủ điều kiện** — đúng nguyên nhân trực tiếp của F-A2R5-04.
+#
+# Sửa khối này = mở rộng phạm vi phê chuẩn của Owner. Không Worker nào được làm điều đó một mình.
+# ---------------------------------------------------------------------------------------------
+ratified_contract_scopes:
+  ratification_ref: OD-20260907-01
+  ratification_record: precode/owner-decisions.md
+  authority_id: AUTH-OWNER-20260907-02
+  ruling_refs:
+    - "A2-R4 §5 — bốn phạm vi đủ điều kiện"
+    - "F-A2R5-03 — allowlist tường minh, không phải denylist"
+    - "F-A2R5-04 — deployment.md thuộc phạm vi 1; fixture identity/ và reporting/ là oracle nghiệm thu của phạm vi 2 và 4"
+  rule_vi: >
+    Một file được phép khai `claim_ceiling: CONTRACT_READY` KHI VÀ CHỈ KHI đường dẫn của nó khớp
+    một mục `files` hoặc nằm dưới một mục `directories` của khối này, VÀ header hợp đồng của
+    chính nó (front-matter, khóa YAML top-level, hoặc `x-contract`) mang
+    `ratification_ref: OD-20260907-01`. Một lần nhắc trong văn xuôi KHÔNG tính — mutation M6b
+    chứng minh vì sao.
+  scopes:
+    - id: boundaries_and_rights
+      name_vi: Ranh giới và quyền
+      files:
+        - contracts/modules.yaml
+        - contracts/capabilities.yaml
+        - contracts/ports.yaml
+        - contracts/errors.yaml
+        - contracts/retry-policy.yaml
+        - contracts/ops/deployment.md
+      directories: []
+      note_vi: >
+        `contracts/ops/deployment.md` thuộc phạm vi này theo ruling F-A2R5-04: bố trí module và
+        điều kiện readiness là hợp đồng ranh giới. Mọi file `contracts/ops/` khác KHÔNG đủ điều
+        kiện.
+    - id: data_and_identity
+      name_vi: Dữ liệu và định danh
+      files:
+        - contracts/data/entities.yaml
+        - contracts/data/identity.md
+        - contracts/data/invariants.md
+        - contracts/schemas/target.schema.json
+        - contracts/schemas/ingest-batch.schema.json
+        - acceptance/fixtures/identity/README.md
+      directories:
+        - acceptance/fixtures/identity/
+      note_vi: >
+        Fixture trong `acceptance/fixtures/identity/` là oracle nghiệm thu của chính phạm vi này
+        (ruling F-A2R5-04). Mọi thư mục fixture khác giữ `DRAFT_FOR_REVIEW`.
+    - id: workflow_and_state
+      name_vi: Workflow và trạng thái
+      files:
+        - contracts/state/run.yaml
+        - contracts/state/analysis.yaml
+        - contracts/state/delivery.yaml
+        - contracts/state/report.yaml
+        - contracts/state/storage.yaml
+      directories: []
+    - id: reporting_and_time
+      name_vi: Báo cáo và thời gian
+      files:
+        - contracts/reporting/time-and-tags.md
+        - contracts/reporting/selection.md
+        - contracts/schemas/report.schema.json
+        - acceptance/fixtures/reporting/README.md
+      directories:
+        - acceptance/fixtures/reporting/
+  ineligible_note_vi: >
+    KHÔNG đủ điều kiện, nêu tên để người đọc không phải suy ra: `contracts/http/`,
+    `contracts/ai/`, `contracts/ui/`, `contracts/telegram/`, mọi `contracts/ops/` ngoài
+    `deployment.md`, bốn schema `worker-assignment`/`ingest-receipt`/`analysis-result`/
+    `saved-snapshot`, và mọi thư mục fixture ngoài `identity/` và `reporting/`. Lý do của từng
+    nhóm nằm ở `precode/review.md` §12.2 — tất cả đều là một `KC` hoặc một phép đo chưa chạy.
 
 gates:
 
@@ -134,12 +224,16 @@ gates:
         statement_vi: "Hai quyết định PC00 tự chọn ngoài baseline §5 được theo dõi tới khi Owner trả lời."
         machine_check: "precode/review.md §7 liệt kê F-PC00-01 và F-PC00-02 là mục còn mở của G0"
         met: true
-    current_status: MET_PROVISIONAL
+    current_status: MET
     evidence_refs: ["EV-PC09-01", "EV-PC09-04"]
-    blocked_by_open_items:
-      - "F-PC00-01 (hủy liên kết là hành động trong app, không phải lệnh Telegram thứ tư) — chờ Owner."
-      - "F-PC00-02 (hoãn export Saved sang P1) — chờ Owner, gắn REQ-OQ10."
-      - "PROV-PC00-01 — phạm vi loại trừ của `data.purge_all`, `OWNER_DECISION_REQUIRED`."
+    ratified_by: "OD-20260907-01"
+    blocked_by_open_items: []
+    ratification_note_vi: >
+      Cả ba mục còn mở của G0 đã được Owner trả lời: `F-PC00-01` (hủy liên kết là hành động trong
+      app, Telegram giữ đúng ba lệnh) — mục 13; `F-PC00-02` (hoãn export Saved sang P1) — mục 20;
+      `PROV-PC00-01` (phạm vi loại trừ của `data.purge_all`) — mục 24, **chỉ xóa dữ liệu nghiên
+      cứu**, giữ đăng nhập/secret/liên kết Telegram/cấu hình provider/lịch, và **backup KHÔNG bị
+      xóa**. Không còn mục nào chờ quyết định.
     allows_next_vi: "Soạn topology và từng hợp đồng. KHÔNG cho phép product coding."
 
   - id: G1
@@ -175,12 +269,14 @@ gates:
           trong `allowed_edges` · `CAPABILITY_DENIED` cho thiếu capability tiến trình/mạng/file/tool
           · `CSRF_REJECTED` cho owner mutation thiếu CSRF), và cả 36/36 cạnh nay có
           `denied_cases[]` với `expected_error_code` và `scenario_refs: [SC49]`.
-    current_status: MET_PROVISIONAL
+    current_status: MET
     evidence_refs: ["EV-PC09-01"]
-    blocked_by_open_items:
-      - "B12 và B13 vẫn `PROVISIONAL`: topology và chính sách secret chưa được Owner phê chuẩn."
-      - "PROV-PC01-01/-02/-04/-05/-06 chờ Owner hoặc chờ ruling."
-      - "Chưa có xác minh độc lập trên epoch chứa các bản sửa FIX5 (A2 chưa chạy)."
+    ratified_by: "OD-20260907-01"
+    blocked_by_open_items: []
+    ratification_note_vi: >
+      B12 (topology, xóa cạnh collector→analysis) và B13 (secret theo task, CLI khóa tool) đã được
+      Owner phê chuẩn; D09 "profile Chrome riêng" chuyển ĐX → XN. Mọi điều kiện ra G1-X1..X5 đo
+      được và đã đạt, nên cổng này là `MET`, không còn `MET_PROVISIONAL`.
     allows_next_vi: >
       Soạn schema và state độc lập framework — đã và đang xảy ra. Mọi điều kiện ra đo được đã đạt;
       `MET_PROVISIONAL` chứ không phải `MET` vì nền vẫn là các quyết định chờ Owner.
@@ -220,10 +316,15 @@ gates:
         statement_vi: "Checkpoint chỉ trên dữ liệu đã ACK; một mô tả duy nhất cho mọi đường ghi checkpoint."
         machine_check: "SC21 + SC03; contracts/data/entities.yaml TXN-checkpoint-only; xác minh độc lập EV-A1R2-03"
         met: true
-    current_status: MET_PROVISIONAL
+    current_status: MET
     evidence_refs: ["EV-PC09-01"]
-    blocked_by_open_items:
-      - "B02, B05, B06, B07, B08 vẫn `PROVISIONAL`."
+    ratified_by: "OD-20260907-01"
+    blocked_by_open_items: []
+    ratification_note_vi: >
+      B02, B05, B06, B07, B08 đã được Owner phê chuẩn, gồm cả cách đọc lại AC-03 và AC-04 và giá
+      trị timezone `Asia/Ho_Chi_Minh`. Điều kiện ra G2-X1..X6 đo được và đã đạt.
+      Còn lại là rủi ro **kỹ thuật chưa đo**, không phải quyết định chưa chốt: partial UNIQUE index
+      và STORED generated column của SQLite vẫn là giả định cho tới E1.
       - "PROV-PC03-04 (tự chạy lại một lần từ `unknown_attempt`) chờ Owner phê chuẩn."
       - "Chưa kiểm chứng trên SQLite thật: partial UNIQUE index và STORED generated column là giả định."
     allows_next_vi: "Soạn report/collector/AI/UI trên interface ổn định — đã xảy ra."
@@ -275,9 +376,13 @@ gates:
     current_status: PARTIALLY_MET
     evidence_refs: ["EV-PC09-01"]
     blocked_by_open_items:
-      - "G3-X5: `research_connector_rate_limit` (REQ-A6 `KC`) và giới hạn định dạng Telegram (CR-PC07-04, `KC`) — đây là hai mục CHẶN CỨNG duy nhất còn lại của G3."
-      - "B01, B03, B04, B09, B10, B11, B14, B16, B17 vẫn `PROVISIONAL`."
-      - "Chưa có xác minh độc lập trên epoch chứa các bản sửa FIX4/FIX5 (A2 chưa chạy)."
+      - "G3-X5: **`REQ-A6`** — bốn giá trị `research_connector_rate_limit` vẫn `PLACEHOLDER_KC`; cần đọc tài liệu arXiv/OpenAlex."
+      - "G3-X5: **`CR-PC07-04`** — giới hạn định dạng Telegram vẫn `KC`; cần đọc tài liệu Bot API."
+      - "**`REQ-OQ03`** (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED` — Owner chọn hoãn (OD-20260907-01 mục 21). Chặn M3."
+      - "**`REQ-A5`** (điều khoản từng nhà AI) vẫn `KC`; mọi adapter `enabled=false`, nên **AC-16 = `BLOCKED`**, không phải `FAIL`."
+      - "**`REQ-A1`/`REQ-A7`** (thu thập X, hạn chế tài khoản) vẫn `KC`; SP1 chưa chạy."
+      - "**`REQ-A2`/`REQ-A3`/`REQ-A4`** (ngưỡng, model đa ngôn ngữ, mật độ) vẫn `KC`; ngưỡng giữ `uncalibrated`."
+      - "B01..B17 nay `RATIFIED` — chúng KHÔNG còn là lý do G3 chưa đạt. Lý do duy nhất còn lại là các mục `KC` ở trên: chúng đòi dữ liệu từ thế giới bên ngoài, và phê chuẩn không thay thế được phép đo."
     allows_next_vi: "Tích hợp contract review; soạn task card (PC10)."
 
   - id: G4
@@ -318,10 +423,10 @@ gates:
       - id: G4-X6
         statement_vi: "B01–B17 được giải hoặc bị chặn có phạm vi rõ; KC có scope và probe gate."
         machine_check: "precode/review.md §5 (bảng rà soát B01–B17) và §6 (ĐX/KC)"
-        met: false
-        gap_vi: >
-          Cả 17 blocker vẫn `OPEN` trong `agent_profile/registry.json` và mọi phương án giải là
-          `PROVISIONAL` chờ Owner. Đây là điều kiện DUY NHẤT mà không Worker nào có thể tự đóng.
+        met: true
+        note_vi: >
+          Owner phê chuẩn cả 17 blocker ngày 2026-09-07 (`OD-20260907-01`). Mỗi mục `KC` còn lại
+          vẫn có scope và probe gate ghi rõ — phê chuẩn không thay thế phép đo.
       - id: G4-X7
         statement_vi: "Mọi finding của audit độc lập đã được xử lý hoặc có disposition."
         machine_check: "precode/review.md §4 (bảng finding A1-R1/R2/R3)"
@@ -335,14 +440,16 @@ gates:
     current_status: PARTIALLY_MET
     evidence_refs: ["EV-PC09-01", "EV-PC09-02", "EV-PC09-03", "EV-PC09-04"]
     note_vi: >
-      Bốn trong bảy điều kiện ra nay đạt nhờ đợt FIX5 (G4-X1..X5). Hai điều kiện còn lại KHÔNG
-      thuộc thẩm quyền của bất kỳ Worker nào: G4-X6 cần Owner phê chuẩn B01–B17, G4-X7 cần một
-      auditor độc lập (A2) chạy trên epoch mới — và người xác minh không được là người viết bản sửa
-      (protocol §8).
+      Sáu trong bảy điều kiện ra nay đạt: G4-X1..X5 (E0 sạch, không orphan, mọi invariant hai cực,
+      mọi AC/mã lỗi có scenario) và **G4-X6 (phê chuẩn)**. Điều kiện còn lại là G4-X7: bản sửa cho
+      ba finding của A2-R3 chưa được xác minh lại, và người xác minh không được là người viết bản
+      sửa (protocol §8). Ngoài ra G4 kế thừa các mục `KC` của G3 — chúng chặn việc gọi một phạm vi
+      là `CONTRACT_READY`, không chặn bản thân traceability.
     blocked_by_open_items:
-      - "G4-X6: B01–B17 `OPEN`, chờ Owner phê chuẩn qua `precode/owner-decision-request.md` (24 mục). Đây là điều kiện DUY NHẤT mà không Worker nào gỡ được."
+      - "G4-X6: **ĐÃ ĐẠT** — B01–B17 `RATIFIED` bởi OD-20260907-01."
       - "CR-PC09-09/-10/-11 (FIX7) và CR-PC09-12 (FIX8) đã được các gói sở hữu xử lý; tất cả `FIX_PROPOSED`, chờ A2 xác minh."
-      - "G4-X7: A2 đã chạy và kết luận PC09 FAIL; 11 finding ở `FIX_PROPOSED`, chưa xác minh lại trên epoch 5."
+      - "G4-X7: A2 đã chạy ba lượt (R1 FAIL → R2 PASS tổng thể → R3 xác minh bản sửa). Ba finding của A2-R3 đã sửa ở FIX10 và **chưa được xác minh lại**."
+      - "G4 chưa đạt vì các mục `KC` của G3, KHÔNG vì thiếu phê chuẩn: điều kiện phê chuẩn (G4-X6) đã đạt."
     allows_next_vi: >
       KHÔNG cho phép gọi baseline là `CONTRACT_READY` ở bất kỳ phạm vi nào trong lúc G4-X6 chưa
       đạt. Xem `precode/review.md` §9 cho phát biểu điều kiện: phạm vi nào thành `CONTRACT_READY`
@@ -358,23 +465,37 @@ gates:
       - id: G5-X1
         statement_vi: "Stack đã được Owner chọn và có ADR."
         machine_check: "REQ-OQ02 có câu trả lời của Owner; ADR-0006 chuyển khỏi PROVISIONAL"
-        met: false
-        gap_vi: "REQ-OQ02 (chọn stack, khuyến nghị A: Python toàn bộ) **CHẶN M1** và chưa có câu trả lời."
+        met: true
+        note_vi: >
+          Owner chọn **phương án B — Python worker + TypeScript web** (OD-20260907-01 mục 3), KHÔNG
+          phải phương án A mà kế hoạch khuyến nghị. ADR-0006 được viết lại: quyết định là B,
+          supersedes đề xuất A. Hợp đồng không đổi — chúng độc lập framework theo thiết kế, và đó
+          là lý do việc chọn stack muộn không phá gì.
       - id: G5-X2
         statement_vi: "Mỗi card pin contract version/hash, allowed files, edges, operation và proof obligations."
         machine_check: "agent-tasks/*.md tồn tại và trích hash của baseline đã freeze"
-        met: false
-        gap_vi: "PC10 đang chạy; chưa đo được ở thời điểm PC09 bàn giao."
+        met: true
+        note_vi: >
+          18 card, mỗi card pin một epoch duy nhất và trích hash hợp đồng. PC10-FIX8 viết lại §3
+          (đường dẫn) và §8 (lệnh build/test) cho stack B.
       - id: G5-X3
         statement_vi: "Mỗi card ghi stop conditions và claim tối đa được phép."
         machine_check: "agent-tasks/TEMPLATE.md §9, §10"
+        met: true
+      - id: G5-X4
+        statement_vi: "Có một bố cục repo triển khai thật cho stack đã chọn, và card trỏ vào đường dẫn tồn tại."
+        machine_check: "đường dẫn source/test mà card khai tồn tại trên đĩa"
         met: false
+        gap_vi: >
+          Stack B đã được chọn nhưng **chưa có repo triển khai nào**: không có cây thư mục Python
+          worker, không có cây TypeScript web, không có lệnh build/test nào chạy được. Card mô tả
+          đường dẫn sẽ tồn tại, không phải đường dẫn đang tồn tại.
     current_status: NOT_MET
     evidence_refs: []
     blocked_by_open_items:
-      - "G4 chưa đạt."
-      - "REQ-OQ02 (stack) chưa có câu trả lời của Owner — chặn M1."
-      - "REQ-OQ01 (D09, Chrome profile riêng) chưa có câu trả lời — chặn M0."
+      - "G5-X4: chưa có bố cục repo triển khai cho stack B — card trỏ vào đường dẫn chưa tồn tại."
+      - "G4 chưa đạt (G4-X7 và các mục KC của G3)."
+      - "**`REQ-OQ03`** (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED`; chặn M3."
     allows_next_vi: "Bắt đầu coding phạm vi được giao KHI người dùng yêu cầu. Chưa được phép."
 
   - id: SP1
@@ -404,9 +525,13 @@ gates:
     current_status: NOT_MET
     evidence_refs: []
     blocked_by_open_items:
-      - "REQ-OQ01 (xác nhận D09) — **CHẶN M0**, là câu hỏi mở số 1 của SRC-SPEC §13.1."
-      - "Owner chưa chấp nhận ngân sách/stop/go-no-go."
-      - "REQ-A1 và REQ-A7 đều `KC`."
+      - "SP1-X2: **chưa đợt probe nào chạy**. Đây là lý do DUY NHẤT còn lại."
+      - "REQ-A1 và REQ-A7 vẫn `KC` — theo định nghĩa chúng chỉ giải được BẰNG probe này."
+    ratification_note_vi: >
+      **`REQ-OQ01` không còn chặn SP1.** Owner đã xác nhận D09 — dùng profile Chrome riêng của dự
+      án (OD-20260907-01 mục 1) — nên câu hỏi mở số 1 của SRC-SPEC §13.1 đã có câu trả lời và D09
+      chuyển ĐX → XN. Owner cũng đã chấp nhận ngân sách, điều kiện dừng và tiêu chí go/no-go qua
+      mục 20. Cổng này nay chỉ chờ **việc chạy**, không chờ quyết định nào nữa.
     allows_next_vi: >
       Viết và chạy spike tối thiểu khi được phép; output vẫn chỉ là evidence probe, KHÔNG phải
       `LIVE_FEASIBILITY_VERIFIED` cho toàn hệ thống. Nếu probe thất bại: báo quyết định blocked

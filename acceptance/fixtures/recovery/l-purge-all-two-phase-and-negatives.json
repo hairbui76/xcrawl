@@ -18,7 +18,9 @@
     ],
     "decision_refs": [
       "R5-02",
-      "PROV-PC01-03"
+      "OD-20260907-01",
+      "CR-PC05-06",
+      "CR-PC05-07"
     ],
     "invariant_refs": [
       "I01",
@@ -45,7 +47,8 @@
     ],
     "scope": "data.purge_all: xác nhận hai pha, chỉ trong maintenance, thu hồi lease, và bốn ca âm.",
     "verification": "NOT_RUN — E0; chưa có code, chưa có DB, chưa có drill.",
-    "claim_ceiling": "DRAFT_FOR_REVIEW"
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "ratification_ref": "OD-20260907-01"
   },
   "fixture_id": "l",
   "scenario_refs": [
@@ -60,37 +63,218 @@
   "title_vi": "SC44 — data.purge_all: hai pha, chỉ trong maintenance, thu hồi lease, bốn ca âm",
   "given": {
     "storage_health": "maintenance",
-    "_exclusions_vi": "Danh sách LOẠI TRỪ vẫn OWNER_DECISION_REQUIRED (PROV-PC01-03); fixture này KHÔNG khẳng định gì về settings/secret/credential đăng nhập.",
     "rows": {
-      "purge_challenge": [],
-      "assignment_lease": [
+      "owner": [
         {
-          "id": "AL-1",
+          "id": "owner-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "session": [
+        {
+          "id": "session-1",
           "owner_id": "O-1",
-          "run_id": "RUN-1",
-          "job_id": "JOB-1",
-          "lease_epoch": 2,
-          "state": "held",
-          "_note": "phải bị thu hồi trước khi xóa"
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "secret_ref": [
+        {
+          "id": "secret_ref-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "task_credential": [
+        {
+          "id": "task_credential-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "secret_audit": [
+        {
+          "id": "secret_audit-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "telegram_link-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "telegram_link_code": [
+        {
+          "id": "telegram_link_code-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "provider_config": [
+        {
+          "id": "provider_config-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "provider_test_result": [
+        {
+          "id": "provider_test_result-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "settings": [
+        {
+          "id": "settings-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "schedule_occurrence": [
+        {
+          "id": "schedule_occurrence-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "tag": [
+        {
+          "id": "tag-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "tag_alias": [
+        {
+          "id": "tag_alias-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "tag_exclusion": [
+        {
+          "id": "tag_exclusion-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "tag_config_version": [
+        {
+          "id": "tag_config_version-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "source_connection": [
+        {
+          "id": "source_connection-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "backup_snapshot": [
+        {
+          "id": "backup_snapshot-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "backup_manifest": [
+        {
+          "id": "backup_manifest-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "restore_record": [
+        {
+          "id": "restore_record-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "purge_challenge": [
+        {
+          "id": "purge_challenge-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "worker_registration": [
+        {
+          "id": "worker_registration-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "schema_migration": [
+        {
+          "_note": "phải còn sau purge"
+        }
+      ],
+      "data_deletion_audit": [
+        {
+          "id": "data_deletion_audit-1",
+          "owner_id": "O-1",
+          "_note": "phải còn sau purge"
         }
       ],
       "work": [
         {
-          "id": "W-1",
+          "id": "work-1",
           "owner_id": "O-1",
-          "_note": "trong phạm vi xóa"
+          "_note": "dữ liệu nghiên cứu — bị xóa"
+        }
+      ],
+      "post": [
+        {
+          "id": "post-1",
+          "owner_id": "O-1",
+          "_note": "dữ liệu nghiên cứu — bị xóa"
         }
       ],
       "saved_item": [
         {
-          "id": "SI-1",
+          "id": "saved_item-1",
           "owner_id": "O-1",
           "target_kind": "work",
-          "target_work_id": "W-1",
-          "state": "saved"
+          "target_work_id": "work-1",
+          "state": "saved",
+          "_note": "Saved là dữ liệu nghiên cứu — bị xóa"
+        }
+      ],
+      "report": [
+        {
+          "id": "report-1",
+          "owner_id": "O-1",
+          "_note": "bị xóa"
+        }
+      ],
+      "assignment_lease": [
+        {
+          "id": "assignment_lease-1",
+          "owner_id": "O-1",
+          "run_id": "run-1",
+          "job_id": "job-1",
+          "lease_epoch": 2,
+          "state": "held",
+          "_note": "thu hồi trước khi xóa, rồi bị xóa cùng nhóm vận hành"
+        }
+      ],
+      "telegram_link_attempt": [
+        {
+          "id": "telegram_link_attempt-1",
+          "owner_id": "O-1",
+          "_note": "bộ đếm rate-limit — dữ liệu vận hành, bị xóa"
         }
       ]
-    }
+    },
+    "_retained_source_vi": "Danh sách 20 bảng giữ lại sao chép từ khóa `retained_by_owner_decision` của `TXN-purge-all` trong contracts/data/entities.yaml (OD-20260907-01 mục 24). Không suy diễn lại ở đây.",
+    "_table_sets_source_vi": "Ba tập bảng sao chép nguyên văn từ ruling CR-PC05-06 + CR-PC05-07 (PURGE-LIST-ruling.md): **xóa 37**, **giữ 21**, **không bao giờ xóa 2** — phủ đúng 60 entity, không chồng lấn. Bản TXN-purge-all đầu tiên tự mâu thuẫn (schedule_occurrence ở cả hai tập; worker_registration và data_deletion_audit xếp nhầm) và KHÔNG được dùng.",
+    "_purge_scope_vi": "Phạm vi purge ĐÃ CHỐT (OD-20260907-01 mục 24; ba tập theo CR-PC05-06 + CR-PC05-07): xóa 37 bảng dữ liệu nghiên cứu và vận hành, giữ 21 bảng cấu hình/định danh/backup, không bao giờ xóa 2 bảng (schema_migration, data_deletion_audit). Ba tập phủ đúng 60 entity và không chồng lấn. Fixture này khẳng định cả ba tập, không để trống mục nào."
   },
   "events": [
     {
@@ -211,38 +395,277 @@
       "_note_vi": "Challenge đã consumed; idempotency key là purge_challenge_id."
     },
     "rows": {
-      "assignment_lease": [
+      "owner": [
         {
-          "id": "AL-1",
+          "id": "owner-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "session": [
+        {
+          "id": "session-1",
           "owner_id": "O-1",
-          "state": "revoked",
-          "_note": "thu hồi TRƯỚC khi xóa, ở seq5"
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "secret_ref": [
+        {
+          "id": "secret_ref-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "task_credential": [
+        {
+          "id": "task_credential-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "secret_audit": [
+        {
+          "id": "secret_audit-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "telegram_link-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "telegram_link_code": [
+        {
+          "id": "telegram_link_code-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "provider_config": [
+        {
+          "id": "provider_config-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "provider_test_result": [
+        {
+          "id": "provider_test_result-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "settings": [
+        {
+          "id": "settings-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "schedule_occurrence": [
+        {
+          "id": "schedule_occurrence-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "tag": [
+        {
+          "id": "tag-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "tag_alias": [
+        {
+          "id": "tag_alias-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "tag_exclusion": [
+        {
+          "id": "tag_exclusion-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "tag_config_version": [
+        {
+          "id": "tag_config_version-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "source_connection": [
+        {
+          "id": "source_connection-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "backup_snapshot": [
+        {
+          "id": "backup_snapshot-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "backup_manifest": [
+        {
+          "id": "backup_manifest-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "restore_record": [
+        {
+          "id": "restore_record-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
         }
       ],
       "purge_challenge": [
         {
-          "id": "PC-2",
+          "id": "purge_challenge-1",
           "owner_id": "O-1",
-          "state": "consumed",
-          "consumed_at": "<t5>"
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "worker_registration": [
+        {
+          "id": "worker_registration-1",
+          "owner_id": "O-1",
+          "_note": "GIỮ NGUYÊN sau purge"
+        }
+      ],
+      "schema_migration": [
+        {
+          "_note": "GIỮ NGUYÊN sau purge"
         }
       ],
       "data_deletion_audit": [
         {
-          "id": "DA-2",
+          "id": "data_deletion_audit-1",
           "owner_id": "O-1",
-          "scope": "all",
-          "target_key": "*",
-          "confirmation_evidence": {
-            "purge_challenge_id": "PC-2",
-            "phrase_matched": true
-          },
-          "_note": "deleted_counts/preserved_counts phụ thuộc danh sách loại trừ chưa chốt"
+          "_note": "giữ vĩnh viễn; lần purge này ghi THÊM một hàng vào đây"
         }
       ]
     },
     "storage_health_after": "maintenance",
-    "_dispatcher_vi": "Sau purge, hệ thống Ở LẠI maintenance; dispatcher KHÔNG tự mở (cùng nguyên tắc NC-10)."
+    "_dispatcher_vi": "Sau purge, hệ thống Ở LẠI maintenance; dispatcher KHÔNG tự mở (cùng nguyên tắc NC-10).",
+    "purged_table_counts_after": {
+      "post": 0,
+      "post_work": 0,
+      "work": 0,
+      "work_version": 0,
+      "identity_alias": 0,
+      "identity_conflict": 0,
+      "identity_merge_audit": 0,
+      "work_label": 0,
+      "analysis": 0,
+      "analysis_generation": 0,
+      "analysis_attempt": 0,
+      "analysis_task": 0,
+      "embedding_generation": 0,
+      "tag_vector": 0,
+      "report": 0,
+      "report_item": 0,
+      "emerging_direction": 0,
+      "coverage_window": 0,
+      "pending_item_ledger": 0,
+      "backfill_ledger": 0,
+      "first_announced_ledger": 0,
+      "rescan_ledger": 0,
+      "saved_item": 0,
+      "saved_snapshot": 0,
+      "delivery": 0,
+      "delivery_part": 0,
+      "delivery_attempt": 0,
+      "delivery_receipt": 0,
+      "outbox_intent": 0,
+      "run": 0,
+      "assignment": 0,
+      "assignment_lease": 0,
+      "checkpoint": 0,
+      "ingest_receipt": 0,
+      "source_fetch_log": 0,
+      "telegram_update_log": 0,
+      "telegram_link_attempt": 0
+    },
+    "retained_table_count": 21,
+    "_retained_tables": [
+      "owner",
+      "session",
+      "secret_ref",
+      "task_credential",
+      "secret_audit",
+      "telegram_link",
+      "telegram_link_code",
+      "provider_config",
+      "provider_test_result",
+      "settings",
+      "schedule_occurrence",
+      "tag",
+      "tag_alias",
+      "tag_exclusion",
+      "tag_config_version",
+      "source_connection",
+      "backup_snapshot",
+      "backup_manifest",
+      "restore_record",
+      "purge_challenge",
+      "worker_registration"
+    ],
+    "backups_untouched_vi": "backup_snapshot / backup_manifest / restore_record còn nguyên hàng, và artifact backup trên đĩa không bị chạm: dữ liệu vừa xóa VẪN CÒN trong các bản backup cho tới khi chúng hết hạn theo retention hoặc bị xóa bằng tay.",
+    "confirmation_dialog_must_state_vi": "Hộp thoại xác nhận phải nói rõ hai điều: (1) phạm vi xóa là dữ liệu nghiên cứu, 20 bảng cấu hình/định danh/backup được giữ; (2) dữ liệu đã xóa VẪN TỒN TẠI trong các bản backup. Không nói (2) là để người dùng tin sai rằng dữ liệu đã biến mất hoàn toàn.",
+    "never_purged_table_count": 2,
+    "_never_purged_tables": [
+      "schema_migration",
+      "data_deletion_audit"
+    ],
+    "_purged_tables": [
+      "post",
+      "post_work",
+      "work",
+      "work_version",
+      "identity_alias",
+      "identity_conflict",
+      "identity_merge_audit",
+      "work_label",
+      "analysis",
+      "analysis_generation",
+      "analysis_attempt",
+      "analysis_task",
+      "embedding_generation",
+      "tag_vector",
+      "report",
+      "report_item",
+      "emerging_direction",
+      "coverage_window",
+      "pending_item_ledger",
+      "backfill_ledger",
+      "first_announced_ledger",
+      "rescan_ledger",
+      "saved_item",
+      "saved_snapshot",
+      "delivery",
+      "delivery_part",
+      "delivery_attempt",
+      "delivery_receipt",
+      "outbox_intent",
+      "run",
+      "assignment",
+      "assignment_lease",
+      "checkpoint",
+      "ingest_receipt",
+      "source_fetch_log",
+      "telegram_update_log",
+      "telegram_link_attempt"
+    ],
+    "purged_table_count": 37
   },
   "forbidden_effects": [
     "Xóa khi cụm từ xác nhận sai hoặc challenge hết hạn.",
@@ -250,8 +673,19 @@
     "Tái sử dụng một challenge đã consumed.",
     "Xóa khi principal không phải owner session.",
     "Tự mở lại dispatcher/scheduler sau khi xóa.",
-    "Lưu cụm từ xác nhận ở dạng bản rõ."
+    "Lưu cụm từ xác nhận ở dạng bản rõ.",
+    "Xóa bất kỳ bảng nào trong 21 bảng retained (đặc biệt owner/session — sẽ khóa chủ nhà ra ngoài app, REQ-D05).",
+    "Xóa `schema_migration` hoặc `data_deletion_audit` (never_purged).",
+    "Xóa hoặc sửa artifact backup.",
+    "Hiển thị hộp thoại xác nhận mà không nói rằng dữ liệu vẫn còn trong backup."
   ],
-  "oracle_vi": "Ở mỗi ca âm (seq2, seq3, seq4, seq6): tổng COUNT(*) của MỌI bảng trước và sau BẰNG NHAU. Ở ca hợp lệ (seq5): COUNT(assignment_lease WHERE state='held') = 0 ngay sau commit; purge_challenge PC-2 chuyển 'consumed'; đúng một hàng data_deletion_audit scope='all'. storage.health vẫn 'maintenance' sau seq5.",
-  "blocked_scope_vi": "Phạm vi LOẠI TRỪ (settings, secret_ref/task_credential/secret_audit, credential đăng nhập, telegram_link, schema_migration) là OWNER_DECISION_REQUIRED — PROV-PC01-03 / PROV-PC00-01. Fixture này cố ý KHÔNG khẳng định deleted_counts cho các bảng đó; thêm khẳng định bây giờ là tự quyết thay Owner."
+  "oracle_vi": "Ở mỗi ca âm (seq2, seq3, seq4, seq6): tổng COUNT(*) của MỌI bảng trước và sau BẰNG NHAU. Ở ca hợp lệ (seq5): với mỗi bảng trong `purged_table_counts_after` (37 bảng), COUNT(*) = 0; với mỗi bảng trong `_retained_tables` (21) và `_never_purged_tables` (2), COUNT(*) không đổi so với `given` — trừ `data_deletion_audit` **tăng đúng 1** vì lần purge tự ghi audit; COUNT(assignment_lease WHERE state='held') = 0 ngay trước khi xóa; purge_challenge chuyển 'consumed'. storage.health vẫn 'maintenance' sau seq5, và artifact backup có sha256 không đổi. Ba tập phủ đúng 60 entity nên không bảng nào rơi ra ngoài phép kiểm.",
+  "_history": {
+    "_note": "Chỉ là lịch sử — không phải trạng thái hiện tại. `PROV-PC01-03` và `PROV-PC00-01` đã được OD-20260907-01 đóng; chúng được liệt kê ở đây, không ở `decision_refs`, để không ai đọc fixture này như thể phạm vi purge còn treo.",
+    "before_ratification_vi": "Trước OD-20260907-01, danh sách loại trừ của data.purge_all ở trạng thái OWNER_DECISION_REQUIRED (PROV-PC01-03 / PROV-PC00-01) và fixture này cố ý bỏ trống phần đó.",
+    "closed_by": "OD-20260907-01 mục 24 (Owner), ngày 2026-09-07",
+    "corrections_after_ratification_vi": "CR-PC05-06 sửa mâu thuẫn của TXN-purge-all bản đầu (schedule_occurrence ở cả hai tập; worker_registration và data_deletion_audit xếp nhầm vào nhóm xóa); CR-PC05-07 đưa telegram_link_attempt vào tập xóa cho đủ 37.",
+    "superseded_decision_refs_vi": "Lịch sử: PROV-PC01-03 và PROV-PC00-01 đã được OD-20260907-01 đóng; chúng không còn nằm trong decision_refs của fixture này."
+  },
+  "scope_status": "RATIFIED (OD-20260907-01)"
 }

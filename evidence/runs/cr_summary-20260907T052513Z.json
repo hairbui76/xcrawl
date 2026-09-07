@@ -1,8 +1,8 @@
 {
-  "total": 107,
+  "total": 119,
   "by_status": {
-    "CLOSED_CLAIMED": 21,
-    "OPEN": 61,
+    "CLOSED_CLAIMED": 24,
+    "OPEN": 70,
     "APPROVED": 1,
     "RULED": 23,
     "ACCEPTED_AS_LIMITATION": 1
@@ -23,6 +23,9 @@
     "CR-PC00-13",
     "CR-PC00-14",
     "CR-PC00-15",
+    "CR-PC00-16",
+    "CR-PC00-17",
+    "CR-PC00-18",
     "CR-PC01-01",
     "CR-PC01-02",
     "CR-PC01-03",
@@ -34,6 +37,7 @@
     "CR-PC01-10",
     "CR-PC01-11",
     "CR-PC01-12",
+    "CR-PC01-13",
     "CR-PC02-01",
     "CR-PC02-02",
     "CR-PC02-03",
@@ -55,6 +59,7 @@
     "CR-PC02-19",
     "CR-PC02-20",
     "CR-PC02-21",
+    "CR-PC02-22",
     "CR-PC03-01",
     "CR-PC03-02",
     "CR-PC03-03",
@@ -78,6 +83,8 @@
     "CR-PC05-03",
     "CR-PC05-04",
     "CR-PC05-05",
+    "CR-PC05-06",
+    "CR-PC05-07",
     "CR-PC06-01",
     "CR-PC06-02",
     "CR-PC06-03",
@@ -110,10 +117,15 @@
     "CR-PC09-10",
     "CR-PC09-11",
     "CR-PC09-12",
+    "CR-PC09-13",
+    "CR-PC09-14",
     "CR-PC10-01",
     "CR-PC10-02",
     "CR-PC10-03",
     "CR-PC10-04",
-    "CR-PC10-05"
+    "CR-PC10-05",
+    "CR-PC10-06",
+    "CR-PC10-07",
+    "CR-PC10-08"
   ]
 }

@@ -1,17 +1,22 @@
 # Hồ sơ audit độc lập — Research Radar Pre-code
 
-Bảy AUDIT_REPORT của hai auditor độc lập (`auditor-A1`, `auditor-A2`) và bảy FROZEN_CANDIDATE manifest
-tương ứng, được lưu lại nguyên văn để chúng không mất cùng phiên làm việc.
+**Chín** AUDIT_REPORT của hai auditor độc lập (`auditor-A1` ×3, `auditor-A2` ×6) và **chín** FROZEN_CANDIDATE
+manifest tương ứng, được lưu lại nguyên văn để chúng không mất cùng phiên làm việc. Chuỗi epoch: `FC-W1` 1 →
+`FC-W2` 2 → `FC-W3` 3 → `FC-W4` 4, 5, 6, 7, **8 (epoch phê chuẩn của Owner)**, **9 (epoch cuối được audit)**.
 
 ## Vị trí của tập hồ sơ này trong chuỗi bằng chứng
 
-**Những bản ghi này ra đời SAU lần freeze `FC-W4` epoch 7 mà `A2-R4` đã audit.** Vì vậy chúng **không** nằm trong
+**Những bản ghi này ra đời SAU lần freeze `FC-W4` epoch 9 mà `A2-R6` đã audit.** Vì vậy chúng **không** nằm trong
 bất kỳ candidate manifest nào đã được audit, và **không** được coi là một phần của candidate đã đóng băng.
 
 Đó không phải thiếu sót mà là ràng buộc của giao thức: `protocol.md` §6 nói rõ *"Persist audit report là new
 evidence artifact trong packaging phase; không chèn report vào manifest mà report đang ký."* Một báo cáo không
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
+
+Thư mục được bổ sung hai lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới epoch 9
+và **thay** bản `coordinator-ledger.md` cũ bằng bản mới hơn (bản cũ dừng ở epoch 7). Mỗi lần chép đều
+`cmp`-verified và hash được tính lại sau khi chép.
 
 **Nội dung là bản sao nguyên văn, không sửa một byte.** Mọi file ở đây được `cp` từ scratchpad của phiên và
 đã được `cmp` xác nhận byte-identical; SHA-256 dưới bảng được tính **sau khi chép**. Không file nào trong thư
@@ -29,6 +34,8 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A2-R2-report.md` | AUDIT_REPORT `A2-R2` — xác minh F-A2R1-01..11 trên toàn bộ baseline | `FC-W4` epoch 5 | `3dee029a8db53a96e6349c54e901b6ad57bc433b4ffebd68b9792556c57c184b` | 31576 |
 | `A2-R3-report.md` | AUDIT_REPORT `A2-R3` — re-review có phạm vi của F-A2R2-01..04 | `FC-W4` epoch 6 | `6fed67439f13c0a5c50c010ef666d885aca9e6f81f0152e67142b1b7aeb08cad` | 21834 |
 | `A2-R4-report.md` | AUDIT_REPORT `A2-R4` — re-review có phạm vi của F-A2R3-01..03 | `FC-W4` epoch 7 | `a5d341952211aa9210c225defc0e1b299ac1bca06b054350d410a98c7d7827a1` | 10512 |
+| `A2-R5-report.md` | AUDIT_REPORT `A2-R5` — xác minh các thay đổi do Owner phê chuẩn (`OD-20260907-01`) | `FC-W4` epoch 8 (epoch phê chuẩn) | `64058e72331d19d4353c7c8f46622cd860f7d00db643cf9ecd790811e0fcc0de` | 31201 |
+| `A2-R6-report.md` | AUDIT_REPORT `A2-R6` — re-review có phạm vi của F-A2R5-01..07 | `FC-W4` epoch 9 | `305084491a439c6d526883317e18f4f7f24b71ff03f5295f760206ce7d401530` | 18894 |
 | `FC-W1-manifest.txt` | FROZEN_CANDIDATE manifest — thuật toán `sha256-path-role-hash-bytes-v1` | `FC-W1` epoch 1 | `6471df833d8d900cd8e92d67032927ca186756a56f69764279cbe2d3fe54e5f3` | 8059 |
 | `FC-W2-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W2` epoch 2 | `0195d00a3b9ebb49053af9292eb3127cfa22c3591c76c20118050bbbe89d1ccd` | 12129 |
 | `FC-W3-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W3` epoch 3 | `b379ca40a4d3b56c1c868baa746e345a8d44dbe57a2f1a5f11cabab5eaedaefc` | 23455 |
@@ -36,6 +43,8 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `FC-W4e5-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W4` epoch 5 | `48b875493abbfda76c979f274e571acbe752e9329b844e6b6cae23975fa6c4e1` | 30720 |
 | `FC-W4e6-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W4` epoch 6 | `d08181135412c1412dbd057d977dedee86ba9905e6a693adaf25457547ea7adb` | 31020 |
 | `FC-W4e7-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W4` epoch 7 | `7cdf1e12bfce6d64b708178ca5e117e0dc9403b1b849dcd6209b83cd89c87968` | 31021 |
+| `FC-W4e8-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W4` epoch 8 | `5a38f0ceef921047877b33dfa9579a3c9051f323c38f4847d323d662e1404a9c` | 36558 |
+| `FC-W4e9-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W4` epoch 9 | `818b0297c76c52d3855a970b3ffde41661c32298f00f4480974a00d7d3953348` | 36969 |
 
 ## Cách đọc
 

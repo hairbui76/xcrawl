@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0009
 title: Identity, alias và target tagged union
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B06, B15]
 source_refs: [SRC-SPEC §1.4, SRC-SPEC §3.2, SRC-SPEC §3.5, SRC-SPEC §7.1, SRC-SPEC §9.2, SRC-SPEC §9.3, SRC-SPEC AC-07, SRC-SPEC AC-09, SRC-SPEC AC-13, SRC-PLAN §7, SRC-PLAN §9.1, SRC-PLAN §10]
 requirement_refs: [REQ-D17, REQ-D29, REQ-D33, REQ-S1.4-03, REQ-AC07, REQ-AC09, REQ-AC13, REQ-S9.2-02, REQ-S9.3-05, REQ-S9.3-09]
@@ -37,6 +40,8 @@ Hai blocker cùng dựa trên một cơ chế nên được gộp vào một ADR
 7. Bất biến "0 trùng" được phát biểu lại: **0 trường hợp trùng trong phạm vi canonical identity đã biết**, cộng một số đếm riêng cho `identity_conflict` đang chờ xử lý (AMD-B15).
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Điểm 7 sửa một chỉ số ở trạng thái **Đã xác nhận** trong SRC-SPEC §1.4, nên bắt buộc Owner phê chuẩn. Các điểm 1–6 là bổ sung định nghĩa còn thiếu, không đảo quyết định nào.
 

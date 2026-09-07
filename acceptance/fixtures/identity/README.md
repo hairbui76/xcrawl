@@ -1,7 +1,8 @@
 ---
 contract_id: CT-fixtures-identity
 version: 0.1.0
-status: draft
+status: accepted
+ratification_ref: OD-20260907-01
 owner_role: data contract owner
 source_refs:
   - "SRC-PLAN §11 PC02 (danh mục fixture bắt buộc)"
@@ -22,14 +23,14 @@ scope: >-
   Bộ fixture cho identity, ingest idempotency và Saved snapshot. Đây là DỮ LIỆU VÀO + ORACLE,
   không phải test đã chạy. Ở gói PC02 chỉ E0 (validate tĩnh) được thực hiện; E1/E2 là NOT_RUN.
 verification: "EV-PC02-01 (parse), EV-PC02-02 (target + wire schema), EV-PC02-03 (tham chiếu entity)."
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
 ---
 
 # Fixture identity — chỉ mục và cách dùng
 
 ## 0. Quy tắc khóa trong `rows` (ruling R4-01, bắt buộc ở CẢ SÁU thư mục fixture)
 
-> Dưới `given.rows.<entity>[]` và `expected.rows.<entity>[]`, mỗi khóa phải là MỘT trong:
+> Dưới `given` → `rows` → `<entity>[]` và `expected` → `rows` → `<entity>[]`, mỗi khóa phải là MỘT trong:
 > (a) một cột tồn tại trong `contracts/data/entities.yaml` cho entity đó, HOẶC
 > (b) một annotation có khóa **bắt đầu bằng `_`** (`_note`, `_target`, `_note_vi`,
 > `_save_channel_note`, `_created_in_transaction`, `_payload_contains`, …), HOẶC
@@ -90,13 +91,29 @@ thi", dùng `performed_by`.
 Chuyển tới PC09 để đăng ký vào `acceptance/scenarios.yaml`: **CR-PC02-08**.
 SC29 = target chỉ-có-post; SC30 = phiên bản arXiv mới; SC31 = wire schema của ingest batch từ chối payload sai.
 
+## 1b. Trạng thái phê chuẩn của thư mục này
+
+Cả **14 fixture** mang `x-contract.claim_ceiling: CONTRACT_READY`,
+`x-contract.status: accepted`, `x-contract.ratification_ref: OD-20260907-01` — ruling
+F-A2R5-04: fixture của hai thư mục đã phê chuẩn (`identity/`, `reporting/`) là **oracle chấp
+nhận** của chính phạm vi đó, nên chúng không được đứng dưới README vốn đã claim CONTRACT_READY.
+
+`ratification_ref` nằm trong **header hợp đồng** (`x-contract` của mỗi file JSON), không nằm
+trong văn xuôi — đó là điều kiện F-A2R5-03 đặt ra để gate đọc được nó.
+
+Mỗi `x-contract` cũng mang `runtime_evidence: NOT_RUN`: E1–E4 chưa chạy, chưa có code, và
+SQLite chưa từng được yêu cầu ép các ràng buộc mô tả trong hợp đồng. `CONTRACT_READY` nói bộ
+hợp đồng đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0 — **không** nói code chạy được.
+
 ## 2. Hình dạng chung của một fixture
 
 ```text
 fixture_id, title, purpose
+fixture_format_version, x-contract   <- header hợp đồng: status, ratification_ref,
+                                        claim_ceiling, runtime_evidence
 scenario_refs, invariant_refs, decision_refs, requirement_refs, source_refs
-contract_refs, owner_id, claim_ceiling, evidence_status
-given.rows       : ảnh chụp các hàng trước sự kiện, theo tên bảng của entities.yaml
+contract_refs, owner_id, evidence_status
+given → rows    : ảnh chụp các hàng trước sự kiện, theo tên bảng của entities.yaml
 events[]         : chuỗi có thứ tự {seq, at, actor, operation, transaction?, description}
 expected         : rows / counts / hash_oracles / (after_event_N cho fixture nhiều mốc)
 forbidden_effects: những gì KHÔNG được xảy ra — là phần bắt lỗi thật sự
@@ -104,7 +121,7 @@ forbidden_effects: những gì KHÔNG được xảy ra — là phần bắt l�
 
 Fixture wire (`pos-*`, `neg-*`, và cả `e-`, `f-`, `h-`) thêm:
 `validation_target`, `expected_validation` (`accept` | `reject`), `batch`, và với negative là
-`expected_violation.json_pointer`.
+`expected_violation` → `json_pointer`.
 
 ## 3. Quy ước về hash
 
@@ -115,7 +132,7 @@ Fixture **không** khẳng định một chuỗi hex cụ thể cho hash nội d
 ```
 
 Giá trị thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong
-`contracts/data/entities.yaml` → `conventions.hashes`. Oracle nằm ở `expected.hash_oracles`,
+`contracts/data/entities.yaml` → `§ conventions → hashes`. Oracle nằm ở `expected` → `hash_oracles`,
 ví dụ "`content_hash` sau merge bằng `content_hash` trước merge". Viết một chuỗi hex bịa vào
 fixture sẽ tạo ra một oracle không ai tái lập được, nên bị cấm ở đây.
 
@@ -128,7 +145,7 @@ EV-PC02-02 tính lại và so sánh, nên giá trị đó tái lập được v�
 | Cấp | Dùng fixture thế nào | Trạng thái ở PC02 |
 | --- | --- | --- |
 | E0 | Parse JSON; validate mọi target object trong `given`/`expected` theo `target.schema.json`; validate `batch` theo `ingest-batch.schema.json`; kiểm mọi tên bảng tồn tại trong `entities.yaml`; tính lại `payload_hash`; kiểm `operation` tồn tại trong `ports.yaml`; kiểm `(actor, owner, operation)` nằm trong `allowed_edges`; so sánh hai chiều entity ↔ `data_owner_of` | **ĐÃ CHẠY** (EV-PC02-01…06, SELF_VALIDATION) |
-| E1 | Nạp `given.rows` vào một kho trống, phát `events` qua đúng operation, so `expected.rows`/`counts`/`hash_oracles`, và khẳng định mọi mục trong `forbidden_effects` KHÔNG xảy ra | `NOT_RUN` — cần code |
+| E1 | Nạp `given` → `rows` vào một kho trống, phát `events` qua đúng operation, so `expected` → `rows`/`counts`/`hash_oracles`, và khẳng định mọi mục trong `forbidden_effects` KHÔNG xảy ra | `NOT_RUN` — cần code |
 | E2 | Thêm fault injection tại các mốc trong `transactions[*].failure_timeline` (crash trước/sau COMMIT, mất ACK, lease hết hạn) | `NOT_RUN` |
 | E3/E4 | Không áp dụng cho bộ fixture này | `NOT_APPLICABLE` (fixture là dữ liệu offline theo thiết kế; live X/AI thuộc PC05/PC06) |
 

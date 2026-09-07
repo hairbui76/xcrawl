@@ -154,6 +154,11 @@ def new_check(cid: str, title: str, oracle: str) -> Check:
 
 SCAN_DIRS = ("contracts", "acceptance", "precode", "evidence")
 
+# Records ABOUT the work rather than part of the contract corpus. Free-text id sweeps skip
+# these: they quote ids they are reporting as wrong, and ids not yet created. Structured
+# fields inside them are still checked, so a dangling citation in a table is still caught.
+COORDINATION_RECORD_PREFIXES = ("evidence/handoffs/", "evidence/coordination/")
+
 # Files that are, by declared exception, not required to carry the baseline §3 header.
 HEADER_EXEMPT = {
     "precode/requirements.csv",          # baseline.json.requirements_csv_contract_header (PC00 §6.3)
@@ -215,6 +220,10 @@ STATUS_VOCABULARY = {
     "FAILED_PARTIAL", "DONE_WITH_CONCERNS", "WHOLE_NEW_FILE", "WHOLE_FILE_DELETE",
     "BYTE_RANGES", "NONEXECUTABLE_EXAMPLE", "DOCUMENTARY_DRAFT", "ENFORCED",
     "INDEPENDENT_REQUIRED", "NO_INDEPENDENT_AUDIT", "E0_CHECK_VIOLATION",
+    # Ratification vocabulary (OD-20260907-01). `ACCEPTED_WORKING_VALUE` is the Owner's
+    # "accepted, but the number may change once measured" state — item 20/22/23 of the record.
+    # It is deliberately NOT plain `ACCEPTED`, and that precision is worth preserving.
+    "ACCEPTED_WORKING_VALUE", "RATIFIED", "PROVISIONAL",
     # protocol.md message types (Coordinator ruling, FIX7 wave): these are message kinds, not
     # error codes, and they legitimately appear in contract prose.
     "OWNER_DECISION_REQUEST", "TASK_PACKET", "HANDOFF", "AUDIT_REPORT", "FROZEN_CANDIDATE",
@@ -785,10 +794,12 @@ def check_requirement_refs(repo: Repo, idx: Index) -> None:
         "regex-extracted REQ-* tokens over all in-scope files are a subset of the registry",
     )
     def _req_scope(r):
-        # Handoffs are evidence records that legitimately quote malformed ids while
-        # reporting them (CR-PC03-01); the corpus under check is the contract baseline.
+        # Coordination records — handoffs, rulings, packets, the Coordinator ledger — are
+        # evidence ABOUT the corpus, not part of it. They legitimately quote ids they are
+        # reporting as wrong (FIX3-rulings names `REQ-S8.4-01` in order to have it replaced)
+        # and ids a later package will create. The corpus under check is the contract baseline.
         return (in_scope_for_refs(r) and r != "precode/requirements.csv"
-                and not r.startswith("evidence/handoffs/"))
+                and not r.startswith(COORDINATION_RECORD_PREFIXES))
 
     for rel, txt in repo.all_text(_req_scope):
         for tok in sorted(set(REQ_RE.findall(txt))):
@@ -858,7 +869,7 @@ def check_id_refs(repo: Repo, idx: Index) -> None:
     # (see `_req_scope`). Structured `scenario_refs` fields inside handoffs are still checked by
     # the key-scoped pass above, so a real dangling citation in a table is still caught.
     for rel, txt in repo.all_text(lambda r: in_scope_for_refs(r)
-                                  and not r.startswith("evidence/handoffs/")):
+                                  and not r.startswith(COORDINATION_RECORD_PREFIXES)):
         if rel in ("precode/baseline.json", "acceptance/scenarios.yaml"):
             continue
         for tok in sorted(set(SC_RE.findall(txt))):
@@ -1042,14 +1053,25 @@ def check_headers(repo: Repo, idx: Index) -> None:
                 c.fail(rel, "unparsed JSON")
                 continue
             xc = doc.get("x-contract")
+            partial = None
             if isinstance(xc, dict):
                 missing = [f for f in BASELINE_HEADER_FIELDS if f not in xc]
-                if missing:
-                    c.fail(rel, "x-contract missing: %s" % ", ".join(missing))
-                continue
+                if not missing:
+                    continue
+                # The oracle is "an x-contract object OR the directory README lists the file".
+                # A fixture that carries a PARTIAL x-contract (e.g. only the ratification fields
+                # ruling F-A2R5-04 asks for) has not lost the README route it already satisfied.
+                # Treating a partial header as an exclusive branch would make adding provenance
+                # break a file that was compliant — a check punishing the fix it asked for.
+                partial = missing
             d = os.path.dirname(rel)
             base = os.path.basename(rel)
             rt = readme_text.get(d)
+            if partial is not None and rt is not None and base in rt:
+                c.note("%s carries a partial x-contract (missing %s) and is listed by name in "
+                       "%s/README.md, which is the route the ruling allows" %
+                       (rel, ", ".join(partial), d))
+                continue
             if rt is None:
                 c.fail(rel, "no x-contract and no directory README.md to carry the header")
             elif base not in rt:
@@ -1506,42 +1528,172 @@ NEGATION_HINTS = (
 )
 
 
+# Ratification of OD-20260907-01 (Owner, 2026-09-07) changed what these words mean. Before it,
+# `ACCEPTED`/`CONTRACT_READY` anywhere was a false claim. After it, they are true in exactly the
+# scopes the Owner ratified — and still false everywhere else. The check therefore became a
+# SCOPE check rather than a blanket ban (CR-PC01-13).
+RATIFICATION_ID = "OD-20260907-01"
+RATIFICATION_RECORD = "precode/owner-decisions.md"
+
+# F-A2R5-03: eligibility is an explicit ALLOWLIST held as DATA in precode/gates.yaml
+# (`ratified_contract_scopes`), which cites OD-20260907-01. It used to be a denylist of prefixes
+# written in this source file, with "eligible" as the default for anything under contracts/ or
+# acceptance/. That polarity meant a newly added file was ratified-eligible and nobody was told —
+# the direct cause of F-A2R5-04. The list now lives outside the tool so that widening the Owner's
+# ratified scope is an edit to a contract, not an edit to a checker.
+RATIFIED_SCOPES_FILE = "precode/gates.yaml"
+
+CLAIM_LABELS_ABOVE_CONTRACT_READY = [
+    "IMPLEMENTATION_VERIFIED", "INTEGRATION_VERIFIED",
+    "LIVE_FEASIBILITY_VERIFIED", "PRODUCT_ACCEPTED",
+]
+
+_ALLOWLIST_CACHE = {}
+
+
+def ratified_allowlist(repo: Repo):
+    """(files, directories, error) from the ratified-scope allowlist in precode/gates.yaml.
+
+    `error` is a string when the allowlist cannot be read or does not cite the ratification. A
+    caller that gets an error must BLOCK, never silently treat everything as ineligible (which
+    would look like a clean PASS) and never fall back to a built-in list (which would put the
+    scope back inside the tool).
+    """
+    key = id(repo)
+    if key in _ALLOWLIST_CACHE:
+        return _ALLOWLIST_CACHE[key]
+    doc = repo.parsed.get(RATIFIED_SCOPES_FILE)
+    block = doc.get("ratified_contract_scopes") if isinstance(doc, dict) else None
+    if not isinstance(block, dict):
+        out = (frozenset(), tuple(), "%s carries no `ratified_contract_scopes` block" %
+               RATIFIED_SCOPES_FILE)
+    elif RATIFICATION_ID not in str(block.get("ratification_ref", "")):
+        out = (frozenset(), tuple(), "%s allowlist does not cite %s" %
+               (RATIFIED_SCOPES_FILE, RATIFICATION_ID))
+    else:
+        files, dirs = set(), []
+        for scope in block.get("scopes") or []:
+            if not isinstance(scope, dict):
+                continue
+            for f in scope.get("files") or []:
+                files.add(str(f).strip())
+            for d in scope.get("directories") or []:
+                d = str(d).strip()
+                dirs.append(d if d.endswith("/") else d + "/")
+        out = (frozenset(files), tuple(dirs), None if files else
+               "%s allowlist is empty" % RATIFIED_SCOPES_FILE)
+    _ALLOWLIST_CACHE[key] = out
+    return out
+
+
+def contract_ready_eligible(repo: Repo, rel: str) -> bool:
+    """Is this exact path on the Owner-ratified allowlist? Default is NO."""
+    files, dirs, err = ratified_allowlist(repo)
+    if err:
+        return False
+    if rel in files:
+        return True
+    return any(rel.startswith(d) for d in dirs)
+
+
+def ratification_ref_of(repo: Repo, rel: str):
+    """The file's ratification reference, read ONLY from its declared contract header.
+
+    F-A2R5-03 mutation M6b: moving the reference out of the header and leaving a prose line that
+    mentions the string used to satisfy this function, so a file could claim CONTRACT_READY on a
+    sentence. A header field is a declaration; a sentence is a mention. Only the first is a claim
+    the file makes about itself, so only the first counts here. There is deliberately NO regex
+    fallback over the file text.
+    """
+    doc = repo.parsed.get(rel)
+    if not isinstance(doc, dict):
+        doc = repo.parsed.get(rel + "#frontmatter")
+    if not isinstance(doc, dict):
+        return None
+    holders = [doc, doc.get("x-contract")]
+    info = doc.get("info")
+    if isinstance(info, dict):
+        holders.append(info.get("x-contract"))
+    for holder in holders:
+        if isinstance(holder, dict) and holder.get("ratification_ref"):
+            return holder["ratification_ref"]
+    return None
+
+
 def check_forbidden_strings(repo: Repo, idx: Index) -> None:
     c = new_check(
         "E0-12-forbidden-strings",
-        "No asserted TBD, no status CLOSED/ACCEPTED, no claim above DRAFT_FOR_REVIEW",
-        "structured fields: `status`/`claim_ceiling`/`completion_claim` values are checked "
-        "exactly. Free text: occurrences are reported when the line carries no negation and "
-        "no vocabulary context.",
+        "Ratified vocabulary is used only where the Owner ratified it; nothing claims more",
+        "After OD-20260907-01: `ACCEPTED` / `RATIFIED` / `CONTRACT_READY` are permitted only in a "
+        "file that carries `ratification_ref: %s`, or anywhere under precode/ (the register and "
+        "the ADRs are where the ratification is recorded). `CONTRACT_READY` is additionally "
+        "confined to the four ratified scopes — a file outside them may not claim it however it "
+        "is annotated — eligibility is the explicit allowlist in %s, so a file not named there is "
+        "ineligible by default. Claims ABOVE CONTRACT_READY are forbidden THROUGHOUT THE SCANNED SCOPE "
+        "(%s): no code exists. `agent-tasks/` is NOT scanned by this tool; the cards there use "
+        "`claim_ceiling` with a different meaning (the ceiling the ordered work may reach) and "
+        "are counted in a note below rather than silently omitted. "
+        "`TBD` remains forbidden as a value, and `CLOSED` as a status."
+        % (RATIFICATION_ID, RATIFIED_SCOPES_FILE, ", ".join(SCAN_DIRS)),
     )
     status_keys = ("status", "claim_ceiling", "completion_claim", "coverage_status",
                    "evidence_status", "decision_status", "finding_status")
+    ratified_words = {"ACCEPTED", "RATIFIED", "CONTRACT_READY"}
+
+    _, _, allow_err = ratified_allowlist(repo)
+    if allow_err:
+        c.blocked("cannot read the ratified-scope allowlist: %s. This check refuses to run "
+                  "rather than report a clean PASS on an unenforceable rule." % allow_err)
+        return
+
     for rel in repo.files:
         if not in_scope_for_refs(rel):
             continue
+        under_precode = rel.startswith("precode/")
+        rat = ratification_ref_of(repo, rel)
+        has_rat = (rat is not None and RATIFICATION_ID in str(rat))
+
+        # A per-ITEM `status: ACCEPTED` is legitimate when the ratification reference sits on the
+        # SAME node — that is better provenance than a file-level one, because it says which item
+        # the Owner ratified. `CONTRACT_READY` is a claim the FILE makes about itself and keeps
+        # the strict header-only rule below.
+        ratified_nodes = set()
+        if is_structured(rel):
+            for path, val in structured_strings(repo, rel):
+                if path.rsplit(".", 1)[-1].split("[")[0] == "ratification_ref" \
+                        and RATIFICATION_ID in str(val):
+                    ratified_nodes.add(path.rsplit(".", 1)[0])
+
         if is_structured(rel):
             for path, val in structured_strings(repo, rel):
                 leaf = path.rsplit(".", 1)[-1].split("[")[0]
                 if leaf not in status_keys:
                     continue
+                node = path.rsplit(".", 1)[0]
                 c.checked += 1
                 v = val.strip()
-                if v in ("CLOSED", "ACCEPTED"):
-                    c.fail(rel, "status value %r is forbidden this session" % v, at=path)
+                if v == "CLOSED":
+                    c.fail(rel, "status value 'CLOSED' is forbidden; a finding is closed only by "
+                                "the designated disposition authority (protocol §8)", at=path)
                 if v == "TBD":
                     c.fail(rel, "value TBD is forbidden (baseline §3: no vagueness)", at=path)
-                if leaf in ("claim_ceiling", "completion_claim") and v in CLAIM_LABELS_ABOVE_DRAFT:
-                    c.fail(rel, "claim %r exceeds the session ceiling DRAFT_FOR_REVIEW" % v, at=path)
+                if v in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+                    c.fail(rel, "claim %r exceeds CONTRACT_READY; no code exists, so nothing "
+                                "above it is establishable" % v, at=path)
+                if v in ratified_words and not (has_rat or under_precode
+                                                or node in ratified_nodes):
+                    c.fail(rel, "uses ratified vocabulary %r without `ratification_ref: %s`"
+                           % (v, RATIFICATION_ID), at=path)
+                if v == "CONTRACT_READY" and not under_precode:
+                    if not contract_ready_eligible(repo, rel):
+                        c.fail(rel, "claims CONTRACT_READY but this file is outside the four "
+                                    "scopes the Owner ratified (OD-20260907-01)", at=path)
+                    elif not has_rat:
+                        c.fail(rel, "claims CONTRACT_READY without a resolvable "
+                                    "`ratification_ref`", at=path)
+
         txt = repo.text.get(rel, "")
-        for m in re.finditer(r"\bTBD\b", txt):
-            line = txt[max(0, txt.rfind("\n", 0, m.start())):
-                       txt.find("\n", m.end()) if txt.find("\n", m.end()) != -1 else len(txt)]
-            c.checked += 1
-            low = line.lower()
-            if any(h in low for h in NEGATION_HINTS) or '"TBD"' in line or "`TBD`" in line:
-                continue
-            c.fail(rel, "bare TBD in text: %s" % line.strip()[:160])
-        for label in CLAIM_LABELS_ABOVE_DRAFT:
+        for label in CLAIM_LABELS_ABOVE_CONTRACT_READY:
             for m in re.finditer(r"\b%s\b" % label, txt):
                 start = txt.rfind("\n", 0, m.start()) + 1
                 end = txt.find("\n", m.end())
@@ -1553,6 +1705,92 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
                 if "`%s`" % label in line or '"%s"' % label in line:
                     continue
                 c.fail(rel, "claim label %s asserted in text: %s" % (label, line.strip()[:160]))
+        for m in re.finditer(r"\bTBD\b", txt):
+            start = txt.rfind("\n", 0, m.start()) + 1
+            end = txt.find("\n", m.end())
+            line = txt[start:end if end != -1 else len(txt)]
+            c.checked += 1
+            low = line.lower()
+            if any(h in low for h in NEGATION_HINTS) or '"TBD"' in line or "`TBD`" in line:
+                continue
+            c.fail(rel, "bare TBD in text: %s" % line.strip()[:160])
+
+    # Scope honesty (CR-PC09-14). This check's reach is SCAN_DIRS; `agent-tasks/` is outside it.
+    # Rather than let the oracle sound wider than the measurement — the defect class every audit
+    # finding in this package shared — measure the gap and report it as a note.
+    cards_dir = os.path.join(repo.root, "agent-tasks")
+    above = []
+    if os.path.isdir(cards_dir):
+        for fn in sorted(os.listdir(cards_dir)):
+            if not fn.endswith(".md"):
+                continue
+            try:
+                with open(os.path.join(cards_dir, fn), "r", encoding="utf-8") as fh:
+                    head = fh.read(4000)
+            except Exception:
+                continue
+            for ln in head.splitlines():
+                if not ln.startswith("claim_ceiling:"):
+                    continue
+                val = ln.split(":", 1)[1].strip()
+                for label in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+                    if val.startswith(label):
+                        above.append("agent-tasks/%s -> %s" % (fn, label))
+                        break
+    c.note("scan scope is %s; agent-tasks/ is NOT scanned. %d task card(s) there declare a "
+           "claim_ceiling above CONTRACT_READY, which in a card denotes the ceiling of the "
+           "work it orders, not a claim about the card: %s"
+           % (", ".join(SCAN_DIRS), len(above), "; ".join(above) if above else "none"))
+
+
+# --------------------------------------------------------------------------------------
+# CHECK 12b — every CONTRACT_READY file's ratification_ref resolves to the Owner record
+# --------------------------------------------------------------------------------------
+
+def check_ratification_refs(repo: Repo, idx: Index) -> None:
+    c = new_check(
+        "E0-12b-ratification-refs",
+        "Every CONTRACT_READY file cites a ratification that resolves to the Owner's record",
+        "A file whose claim_ceiling is CONTRACT_READY must carry `ratification_ref` naming %s IN ITS "
+        "PARSED CONTRACT HEADER (front-matter, top-level key, or `x-contract`) — a prose mention "
+        "does not count (F-A2R5-03 mutation M6b) — and %s must exist and contain that id. The "
+        "eligible set is the explicit allowlist in %s. A ceiling raised on a citation that does "
+        "not resolve, or on a sentence, is a claim with no authority behind it."
+        % (RATIFICATION_ID, RATIFICATION_RECORD, RATIFIED_SCOPES_FILE),
+    )
+    _, _, allow_err = ratified_allowlist(repo)
+    if allow_err:
+        c.blocked("cannot read the ratified-scope allowlist: %s" % allow_err)
+        return
+    record = repo.text.get(RATIFICATION_RECORD)
+    c.checked += 1
+    if record is None:
+        c.fail(RATIFICATION_RECORD, "the Owner decision record is absent, so no CONTRACT_READY "
+                                    "citation in the corpus can resolve")
+        return
+    if RATIFICATION_ID not in record:
+        c.fail(RATIFICATION_RECORD, "the record does not contain %s" % RATIFICATION_ID)
+
+    for rel in repo.files:
+        if not (rel.startswith(("contracts/", "acceptance/")) and in_scope_for_refs(rel)):
+            continue
+        claims = any(v.strip() == "CONTRACT_READY"
+                     for p, v in structured_strings(repo, rel)
+                     if p.rsplit(".", 1)[-1].split("[")[0] in ("claim_ceiling", "completion_claim"))
+        if not claims and isinstance(repo.parsed.get(rel + "#frontmatter"), dict):
+            claims = repo.parsed[rel + "#frontmatter"].get("claim_ceiling") == "CONTRACT_READY"
+        if not claims:
+            continue
+        c.checked += 1
+        rat = ratification_ref_of(repo, rel)
+        if rat is None:
+            c.fail(rel, "claims CONTRACT_READY but carries no `ratification_ref` in its parsed "
+                        "contract header (a prose mention does not count)")
+        elif RATIFICATION_ID not in str(rat):
+            c.fail(rel, "claims CONTRACT_READY citing %r, which is not %s"
+                   % (rat, RATIFICATION_ID))
+        elif not contract_ready_eligible(repo, rel):
+            c.fail(rel, "claims CONTRACT_READY inside a scope the Owner did not ratify")
 
 
 # --------------------------------------------------------------------------------------
@@ -1951,6 +2189,209 @@ def check_scenarios(repo: Repo, idx: Index) -> None:
 # CHECK 17 — declared deviations are well formed and the header exceptions are written down
 # --------------------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------------------
+# CHECK 18 — the ratified data.purge_all table sets say the same thing in every artefact
+#
+# F-A2R5-01 (MAJOR): the Owner's most consequential answer was applied in two contracts and left
+# unapplied in six artefacts, one of them SC44 — the acceptance oracle that tests it. The corpus
+# reported one decision as both ratified and pending. No check caught it because no check
+# compared what the artefacts SAY about purge.
+#
+# This check does two things a reader cannot do reliably by eye:
+#   (a) partition integrity — the three sets in entities.yaml must be pairwise disjoint and must
+#       cover every entity exactly once. A table added later without being classified FAILS here
+#       instead of quietly landing in "not asserted".
+#   (b) cross-artefact agreement — any artefact that ENUMERATES a purge set (five or more entity
+#       names inside one purge-context span) must produce a set equal to one of the three
+#       authoritative sets, and no artefact in the purge conversation may still mark the scope
+#       undecided except on a line that also names the ratification or the finding.
+# --------------------------------------------------------------------------------------
+
+PURGE_ARTEFACTS = (
+    "contracts/data/entities.yaml",
+    "contracts/ports.yaml",
+    "contracts/http/openapi.yaml",
+    "contracts/ops/secrets.md",
+    "contracts/ops/backup-restore.md",
+    "contracts/ui/screens.yaml",
+    "acceptance/scenarios.yaml",
+    "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json",
+    "acceptance/fixtures/recovery/README.md",
+)
+PURGE_UNDECIDED_MARKERS = ("OWNER_DECISION_REQUIRED", "PROV-PC00-01", "PROV-PC01-03")
+PURGE_RESOLVED_CONTEXT = (RATIFICATION_ID, "F-A2R5-01", "PURGE-LIST", "Lịch sử", "lịch sử",
+                          "trước ratification", "từng", "history", "no longer")
+
+
+def purge_sets(repo: Repo):
+    """(purged, retained, never_purged, error) from entities.yaml TXN-purge-all."""
+    doc = repo.parsed.get("contracts/data/entities.yaml")
+    if not isinstance(doc, dict):
+        return None, None, None, "contracts/data/entities.yaml did not parse"
+    tx = doc.get("transactions")
+    node = None
+    if isinstance(tx, list):
+        for t in tx:
+            if isinstance(t, dict) and "purge" in str(t.get("id", "")).lower():
+                node = t
+                break
+    elif isinstance(tx, dict):
+        node = tx.get("TXN-purge-all")
+    tables = (node or {}).get("tables") if isinstance(node, dict) else None
+    if not isinstance(tables, dict):
+        return None, None, None, "TXN-purge-all carries no `tables` block"
+
+    def grab(key):
+        # The three lists are authored in three different shapes (a dict with `list`, a dict with
+        # `tables`, a bare list of {table, why_vi}). Read the artefact as written rather than
+        # forcing one shape: a checker that only understands one spelling of the same fact is how
+        # the fact goes unchecked.
+        v = tables.get(key)
+        if isinstance(v, dict):
+            v = v.get("list") or v.get("tables") or v.get("entities")
+        if not isinstance(v, list):
+            return None
+        out = set()
+        for x in v:
+            if isinstance(x, dict):
+                x = x.get("table") or x.get("name") or x.get("entity")
+            if x is None:
+                return None
+            out.add(str(x).strip())
+        return frozenset(out)
+
+    p, r, n = grab("purged"), grab("retained_by_owner_decision"), grab("never_purged")
+    if p is None or r is None or n is None:
+        return None, None, None, "TXN-purge-all `tables` lacks one of the three lists"
+    return p, r, n, None
+
+
+def structured_lists(repo: Repo, rel: str):
+    """Yield (path, list) for every list value in a parsed structured document."""
+    doc = repo.parsed.get(rel)
+
+    def walk(node, path="$"):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                yield from walk(v, "%s.%s" % (path, k))
+        elif isinstance(node, list):
+            yield path, node
+            for i, v in enumerate(node):
+                yield from walk(v, "%s[%d]" % (path, i))
+
+    if doc is not None:
+        yield from walk(doc)
+
+
+def check_purge_sets(repo: Repo, idx: Index) -> None:
+    c = new_check(
+        "E0-18-purge-set-agreement",
+        "The ratified data.purge_all sets partition the entities and every artefact agrees",
+        "contracts/data/entities.yaml `TXN-purge-all.tables` is the authoritative enumeration "
+        "(OD-20260907-01 item 24). The three sets must be pairwise disjoint and cover `entities` "
+        "exactly. Any artefact that enumerates five or more entity names inside a purge-context "
+        "span must yield a set EQUAL to one of the three. No artefact may still mark the purge "
+        "scope undecided (OWNER_DECISION_REQUIRED / PROV-PC00-01 / PROV-PC01-03) except on a "
+        "line that also names the ratification or the finding that closed it.",
+    )
+    purged, retained, never, err = purge_sets(repo)
+    if err:
+        c.blocked(err)
+        return
+
+    entities = set(idx.entities) if getattr(idx, "entities", None) else set()
+    if not entities:
+        doc = repo.parsed.get("contracts/data/entities.yaml") or {}
+        ents = doc.get("entities")
+        if isinstance(ents, list):
+            entities = {str(e.get("name") or e.get("id")) for e in ents if isinstance(e, dict)}
+        elif isinstance(ents, dict):
+            entities = set(ents)
+
+    # (a) partition integrity
+    c.checked += 1
+    for a, b, an, bn in ((purged, retained, "purged", "retained_by_owner_decision"),
+                         (purged, never, "purged", "never_purged"),
+                         (retained, never, "retained_by_owner_decision", "never_purged")):
+        both = sorted(a & b)
+        if both:
+            c.fail("contracts/data/entities.yaml",
+                   "tables appear in both %s and %s: %s" % (an, bn, ", ".join(both)))
+    union = purged | retained | never
+    if entities:
+        c.checked += 1
+        missing = sorted(entities - union)
+        extra = sorted(union - entities)
+        if missing:
+            c.fail("contracts/data/entities.yaml",
+                   "entities never classified by TXN-purge-all (they would be silently "
+                   "unasserted by every purge oracle): %s" % ", ".join(missing))
+        if extra:
+            c.fail("contracts/data/entities.yaml",
+                   "TXN-purge-all names tables that are not entities: %s" % ", ".join(extra))
+    c.note("authoritative sets: purged %d · retained %d · never_purged %d · union %d of %d "
+           "entities" % (len(purged), len(retained), len(never), len(union), len(entities)))
+
+    # (b) no artefact may still call the purge scope undecided
+    #
+    # Deliberately NOT done here: comparing prose enumerations set-for-set. I wrote that version
+    # first and it produced 24 violations of which ~20 were false — any paragraph mentioning
+    # "purge" near five entity names tripped it, and entities.yaml trips it by existing. A noisy
+    # check is worse than no check: it teaches its readers to skip the output. What is left is
+    # crisp and is what would actually have caught F-A2R5-01 — every one of the six stale
+    # artefacts carried an undecided marker. Prose enumerations remain unverified, and that
+    # limitation is written down in evidence/tools/README.md §5g rather than implied by a PASS.
+    for rel in PURGE_ARTEFACTS:
+        txt = repo.text.get(rel)
+        if txt is None:
+            c.fail(rel, "artefact named in the purge conversation is absent from the corpus")
+            continue
+        blocks = re.split(r"\n\s*\n", txt)
+        for block in blocks:
+            if "purge" not in block.lower():
+                continue          # markers elsewhere in the file are other decisions, not this one
+            blines = block.splitlines()
+            for i, line in enumerate(blines):
+                for marker in PURGE_UNDECIDED_MARKERS:
+                    if marker not in line:
+                        continue
+                    c.checked += 1
+                    # A folded YAML sentence is split by the author's line width, not by meaning,
+                    # so the history qualifier can land on the neighbouring line. Widen to ±1
+                    # line — enough for folding, far too narrow to let a stale marker inherit a
+                    # ratification mentioned elsewhere in the same block.
+                    window = " ".join(blines[max(0, i - 1):i + 2])
+                    if any(h in window for h in PURGE_RESOLVED_CONTEXT):
+                        continue
+                    c.fail(rel, "calls the purge scope undecided (%s) on a line that does not "
+                                "mark it as history or name the ratification that closed it: %s"
+                           % (marker, line.strip()[:130]))
+
+    # (c) a STRUCTURED purge list anywhere else must equal the authority
+    for rel in PURGE_ARTEFACTS:
+        if rel == "contracts/data/entities.yaml" or not is_structured(rel):
+            continue
+        for path, val in structured_lists(repo, rel):
+            leaf = path.rsplit(".", 1)[-1].split("[")[0].lower()
+            if leaf not in ("purged", "retained_by_owner_decision", "never_purged",
+                            "purged_tables", "retained_tables"):
+                continue
+            names = set()
+            for x in val:
+                if isinstance(x, dict):
+                    x = x.get("table") or x.get("name") or x.get("entity")
+                if isinstance(x, str):
+                    names.add(x.strip())
+            if not names:
+                continue
+            c.checked += 1
+            target = purged if leaf.startswith("purged") else (
+                never if leaf == "never_purged" else retained)
+            if names != set(target):
+                c.fail(rel, "a structured purge list at %s differs from the authoritative set: %s"
+                       % (path, ", ".join(sorted(names ^ set(target)))[:200]))
+
+
 def check_declared_deviations(repo: Repo, idx: Index) -> None:
     c = new_check(
         "E0-17-declared-deviations",
@@ -2047,10 +2488,12 @@ def main(argv=None) -> int:
     check_denied_edges(repo, idx)
     check_traceability(repo, idx)
     check_forbidden_strings(repo, idx)
+    check_ratification_refs(repo, idx)
     check_coverage_windows(repo, idx)
     check_fixture_actor_edge(repo, idx)
     check_fixture_fields(repo, idx)
     check_scenarios(repo, idx)
+    check_purge_sets(repo, idx)
     check_declared_deviations(repo, idx)
 
     for _c in CHECKS:

@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0002
 title: Tách mô hình trạng thái run thành phase / status / outcome / stop_reason
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B02, B05]
 source_refs: [SRC-SPEC §5.2, SRC-SPEC §9.1, SRC-SPEC §8.3, SRC-SPEC AC-03, SRC-SPEC AC-15, SRC-PLAN §8.1]
 requirement_refs: [REQ-S5.2-01, REQ-S9.1-01, REQ-S9.1-02, REQ-AC03, REQ-AC15, REQ-D14, REQ-S8.3-01, REQ-S8.3-02, REQ-S8.3-03]
@@ -36,6 +39,8 @@ Run mang bốn trường độc lập:
 Delivery là **vòng đời riêng** (xem ADR-0003), không phải trạng thái của run. Bảng ánh xạ từ enum cũ sang mô hình mới nằm trong `precode/decision-register.md` §3, AMD-B02. Độ bao phủ nguồn đã biết và độ thiếu hụt là metadata riêng: `completed` **không** có nghĩa đã quét đủ toàn bộ X.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Quyết định này sửa câu chữ của AC-03 nên phải có Owner phê chuẩn (AMD-B02). Không được đổi enum trong đặc tả trước khi PC03 viết xong bảng transition đầy đủ.
 

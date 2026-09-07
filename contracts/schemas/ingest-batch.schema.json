@@ -6,7 +6,8 @@
   "x-contract": {
     "contract_id": "CT-schema-ingest-batch",
     "version": "0.1.0",
-    "status": "draft",
+    "status": "accepted",
+    "ratification_ref": "OD-20260907-01",
     "owner_role": "data contract owner",
     "source_refs": [
       "SRC-PLAN §5.1",
@@ -47,7 +48,7 @@
     "source_deletion_note": "Quan sát 'nguồn đã bị xóa' KHÔNG có operation riêng: nó đi qua `ingest.submit_batch` dưới dạng trường `source_deleted_observed_at` của item (xem §defs/ingest_item). Item đó trùng `x_post_id` nên vào `posts_duplicate`, và cập nhật ĐƠN ĐIỆU cột `post.source_deleted_observed_at` (chỉ ghi khi giá trị hiện tại là NULL). Xem contracts/data/entities.yaml §entities/post/immutability/monotonic_fields và §transactions/TXN-ingest-batch. Ruling Coordinator PKT-PC02-FIX1; tên operation từng được cân nhắc rồi bãi bỏ nằm trong handoff, không nằm trong hợp đồng.",
     "scope": "Chỉ hình dạng request. Ngữ nghĩa transaction ở entities.yaml transactions[TXN-ingest-batch]; hình dạng HTTP và receipt response thuộc PC05.",
     "verification": "EV-PC02-01 check_schema; EV-PC02-02 một ví dụ positive validate và bốn ví dụ negative bị từ chối.",
-    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "claim_ceiling": "CONTRACT_READY",
     "payload_hash_definition": "payload_hash = 'sha256:' + hex(sha256(JCS(payload_core))) với payload_core = {\"schema_version\", \"items\", \"client_checkpoint_proposal\"}. CỐ Ý loại request_id, idempotency_key, job_id, lease_id, lease_epoch: một lần retry sinh request_id mới vẫn phải cho cùng payload_hash để server nhận ra là replay chứ không phải IDEMPOTENCY_CONFLICT.",
     "limits": {
       "max_items": {
@@ -86,7 +87,9 @@
         "status": "PROVISIONAL",
         "rationale": "8 MiB: batch nằm gọn trong một transaction ngắn. Ép ở tầng transport (PC05), không biểu diễn được bằng JSON Schema."
       }
-    }
+    },
+    "runtime_evidence": "NOT_RUN",
+    "runtime_evidence_note_vi": "Bằng chứng runtime là NOT_RUN: E1 (contract test bằng fixture), E2 (fault injection), E3 (live), E4 (review nội dung) đều CHƯA chạy. Chưa có code, và SQLite chưa từng được yêu cầu ép các ràng buộc mô tả ở đây (partial index, generated column, CHECK). CONTRACT_READY nói bộ hợp đồng đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0 — không nói code chạy được (SRC-PLAN §2, §14.2)."
   },
   "type": "object",
   "additionalProperties": false,

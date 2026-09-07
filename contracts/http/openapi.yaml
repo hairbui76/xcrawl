@@ -7,7 +7,7 @@
 openapi: 3.1.0
 info:
   title: Research Radar — HTTP wire contract
-  version: 0.2.0
+  version: 0.3.0
   summary: 'Hợp đồng HTTP cho toàn bộ operation `transport: http` của contracts/ports.yaml.'
   description: |-
     Đây là hợp đồng dây (wire) của Research Radar, sinh từ `contracts/ports.yaml` và giữ nguyên `operation_id`
@@ -40,7 +40,7 @@ info:
     operation ghi `x-caller-modules` lấy nguyên từ ports.yaml; gọi từ module khác ⇒ 403 `FORBIDDEN_EDGE`.
   x-contract:
     contract_id: CT-http-openapi
-    version: 0.2.0
+    version: 0.3.0
     status: draft
     owner_role: connector contract owner
     source_refs:
@@ -4934,7 +4934,10 @@ paths:
         — PC01 chốt **ai sở hữu mutation, phạm vi giữ lại và cờ xác nhận**, không chốt danh sách bảng cuối cùng (CR-PC01-05).
 
 
-        Xóa dữ liệu gốc của MỘT target; GIỮ `saved_snapshot` (REQ-D55) và các ledger. Cần cờ xác nhận tường minh trong body.'
+        Xóa dữ liệu gốc của MỘT target; GIỮ `saved_snapshot` (REQ-D55) và các ledger. Cần cờ xác nhận tường minh trong body.
+        Khác `data.purge_all` ở phạm vi: thao tác này nhắm một target, không đụng tới cấu hình hay dữ liệu nghiên cứu khác,
+        và cũng KHÔNG đụng tới backup — dữ liệu đã xóa vẫn còn trong các bản backup (OD-20260907-01 mục 24, cùng quy tắc
+        với `data.purge_all`).'
       tags:
       - data-admin
       security:
@@ -5054,15 +5057,36 @@ paths:
     post:
       operationId: data.purge_all
       summary: Xóa toàn bộ dữ liệu (thao tác thứ ba của SRC-SPEC §7.3, đòi xác nhận gõ tay)
-      description: '`phase`, `purge_challenge_id` (phase execute), `confirmation_phrase` (phase execute).
-
-
-        Xem transaction_vi và exclusions_vi. Danh sách bảng cuối cùng do PC02/PC08 chốt (CR-PC01-05).
-
-
-        Xóa toàn bộ dữ liệu. Cần cụm từ xác nhận gõ tay khớp một challenge do SERVER cấp, và CHỈ chạy được khi `storage.health
-        = maintenance`; thu hồi mọi lease. Phạm vi loại trừ (settings/secrets) là PROVISIONAL và mang `OWNER_DECISION_REQUIRED`
-        ở PC01.'
+      description: "`phase`, `purge_challenge_id` (phase execute), `confirmation_phrase` (phase execute).\n\nXem transaction_vi\
+        \ và exclusions_vi. Ba tập bảng (37 xóa / 21 giữ / 2 không bao giờ xóa) theo ruling CR-PC05-06 + CR-PC05-07; CR-PC01-05\
+        \ khép lại.\n\nXóa dữ liệu nghiên cứu. Phạm vi ĐÃ ĐƯỢC OWNER CHỐT — `ACCEPTED (OD-20260907-01 mục 24)`; nó KHÔNG\
+        \ còn `OWNER_DECISION_REQUIRED`, và `PROV-PC00-01` / `PROV-PC01-03` chỉ còn giá trị LỊCH SỬ. Ba tập bảng dưới đây\
+        \ lấy nguyên văn từ ruling `PURGE-LIST-ruling.md` (2026-09-07T05:55Z), bản đã sửa lỗi CR-PC05-06. \n\nXÓA (37 bảng):\
+        \ post, post_work, work, work_version, identity_alias, identity_conflict, identity_merge_audit, work_label, analysis,\
+        \ analysis_generation, analysis_attempt, analysis_task, embedding_generation, tag_vector, report, report_item, emerging_direction,\
+        \ coverage_window, pending_item_ledger, backfill_ledger, first_announced_ledger, rescan_ledger, saved_item, saved_snapshot,\
+        \ delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run, assignment, assignment_lease,\
+        \ checkpoint, ingest_receipt, source_fetch_log, telegram_update_log, telegram_link_attempt (bộ đếm rate limit, giữ\
+        \ 30 ngày — dữ liệu VẬN HÀNH, không phải cấu hình). \n\nGIỮ LẠI (21 bảng): `owner`, `session`, `secret_ref`, `task_credential`,\
+        \ `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`,\
+        \ `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`,\
+        \ `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration` (đăng ký/token của collector là\
+        \ CẤU HÌNH, không chứa dữ liệu nghiên cứu; xóa nó buộc phải đăng ký lại collector). \n\nKHÔNG BAO GIỜ XÓA (2 bảng):\
+        \ `schema_migration` (mô tả cấu trúc kho) và `data_deletion_audit` (bản ghi xóa được giữ VĨNH VIỄN theo tham số\
+        \ PC08 đã phê chuẩn; chính thao tác purge ghi một hàng audit vào đây). \n\nLÝ DO GIỮ: xóa credential đăng nhập sẽ\
+        \ khóa chính chủ nhà ra ngoài app (REQ-D05 cấm signup và cấm quên-mật-khẩu tự động), và xóa cấu hình biến 'xóa dữ\
+        \ liệu' thành 'gỡ cài đặt' — hai ý định khác nhau. Sau purge, hệ thống vẫn đăng nhập được, vẫn giữ lịch và tag,\
+        \ và vẫn đủ cấu hình để chạy đợt mới từ đầu. \n\nBACKUP KHÔNG BỊ ĐỤNG TỚI: artifact backup trên hệ thống tệp và\
+        \ các bảng `backup_*` đều được giữ. Hộp thoại xác nhận PHẢI nói thẳng rằng **dữ liệu vừa xóa vẫn còn trong các bản\
+        \ backup**; xóa khỏi backup là một thao tác vận hành RIÊNG (contracts/ops/backup-restore.md). Không được để người\
+        \ dùng tin rằng purge đã xóa mọi dấu vết — đây là điểm Owner được cảnh báo là có hậu quả lớn nhất. \n\nHAI PHA (một\
+        \ operation_id, hai `phase`): (1) `request_challenge` — server sinh `purge_challenge` có hạn và trả về cụm từ xác\
+        \ nhận để người dùng gõ lại; KHÔNG xóa gì. (2) `execute` — đòi `purge_challenge_id` + `confirmation_phrase` khớp\
+        \ CHÍNH XÁC cụm từ server đã phát; sai hoặc hết hạn ⇒ 422 `VALIDATION_ERROR`, challenge bị hủy và phải xin lại.\
+        \ Một challenge dùng đúng một lần. \n\nTIỀN ĐIỀU KIỆN: chỉ chạy được khi `storage.health = maintenance`; ở `healthy`,\
+        \ `write_blocked` hay `recovery_required` ⇒ 409 `CONFLICT`. Thu hồi mọi `assignment_lease`, dừng scheduler và delivery\
+        \ dispatcher TRƯỚC khi xóa (I10). Sau khi xong, `storage.health` VẪN ở `maintenance` cho tới khi owner mở lại —\
+        \ không tự động resume dispatcher (cùng nguyên tắc NC-10)."
       tags:
       - data-admin
       security:

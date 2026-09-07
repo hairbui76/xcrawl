@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0007
 title: Timezone và chuẩn timestamp
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B08]
 source_refs: [SRC-SPEC §3.3, SRC-SPEC §3.6, SRC-SPEC §8.2, SRC-SPEC §10.3, SRC-SPEC §13.1, SRC-SPEC AC-02, SRC-PLAN §5.1, SRC-PLAN §9.1]
 requirement_refs: [REQ-D56, REQ-D13, REQ-D15, REQ-D27, REQ-AC02, REQ-S8.2-08, REQ-S10.3-05, REQ-OQ06]
@@ -33,6 +36,8 @@ SRC-SPEC D56 nói "Timezone lấy theo máy chạy app". Hệ thống có ít nh
 5. Quy tắc DST và catch-up: PC03 viết thành bảng — bao gồm giờ bị bỏ qua khi chuyển sang DST, giờ lặp lại khi kết thúc DST, và cách gộp nhiều đợt quá hạn thành một.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Điểm 1 sửa câu chữ D56 (UQ) và cần Owner xác nhận **giá trị timezone thật**. Nếu Owner ở múi khác thì mọi fixture lịch của PC03/PC04 phải dựng lại — nhưng bản thân quyết định "một timezone lưu trong settings" không đổi.
 

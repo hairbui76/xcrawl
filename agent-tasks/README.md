@@ -117,9 +117,9 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-FCW4f-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
-pin. Epoch cũ, theo thứ tự bị thay: `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ←
-`PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
+**Pin hiện tại: `PC10-PIN-OD01c-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+pin. Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01b-20260907` ←
+`PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 **Tên epoch được đọc từ card, không chép tay.** Finding `F-A2R1-03` cho thấy vì sao: hai file `precode/` từng
 khẳng định một epoch đã bị thay, và một trong hai nằm ngay dưới tiêu đề "Pin hiện tại" — người đọc đi kiểm
@@ -173,7 +173,7 @@ owner_role: implementation planning owner
 template_ref: agent-tasks/TEMPLATE.md
 milestone: <M0..M8>
 gate: <G5 | SP1>
-stack_decision: ADR-0006 (Option A / Python) — PROVISIONAL, status proposed
+stack_decision: ADR-0006 (Option B — Python workers + TypeScript web) — ACCEPTED (OD-20260907-01)
 claim_ceiling: <nhãn SRC-PLAN §2>
 owner_modules: [MOD-...]
 scenario_refs: [SC...]
@@ -192,6 +192,40 @@ Bốn file khung của thư mục này — `README.md`, `TEMPLATE.md`, `WALKTHRO
 đặt nhãn mới. Ba ID space do PC10 đưa vào đã được Coordinator chấp nhận: `EVM-<Task ID>` (evidence manifest),
 `SG-<nn>` (stop condition trong card), `PC10-PIN-<epoch>` (pin epoch).
 
+## 5.3 Layout hai ngôn ngữ — Stack B (ACCEPTED)
+
+Owner chốt **Option B** ngày 2026-09-07 (`OD-20260907-01` mục 3; ADR-0006 nay `accepted`). Phân chia ngôn
+ngữ là **ACCEPTED**; đường dẫn cụ thể vẫn `PROVISIONAL` cho tới khi có repo triển khai; **framework chưa
+được chốt** — ADR-0006 cố ý không nêu tên, nên card nào cần chọn framework phải DỪNG và raise CR.
+
+```
+server/     Python   backend, domain services, scheduler, report, delivery, auth, storage
+collector/  Python   collector chạy trên máy cá nhân (Playwright Python, Chrome profile riêng — D09)
+worker/     Python   analysis worker + AI adapter trên máy cá nhân
+probe/      Python   kịch bản probe SP1 (M0), đầu ra là bằng chứng
+tests/      Python   tests/contract/… và tests/integration/… cho toàn bộ cây Python
+web/        TypeScript
+  web/src/lib/       api.ts (client sinh từ contracts/http/openapi.yaml), kiểu dùng chung
+  web/src/routes/    read model cho từng SCR-*
+  web/src/views/     component hiển thị
+  web/tests/contract/      *.test.ts
+  web/tests/integration/   *.test.ts
+```
+
+Quy tắc bắt buộc:
+
+- **Không file `.py` nào dưới `web/`; không file `.ts`/`.tsx` nào dưới `server/`, `collector/`, `worker/`,
+  `probe/`.** EV-PC10-01 phép kiểm **(m)** ép điều này bằng máy trên §3 của mọi card.
+- Ranh giới giữa hai ngôn ngữ là **HTTP API đã có hợp đồng** (`contracts/http/openapi.yaml`). Web app
+  TypeScript là một consumer của owner API; nó **không** chia sẻ tiến trình hay module với phần Python, nên
+  ngôn ngữ thứ hai **không** tạo thêm cạnh quyền nào ngoài những cạnh đã có trong `contracts/modules.yaml`.
+- `web/src/lib/api.ts` là nơi duy nhất giữ **nửa trình duyệt của CSRF**: đọc cookie `rr_csrf` và gắn header
+  `X-CSRF-Token` cho mọi mutation. Card `TC-owner-auth-session` sở hữu nửa server; nó **không** ghi vào
+  `web/`.
+- Hai card UI (`TC-ui-runs-three-states`, `TC-ui-reports-detail`) cùng dùng `web/src/lib/api.ts`. Card nào
+  chạy trước tạo file; card sau **mở rộng**, không viết lại.
+- Đổi layout chỉ sửa **§3 và §8** của card. §2, §4, §5, §6, §7 không đổi — hợp đồng độc lập framework.
+
 ## 5.2 Scenario và nghĩa vụ default-deny
 
 Dải scenario hiện tại là **SC01–SC53**, và sau FIX5 **mọi SC đều có ít nhất một fixture**
@@ -206,6 +240,52 @@ FAIL**, không chỉ sai hành vi.
 
 `SC50` (đường chạy thành công đầu-cuối) nằm trên bốn card của trục chính: ingest, collector, report và
 delivery.
+
+## 5.4 Phủ P0 — câu hỏi mở suốt mười một vòng, nay đã đo
+
+`EV-PC10-06` chạy `acceptance/traceability.csv` (246 hàng) đối chiếu với 18 card. Ba đường phủ được tính
+riêng, vì chúng **không** mạnh như nhau:
+
+| Đường | Nghĩa | Sức nặng |
+| --- | --- | --- |
+| **direct** | card gọi đích danh REQ id | mạnh nhất |
+| **via scenario** | `scenario_refs` của REQ giao với SC mà card mang | mạnh — SC có oracle và fixture |
+| **via contract** | `contract_refs` của REQ giao với file card pin, **sau khi loại 9 file quá phổ biến** (`baseline.json`, `decision-register.md`, `requirements.csv`, `errors.yaml`, `modules.yaml`, `capabilities.yaml`, `ports.yaml`, `retry-policy.yaml`, `entities.yaml`) | **yếu** — chỉ nói "cùng đọc một file", không nói card chứng minh điều gì |
+
+### Kết quả
+
+| Tập | Có ít nhất một card | Mạnh (direct hoặc scenario) | Chỉ qua contract | Không card nào |
+| --- | --- | --- | --- | --- |
+| **12 mục phạm vi `REQ-P0-01…12`** (SRC-SPEC §2.1) | **12/12** | **12/12** | 0 | **0** |
+| 234 hàng `priority = P0` | 223/234 | 192/234 | 31 | 11 |
+
+**Mười hai mục phạm vi P0 phủ hết, và phủ mạnh** — mỗi mục nối tới card qua ít nhất một SC có oracle. Không
+mục nào chỉ dựa vào "cùng đọc một file hợp đồng".
+
+### Mười một hàng `priority = P0` không có card — và vì sao mười trong số đó là đúng
+
+| Hàng | Là gì | Phán quyết |
+| --- | --- | --- |
+| `REQ-S13-02`…`-08` (7 hàng) | Định nghĩa mốc M1–M7 (SRC-SPEC §13) | **Không card-shaped.** Mốc được phủ bởi `precode/gates.yaml`, không bởi card triển khai — đúng như A2-R1 §7 mục 2 đã phán |
+| `REQ-S1.4-04`, `-05` (2 hàng) | Chỉ số thành công vận hành; và một chỉ số **cố ý bị loại** vì không đo trung thực được | **Không card-shaped.** Đây là tiêu chí đánh giá E4, không phải nghĩa vụ code |
+| `REQ-S6.3-01` | Khuyến nghị stack A của đặc tả | **Đã lỗi thời.** Owner chọn **B** (`OD-20260907-01` mục 3); hàng này giờ là bản ghi lịch sử |
+| **`REQ-S7.3-01`** | *"Mọi bảng dữ liệu có `owner_id` dù chỉ có một owner"* | **Đây là lỗ hổng thật.** Nó là một bất biến dữ liệu **kiểm được**, không phải một cột mốc |
+
+Về `REQ-S7.3-01`: hợp đồng **đã** thỏa — 58/60 entity trong `contracts/data/entities.yaml` có `owner_id`, và
+hai ngoại lệ (`owner` và `schema_migration`) là chính đáng. Nhưng **không card nào mang nó như một nghĩa vụ
+chứng minh**, nên khi code chạy sẽ không có ai kiểm. Xem `CR-PC10-08`.
+
+### 31 hàng phủ "yếu"
+
+Chúng chỉ nối với card qua một file hợp đồng dùng chung. Phần lớn là prose kiến trúc (`REQ-S13.2-*` —
+"điểm không được bỏ qua"), tham số chờ đo (`REQ-A1`…`A4`, `REQ-OQ07`), hoặc mô tả màn hình. Chúng **chưa
+phải** lỗ hổng, nhưng chúng cũng **chưa được chứng minh** bởi bất kỳ oracle nào — nếu ai đó cần con số
+"P0 đã phủ", con số trung thực là **192/234 mạnh**, không phải 223 hay 234.
+
+### Điều phép đo này **không** nói
+
+Nó đo **khả năng với tới của card**, không đo implementation và không đo test. Một REQ "phủ mạnh" chỉ có
+nghĩa là *có một card đáng lẽ phải chứng minh nó*. Chưa card nào chạy; E1–E4 vẫn `NOT_RUN`.
 
 ## 6. Đọc thêm
 

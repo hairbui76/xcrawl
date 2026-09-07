@@ -2,7 +2,31 @@
   "baseline_id": "PC00-BASELINE",
   "version": "0.1.0",
   "status": "draft",
-  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "claim_ceiling": {
+    "note_vi": "Tu 2026-09-07 tran claim la mot object THEO PHAM VI, khong con mot gia tri chung. Can cu: OD-20260907-01 §4 — chi bon pham vi ma A2-R4 neu la du dieu kien moi duoc nang len CONTRACT_READY, va chi voi file co dependency con lai KHONG phai KC. Chot ngay 2026-09-07 (PKT-PC00-FIX11): E0 dong cua chay dat 23/23 nen bon pham vi do da len CONTRACT_READY that; sau pham vi con lai giu DRAFT_FOR_REVIEW.",
+    "e0_run_ref": "E0-20260907T044549Z",
+    "e0_result": "23/23 PASS",
+    "scope_note_vi": "CONTRACT_READY o day chi noi ve tinh nhat quan tinh cua hop dong (muc E0). No KHONG noi gi ve code, ve dich vu that, hay ve chat luong san pham: E1-E4 van NOT_RUN va product_status van NOT_READY_FOR_PRODUCT_CODE.",
+    "default": "DRAFT_FOR_REVIEW",
+    "by_scope": {
+      "boundaries_and_rights": "CONTRACT_READY",
+      "data_and_identity": "CONTRACT_READY",
+      "workflow_and_state": "CONTRACT_READY",
+      "reporting_and_time": "CONTRACT_READY",
+      "collector_and_sources": "DRAFT_FOR_REVIEW",
+      "ai_and_grounding": "DRAFT_FOR_REVIEW",
+      "app_and_delivery": "DRAFT_FOR_REVIEW",
+      "ops_and_recovery": "DRAFT_FOR_REVIEW",
+      "verification_and_evidence": "DRAFT_FOR_REVIEW",
+      "task_cards": "DRAFT_FOR_REVIEW"
+    },
+    "blocked_by_kc_vi": {
+      "collector_and_sources": "REQ-A6 (nhip goi arXiv/OpenAlex) con KC",
+      "ai_and_grounding": "REQ-A5 (dieu khoan CLI/ACP) con KC; REQ-OQ03 con OWNER_DECISION_REQUIRED",
+      "task_cards": "18 card can viet lai §3/§8 theo stack B (OD-20260907-01 muc 3)"
+    },
+    "finalised_by": "W6 (da chot o PKT-PC00-FIX11 theo CR-PC00-18)"
+  },
   "produced_by": {
     "packet_id": "PKT-PC00",
     "principal": "worker-W1",
@@ -1522,6 +1546,39 @@
     },
     "PROJECT": {
       "note_vi": "Anchor cho cac ID phat sinh trong du an, khong co trong hai file nguon. Chung van phai co decision record thi moi duoc dung.",
+      "owner_decisions": [
+        {
+          "anchor_id": "OD-20260907-01",
+          "label": "OD-20260907-01",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-07 (25 muc)",
+          "source_file": "precode/owner-decisions.md",
+          "authority_created": "AUTH-OWNER-20260907-02",
+          "evidence_ref": "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07",
+          "ratifies": [
+            "B01..B17",
+            "AMD-B01..AMD-B17",
+            "ADR-0001..ADR-0010",
+            "PROV-PC00-01",
+            "PROV-PC00-02",
+            "PROV-PC00-04",
+            "PROV-PC01-03",
+            "PROV-PC04-01..09",
+            "PROV-PC08-01..05"
+          ],
+          "not_decided": [
+            "REQ-OQ03 (provider/model) — van OWNER_DECISION_REQUIRED, chan M3",
+            "moi muc KC van la KC — phong van khong tao bang chung runtime",
+            "khong finding audit nao bi dong"
+          ],
+          "status_promotions": {
+            "REQ-D08": "ĐX -> XN",
+            "REQ-D09": "ĐX -> XN",
+            "REQ-D42": "ĐX -> XN",
+            "REQ-D50": "ĐX -> XN"
+          },
+          "stack_choice": "B (Python workers + TypeScript web) — thay the phuong an A"
+        }
+      ],
       "invariants": [
         {
           "anchor_id": "CT-data-invariants:I16",

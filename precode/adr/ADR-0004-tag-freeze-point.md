@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0004
 title: Mốc freeze tag tại transaction publish báo cáo
-status: proposed
+status: accepted
 decision_owner: Owner
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B01, B04]
 source_refs: [SRC-SPEC §3.4, SRC-SPEC §3.5, SRC-SPEC §5.5, SRC-SPEC §8.1, SRC-SPEC §8.2, SRC-SPEC §9.2, SRC-SPEC AC-05, SRC-SPEC AC-08, SRC-PLAN §8.2, SRC-PLAN §9.2]
 requirement_refs: [REQ-CTAG, REQ-D23, REQ-D24, REQ-D27, REQ-D28, REQ-D57, REQ-AC05, REQ-AC08, REQ-S8.1-03, REQ-S8.2-01, REQ-S8.2-02, REQ-S9.2-04, REQ-S10.4-03]
@@ -36,6 +39,8 @@ Vấn đề liên đới (B04): coverage tiến vào lúc nào. Nếu coverage s
 6. Sổ pending item và sổ backfill độc lập với con trỏ kỳ. Backfill N ngày tiêu thụ đúng một lần cho mỗi subscription activation đã định danh; crash của builder không tiêu thụ backfill.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `proposed`. Điểm 1 sửa câu chữ của một quyết định **XN** (`C03/D-tag`) nên bắt buộc Owner phê chuẩn. Điểm 5 bổ sung hành vi cho D57 (UQ) và cũng cần Owner biết.
 

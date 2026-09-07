@@ -19,6 +19,47 @@
     "contracts/schemas/ingest-batch.schema.json"
   ],
   "fixture_format_version": "0.1.0",
+  "x-contract": {
+    "contract_id": "CT-fixture-fx-id-wire-neg-2",
+    "version": "0.1.0",
+    "status": "accepted",
+    "ratification_ref": "OD-20260907-01",
+    "owner_role": "data contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "contracts/schemas/ingest-batch.schema.json"
+    ],
+    "requirement_refs": [
+      "REQ-P0-12"
+    ],
+    "decision_refs": [
+      "B05"
+    ],
+    "invariant_refs": [
+      "I02"
+    ],
+    "producers": [
+      "MOD-backend-api"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-identity-service",
+      "MOD-saved-service",
+      "MOD-analysis-service"
+    ],
+    "dependencies": [
+      "contracts/data/entities.yaml",
+      "contracts/data/identity.md",
+      "contracts/data/invariants.md",
+      "contracts/schemas/target.schema.json"
+    ],
+    "scope": "payload_hash phải là 'sha256:' + 64 hex thường. Định dạng tự do làm việc so sánh replay không tất định.",
+    "verification": "E0: parse, target-schema validation, wire-schema accept/reject, field-existence R4-01, actor-edge. E1–E4: NOT_RUN.",
+    "claim_ceiling": "CONTRACT_READY",
+    "eligibility_scope": "data and identity (A2-R4); fixture là oracle chấp nhận của phạm vi đã phê chuẩn — ruling F-A2R5-04",
+    "runtime_evidence": "NOT_RUN",
+    "runtime_evidence_note_vi": "Bằng chứng runtime là NOT_RUN: E1 (contract test bằng fixture), E2 (fault injection), E3 (live), E4 (review nội dung) đều CHƯA chạy. Chưa có code, và SQLite chưa từng được yêu cầu ép các ràng buộc mô tả ở đây. CONTRACT_READY nói bộ hợp đồng đủ trường và đã kiểm ví dụ hợp lệ/bất hợp lệ ở mức E0 — không nói code chạy được (SRC-PLAN §2, §14.2)."
+  },
   "owner_id": "01J0WNER100000000000000000",
   "contract_refs": [
     "contracts/data/entities.yaml",
@@ -26,7 +67,6 @@
     "contracts/data/invariants.md",
     "contracts/schemas/target.schema.json"
   ],
-  "claim_ceiling": "DRAFT_FOR_REVIEW",
   "evidence_status": "NOT_RUN",
   "validation_target": "contracts/schemas/ingest-batch.schema.json",
   "expected_validation": "reject",

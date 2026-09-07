@@ -51,23 +51,34 @@ Ngoại lệ khai báo còn lại của PC00: `precode/requirements.csv` mang he
 | --- | --- | --- |
 | `proposed` | Quyết định làm đổi hành vi đã cam kết hoặc đánh đổi mà người dùng đã chọn; chờ Owner | Owner |
 | `provisional-accepted` | Chi tiết thuần kỹ thuật, nằm trong phạm vi ủy quyền; đã ghi căn cứ; vẫn có thể bị Owner đảo | Coordinator dưới `AUTH-OWNER-20260906-01` |
+| `accepted` | Owner đã phê chuẩn | Owner, qua `OD-20260907-01` |
 
-Không ADR nào được ghi `accepted`, `superseded` hay `deprecated` trong phiên này.
+**Cập nhật 2026-09-07.** Cả **10** ADR nay ở trạng thái `accepted`, phê chuẩn bằng `OD-20260907-01`
+(`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`, evidence
+`session_017QmDJtMqD9o1z79waqSB9W`). Mỗi file mang `ratified_by`, `ratified_at` và `evidence_ref` trong
+front-matter, cùng một banner ở mục "Trạng thái"; lập luận lúc còn `proposed` được **giữ nguyên bên dưới**
+để truy vết, không bị viết lại.
+
+**ADR-0006 là ngoại lệ về nội dung:** Owner chọn phương án **B (Python workers + TypeScript web)**, không phải
+A. File đã được viết lại; **tên file giữ nguyên** `ADR-0006-stack-option-a.md` vì 18 task card và chỉ mục này
+trỏ theo đường dẫn đó — đổi tên cần một packet riêng (`CR-PC00-16`).
+
+Không ADR nào được ghi `superseded` hay `deprecated` trong phiên này.
 
 ## Bảng chỉ mục
 
 | ADR | Tiêu đề | Blocker | Status | Gói tiêu thụ |
 | --- | --- | --- | --- | --- |
-| [ADR-0001](ADR-0001-topology-and-placement.md) | Topology và nơi chạy từng module | B12 | proposed | PC01, PC05, PC06 |
-| [ADR-0002](ADR-0002-run-state-model-split.md) | Tách mô hình trạng thái run | B02 | proposed | PC03, PC07 |
-| [ADR-0003](ADR-0003-delivery-unknown-state.md) | Trạng thái delivery không xác định | B03 | proposed | PC07 |
-| [ADR-0004](ADR-0004-tag-freeze-point.md) | Mốc freeze tag tại publish | B01, B04 | proposed | PC04, PC07 |
-| [ADR-0005](ADR-0005-backup-method.md) | Phương pháp backup và restore | B11 | proposed | PC08 |
-| [ADR-0006](ADR-0006-stack-option-a.md) | Stack Option A (Python toàn bộ) | — (REQ-OQ02) | proposed | PC10 |
-| [ADR-0007](ADR-0007-timezone-handling.md) | Timezone và chuẩn timestamp | B08 | proposed | PC03, PC04 |
-| [ADR-0008](ADR-0008-analysis-key-and-generation.md) | Analysis key và generation | B07 | provisional-accepted | PC02, PC06 |
-| [ADR-0009](ADR-0009-identity-alias-target-union.md) | Identity, alias và target tagged union | B06, B15 | proposed | PC02, PC04 |
-| [ADR-0010](ADR-0010-secret-scoping-and-cli-isolation.md) | Phạm vi secret và cô lập CLI/ACP | B13 | proposed | PC01, PC06, PC08 |
+| [ADR-0001](ADR-0001-topology-and-placement.md) | Topology và nơi chạy từng module | B12 | accepted | PC01, PC05, PC06 |
+| [ADR-0002](ADR-0002-run-state-model-split.md) | Tách mô hình trạng thái run | B02 | accepted | PC03, PC07 |
+| [ADR-0003](ADR-0003-delivery-unknown-state.md) | Trạng thái delivery không xác định | B03 | accepted | PC07 |
+| [ADR-0004](ADR-0004-tag-freeze-point.md) | Mốc freeze tag tại publish | B01, B04 | accepted | PC04, PC07 |
+| [ADR-0005](ADR-0005-backup-method.md) | Phương pháp backup và restore | B11 | accepted | PC08 |
+| [ADR-0006](ADR-0006-stack-option-a.md) | **Stack Option B (Python workers + TypeScript web)** | — (REQ-OQ02) | accepted | PC10 |
+| [ADR-0007](ADR-0007-timezone-handling.md) | Timezone và chuẩn timestamp | B08 | accepted | PC03, PC04 |
+| [ADR-0008](ADR-0008-analysis-key-and-generation.md) | Analysis key và generation | B07 | accepted | PC02, PC06 |
+| [ADR-0009](ADR-0009-identity-alias-target-union.md) | Identity, alias và target tagged union | B06, B15 | accepted | PC02, PC04 |
+| [ADR-0010](ADR-0010-secret-scoping-and-cli-isolation.md) | Phạm vi secret và cô lập CLI/ACP | B13 | accepted | PC01, PC06, PC08 |
 
 ## Mẫu ADR
 
@@ -75,9 +86,11 @@ Không ADR nào được ghi `accepted`, `superseded` hay `deprecated` trong phi
 ---
 adr_id: ADR-NNNN
 title: <tiêu đề ngắn>
-status: proposed | provisional-accepted
+status: proposed | provisional-accepted | accepted
 decision_owner: Owner | Coordinator (delegated)
 date: YYYY-MM-DD
+ratified_by: OD-…            # khi status = accepted
+evidence_ref: "…"           # khi status = accepted
 blocker_refs: [B..]
 source_refs: [SRC-SPEC §.., SRC-PLAN §..]
 requirement_refs: [REQ-..]

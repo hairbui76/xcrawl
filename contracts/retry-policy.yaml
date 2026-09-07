@@ -3,8 +3,8 @@
 # Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
 
 contract_id: CT-policy-retry
-version: 0.5.0
-status: draft
+version: 0.6.0
+status: accepted
 owner_role: workflow contract owner
 source_refs:
   - SRC-PLAN §5
@@ -61,13 +61,47 @@ scope: >-
   ingest, phân tích, provider, Telegram, connector nghiên cứu, lịch và catch-up, run-now, và probe phục hồi
   storage. Mỗi mục nêu ai retry (server hay worker) và khi nào TUYỆT ĐỐI không retry. Số PROVISIONAL là số cấu
   hình được, đổi không cần amendment, nhưng phải có lý do — không có "TBD" (baseline §3).
+  MỤC KC CÒN LẠI (nêu tường minh theo yêu cầu ratification): `research_connector_rate_limit` — nhịp gọi và
+  yêu cầu định danh thật của arXiv/OpenAlex (REQ-A6). Bốn giá trị cố ý để trống; chỉ có một sàn an toàn tự đặt
+  `min_interval_ms = 3000`. Mục này thuộc phạm vi PC05 và KHÔNG hạ trần của file này.
   File này KHÔNG định nghĩa mã trạng thái HTTP (PC05), rate limit thật của arXiv/OpenAlex (KC, REQ-A6) hay
   chi phí AI (PC06).
 verification: >-
   EV-PC03-05 (SELF_VALIDATION): script lint khẳng định mọi mục trong `budgets` có `value` (hoặc `values`),
   `unit`, `rationale_vi`, `status`, `retried_by`; và mọi `retry_budget_ref` xuất hiện trong contracts/errors.yaml
   và contracts/state/*.yaml đều tồn tại ở đây.
-claim_ceiling: DRAFT_FOR_REVIEW
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+ratification:
+  authority: AUTH-OWNER-20260907-02
+  decision_id: OD-20260907-01
+  ratified_at: 2026-09-07
+  evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W — Owner phỏng vấn từng mục; bản ghi ở scratchpad/packets/OWNER-DECISIONS-20260907.md"
+  scope_eligibility: "A2-R4 tuyên bố phạm vi \"Workflow and state\" đủ điều kiện CONTRACT_READY."
+  accepted_vi: >-
+    Owner đã phê chuẩn B01–B17 và các amendment tương ứng. Mọi quyết định trước đây mang nhãn PROVISIONAL trong
+    file này mà thuộc danh sách đó nay là `ACCEPTED (OD-20260907-01)`. Cụ thể với gói này: AMD-B02 (mô hình bốn
+    trường của run), AMD-B03 (`delivery.state = unknown`, không tự retry), AMD-B05 (không ingest trùng theo x_post_id),
+    AMD-B07 (analysis key + generation), AMD-B08 (một IANA timezone; giá trị `Asia/Ho_Chi_Minh` được xác nhận),
+    AMD-B10 (resume chỉ trong app), AMD-B11 (snapshot nhất quán + khóa side effect), AMD-B17 (chỉ mục đã chọn,
+    partial kèm pending list), cùng hai thay đổi kỹ thuật: mã `CSRF_REJECTED` và resume-từ-`blocked` có
+    `unblock_reason` bắt buộc. Một lần tự chạy lại từ `unknown_attempt` cũng đã được Owner chấp nhận.
+  measurement_pending_vi: >-
+    Owner chấp nhận các giá trị dưới đây là GIÁ TRỊ LÀM VIỆC, nhưng chúng vẫn cần đo trước khi được gọi là
+    đúng: giới hạn mỗi đợt 200 bài / 1800 giây (REQ-OQ05, đo sau M0). Chúng KHÔNG hạ trần của file: một con số
+    đã được Owner chấp nhận và có đường đo rõ ràng thì hợp đồng vẫn kiểm được. Từng mục mang cờ
+    `measurement_pending` tại chỗ.
+  still_kc_vi: >-
+    KHÔNG mục nào ở đây khiến file mất tư cách CONTRACT_READY, nhưng phải nói ra: nhịp gọi và yêu cầu định danh
+    thật của arXiv/OpenAlex vẫn là `KC` (REQ-A6) — bốn giá trị trong `research_connector_rate_limit` cố ý để
+    trống, chỉ có một sàn an toàn tự đặt. Module research connector do đó KHÔNG được coi là CONTRACT_READY;
+    đó là phạm vi của PC05, không phải của file này. Ngoài ra REQ-A1/A5/A7 vẫn KC và mọi bằng chứng runtime
+    (E1–E4) vẫn `NOT_RUN`.
+  tuning_values_vi: >-
+    Các con số kỹ thuật thuần túy (lease TTL, heartbeat, backoff, timeout inference, probe storage) vẫn mang
+    `status: PROVISIONAL`. Chúng nằm trong phạm vi ủy quyền kỹ thuật, đổi được bằng cấu hình mà không cần
+    amendment, và KHÔNG phải quyết định sản phẩm chờ Owner. Nhãn PROVISIONAL ở đó nghĩa là "chưa hiệu chỉnh
+    bằng dữ liệu thật", không phải "chưa được phê chuẩn".
 
 # ---------------------------------------------------------------------------
 # 1. Nguyên tắc
@@ -95,6 +129,12 @@ principles:
     statement_vi: >-
       Số PROVISIONAL trong file này là tham số cấu hình runtime (lưu ở `settings`), không phải hằng số biên dịch.
       Owner đổi được sau M0 mà không cần amendment (REQ-OQ05, REQ-OQ06, REQ-A1).
+      SAU RATIFICATION (OD-20260907-01): nhãn `PROVISIONAL` ở đây nghĩa là "CHƯA HIỆU CHỈNH BẰNG DỮ LIỆU THẬT",
+      KHÔNG phải "chưa được Owner phê chuẩn". Ba mức phân biệt trong file này:
+      (1) `ACCEPTED (OD-20260907-01)` — Owner đã chốt giá trị;
+      (2) `ACCEPTED (OD-20260907-01)` + `measurement_pending` — Owner chấp nhận làm giá trị làm việc, còn phải đo;
+      (3) `PROVISIONAL` — tham số kỹ thuật trong phạm vi ủy quyền, không cần Owner.
+      Chỉ một mục còn `PLACEHOLDER_KC`: `research_connector_rate_limit`.
 
 # ---------------------------------------------------------------------------
 # 2. Khi nào TUYỆT ĐỐI không retry (danh sách đóng)
@@ -430,7 +470,13 @@ budgets:
       lấy từ thông lệ "1 request/3s" mà arXiv nêu trong hướng dẫn sử dụng API công khai; nó chỉ là sàn để hệ thống
       không chạy không giới hạn, KHÔNG phải tuyên bố về hạn mức thật.
       `Retry-After` do nguồn trả về luôn THẮNG mọi giá trị ở đây.
-    blocked_scope_vi: "PC05 phải điền bốn giá trị null trước khi module research connector được coi là CONTRACT_READY (SRC-PLAN §10)."
+    blocked_scope_vi: >-
+      PC05 phải điền bốn giá trị null trước khi module research connector được coi là CONTRACT_READY
+      (SRC-PLAN §10). ĐÂY LÀ MỤC `KC` DUY NHẤT CÒN LẠI TRONG FILE NÀY sau ratification, và nó KHÔNG được
+      ratification làm cho biến mất: Owner phê chuẩn các quyết định sản phẩm, còn hạn mức thật của arXiv và
+      OpenAlex là DỮ KIỆN BÊN NGOÀI phải đọc từ tài liệu chính thức, không ai "chấp nhận" được thay cho nó.
+      Trần của file này là CONTRACT_READY chỉ vì phạm vi của nó là workflow/state; mục KC này thuộc phạm vi
+      collector (PC05), nơi trần vẫn là DRAFT_FOR_REVIEW.
 
   # ---------------------------------------------------------------- report
   report_build_rebuild_attempts:
@@ -658,8 +704,15 @@ budgets:
   per_run_post_limit:
     value: 200
     unit: posts
-    status: PROVISIONAL
-    decision_ref: "baseline §5 OQ defaults; REQ-OQ05, REQ-AC03"
+    status: "ACCEPTED (OD-20260907-01)"
+    measurement_pending:
+      required_before: "M0 (probe khả thi, contracts/ops/collector-probe.md §7)"
+      requirement_ref: REQ-OQ05
+      note_vi: >-
+        Owner chấp nhận 200 làm GIÁ TRỊ LÀM VIỆC (OD-20260907-01 mục 20), và cũng nói rõ con số thật đến sau
+        khi đo. Cờ này KHÔNG hạ trần của file: một giá trị đã được chấp nhận, có đơn vị, có lý do và có đường
+        đo cụ thể thì hợp đồng vẫn kiểm được. Nó chỉ cấm việc đọc 200 như một hằng số đã được chứng minh.
+    decision_ref: "OD-20260907-01 mục 20; REQ-OQ05, REQ-AC03"
     applies_to: [worker.claim_assignment, worker.report_stop]
     retried_by: not_applicable
     rationale_vi: >-
@@ -668,8 +721,12 @@ budgets:
   per_run_duration_limit:
     value: 1800
     unit: seconds
-    status: PROVISIONAL
-    decision_ref: "baseline §5 OQ defaults ('200 posts hoặc 30 phút, cái nào tới trước'); REQ-OQ05"
+    status: "ACCEPTED (OD-20260907-01)"
+    measurement_pending:
+      required_before: "M0"
+      requirement_ref: REQ-OQ05
+      note_vi: "Như `per_run_post_limit`: Owner chấp nhận 30 phút làm giá trị làm việc; con số thật đến sau M0."
+    decision_ref: "OD-20260907-01 mục 20 ('200 posts hoặc 30 phút, cái nào tới trước'); REQ-OQ05"
     applies_to: [worker.claim_assignment, worker.report_stop]
     retried_by: not_applicable
     rationale_vi: >-
@@ -678,13 +735,14 @@ budgets:
   schedule_slots_default:
     values: ["08:00", "20:00"]
     unit: local_time_hh_mm
-    status: PROVISIONAL
-    decision_ref: "baseline §5 OQ defaults (từ ví dụ trong SRC-SPEC §8.2); REQ-OQ06"
+    status: "ACCEPTED (OD-20260907-01)"
+    decision_ref: "OD-20260907-01 mục 20 (Owner chấp nhận toàn bộ OQ defaults); REQ-OQ06"
     applies_to: [scheduler.evaluate_due]
     retried_by: not_applicable
     rationale_vi: >-
       Hai mốc mỗi ngày theo giờ địa phương của `schedule_timezone`. Lấy từ ví dụ của đặc tả, chưa phải lựa chọn
-      của Owner (REQ-OQ06). Cách 12 giờ nên mọi budget ở trên đều gọn trong một khoảng giữa hai đợt.
+      của Owner — nay ĐÃ LÀ lựa chọn của Owner (OD-20260907-01). Cách 12 giờ nên mọi budget ở trên đều gọn
+      trong một khoảng giữa hai đợt.
 
 # ---------------------------------------------------------------------------
 # 4. Ai retry cái gì (bảng tổng hợp)

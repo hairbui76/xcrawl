@@ -1,9 +1,12 @@
 ---
 adr_id: ADR-0008
 title: Analysis key và generation
-status: provisional-accepted
+status: accepted
 decision_owner: Coordinator (delegated under AUTH-OWNER-20260906-01)
 date: 2026-09-06
+ratified_by: OD-20260907-01
+ratified_at: 2026-09-07
+evidence_ref: "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
 blocker_refs: [B07]
 source_refs: [SRC-SPEC §3.5, SRC-SPEC §7.1, SRC-SPEC §7.3, SRC-SPEC §9.2, SRC-SPEC §9.3, SRC-SPEC §10.4, SRC-SPEC AC-06, SRC-PLAN §8.2, SRC-PLAN §9.3]
 requirement_refs: [REQ-D25, REQ-D26, REQ-AC06, REQ-S7.3-02, REQ-S9.2-03, REQ-S10.4-02, REQ-S8.1-04]
@@ -35,6 +38,8 @@ Bảng `analysis` ở §7.1 chỉ có "phiên bản" mà không có source finge
 7. Vector embedding có generation riêng: đổi model embedding xây generation mới, kiểm đủ vector rồi mới chuyển active generation một cách nguyên tử. Không trộn vector khác model/dimension trong cùng một lần selection.
 
 ## Trạng thái
+
+**`accepted` — Owner phê chuẩn ngày 2026-09-07 bằng `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`).** Đoạn dưới đây là lập luận lúc ADR còn ở trạng thái `proposed`; giữ nguyên để truy vết, **không** còn là trạng thái hiện tại.
 
 `provisional-accepted`. Đây là chi tiết kỹ thuật nằm trong phạm vi ủy quyền: nó **không** đảo bất kỳ hành vi nào người dùng đã chọn — D25 vẫn đúng (một kết quả hợp lệ, tái sử dụng), D26 vẫn đúng (phân tích lại tạo bản mới, giữ bản cũ). Amendment AMD-B07 chỉ làm rõ câu chữ. Owner vẫn có thể đảo; nếu đảo thì D26 phải bị loại bỏ.
 

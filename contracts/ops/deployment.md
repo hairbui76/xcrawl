@@ -1,7 +1,7 @@
 ---
 contract_id: CT-ops-deployment
 version: 0.1.0
-status: draft
+status: accepted
 owner_role: architecture owner
 source_refs:
   - SRC-SPEC §6.1
@@ -41,8 +41,19 @@ scope: >
   machine (PC03), không định nghĩa wire schema (PC05).
 verification: >
   E0 self-validation: đọc chéo với contracts/modules.yaml và contracts/ports.yaml (module, operation, network scope
-  khớp nhau). Không có evidence E1–E4; mọi số PROVISIONAL chưa được đo trên hệ thống thật — NOT_RUN.
-claim_ceiling: DRAFT_FOR_REVIEW
+  khớp nhau). Không có evidence E1–E4; các tham số vận hành ở §3 và §6 là **giá trị cấu hình đang dùng**, chưa
+  được đo trên hệ thống thật — NOT_RUN.
+claim_ceiling: CONTRACT_READY
+ratification_ref: OD-20260907-01
+scope_membership: "Boundaries and rights"
+scope_membership_ruling_vi: >
+  Coordinator ruling (post-A2-R5, F-A2R5-04): file này **thuộc** phạm vi 1 "Boundaries and rights" cùng
+  contracts/modules.yaml, capabilities.yaml và ports.yaml — vị trí chạy của module và định nghĩa readiness **là**
+  hợp đồng ranh giới, không phải tài liệu vận hành phụ. Vì vậy nó được nâng trần cùng ba file kia và chịu cùng
+  phép kiểm. Ghi ở header thay vì trong một comment nguồn, để một bộ kiểm đọc được nó.
+ratification_note_vi: >
+  Owner phê chuẩn B01–B17 ngày 2026-09-07 (OD-20260907-01). `CONTRACT_READY` nói về độ đầy đủ của hợp đồng,
+  không nói về runtime: chưa có drill, chưa có probe, E1–E4 vẫn NOT_RUN.
 ---
 
 # Triển khai, readiness và capability registration
@@ -102,14 +113,14 @@ rules chứ không bằng ranh giới mạng (SRC-PLAN §6).
 | Điểm | Binding | Giá trị | Lý do |
 | --- | --- | --- | --- |
 | App HTTPS | `0.0.0.0:443` (qua reverse proxy của server) | 443/TCP | D04 yêu cầu truy cập từ ngoài mạng nhà |
-| App container | loopback của mạng Docker | `8080/TCP` (PROVISIONAL) | Chỉ reverse proxy chạm tới; không expose ra host |
-| Embedding container | mạng nội bộ Docker | `8090/TCP` (PROVISIONAL) | Chỉ container `app` gọi; **egress ra Internet rỗng** (FE-22) |
+| App container | loopback của mạng Docker | `8080/TCP` (mặc định cấu hình) | Chỉ reverse proxy chạm tới; không expose ra host |
+| Embedding container | mạng nội bộ Docker | `8090/TCP` (mặc định cấu hình) | Chỉ container `app` gọi; **egress ra Internet rỗng** (FE-22) |
 | SQLite | file trên volume | — | Không có cổng; không tiến trình ngoài server mở được (NC-05) |
 | Telegram ingress | đường dẫn webhook bí mật trên cùng 443 | — | Xác thực bằng `telegram_ingress_secret` |
-| Chrome remote debugging | **`127.0.0.1` (loopback) duy nhất** | `9222/TCP` (PROVISIONAL) | SRC-SPEC §11.2: không bao giờ mở ra LAN hay reverse proxy |
+| Chrome remote debugging | **`127.0.0.1` (loopback) duy nhất** | `9222/TCP` (mặc định cấu hình) | SRC-SPEC §11.2: không bao giờ mở ra LAN hay reverse proxy |
 | Collector / analysis worker | **không lắng nghe cổng nào** | — | Máy cá nhân không mở cổng vào (SRC-SPEC §6.4) |
 
-Các giá trị cổng ghi PROVISIONAL là mặc định cấu hình được, không phải hằng số nghiệp vụ; đổi chúng không cần
+Các giá trị cổng trên là mặc định cấu hình được, không phải hằng số nghiệp vụ; đổi chúng không cần
 amendment, nhưng **binding loopback của Chrome là ràng buộc bảo mật, không được đổi** mà không có quyết định của
 Owner.
 
@@ -155,10 +166,10 @@ Trạng thái hiển thị ở màn hình Runs (D11) do **server** tính, không
 
 | Tham số | Giá trị | Đơn vị | Lý do |
 | --- | --- | --- | --- |
-| `heartbeat_interval` | 30 | giây | PROVISIONAL. Đủ nhỏ để phát hiện máy tắt trong vòng vài chục giây, đủ lớn để không tạo tải vô ích cho một hệ một người dùng. |
-| `online_threshold` | 90 | giây | PROVISIONAL. Bằng 3 × `heartbeat_interval`: chịu được hai lần lỡ nhịp do mạng nhà chập chờn trước khi báo offline. |
-| `registration_refresh_interval` | 900 | giây | PROVISIONAL. Đăng ký lại capability định kỳ để trạng thái provider CLI không bị cũ quá 15 phút. |
-| `registration_stale_after` | 1800 | giây | PROVISIONAL. Bằng 2 × `registration_refresh_interval`; quá hạn thì capability chuyển `unknown`, không giữ giá trị cũ. |
+| `heartbeat_interval` | 30 | giây | Giá trị đang dùng. Đủ nhỏ để phát hiện máy tắt trong vòng vài chục giây, đủ lớn để không tạo tải vô ích cho một hệ một người dùng. |
+| `online_threshold` | 90 | giây | Giá trị đang dùng. Bằng 3 × `heartbeat_interval`: chịu được hai lần lỡ nhịp do mạng nhà chập chờn trước khi báo offline. |
+| `registration_refresh_interval` | 900 | giây | Giá trị đang dùng. Đăng ký lại capability định kỳ để trạng thái provider CLI không bị cũ quá 15 phút. |
+| `registration_stale_after` | 1800 | giây | Giá trị đang dùng. Bằng 2 × `registration_refresh_interval`; quá hạn thì capability chuyển `unknown`, không giữ giá trị cũ. |
 
 Định nghĩa:
 
@@ -169,8 +180,13 @@ Trạng thái hiển thị ở màn hình Runs (D11) do **server** tính, không
 - **needs_user** là trạng thái của **run**, không phải của worker: worker có thể online trong khi run đang chờ
   người xử lý CAPTCHA (B02/AMD-B02).
 
-`last_run` chỉ để xem, **không** dùng làm mốc lọc dữ liệu (D12). Ngưỡng ở trên là PROVISIONAL cho tới khi có số
-thật từ probe A1 (SP1); chúng là tham số cấu hình, đổi không cần amendment.
+`last_run` chỉ để xem, **không** dùng làm mốc lọc dữ liệu (D12).
+
+**Provenance của bốn số trên:** chúng là **tham số cấu hình do PC01 chọn**, không phải quyết định sản phẩm — chúng
+chưa bao giờ nằm trong bản hỏi Owner, nên OD-20260907-01 không nói gì về chúng, và không cần nói. Đổi chúng không
+cần amendment. `kc_dependency`: REQ-A1 (KC) — sau probe A1 (SP1) sẽ có số thật về nhịp thu thập và tần suất bị đòi
+xác minh, và bốn giá trị này nên được hiệu chỉnh theo. Đó là phụ thuộc **của bốn tham số**, không hạ trần của file:
+hợp đồng đã nêu đủ giá trị, đơn vị và lý do như baseline §3 đòi hỏi.
 
 ## 7. Luồng đăng ký capability
 
@@ -256,4 +272,4 @@ oracle.
 | Wire HTTP, đường dẫn, mã trạng thái HTTP | PC05 (`contracts/http/openapi.yaml`) |
 | Lifecycle secret, mã hóa at-rest, xoay vòng token, CSRF | PC08 (`contracts/ops/secrets.md`) |
 | Quy trình backup/restore chi tiết, RPO/RTO | PC08 (`contracts/ops/backup-restore.md`) |
-| Ngôn ngữ/stack và đường dẫn build | PC10 (stack là Option A PROVISIONAL, cần ADR + lựa chọn của Owner) |
+| Ngôn ngữ/stack và đường dẫn build | PC10. Stack **đã chốt: phương án B — worker Python + web TypeScript** (OD-20260907-01 mục 3; ADR-0006 viết lại, thay cho đề xuất A). Ranh giới module và hợp đồng trong file này **không đổi** theo lựa chọn đó: chúng độc lập framework từ đầu; chỉ đường dẫn build/test trong task card của PC10 phải viết lại. |

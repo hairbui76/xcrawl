@@ -1,17 +1,25 @@
 # Hồ sơ điều phối — Research Radar Pre-code
 
-Baseline điều phối, toàn bộ TASK_PACKET (PC00–PC10 và các packet audit), các ruling của Coordinator sau mỗi
-vòng audit, và sổ tiến độ của Coordinator. Lưu nguyên văn để chuỗi thẩm quyền của phiên còn kiểm lại được.
+Baseline điều phối, toàn bộ TASK_PACKET (PC00–PC10 và tám packet audit), các ruling của Coordinator sau mỗi
+vòng audit, **biên bản quyết định của Owner**, và sổ tiến độ của Coordinator. Lưu nguyên văn để chuỗi thẩm
+quyền của phiên còn kiểm lại được.
+
+Chuỗi thẩm quyền có **hai** authority Owner: `AUTH-OWNER-20260906-01` (cho phép phiên soạn tài liệu) và
+`AUTH-OWNER-20260907-02` (phê chuẩn 25 quyết định — xem `OWNER-DECISIONS-20260907.md`).
 
 ## Vị trí của tập hồ sơ này trong chuỗi bằng chứng
 
-**Những bản ghi này ra đời SAU lần freeze `FC-W4` epoch 7 mà `A2-R4` đã audit.** Vì vậy chúng **không** nằm trong
+**Những bản ghi này ra đời SAU lần freeze `FC-W4` epoch 9 mà `A2-R6` đã audit.** Vì vậy chúng **không** nằm trong
 bất kỳ candidate manifest nào đã được audit, và **không** được coi là một phần của candidate đã đóng băng.
 
 Đó không phải thiếu sót mà là ràng buộc của giao thức: `protocol.md` §6 nói rõ *"Persist audit report là new
 evidence artifact trong packaging phase; không chèn report vào manifest mà report đang ký."* Một báo cáo không
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
+
+Thư mục được bổ sung hai lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới epoch 9
+và **thay** bản `coordinator-ledger.md` cũ bằng bản mới hơn (bản cũ dừng ở epoch 7). Mỗi lần chép đều
+`cmp`-verified và hash được tính lại sau khi chép.
 
 **Nội dung là bản sao nguyên văn, không sửa một byte.** Mọi file ở đây được `cp` từ scratchpad của phiên và
 đã được `cmp` xác nhận byte-identical; SHA-256 dưới bảng được tính **sau khi chép**. Không file nào trong thư
@@ -27,14 +35,18 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A1-audit-2-packet.md` | TASK_PACKET cho `auditor-A1`, vòng 2 (FC-W2) | `fd5c135e9232154df43f0675e08d95f88dec50370a7078fe905341bb9ee6a2bb` | 4690 |
 | `A1-audit-3-packet.md` | TASK_PACKET cho `auditor-A1`, vòng 3 (FC-W3) | `1c03d56eb00702e87357949ac6890e712d943c6f5c3e1ff01cf36b5ce2e3ceef` | 5988 |
 | `A2-final-audit-packet.md` | TASK_PACKET cho `auditor-A2`, audit cuối (FC-W4 epoch 4) | `fd97c28794b8b32240b6de92c52534276c89a88d24e68a6d34c103f92f8510a3` | 6190 |
+| `A2-r6-packet.md` | TASK_PACKET cho `auditor-A2` — re-review có phạm vi (epoch 9) | `d6cc9f20c2800dd21ccab35c14facebb71992760c663c7e2242bcd32dbca39f6` | 2553 |
+| `A2-ratification-verify-packet.md` | TASK_PACKET cho `auditor-A2` — xác minh phần ratification (epoch 8) | `ad93f96eaf5f4488bb16376d61e9c097cf60e0a4fb08a27282d2b06f3b23c693` | 3981 |
 | `A2-rereview-packet.md` | TASK_PACKET cho `auditor-A2`, re-review có phạm vi (epoch 6/7) | `0731599209e4c61c4d7d07d2b5d37dcd88bdae9cb507f707b03a0480d71641ae` | 2005 |
 | `A2-verify-packet.md` | TASK_PACKET cho `auditor-A2`, xác minh remedy (epoch 5) | `a6a222d569afd1eb647fefcbbb12cd5ae58ae2483fd8043a4b24b8758e503054` | 2733 |
 | `FIX-A1R1-rulings.md` | Ruling R-01..R-09 sau AUDIT_REPORT A1-R1 | `94cdf17b1922dbff89273a316bb9e71e218f50d9f253a5f87cbae4769d1e1ff4` | 6380 |
+| `FIX-R5-rulings.md` | Ruling sau AUDIT_REPORT `A2-R5` | `e2a0e26eb6686112aa8de5bed9c2a04adf1732555b005a3d8c4d98e7b0f12beb` | 3680 |
 | `FIX3-rulings.md` | Ruling đợt FIX3 (sau A1-R2 và các CR của PC03/PC04/PC08) | `8e3bc78ba76562d11731a590fd516d3df781f191f4a6f39b3bb71fd1d5072f14` | 4977 |
 | `FIX4-rulings.md` | Ruling R4-01..R4-04 sau A1-R3 | `66fa366bcea8b4a1d3746a40957dddad133f64cb147e2802950905821fdc11ee` | 2689 |
 | `FIX5-rulings.md` | Ruling R5-01..R5-08 | `077451e71db38d160f6be4fc484d3856d7a90f321755eae2d702717268e62d24` | 4425 |
 | `FIX6-rulings.md` | Ruling sau A2-R1 (F-01..F-11) | `5efa475ff24a0f2dc035baaf9b10932c8eb71b9dc8fc767984714412ac9f69d0` | 4069 |
 | `FIX7-rulings.md` | Ruling đợt FIX7 | `0a4960a4ba9819ec400eb8e4023b2c04f5910e8868812036ddac8fc825e0861a` | 2183 |
+| `OWNER-DECISIONS-20260907.md` | **Biên bản quyết định của Owner** ngày 2026-09-07 (`OD-20260907-01`, authority `AUTH-OWNER-20260907-02`) — bản gốc do Coordinator phát; bản chuyển ngữ đầy đủ ở `precode/owner-decisions.md` | `31d496a04dc221b030b51f64da2e18a5231f219cbcd011467cf329d1208572c4` | 4750 |
 | `PC00-packet.md` | TASK_PACKET PC00 — khóa nguồn, nguyên tử hóa yêu cầu, xử lý mâu thuẫn | `0b474a977901722c649bea154b61689af6d967b59dbbe952d942a426af7f0aa9` | 6273 |
 | `PC01-packet.md` | TASK_PACKET PC01 — topology, ownership, capability | `cbe6da783a6492510fa7af567e034746d4cfb63245fea8a759ad201a0957c54f` | 6309 |
 | `PC02-packet.md` | TASK_PACKET PC02 — identity, entity, transaction | `e51760b57aae6b25e096613e02fecd088fa1b48e4b53ae80941c1b2ab9b3c52e` | 6318 |
@@ -46,7 +58,8 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `PC08-packet.md` | TASK_PACKET PC08 — secrets, Internet boundary, backup, recovery | `6845425e14d5b99fa391ce666fe33dc99eb5c4a08f10f88a5dde5672934769a7` | 7982 |
 | `PC09-packet.md` | TASK_PACKET PC09 — oracle, traceability, evidence, readiness | `a8eff8c99df5238e96a70bd9aee30400204df07ed15612cec4d6960f6d37ed43` | 6895 |
 | `PC10-packet.md` | TASK_PACKET PC10 — task card cho coding, bàn giao bộ hợp đồng | `ebb5cee9c6c61acc07be033092c4257056592e553fe8df6c9e89880b245cac32` | 5642 |
-| `coordinator-ledger.md` | Sổ tiến độ của Coordinator (bản gốc `progress.md` trong scratchpad): dòng thời gian dispatch, freeze, audit và ruling của toàn phiên | `a8a7d319f0aa527c27d3cd7a5b9f77c3755cfd7fb784dd68392a12cdd117cc03` | 31463 |
+| `PURGE-LIST-ruling.md` | Ruling chốt danh sách loại trừ của `data.purge_all` (theo mục 24 của biên bản Owner) | `6c320e312efb9ba9f68b3480f01052cb47f9c01852a6baf0af001c30854fe5b2` | 2520 |
+| `coordinator-ledger.md` | Sổ tiến độ của Coordinator (bản gốc `progress.md` trong scratchpad): dòng thời gian dispatch, freeze, audit và ruling của toàn phiên. **Bản 2026-09-07T12:33Z, thay thế bản chép ở PKT-PC00-FIX9** (`a8a7d319…`) — bản cũ dừng ở epoch 7, bản này chạy tới epoch 9 | `0369031b73e7550ec4fe7d63e8d206049a560528d3b97d8a5eca6e4eb6db4ac5` | 39468 |
 
 ## Cách đọc
 
@@ -59,6 +72,10 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   việc; việc xác minh thuộc auditor ở epoch kế tiếp.
 - **`coordinator-ledger.md`** là bản sao của `progress.md`: dòng thời gian dispatch → freeze → audit → ruling của
   cả phiên. Đây là bản ghi *do Coordinator viết*, nên nó là lời tự thuật của một bên, không phải bằng chứng
-  độc lập.
+  độc lập. Bản hiện tại chép ở `PKT-PC00-FIX12` và **thay thế** bản chép ở `PKT-PC00-FIX9` (`a8a7d319…`,
+  dừng ở epoch 7).
+- **`OWNER-DECISIONS-20260907.md` là văn bản ràng buộc**, không phải một ruling: nó là biên bản của Owner.
+  `precode/owner-decisions.md` chép lại đầy đủ 25 mục kèm phần PC00 ghi rõ những gì quyết định này **không**
+  làm (`REQ-OQ03` vẫn mở; mọi mục `KC` vẫn `KC`; không finding audit nào bị đóng).
 - **Nguồn đối chiếu:** `evidence/audits/` giữ báo cáo và manifest mà các ruling này phản hồi;
   `evidence/handoffs/` giữ HANDOFF của từng Worker.

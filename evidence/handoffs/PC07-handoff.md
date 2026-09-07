@@ -661,3 +661,70 @@ PC09/W6.
 
 Lease `LEASE-PC07-e5` nhả lúc 2026-09-07T01:55Z. Không lệnh git mutation, không network, không
 file ngoài grant, không `__pycache__`.
+
+---
+
+# ADDENDUM — PKT-PC07-FIX5 (F-A2R5-01: phạm vi purge đã phê chuẩn, trong màn hình)
+
+## E1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC07-FIX5` · authority `AUTH-OWNER-20260907-02` (OD-20260907-01) · lease `LEASE-PC07-e6` (fencing 6) |
+| worker principal | `worker-W3` · expires_at 2026-09-08T04:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `DRAFT_FOR_REVIEW` (screens.yaml không thuộc bốn phạm vi đã phê chuẩn) |
+| finding | F-A2R5-01 → `FIX_PROPOSED` |
+| next actor | Coordinator · `lease_released_at` | 2026-09-07T05:12Z |
+
+## E2. Delta
+
+`ACT-purge-all` trong `contracts/ui/screens.yaml` trước đây mang
+`status: OWNER_DECISION_REQUIRED_SCOPE` và bảo hộp thoại "liệt kê phạm vi còn
+`OWNER_DECISION_REQUIRED`". Owner đã quyết định; câu đó nay sai.
+
+Thay bằng: `status: ACCEPTED`, `ratification_ref: OD-20260907-01`, nhãn nút đổi thành
+**"Xóa toàn bộ dữ liệu nghiên cứu"** (nói đúng phạm vi ngay trên nút), và một khối
+`confirmation_dialog` **ba phần bắt buộc**:
+
+1. `deleted_vi` — liệt kê nhóm dữ liệu nghiên cứu bị xóa, **bao gồm Saved và snapshot** (người
+   dùng phải biết Saved cũng mất).
+2. `retained_vi` — những gì được giữ, mở đầu bằng "**bạn KHÔNG bị đá ra khỏi hệ thống**": đăng
+   nhập và phiên, secret và nhật ký truy cập, liên kết Telegram, cấu hình provider, cấu hình và
+   lịch, worker, schema, sổ backup, nhật ký xóa.
+3. `backups_vi` — **"Dữ liệu vừa xóa VẪN CÒN trong các bản backup."** Bắt buộc, kèm câu giải
+   thích tại sao: người bấm "xóa toàn bộ" mà không biết điều đó là **bị lừa**.
+
+Thêm `scope_authority`: danh sách 20 bảng ở `entities.yaml` §`transactions` → `TXN-purge-all` →
+`tables` → `retained_by_owner_decision` là **nguồn liệt kê có thẩm quyền**; màn hình không được
+giữ bản sao. Thêm bốn `forbidden_vi`, trong đó có "hiện nút khi thiếu bất kỳ khối nào trong ba
+khối" và "nói hoặc ngụ ý rằng backup cũng bị xóa".
+
+`decision_note_vi` giữ `OWNER_DECISION_REQUIRED` **chỉ như lịch sử** ("trước đó phạm vi từng
+là… nay chỉ còn là lịch sử, không phải trạng thái mở") — đúng như ruling cho phép.
+
+## E3. Hash sau
+
+| Path | sha256 | Bytes |
+| --- | --- | --- |
+| `contracts/ui/screens.yaml` | `e3026a2093a86bc3a1322f26c282f08fd387ef304f9c2d97f5385418d285e35d` | 50351 |
+
+⚠️ Card-pin: card trong `agent-tasks/` pin hash cũ của `screens.yaml`; W7 re-pin trong đợt
+`PC10-PIN-OD01c-20260907`.
+
+`claim_ceiling` của `screens.yaml` **giữ `DRAFT_FOR_REVIEW`**: "app, Save và Telegram" không
+nằm trong bốn phạm vi mà A2-R4 tuyên bố đủ điều kiện, và tôi không tự mở rộng ranh giới phê
+chuẩn của Owner.
+
+## E4. Evidence
+
+Chạy 2026-09-07T05:08:00Z → 05:08:08Z: `verify_pc07.py` (5 gate) **0**, `RESULT: PASS (0 fail)` ·
+`fixture_field_gate.py` **0** · `check_actor_edges_all.py` **0** · `prose_token_gate.py` trên 26
+file PC07 **0** (121 op + 80 column, 0 vi phạm).
+
+Hai token mới do chính văn bản tôi vừa viết sinh ra (`tables.retained_by_owner_decision`,
+`TXN-purge-all.` trong câu dẫn) bị gate bắt và đã viết lại thành dạng "mục X → Y".
+
+## E5. Kết thúc
+
+Lease `LEASE-PC07-e6` nhả lúc 2026-09-07T05:12Z. Không lệnh git mutation, không network, không
+file ngoài grant, không `__pycache__`.

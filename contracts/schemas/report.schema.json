@@ -6,7 +6,7 @@
   "x-contract": {
     "contract_id": "CT-schema-report",
     "version": "0.1.0",
-    "status": "draft",
+    "status": "accepted",
     "owner_role": "reporting contract owner",
     "source_refs": [
       "SRC-SPEC §3.5 D23, D27, D29, D53, D54, D57",
@@ -66,7 +66,20 @@
     ],
     "scope": "Hình dạng đọc được của một report đã publish: coverage, phiên bản đã ghim, mục, khối hướng đang nổi, danh sách pending và ghi chú coverage. Không mô tả bảng vật lý (entities.yaml) và không định nghĩa nội dung summary (PC06).",
     "verification": "EV-PC04-01: metaschema Draft 2020-12 + mọi expected.report trong acceptance/fixtures/reporting/ validate theo schema này, với target.schema.json nạp vào resolver store.",
-    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "claim_ceiling": "CONTRACT_READY",
+    "ratification_ref": "OD-20260907-01",
+    "ratified_by": "AUTH-OWNER-20260907-02",
+    "ratified_at": "2026-09-07",
+    "ratification_scope": "A2-R4 tuyên bố phạm vi 'Reporting and time' đủ điều kiện CONTRACT_READY; Owner phê chuẩn B01–B17 và 8 tham số PC04 cộng phương án kỳ rỗng (b) (OD-20260907-01 mục 22). PROV-PC04-01..09 nay là ACCEPTED (OD-20260907-01) với tư cách giá trị làm việc.",
+    "ratification_limits": "Owner phê chuẩn GIÁ TRỊ LÀM VIỆC, KHÔNG phải kết quả hiệu chỉnh. coverage_note.threshold_calibration_state vẫn có thể là 'uncalibrated' và $defs.density_parameters.parameters_status vẫn là PROVISIONAL_BOOTSTRAP cho tới khi REQ-A2/REQ-A4 chạy. CONTRACT_READY nghĩa là hình dạng wire và oracle đã đóng, không nghĩa là các con số đã được chứng minh.",
+    "runtime_evidence": {
+      "level_reached": "E0",
+      "e1_contract_tests": "NOT_RUN",
+      "e2_integration_fault_injection": "NOT_RUN",
+      "e3_live_probe": "NOT_RUN",
+      "e4_content_review": "NOT_RUN",
+      "statement_vi": "Hợp đồng này đã được phê chuẩn (OD-20260907-01) và đạt CONTRACT_READY, nhưng MỌI bằng chứng runtime vẫn là NOT_RUN: chưa có code, chưa có contract test, chưa có fault injection, chưa có live probe, chưa có review nội dung. E0 (lint tĩnh + fixture validate) là cấp cao nhất đã đạt. CONTRACT_READY nói hợp đồng đủ chặt để bắt đầu code, KHÔNG nói code chạy đúng (SRC-PLAN §2: không nâng cấp nhãn bằng suy diễn)."
+    },
     "external_schema_refs": {
       "analysis_result": {
         "schema_id": "https://research-radar.local/schemas/analysis-result.schema.json",

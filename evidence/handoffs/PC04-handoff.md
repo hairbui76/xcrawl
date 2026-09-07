@@ -710,3 +710,190 @@ W2/W3/W5 land, đúng như FIX7 §"Card pins" đã dự liệu.
    của W3 — cần W3 xác nhận đã land trước khi freeze.
 4. `boundary` và `e2e`/`collection` nay có cột thật để kiểm (khác FIX2 khi chúng rỗng); nhận xét
    "0 vì không có `rows`" ở addendum FIX2 chỉ còn đúng với `boundary`.
+
+
+---
+
+# ADDENDUM — PKT-PC04-FIX5 (phê chuẩn Owner OD-20260907-01 → CONTRACT_READY)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC04-FIX5` · authority `AUTH-COORD-PC04-FIX5` (parent **`AUTH-OWNER-20260907-02`**) · lease `LEASE-PC04-e6` (**fencing 6**) |
+| status | **`DONE`** · completion_claim **`CONTRACT_READY`** (nâng từ `DRAFT_FOR_REVIEW`) |
+| clock bắt đầu | `2026-09-07T04:15:37Z`; hết hạn `2026-09-08T00:00Z` — còn hạn |
+| lease_released_at | 2026-09-07T04:40Z |
+| căn cứ | `OD-20260907-01` mục 22 (8 tham số PC04 + kỳ rỗng (b)), mục 20 (OQ defaults, N = 7), mục 4 (timezone), mục 5/8/16/19 (B01/B04/B14/B17); A2-R4 tuyên bố phạm vi "Reporting and time" đủ điều kiện |
+| nguồn | SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…` — **khớp** đầu và cuối |
+
+## F1. Delta
+
+| Path | After (sha256) | Bytes |
+| --- | --- | --- |
+| `contracts/reporting/time-and-tags.md` | `70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c` | 61837 |
+| `contracts/reporting/selection.md` | `781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4` | 37357 |
+| `contracts/schemas/report.schema.json` | `d2e43686032e36c2932253abe69f37b09f6d695b8d09c96db1eaefe05b65b471` | 32004 |
+| `acceptance/fixtures/reporting/README.md` | `3eaab904623d9e498515de84146934179670b4924541763789b99b87d40abafa` | 15469 |
+
+**⚠ Card-pinned hashes.** Cả bốn file đổi hash. Mọi task card, manifest hoặc pin
+(`PC10-PIN-FCW4d-20260907` nếu đã lập) trỏ bản trước là **STALE** và phải re-pin.
+
+## F2. Header
+
+Bốn file nay mang `status: accepted`, `claim_ceiling: CONTRACT_READY`,
+`ratification_ref: OD-20260907-01`, `ratified_by: AUTH-OWNER-20260907-02`, `ratified_at: 2026-09-07`,
+cộng hai trường mới `ratification_scope` và **`ratification_limits`**.
+
+`ratification_limits` là trường quan trọng nhất của gói này. Nó nói rõ điều mà một người đọc
+nhãn `CONTRACT_READY` rất dễ hiểu sai:
+
+> Owner phê chuẩn **giá trị làm việc**, không phải kết quả hiệu chỉnh. `CONTRACT_READY` nghĩa là
+> **ngữ nghĩa và oracle đã đóng**, không nghĩa là các con số đã được chứng minh là tốt.
+
+## F3. Nhãn PROVISIONAL → ACCEPTED: 17 chỗ, và 6 chỗ **cố ý giữ nguyên**
+
+Đã đổi **13** nhãn trong `time-and-tags.md` và **4** trong `selection.md` sang
+`ACCEPTED (OD-20260907-01)`: mốc freeze tag (B01), sổ coverage (B04), kỳ rỗng phương án (b),
+N = 7 và trần backfill 30 ngày, quy tắc add→remove→re-add, first-announcement sớm nhất sau merge,
+đọc hiểu phiên bản paper mới, `max_items_per_period` = 50, `max_emerging_directions` = 3, ngưỡng
+exclusion dùng lại ngưỡng phạm vi, quy tắc kẹp đồng hồ, và timezone `Asia/Ho_Chi_Minh` (Owner
+**đã xác nhận**, mục 4 — trước đây file ghi "Owner phải xác nhận").
+
+**Sáu chỗ giữ nguyên `PROVISIONAL`, có chủ ý:**
+
+| Chỗ | Vì sao KHÔNG đổi |
+| --- | --- |
+| `settings['reporting.default_similarity_threshold']` = `0.8000` | `PROVISIONAL_BOOTSTRAP` + `threshold_calibration_state: uncalibrated` cho tới khi REQ-A2 chạy — packet yêu cầu tường minh |
+| Toàn bộ tham số mật độ §8.2 | Cổng REQ-A4 còn nguyên; chưa có 3–4 kỳ thật nào được đọc lại |
+| `report_build_rebuild_attempts`, `report_build_stale_after`, `cas_conflict_retries` | **PC03 sở hữu**. PC04 chỉ trích dẫn; đổi trạng thái số của gói khác trong file của mình là vượt quyền. Nay ghi rõ "PC03 sở hữu" |
+| Câu trích REQ-OQ08 ("không đặt một con số PROVISIONAL như thể đã biết") | Là trích dẫn yêu cầu, không phải nhãn trạng thái |
+
+Banner đầu `selection.md` được viết lại thành một cảnh báo tường minh: Owner chấp nhận giá trị
+làm việc **và** ngưỡng vẫn `uncalibrated` — "cả hai điều cùng đúng, và trình bày thiếu một trong
+hai là sai". Đây là chỗ dễ bị đọc thành "Owner đã duyệt nên ngưỡng ổn rồi" nhất.
+
+## F4. Gate — tất cả exit 0
+
+`EV-PC04-01` (9 `expected.report` validate) · `EV-PC04-02` (ví dụ mật độ) · `EV-PC04-03` (tham
+chiếu) · `EV-PC04-04` (24 coverage window) · `EV-PC04-05` (actor-edge 62/62) ·
+`EV-PC04-06` (field gate R4-01: **86 file / 2073 cột / 0 chưa giải quyết** trên 9 thư mục) ·
+token sweep E0-04b/04c (**0 token**).
+
+## F5. PC06 KHÔNG bị đụng
+
+Xác minh bằng hash: `contracts/ai/tasks.yaml` `0048bbdd…`, `providers.yaml` `462e5321…`,
+`grounding.md` `b54cec8b…`, `analysis-result.schema.json` `f26720ee…`,
+`acceptance/fixtures/ai/README.md` `6b7ede2b…` — **không đổi** so với addendum FIX4.
+`analysis-result.schema.json` → `x-contract` vẫn `status: draft`,
+`claim_ceiling: DRAFT_FOR_REVIEW`. Phạm vi AI ở lại `DRAFT_FOR_REVIEW` đúng như packet yêu cầu:
+REQ-A5 vẫn `KC`, REQ-AC16 vẫn `BLOCKED` cho tới khi một probe CLI/ACP chạy được.
+
+## F6. Concerns
+
+1. **Đọc nhãn `CONTRACT_READY` cho đúng.** Bốn file này đạt ceiling vì ngữ nghĩa, oracle và
+   fixture đã đóng — **không** vì các tham số đã được đo. Ngưỡng similarity và tham số mật độ
+   vẫn chưa có một điểm dữ liệu thật nào. Nếu một báo cáo hạ nguồn trích `CONTRACT_READY` để suy
+   ra chất lượng chọn nội dung, đó là suy diễn sai nhãn (SRC-PLAN §2 "Không nâng cấp nhãn bằng
+   suy diễn").
+2. **REQ-A2 / REQ-A4 / REQ-A3 vẫn `KC`.** Chừng nào `threshold_calibration_state` còn
+   `uncalibrated`, mọi report mang cờ đó và **cấm** tuyên bố chỉ tiêu SRC-SPEC §1.4.
+3. **Ba ngân sách PC03 vẫn `PROVISIONAL`** trong file của tôi. Nếu Coordinator muốn toàn bộ
+   phạm vi "Reporting and time" nhất quán nhãn, PC03 phải tự đổi trong `retry-policy.yaml` —
+   tôi không đổi hộ.
+4. `PROV-PC04-01..09`: tôi ánh xạ 9 mục = 8 tham số §7.3 + phương án kỳ rỗng §7.5 của handoff
+   gốc. Nếu Coordinator đánh số khác, xin đối chiếu lại trước khi freeze.
+
+
+---
+
+# ADDENDUM — PKT-PC04-FIX6 (F-A2R5-04 / F-A2R5-05)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC04-FIX6` · authority `AUTH-COORD-PC04-FIX6` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC04-e7` (**fencing 7**) |
+| status | **`DONE`** · completion_claim `CONTRACT_READY` |
+| clock bắt đầu | `2026-09-07T05:05:30Z`; hết hạn `2026-09-08T04:00Z` — còn hạn |
+| lease_released_at | 2026-09-07T05:35Z |
+| nguồn | SRC-PLAN `f65bb046…`, SRC-SPEC `d35e1f2d…` — **khớp** |
+
+## G1. Delta — 16 file
+
+| `acceptance/fixtures/reporting/README.md` | `cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f` | 16228 |
+| `contracts/schemas/report.schema.json` | `8bf6bc9ccd6040c06f4ba709ea638e647ab8349e1bac4f26cd6049df76b7ba60` | 32747 |
+| `acceptance/fixtures/reporting/a-tag-removed-before-publish.json` | `cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44` | 16121 |
+| `acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json` | `57d26a0a8381b1b76c0c3109358e132a40bd3a2b5873c515bb5c5dcc828bc1c3` | 16540 |
+| `acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json` | `3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa` | 6023 |
+| `acceptance/fixtures/reporting/d-empty-period-coverage-only.json` | `2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e` | 8879 |
+| `acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json` | `ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4` | 10989 |
+| `acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json` | `e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1` | 13675 |
+| `acceptance/fixtures/reporting/g-concurrent-publishers-cas.json` | `825a383b20576864f45a8d9fb9be23bc01d04fe8103f9cf0e8275cff8052980e` | 5795 |
+| `acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json` | `99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874` | 9789 |
+| `acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json` | `207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321` | 15344 |
+| `acceptance/fixtures/reporting/j-backfill-add-remove-readd.json` | `b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a` | 6842 |
+| `acceptance/fixtures/reporting/k-builder-crash-backfill-not-consumed.json` | `9fce157821143ef6d852a688e033424d8f4191dbedfb47caaa80d9ba9a3b6f82` | 5879 |
+| `acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json` | `e911021ea43f8d9168ea64da6919735a58c41a379a7e926b566128030939a359` | 6580 |
+| `acceptance/fixtures/reporting/m-density-worked-example.json` | `719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347` | 29177 |
+| `acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json` | `98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f` | 19229 |
+
+**⚠ Card-pinned hashes.** Cả 16 file đổi hash. `PC10-PIN-OD01c-20260907` (W7 sắp lập) phải được
+lập **sau** gói này, không phải trước.
+
+## G2. (a) F-A2R5-04 — 14 fixture lên `CONTRACT_READY`
+
+Cả 14 file trong `acceptance/fixtures/reporting/` nay mang `claim_ceiling: CONTRACT_READY`,
+`ratification_ref: OD-20260907-01`, `ratified_by: AUTH-OWNER-20260907-02`, `ratified_at`,
+`ratification_scope`, `ratification_limits`. README có thêm một khối nói rõ ceiling của thư mục.
+Nghịch lý mà audit nêu — index claim cao hơn 14 file nó liệt kê — đã hết.
+
+**Chỗ đặt `ratification_ref`: khối khóa cấp cao nhất của file JSON, KHÔNG phải một object
+`x-contract` mới.** Lý do cụ thể, và nó vừa được chứng minh bằng dữ liệu:
+
+- `ratification_ref_of()` trong `evidence/tools/e0_check.py` đọc theo thứ tự *top-level dict* →
+  `x-contract` → `info.x-contract` → regex. Khóa cấp cao nhất **resolve được**, và ruling
+  F-A2R5-03 liệt kê "top-level key" là một trong ba dạng hợp lệ.
+- `claim_ceiling` của các fixture này vốn đã nằm ở cấp cao nhất từ PC04 gốc; đặt
+  `ratification_ref` cạnh nó giữ **một** nguồn sự thật thay vì hai.
+- **Bằng chứng rằng lựa chọn này đúng:** `acceptance/fixtures/identity/` (W3) đã tạo một object
+  `x-contract` **chỉ chứa** các trường phê chuẩn. `E0-08-contract-header` lập tức đòi đủ header
+  baseline §3 **bên trong** object đó và báo **14 violation** cho 14 file identity. Nếu tôi làm
+  y hệt, 14 fixture reporting cũng sẽ đỏ. Với cách đặt ở cấp cao nhất, **0** file reporting nằm
+  trong danh sách violation của E0-08.
+
+Nếu Coordinator muốn dạng `x-contract` theo nghĩa đen, việc đó phải đi kèm **đủ** header baseline
+§3 trong mỗi fixture — đó là một gói riêng, và nên làm cùng lúc cho cả identity lẫn reporting.
+
+## G3. (b) F-A2R5-05 — `report.schema.json` khai runtime NOT_RUN
+
+`x-contract` nay có `runtime_evidence`: `level_reached: E0`, và bốn khóa
+`e1_contract_tests` / `e2_integration_fault_injection` / `e3_live_probe` / `e4_content_review`
+đều `NOT_RUN`, kèm `statement_vi` nói thẳng: hợp đồng đã phê chuẩn và đạt `CONTRACT_READY`,
+nhưng **chưa có code, chưa có contract test, chưa có fault injection, chưa có live probe, chưa có
+review nội dung**. Bốn khóa là dữ liệu máy đọc được, đúng yêu cầu "in a field a checker can read"
+của remediation constraint.
+
+Caveat hiệu chỉnh giữ nguyên: `coverage_note` → `threshold_calibration_state` vẫn có thể là
+`uncalibrated`, và `$defs.density_parameters` → `parameters_status` vẫn `PROVISIONAL_BOOTSTRAP`.
+Ceiling **không** đụng tới hai thứ đó, và `ratification_limits` đã nói vậy từ FIX5.
+
+## G4. Gate
+
+Bộ gate của tôi: `EV-PC04-01` (9 `expected.report` validate) · `-02` · `-03` · `-04` ·
+`-05` (actor-edge 62/62) · `-06` (field gate R4-01: 86 file / 2073 cột / 0 chưa giải quyết) ·
+token sweep E0-04b/04c (0 token) — **tất cả exit 0**.
+
+`evidence/tools/e0_check.py` (bộ chung của W6) sau thay đổi này:
+**22/23 PASS**, `E0-12b-ratification-refs` **PASS** (checked = 50, violations = 0).
+Một FAIL duy nhất là `E0-08-contract-header` với **14 violation, toàn bộ thuộc
+`acceptance/fixtures/identity/`** — xem G2. **0** violation thuộc phạm vi của tôi.
+
+## G5. Concerns
+
+1. **W3 cần biết ngay:** 14 fixture identity đang FAIL `E0-08` vì object `x-contract` thiếu header
+   baseline §3. Hai cách sửa: điền đủ header vào mỗi file, hoặc chuyển các trường phê chuẩn lên
+   cấp cao nhất như reporting đã làm. Cách thứ hai rẻ hơn và đã được chứng minh là xanh.
+2. **Đề nghị W6:** `E0-08` và `E0-12b` hiện phạt hai cách đặt header khác nhau theo hai hướng
+   ngược nhau — tạo `x-contract` một phần thì E0-08 đỏ, không tạo thì vẫn xanh. Nên nói rõ trong
+   mô tả check rằng với fixture JSON, khối khóa cấp cao nhất **là** header hợp đồng (ruling R-05),
+   để gói sau không phải suy ra điều đó từ việc thử.
+3. Ceiling của 14 fixture là `CONTRACT_READY` trong khi `evidence_status` của chúng vẫn `NOT_RUN`.
+   Hai điều này cùng đúng và không mâu thuẫn — nhưng đó chính là chỗ dễ đọc nhầm nhất, nên cả
+   README lẫn `ratification_limits` của từng file đều nói thẳng.

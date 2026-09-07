@@ -38,7 +38,12 @@
     "contracts/schemas/target.schema.json",
     "contracts/data/entities.yaml"
   ],
-  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "claim_ceiling": "CONTRACT_READY",
+  "ratification_ref": "OD-20260907-01",
+  "ratified_by": "AUTH-OWNER-20260907-02",
+  "ratified_at": "2026-09-07",
+  "ratification_scope": "Fixture của phạm vi 'Reporting and time' mà Owner đã phê chuẩn (OD-20260907-01 mục 22); đây là các ORACLE CHẤP NHẬN của phạm vi đó, nên chúng mang cùng ceiling với hợp đồng chúng kiểm (F-A2R5-04: một README index không được claim cao hơn file nó liệt kê).",
+  "ratification_limits": "CONTRACT_READY nói dữ liệu vào và oracle đã đóng. Nó KHÔNG nói fixture đã chạy: evidence_status vẫn là NOT_RUN và E1–E4 chưa chạy lần nào. Ngưỡng similarity vẫn 'uncalibrated' (REQ-A2) và tham số mật độ vẫn sau cổng REQ-A4 — Owner chấp nhận GIÁ TRỊ LÀM VIỆC, không phải kết quả hiệu chỉnh.",
   "evidence_status": "NOT_RUN",
   "given": {
     "embedding_generation": {
