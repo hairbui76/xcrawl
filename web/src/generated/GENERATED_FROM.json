@@ -1,0 +1,14 @@
+{
+  "generator": "web/scripts/generate.mjs",
+  "rule": "Generated code must match the contract it was generated from. A mismatch means either the contract changed without regeneration, or a generated file was hand-edited. Both are defects (ADR-0011; agent-tasks/README.md §5.3).",
+  "sources": [
+    {
+      "path": "contracts/http/openapi.yaml",
+      "sha256": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "bytes": 231705
+    }
+  ],
+  "outputs": [
+    "openapi.d.ts"
+  ]
+}

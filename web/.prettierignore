@@ -1,0 +1,4 @@
+dist
+node_modules
+# Machine output: its formatting is openapi-typescript's, not ours.
+src/generated

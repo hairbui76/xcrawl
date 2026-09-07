@@ -1,0 +1,51 @@
+# Local developer gate. It runs the same tools CI runs, so a red CI job is rare and never
+# a surprise. It runs NOTHING live: no X, no AI provider, no Telegram (ADR-0011, CI row).
+#
+#   uv run pre-commit install
+default_install_hook_types: [pre-commit]
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        exclude: ^contracts/http/openapi\.yaml$   # 3.1 tags; validated by the openapi job
+      - id: check-json
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+        exclude: ^(web/src/generated/|shared/rr_contracts/rr_contracts/generated/)
+      - id: trailing-whitespace
+        exclude: ^(web/src/generated/|shared/rr_contracts/rr_contracts/generated/)
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (lint)
+        entry: uv run ruff check --force-exclude
+        language: system
+        types: [python]
+        require_serial: true
+      - id: ruff-format
+        name: ruff (format)
+        entry: uv run ruff format --check --force-exclude
+        language: system
+        types: [python]
+        require_serial: true
+      - id: mypy
+        name: mypy --strict (server core)
+        entry: uv run mypy
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: generated-python-matches-contracts
+        name: generated Pydantic models match contracts/
+        entry: uv run python shared/rr_contracts/generate.py --check
+        language: system
+        pass_filenames: false
+        files: ^(contracts/|shared/rr_contracts/)
+      - id: card-pins
+        name: task card pins are current
+        entry: uv run python evidence/tools/verify_cards.py
+        language: system
+        pass_filenames: false
+        files: ^(agent-tasks/|contracts/|acceptance/|precode/)

@@ -1,5 +1,5 @@
 contract_id: CT-precode-gates
-version: 0.1.0
+version: 0.2.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -485,18 +485,47 @@ gates:
       - id: G5-X4
         statement_vi: "Có một bố cục repo triển khai thật cho stack đã chọn, và card trỏ vào đường dẫn tồn tại."
         machine_check: "đường dẫn source/test mà card khai tồn tại trên đĩa"
-        met: false
-        gap_vi: >
-          Stack B đã được chọn nhưng **chưa có repo triển khai nào**: không có cây thư mục Python
-          worker, không có cây TypeScript web, không có lệnh build/test nào chạy được. Card mô tả
-          đường dẫn sẽ tồn tại, không phải đường dẫn đang tồn tại.
-    current_status: NOT_MET
-    evidence_refs: []
+        met: true
+        note_vi: >
+          **Đạt bởi Giai đoạn 0** (`PKT-P0-SKELETON`, `evidence/handoffs/P0-skeleton-handoff.md`).
+          Bảy cây thư mục của stack B tồn tại thật trên đĩa — `server/`, `worker/`, `collector/`,
+          `shared/`, `web/`, `tests/`, `probe/` — cùng `pyproject.toml`, `uv.lock`,
+          `web/package-lock.json`, Alembic, CI `.github/workflows/`, và hai bộ sinh có cửa
+          diff-on-regenerate. `evidence/tools/verify_cards.py` chạy **13/13 check, 0 violation**
+          trên 18 card ở epoch `PC10-PIN-P1c-20260907`: mọi đường dẫn §3 mà card pin nay phân
+          giải được trên đĩa. Auditor độc lập `A3` đã chạy lại toàn bộ cửa này từ bytes đã đóng
+          băng ở cả hai lượt (`evidence/audits/A3-R1-report.md` §1, `A3-R2-report.md` §1) và
+          xếp skeleton **PASS**.
+    current_status: PARTIALLY_MET
+    evidence_refs:
+      - "evidence/handoffs/P0-skeleton-handoff.md"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
+      - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
+      - "evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json"
+      - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
+    note_vi: >
+      **Bốn điều kiện ra G5-X1..X4 nay đều `met: true`** — X4 là điều kiện cuối cùng và Giai
+      đoạn 0 đã đạt nó. Cổng vẫn **`PARTIALLY_MET`**, không phải `MET`, vì hai lý do nằm ngoài
+      bốn điều kiện ra và cả hai được nêu đích danh dưới `blocked_by_open_items`:
+      (1) **điều kiện VÀO** của G5 là "G4 đạt trong đúng phạm vi định giao", và G4 vẫn
+      `PARTIALLY_MET` (G4-X7 cộng các mục `KC` kế thừa từ G3);
+      (2) **`REQ-OQ03`** (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED`.
+      `REQ-OQ03` **không** chặn Giai đoạn 1 — bốn card đã chạy đều nằm ở M1 và không card nào
+      gọi một provider AI — nhưng nó chặn M3, nên nó chặn G5 ở nghĩa "sẵn sàng giao MỌI card",
+      không ở nghĩa "sẵn sàng giao card đã giao". Ghi cả hai nghĩa thay vì chọn con số dễ chịu
+      hơn: bốn card M1 đã được giao, đã chạy và đã được audit độc lập; phần còn lại của G5 thì
+      chưa mở.
     blocked_by_open_items:
-      - "G5-X4: chưa có bố cục repo triển khai cho stack B — card trỏ vào đường dẫn chưa tồn tại."
-      - "G4 chưa đạt (G4-X7 và các mục KC của G3)."
-      - "**`REQ-OQ03`** (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED`; chặn M3."
-    allows_next_vi: "Bắt đầu coding phạm vi được giao KHI người dùng yêu cầu. Chưa được phép."
+      - "G5-X4: **ĐÃ ĐẠT** — bố cục repo cho stack B tồn tại (Giai đoạn 0), card trỏ vào đường dẫn có thật, `verify_cards.py` 13/13."
+      - "Điều kiện VÀO chưa đạt: G4 vẫn `PARTIALLY_MET` (G4-X7 và các mục KC của G3)."
+      - "**`REQ-OQ03`** (provider/model cụ thể) vẫn `OWNER_DECISION_REQUIRED`; chặn M3, không chặn M1."
+      - "`AMD-ENT-owner-01` vẫn `PROVISIONAL`: Owner chưa phát biểu. Nếu Owner phản đối, schema của `TC-owner-auth-session` và verdict A3-R2 cho card đó cùng mở lại."
+    allows_next_vi: >
+      Bắt đầu coding **phạm vi đã được giao** (M1: bốn card Giai đoạn 1 — đã làm, đã audit).
+      KHÔNG suy ra rằng mọi card khác được phép bắt đầu: điều kiện vào của cổng chưa đạt và
+      `REQ-OQ03` vẫn mở.
 
   - id: SP1
     name_vi: "Feasibility probe — thử nghiệm collector thật 5–10 đợt"
@@ -546,22 +575,55 @@ gates:
     exit_conditions:
       - id: G6-X1
         statement_vi: "Mọi scenario có `evidence_level_required` ≤ E2 đã chạy và PASS."
-        machine_check: "evidence/index.json: mọi SC với level ≤ E2 có result PASS"
+        machine_check: "acceptance/scenarios.yaml: mọi SC với level ≤ E2 có status `PASS (E1)` hoặc `PASS (E2)`"
         met: false
+        gap_vi: >
+          **4 trong 51** scenario ở cấp ≤ E2 đã chạy và PASS: `SC21`, `SC26` (E2, fault
+          injection thật) và `SC29`, `SC31` (E1, contract test bằng fixture). 47 dòng còn lại
+          vẫn `NOT_RUN`, trong đó 12 dòng mang `partial_evidence_vi` — Giai đoạn 1 chạm được
+          một phần oracle nhưng không đủ. Con số đo được là 4/51, không phải "đã có code nên
+          gần xong".
+        evidence_refs:
+          - "acceptance/scenarios.yaml (status + status_evidence_refs của SC21, SC26, SC29, SC31)"
+          - "evidence/index.json"
       - id: G6-X2
         statement_vi: "Mọi scenario có `evidence_level_required` = E3 đã có live probe với giới hạn ghi rõ."
-        machine_check: "evidence/index.json: SC14, SC16, SC17, SC43, SC51 có result != NOT_RUN"
+        machine_check: "acceptance/scenarios.yaml: SC14, SC16, SC17, SC43, SC51 có status != NOT_RUN"
         met: false
+        gap_vi: >
+          **0/5.** Không lời gọi live nào đã chạy — không X, không Telegram, không provider AI,
+          không Chrome. Cả hai lượt audit A3 xác nhận điều đó bằng quan sát của chính auditor
+          (`A3-R1-report.md` §5, `A3-R2-report.md` §6): E3/E4 vẫn `NOT_RUN` theo giao thức.
       - id: G6-X3
         statement_vi: "Một drill restore THẬT đã chạy vào môi trường sạch."
-        machine_check: "SC27 + SC53 có result != NOT_RUN; contracts/ops/backup-restore.md §5.7"
+        machine_check: "SC27 + SC53 có status != NOT_RUN; contracts/ops/backup-restore.md §5.7"
         met: false
-    current_status: NOT_APPLICABLE_YET
-    evidence_refs: []
+        gap_vi: >
+          **0/2.** `SC42` đã chứng minh rằng **cổng khóa** khi vị từ đối soát false, nhưng đó
+          là cổng, không phải drill: chưa lần restore nào chạy vào môi trường sạch, và
+          `write_blocked → healthy` cũng chưa chạy qua một lần ghi thật (`CR-TC-storage-04`,
+          `F-A3R1-11` PARTIAL ở cả hai lượt A3).
+    current_status: NOT_MET
+    evidence_refs:
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
+      - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
+      - "evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json"
+      - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
+    note_vi: >
+      Cổng chuyển từ `NOT_APPLICABLE_YET` sang **`NOT_MET`**: lý do cũ ("chưa có code") không
+      còn đúng, nên giữ nhãn "chưa áp dụng được" sẽ là che một phép đo nay làm được. Code Giai
+      đoạn 0/1 tồn tại, đã chạy, và một auditor độc lập đã chạy lại nó — vì vậy G6 nay ĐO
+      được, và phép đo là 4/51 · 0/5 · 0/2. Không điều kiện ra nào đạt.
     blocked_by_open_items:
-      - "Chưa có code. Mọi E1–E4 là `NOT_RUN`."
+      - "G6-X1: 47/51 scenario cấp ≤ E2 vẫn `NOT_RUN` (12 trong số đó có bằng chứng một phần đã ghi)."
+      - "G6-X2: chưa có lời gọi live nào; cổng SP1 chưa mở (SP1-X2 chưa chạy đợt probe nào)."
+      - "G6-X3: chưa có drill restore thật; `write_blocked → healthy` chưa chạy qua một lần ghi thật."
+      - "Mười một trong mười ba module vẫn chưa có card nào chạy: chỉ MOD-ingest-service, MOD-identity-service, MOD-auth-service và MOD-data-store có code."
     allows_next_vi: >
-      Gọi integration/live verified TRONG PHẠM VI đã đo. KHÔNG suy ra product accepted.
+      Gọi integration/live verified TRONG PHẠM VI đã đo. Ở thời điểm này phạm vi đó là **bốn
+      scenario**, không phải hệ thống. KHÔNG suy ra product accepted.
 
   - id: G7
     name_vi: "Product acceptance — đủ kỳ/tuần theo rubric đã chốt, Owner đánh giá"

@@ -1,6 +1,6 @@
 ---
 contract_id: CT-evidence-tools
-version: 0.1.0
+version: 0.3.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -23,16 +23,22 @@ dependencies:
   - "contracts/"
   - "acceptance/"
   - "precode/"
+  - "agent-tasks/"
   - "python3 ≥ 3.10, PyYAML, jsonschema"
 scope: >
-  Bộ công cụ kiểm tra tĩnh (E0) cho baseline hợp đồng Pre-code. Một file duy nhất,
-  `e0_check.py`, chạy 19 check và xuất một báo cáo JSON máy đọc được cộng một bản tóm tắt cho
-  người. Đây là tài liệu sử dụng, giới hạn và cách đếm của nó.
+  Bộ công cụ kiểm tra tĩnh (E0) cho baseline hợp đồng Pre-code. **Hai** công cụ, cả hai chỉ đọc
+  và cả hai chạy trong job CI `e0`: `e0_check.py` chạy **25 check** trên contracts/, acceptance/,
+  precode/, evidence/ (§1–§7); `verify_cards.py` chạy **13 check** trên 18 task card của
+  agent-tasks/ — dạng chạy được của EV-PC10-01 — cộng một self-test âm (§8). Mỗi công cụ xuất một
+  báo cáo JSON máy đọc được và một bản tóm tắt cho người. Đây là tài liệu sử dụng, giới hạn và
+  cách đếm của chúng.
 verification: "Bản thân công cụ là phương tiện verification; kết quả của nó là SELF_VALIDATION."
 claim_ceiling: DRAFT_FOR_REVIEW
 ---
 
 # E0 static checks
+
+*Hai công cụ: `e0_check.py` (§1–§7, 25 check) và `verify_cards.py` (§8, 13 check + self-test âm).*
 
 ## 1. Cái này chứng minh gì và KHÔNG chứng minh gì
 
@@ -73,7 +79,7 @@ Một `BLOCKED` (thiếu file đầu vào) **không** làm exit code khác 0 —
 Phụ thuộc: python3 stdlib + PyYAML + jsonschema. Không có phụ thuộc nào khác và công cụ **không**
 truy cập mạng.
 
-## 3. Hai mươi bốn check
+## 3. Hai mươi lăm check
 
 | ID | Kiểm gì | Oracle |
 | --- | --- | --- |
@@ -98,9 +104,10 @@ truy cập mạng.
 | `E0-13-coverage-windows` | Fixture có `coverage_window` | `window_from < window_to`; `window_to[n] == window_from[n+1]` theo `sequence` |
 | `E0-14-fixture-actor-edge` | `events[]` của mọi fixture | `actor` ∈ `caller_modules` VÀ `(actor, owner, operation)` ∈ `allowed_edges`; `performed_by` là service thực thi, **không** phải khẳng định caller; `edge_assertion: forbidden` đảo ngược kỳ vọng (R4-02); một sự kiện `operation: null` **phải** khai `event_type` ∈ {`local_observation`, `in_process_call`} |
 | `E0-15-fixture-field-existence` | `given.rows` / `expected.rows` | mọi key là một cột của entity đó, HOẶC bắt đầu bằng `_`, HOẶC mang `pending_cr` (R4-01) |
-| `E0-16-scenario-catalogue` | `acceptance/scenarios.yaml` | mỗi AC-01..18 có SC; mỗi mã lỗi có SC; id duy nhất và liên tục; mọi `fixture_refs`/`contract_refs` tồn tại trên đĩa; mọi `status` là `NOT_RUN` |
+| `E0-16-scenario-catalogue` | `acceptance/scenarios.yaml` | mỗi AC-01..18 có SC; mỗi mã lỗi có SC; id duy nhất và liên tục; mọi `fixture_refs`/`contract_refs` tồn tại trên đĩa; và mọi `status` hoặc là `NOT_RUN` hoặc là `PASS (E1)`/`PASS (E2)` **kèm bằng chứng**: `status_evidence_refs` không rỗng và mọi đường dẫn trong đó tồn tại trên đĩa, `status_scope_vi` không rỗng, và `evidence_level_required` không cao hơn cấp được khai. `PASS (E3)`/`PASS (E4)` bị từ chối thẳng — chưa lời gọi live nào và chưa kỳ review nội dung nào chạy. Đổi ở `PKT-PC09-P1`: vế cũ là lệnh cấm phẳng ("mọi status là NOT_RUN"), vế mới là **yêu cầu có bằng chứng**, vì bốn scenario thật sự đã chạy và được một auditor độc lập chạy lại |
 | `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: 37 + 21 + 2 = 60. (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
 | `E0-17-declared-deviations` | `x-contract.deviations` và các ngoại lệ header | mỗi deviation có `rule`/`deviation`/`reason`/`evidence_refs`; ngoại lệ ADR (R-05) và ngoại lệ CSV được ghi ở nơi đọc được |
+| `E0-19-generated-matches` | Hai manifest `GENERATED_FROM.json` (`shared/rr_contracts/rr_contracts/generated/`, `web/src/generated/`) | Mỗi manifest parse được, khai `generator` và một `sources` **không rỗng**, và mọi `sources[].path` tồn tại với `sha256` **bằng** hash của file trên đĩa hôm nay (và `bytes` khớp khi được khai). Đây là quy tắc "sinh, đừng sửa tay" của ADR-0011 ở dạng check tĩnh. Nó **KHÔNG** chứng minh đầu ra của bộ sinh đúng, và **KHÔNG** bắt được một file sinh bị sửa tay — chỉ chạy lại bộ sinh mới bắt được, và hai cửa đó (`pytest shared/rr_contracts/tests/test_generated_matches_contracts.py`, `node web/scripts/generate.mjs --check`) **vẫn ở nguyên**. `contracts/data/entities.yaml` **cố ý** không phải nguồn của bộ sinh nào (`CR-P0-06`, `F-A3R2-04`): hình dạng bảng đi vào code bằng tay qua Alembic và được canh bởi **pytest** `tests/contract/test_schema_matches_entities.py` — cổng schema sống trong pytest, không trong E0. Check in ra sự vắng mặt đó thành một note thay vì để người đọc suy ra |
 
 ## 4. Cách đếm — một phương pháp duy nhất
 
@@ -248,6 +255,123 @@ xử lý là:
 `F-A2R1-10`). Cách sửa cả hai lần giống nhau — thu tiêu đề về đúng phép đo, rồi đo phần chênh và
 in nó ra — và §5 nên được đọc với giả định rằng còn những chỗ như thế chưa ai tìm ra.
 
+## 5i. `CR-P0-02` — `E0-12` từng dựa trên một mệnh đề nay đã sai
+
+Oracle cũ của `E0-12` cấm **tuyệt đối** mọi nhãn trên `CONTRACT_READY` trong toàn bộ phạm vi quét,
+và nêu lý do ngay trong chính oracle: *"no code exists, so nothing above it is establishable"*.
+Mệnh đề đó đúng cho tới khi Giai đoạn 0/1 ship code mà một auditor độc lập chạy lại được.
+
+Người viết `P0-skeleton-handoff.md` gặp hậu quả cụ thể của nó: để đi qua cửa, họ phải đặt trần
+hoàn thành của mình vào một **bảng văn xuôi trong backtick** thay vì vào một trường có cấu trúc
+của front-matter, vì trường có cấu trúc sẽ FAIL. Đó là một cách viết vòng để lách một cửa đã lỗi
+thời — và một cửa buộc người trung thực phải viết vòng là một cửa đang dạy sai thói quen.
+
+Quy tắc nay được **thu hẹp, không bị bỏ**:
+
+| Ở đâu | `IMPLEMENTATION_VERIFIED` | `INTEGRATION_VERIFIED` và cao hơn |
+| --- | --- | --- |
+| `evidence/handoffs/**`, `evidence/runs/**` **có trích dẫn một báo cáo A3** | **được phép** | cấm |
+| `evidence/handoffs/**`, `evidence/runs/**` **không** trích dẫn | cấm | cấm |
+| `contracts/**`, `acceptance/**`, `precode/**` | cấm (không đổi) | cấm (không đổi) |
+
+Trích dẫn là điều biến nhãn thành một **tham chiếu bằng chứng** thay vì một lời tự phong: một
+Worker không được tự nâng trần của chính mình, và `evidence/manifest.schema.json` vẫn chặn một bản
+ghi `SELF_VALIDATION` ở `CONTRACT_READY` — cái chặn đó **không** được nới, và nó chính là câu trả
+lời cho `CR-TC-ingest-06` và `CR-TC-storage-02`.
+
+**Độ mịn, nói ra thay vì để suy:** trích dẫn được kiểm **theo FILE**, không theo từng bản ghi. Một
+handoff trích dẫn A3 ở đâu đó vì thế có thể mang nhãn trên một bản ghi mà báo cáo không phán tới.
+`E0-12` in ra danh sách file đã dùng ngoại lệ này trong note của nó, để phạm vi thật của ngoại lệ
+nằm trong bằng chứng chứ không nằm trong trí nhớ ai đó. Nghĩa vụ theo từng bản ghi do
+`evidence/manifest.schema.json` và `precode/review.md` §14.3 gánh.
+
+## 5k. `F-A3R3-01` — quy tắc nói nó canh một cây mà vòng lặp chưa bao giờ đọc
+
+`A3-R3` tìm thấy đúng lớp lỗi mà §5f và §5h đã cảnh báo hai lần, lần này trong bản sửa của chính
+tôi: oracle của `E0-12` viết rằng ngoại lệ `CR-P0-02` áp cho `evidence/handoffs/**` **và
+`evidence/runs/**`**, nhưng `in_scope_for_refs()` loại `evidence/runs/` khỏi phạm vi (đúng theo
+`F-A2R1-11`, để `files_scanned` tái lập được), và vòng lặp của `E0-12` bắt đầu bằng chính vị từ
+đó. Auditor tiêm ba khiếm khuyết vào cây đó và cả ba **PASS**; `checked` thậm chí không nhúc nhích.
+
+Auditor cũng tìm ra cái thứ hai, sâu hơn: `evidence/manifest.schema.json` chặn
+`IMPLEMENTATION_VERIFIED` trên một bản ghi `SELF_VALIDATION` — cửa chặn thật sự — nhưng trên một
+bản ghi **tự khai** `review_type: INDEPENDENT_AUDIT` nó chấp nhận **mọi** nhãn, tới tận nhãn cao
+nhất. Nghĩa là ở đúng loại bản ghi dễ tự phong nhất, không cửa máy nào ràng buộc nhãn: không
+`E0-12` (cây bị loại), không schema (trần bị nới).
+
+Bản sửa ở `PKT-PC09-P1-FIX1`, hai phần:
+
+1. **`E0-12` nay thật sự đọc cây đó.** `evidence/runs/**` được duyệt **riêng** trong chính check
+   (hàm `run_record_files`), nên `files_scanned` **không đổi** và `F-A2R1-11` vẫn được tôn trọng;
+   số file/trường đọc thêm được in ra trong một note. Ở cây này chỉ **trường có cấu trúc** được
+   kiểm — kể cả `claim.supports_label`. Lý do phải nói ra: một báo cáo E0 **cũng là** một file
+   trong `evidence/runs/`, và nó nhúng chính oracle này, vốn nêu tên mọi nhãn bị cấm; quét văn
+   xuôi ở đó sẽ làm công cụ fail trên đầu ra của chính nó.
+2. **Schema có trần theo loại review.** `x-maximum-claim-by-review-type` + hai nhánh `allOf` mới:
+   `INDEPENDENT_AUDIT` tối đa `IMPLEMENTATION_VERIFIED`, `COORDINATOR_CHECK` tối đa
+   `CONTRACT_READY`. Ba nhãn trên đó cần G6-X1 / SP1-X2 / G7, và chưa cổng nào mở.
+
+**Một mở rộng vượt câu chữ của packet, khai ra thay vì làm lặng.** Packet bảo mở rộng sang
+`evidence/runs/**`. Tôi mở sang **ba** vị trí, thêm `evidence/index.json`, vì index nhúng nguyên
+văn từng bản ghi — một nhãn lọt vào đó là một nhãn trong một bản ghi, và trước đợt này
+`supports_label` **không được kiểm ở file nào cả**. Đây vừa là siết chặt vừa là nới quyền, nên nó
+là `CR-PC09-17` gửi Coordinator, không phải một quyết định của Worker.
+
+**Một exemption mới, cũng được đếm.** `evidence/coordination/**` (packet, ruling, ledger) được
+miễn khỏi **quét văn xuôi** nhãn: một packet hỏi "nhãn X có đứng được cho bốn card không?" đang
+**trích** nhãn nó dispatch, giống hệt `claim_ceiling` trong một card `agent-tasks/`. Trường có
+cấu trúc của chúng vẫn bị kiểm, và số lần trích được **đếm và in ra** trong note của `E0-12` —
+cùng cách xử lý §5f đã dùng, vì cùng một rủi ro.
+
+## 5j. Self-test âm cho ba quy tắc của `PKT-PC09-P1`
+
+Cùng kỷ luật §5b: một quy tắc chưa ai thấy **cắn** là một quy tắc không nên tin. Script
+`selftest_p1.py` (thư mục scratch của Worker) tiêm từng khiếm khuyết một vào một **bản sao** của
+repo và khẳng định đúng check bắt được nó ở đúng đường dẫn. **11/11 CAUGHT**, gồm một *positive
+control*:
+
+| # | Tiêm gì | Check phải bắt |
+| --- | --- | --- |
+| N1 | `IMPLEMENTATION_VERIFIED` trần trụi trong một handoff **không** trích A3 | `E0-12` |
+| N2 | `INTEGRATION_VERIFIED` trong một handoff **có** trích A3 | `E0-12` (ngoại lệ chỉ mở cho một nhãn) |
+| N3 | `IMPLEMENTATION_VERIFIED` trong một file `contracts/` | `E0-12` (quy tắc cũ không đổi) |
+| P1 | *(đối chứng dương)* handoff thật có trích A3 | `E0-12` **KHÔNG** được báo |
+| N4 | `status: "PASS (E3)"` | `E0-16` (ngoài từ vựng) |
+| N5 | scenario đòi E2 mà khai `PASS (E1)` | `E0-16` (không pass dưới cấp mình đòi) |
+| N6 | `status_evidence_refs` trỏ file không tồn tại | `E0-16` |
+| N7 | `status_scope_vi` bị làm rỗng | `E0-16` |
+| N8 | thêm một byte vào một nguồn đã khai của bộ sinh | `E0-19` |
+| N9 | xóa một `GENERATED_FROM.json` | `E0-19` |
+| N10 | `GENERATED_FROM.json` với `sources: []` | `E0-19` (không được pass rỗng) |
+
+### Bảng đột biến thứ hai — `PKT-PC09-P1-FIX1`, chính bảng của `A3-R3` đảo ngược
+
+`selftest_fix1.py` chạy lại từng dòng auditor báo là "PASS khi lẽ ra phải FAIL", cộng hai đối
+chứng và năm đột biến schema. **12/12 hành xử đúng đặc tả**:
+
+| # | Đột biến | Kỳ vọng | Quan sát |
+| --- | --- | --- | --- |
+| — | repo không đột biến (đối chứng nền) | PASS | PASS, 0 vi phạm |
+| 1 | `IMPLEMENTATION_VERIFIED` vào `precode/gates.yaml` | FAIL | FAIL, 1 vi phạm |
+| 2 | `evidence/runs/*.json` `claim_ceiling` nhãn đó, **không** trích A3 | FAIL | FAIL |
+| 3 | `evidence/runs/*.json` `claim.supports_label` nhãn đó, không trích | FAIL | FAIL |
+| 4 | `evidence/runs/*.json` `INTEGRATION_VERIFIED`, **có** trích A3 | FAIL | FAIL |
+| 5 | `evidence/runs/*.json` `IMPLEMENTATION_VERIFIED` **có** trích (đối chứng dương) | PASS | PASS |
+| 6 | `evidence/index.json` bản ghi `supports_label` → `INTEGRATION_VERIFIED` | FAIL | FAIL |
+| S1 | schema: `IMPLEMENTATION_VERIFIED` trên `INDEPENDENT_AUDIT` | ACCEPT | ACCEPT |
+| S2 | schema: `INTEGRATION_VERIFIED` trên `INDEPENDENT_AUDIT` | REJECT | REJECT |
+| S3 | schema: `PRODUCT_ACCEPTED` trên `INDEPENDENT_AUDIT` | REJECT | REJECT |
+| S4 | schema: `IMPLEMENTATION_VERIFIED` trên `SELF_VALIDATION` | REJECT | REJECT |
+| S5 | schema: `IMPLEMENTATION_VERIFIED` trên `COORDINATOR_CHECK` | REJECT | REJECT |
+
+Dòng 5 và S1 là lý do bảng này có giá trị: một quy tắc chỉ biết từ chối, không biết cho qua
+trường hợp hợp lệ, cũng vô dụng như một quy tắc không bắt được gì.
+
+N10 và đối chứng P1 là hai ca đáng nói. N10 kiểm rằng một manifest **không khẳng định gì** bị coi
+là hỏng thay vì được coi là sạch — cùng lớp lỗi với `items_checked: 0` mà `finalize()` canh. P1
+kiểm chiều ngược lại: một quy tắc chỉ bắt được lỗi mà không cho phép trường hợp hợp lệ thì cũng
+vô dụng như một quy tắc không bắt được gì.
+
 ## 5c. Cải tiến được khuyến nghị tiếp theo — `CR-PC07-10` (KHÔNG thực hiện ở đợt này)
 
 W3 nêu một phản biện đúng về `E0-04b`/`E0-04c` và nó nên được ghi lại thay vì bị quên:
@@ -353,3 +477,94 @@ từng vi phạm, rồi gọi hàm đó trong `main()`. Ba quy tắc:
    cả một thư mục.
 5. **Ghi oracle bằng chữ.** Trường `oracle` được in ra và được sao vào `evidence/index.json`; nó
    là thứ người đọc dùng để biết `PASS` nghĩa là gì.
+
+
+---
+
+## 8. `verify_cards.py` — cửa pin của 18 task card
+
+Công cụ thứ hai trong thư mục này. Nó **không** thuộc `e0_check.py`; nó là dạng chạy được của
+`EV-PC10-01`, phép kiểm mà PC10 vốn chỉ chạy bằng một script trong thư mục scratch. Job `e0`
+chạy cả hai (`.github/workflows/e0.yml`).
+
+```
+PYTHONDONTWRITEBYTECODE=1 uv run python evidence/tools/verify_cards.py \
+    --repo . --json-out "$RUNNER_TEMP/cards.json"
+```
+
+Cờ: `--only <id,id>` chạy một tập con; `--json` in báo cáo ra stdout (`--json-out` ghi ra file);
+`--self-test` chạy self-test âm ở §8.2; `--self-test-dir` chỉ định thư mục scratch cho nó (mặc
+định là một thư mục tạm, và **không bao giờ** được nằm trong repo — công cụ từ chối).
+
+Thoát 0 chỉ khi **mọi** check `PASS`. `FAIL` và `BLOCKED` đều thoát 1; 2 là công cụ không chạy
+được. Một check đọc 0 mục tự chuyển `BLOCKED` — cùng quy tắc §7.3 ở trên, vì cùng một lý do.
+
+### 8.1 Mười ba check — bằng đúng oracle của `EV-PC10-01`
+
+Tới `PKT-PC10-FIX15` bản port này chỉ chạy **chín** check; bốn check còn lại sống trong script
+scratch của PC10 và sẽ biến mất cùng thư mục đó. `CR-PC10-10` ghi lại khoảng trống ấy, và
+`PKT-PC10-FIX16` đóng nó. Nay hai bản **bằng nhau**.
+
+| Check | Oracle | Nguồn |
+| --- | --- | --- |
+| `pins` (a) | mọi sha256 + byte count ở §0 khớp file trên đĩa | `INV-06` |
+| `epoch` (k) | 18 card đồng thuận **một** epoch, **và** bốn file khẳng định pin hiện hành (`precode/README.md`, `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md`) nêu đúng epoch đó; epoch cũ chỉ được xuất hiện trong đoạn văn có dấu hiệu kể lịch sử | `F-A2R1-03` |
+| `paths` (b) | mọi đường dẫn tài liệu card trích dẫn đều tồn tại | — |
+| `operations` (c) | mọi operation ID ở §4 có trong `contracts/ports.yaml` | — |
+| `scenarios` (d) | mọi `SC..` giải được trong `acceptance/scenarios.yaml` | — |
+| `errors` (e) | mọi mã ở §7 có trong `contracts/errors.yaml` | — |
+| `modules` (f) | mọi `MOD-*` có trong `contracts/modules.yaml` | — |
+| `invariants` (g) | mọi `I<nn>` có trong sổ bất biến | — |
+| **`obligations` (h)** | mọi card mang `SC49`, bảng ranh giới R5-01 ở §5 (`UNAUTHORIZED`, `FORBIDDEN_EDGE`, `CAPABILITY_DENIED`, `CSRF_REJECTED`) và fixture default-deny | ruling R5-01 |
+| **`claim_labels` (i)** | nhãn claim chỉ lấy từ SRC-PLAN §2 | SRC-PLAN §2 |
+| **`pc09_unpinned` (j)** | sáu file PC09 + `e0_check.py` **không** được pin hash ở §0 | ruling về `CR-PC10-01` |
+| **`stack` (l)** | không card nào trình bày Stack A như stack được chọn; mọi card nêu Option B và trích `OD-20260907-01` | `OD-20260907-01` |
+| `layout` (m) | luật hai ngôn ngữ của `agent-tasks/README.md` §5.3 — kiểm **cả** trên chữ của card **và** trên file thật trên đĩa | §5.3 |
+
+Bốn check mới không phải trang trí. `(j)` là thứ ngăn một lần pin "cho đủ" biến sáu file mà card
+được lệnh **đọc bản mới nhất** thành sáu file làm card `STALE`. `(k)` bản đầy đủ đã bắt lỗi thật
+**hai lần** (`F-A2R1-03`, và `PKT-PC10-FIX14` §N.3 — nơi một script cập nhật prose chạy sai thư
+mục làm việc, để 18 card ở epoch mới còn bốn file điểm vào ở epoch cũ).
+
+### 8.2 Self-test âm — `--self-test`
+
+Cùng nguyên tắc §5b: một `PASS` chỉ đáng tin khi check bắt được lỗi mà nó tuyên bố bắt. Công cụ
+dựng một **shadow tree** trong thư mục scratch — `agent-tasks/` và `precode/` được **sao thật**,
+mọi thứ khác ở gốc repo là **symlink**, nên cái bóng tốn vài trăm KB chứ không phải một checkout
+— rồi tiêm đúng **một** khiếm khuyết cho mỗi check và đòi check sở hữu nó phải báo:
+
+| Check | Đột biến |
+| --- | --- |
+| `pins` | đổi một sha256 đã pin thành `000…` |
+| `epoch` | (1) một card bị pin lại **một mình** sang epoch khác; (2) `agent-tasks/README.md` bị bỏ lại ở một epoch đã bị thay |
+| `paths` | card trích một hợp đồng không tồn tại |
+| `operations` | §4 nêu `bogus.operation_id` |
+| `scenarios` | card trích `SC97` |
+| `errors` | §7 nêu `NOT_A_REGISTERED_CODE` |
+| `modules` | card nêu `MOD-not-a-real-module` |
+| `invariants` | card trích `I97` |
+| `obligations` | gỡ `SC49` và đổi tên `CSRF_REJECTED` **ở mọi chỗ** |
+| `claim_labels` | card tự đặt nhãn `PRODUCTION_VERIFIED` |
+| `pc09_unpinned` | card pin `acceptance/scenarios.yaml` bằng hash |
+| `stack` | card trình bày `Option A` không kèm dấu hiệu bị thay |
+| `layout` | card đặt `web/src/lib/handler.py` |
+
+Hai điều kiện làm self-test này khác một self-test trang trí:
+
+1. **Mọi lần tiêm đều được xác nhận đã landing.** `_mutate()` thoát khác 0 nếu chuỗi đích vắng
+   mặt. §5b ghi lại chuyện gì xảy ra khi không có điều này: đột biến không landing, check báo
+   `PASS`, và self-test chứng minh **không gì cả** theo đúng cách trông giống thành công.
+2. **So sánh theo số vi phạm, không theo trạng thái.** Baseline được đo **cho từng check** trên
+   cái bóng sạch; một đột biến được tính là "CAUGHT" khi nó làm **tăng** số vi phạm. Nhờ vậy
+   self-test vẫn chứng minh được `pins` cắn ngay cả khi cây thật đang có pin lệch — một điều
+   kiện "phải sạch trước đã" sẽ tắt self-test đúng lúc cần nó nhất. Khi baseline không sạch,
+   đầu ra nói thẳng điều đó và nhắc rằng self-test **không** nói repo đang PASS.
+
+Thoát 0 chỉ khi **mọi** đột biến bị bắt. Cái bóng bị xóa sau khi chạy; không byte nào được ghi
+vào repo.
+
+### 8.3 Điều công cụ này KHÔNG chứng minh
+
+Nó đọc lại **khai báo**, không đọc **nghĩa**. Một card có thể qua cả mười ba check và vẫn giao
+sai việc. `pins` `PASS` chỉ nói byte hôm nay khớp byte đã pin — không nói hợp đồng đúng. Mọi kết
+quả là `SELF_VALIDATION` theo SRC-PLAN §11.

@@ -1,5 +1,5 @@
 contract_id: CT-acceptance-scenarios
-version: 0.1.0
+version: 0.2.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -95,10 +95,13 @@ scope: >
   invariant chưa có mặt dương (I12, I15 và chuỗi kỳ hoàn chỉnh).
 verification: >
   E0 — `evidence/tools/e0_check.py` check `E0-16-scenario-catalogue` (mọi AC có SC; mọi mã lỗi
-  có SC; mọi fixture_refs và contract_refs phân giải được; đánh số liên tục; mọi status là
-  NOT_RUN), check `E0-11b-invariant-polarity` (mỗi invariant có ít nhất một scenario dương và
-  một scenario âm) và check `E0-10a-denied-edge-scenario` (mỗi cạnh bị cấm có scenario).
-  E1–E4 chưa chạy; xem `evidence/index.json`.
+  có SC; mọi fixture_refs và contract_refs phân giải được; đánh số liên tục; và mọi status
+  hoặc là `NOT_RUN`, hoặc là `PASS (E1)`/`PASS (E2)` KÈM `status_evidence_refs` phân giải được
+  trên đĩa, `status_scope_vi`, và một `evidence_level_required` không cao hơn cấp được khai —
+  `PASS (E3)`/`PASS (E4)` bị từ chối thẳng), check `E0-11b-invariant-polarity` (mỗi invariant
+  có ít nhất một scenario dương và một scenario âm) và check `E0-10a-denied-edge-scenario`
+  (mỗi cạnh bị cấm có scenario).
+  E3–E4 chưa chạy ở bất kỳ scenario nào; xem `evidence/index.json`.
 claim_ceiling: DRAFT_FOR_REVIEW
 
 reading_guide_vi: >
@@ -109,7 +112,13 @@ reading_guide_vi: >
   hợp đồng, E1 contract test bằng fixture, E2 integration + fault injection, E3 live probe có
   giới hạn, E4 review nội dung nhiều kỳ. `mockable_vi` và `needs_live_or_human_vi` chia đôi:
   cái gì giả lập được bằng fixture/fake-clock, và cái gì bắt buộc phải có dịch vụ thật hoặc
-  người đọc. `status: NOT_RUN` ở mọi dòng — chưa có code, chưa có harness, chưa chạy gì.
+  người đọc. `status` nay có ba giá trị: `NOT_RUN` (52 dòng), `PASS (E1)` (2 dòng) và
+  `PASS (E2)` (2 dòng). Bốn dòng PASS là bốn scenario mà Giai đoạn 1 chạy TOÀN BỘ oracle trong
+  phạm vi một card và một auditor độc lập (A3-R1, A3-R2) đã chạy lại từ chính bytes đã đóng
+  băng; mỗi dòng mang `status_evidence_refs` và một `status_scope_vi` nói cả cái đã và cái
+  CHƯA thiết lập. Một scenario mà Giai đoạn 1 chỉ chạm được MỘT PHẦN oracle vẫn là `NOT_RUN`
+  và mang `partial_evidence_vi` nói phần nào đã chạy và phần nào chưa — một phần không phải
+  một PASS, và điều đã đo không được phép biến mất chỉ vì nó chưa đủ.
 
 fixture_missing_note_vi: >
   `fixture_refs: [MISSING]` là cơ chế dành cho một scenario đã có oracle nhưng CHƯA có dữ liệu
@@ -261,6 +270,11 @@ scenarios:
       Con số giới hạn THẬT (REQ-OQ05) chỉ chốt được sau M0 bằng số liệu probe; scenario này
       chứng minh cơ chế, không chứng minh con số đúng.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Nửa 'đọc lại sau khi con trỏ mất hiệu lực' đã chạy trong
+      tests/integration/test_ingest_ack_lost.py, nhưng oracle của SC03 là bộ ba (status,
+      outcome, stop_reason) theo AMD-B02 và số request tới nguồn sau report_stop — cả hai thuộc
+      collector/scheduler, chưa tồn tại ở M1.
 
   - id: SC04
     title_vi: "CAPTCHA giữa lô → needs_user, ĐÚNG MỘT cảnh báo, không tự thử lại, resume phải cấp lease mới"
@@ -437,6 +451,11 @@ scenarios:
     needs_live_or_human_vi: >
       Tỷ lệ trùng THẬT trên dữ liệu X thật (REQ-S1.4-03) chỉ đo được ở E3/E4 sau khi có kho thật.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Chuẩn hóa năm cách viết arXiv về một work và chín post_work đã chạy
+      (tests/integration/test_identity_merge_audit.py, fixture h). Vế COUNT(report_item WHERE
+      target_key='work:<id>') = 1 KHÔNG đo được: bảng `report` và `report_item` thuộc card báo
+      cáo, chưa tồn tại.
 
   - id: SC08
     title_vi: "Chuỗi kỳ báo cáo có kỳ rỗng và một publisher crash → các cửa sổ coverage nối liền, nửa mở"
@@ -535,6 +554,10 @@ scenarios:
     mockable_vi: "Ledger và merge là transaction; fixture + walkthrough đủ."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      first_announced_ledger và merge hook §8.3 đã chạy ở tầng identity; vế
+      report_item.item_type='prior_reference' và content_hash của report đã publish KHÔNG đo
+      được — card báo cáo chưa tồn tại.
 
   - id: SC10
     title_vi: "Một mục trong báo cáo tự đủ trên cả app và Telegram: nội dung, điểm khác, hạn chế, mức đọc, tag khớp"
@@ -1139,7 +1162,20 @@ scenarios:
     needs_live_or_human_vi: >
       Độ ổn định THẬT của con trỏ feed X (B05) không chứng minh được offline; probe SP1 ghi lại
       tần suất cursor mất hiệu lực.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
+      - "tests/integration/test_ingest_ack_lost.py"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+    status_scope_vi: >
+      Fault injection thật (ACK mất sau commit, và mất trước commit) trên SQLite: sau replay
+      cùng idempotency_key và cùng payload_hash, COUNT(post) và COUNT(ingest_receipt) không đổi,
+      receipt_hash bằng lần commit đầu, delta của checkpoint.acked_through_ingest_sequence bằng
+      0; và với con trỏ bị vô hiệu hóa, đọc lại trang cũ không ingest thêm hàng nào (AMD-B05:
+      cam kết là không ingest trùng theo x_post_id, không phải không đọc lại). KHÔNG thiết lập:
+      độ ổn định THẬT của con trỏ feed X (B05, chỉ đo được bằng probe SP1), và hai lần submit
+      ĐỒNG THỜI cùng một idempotency_key — A3 ghi rõ điều đó là chưa thiết lập.
 
   - id: SC22
     title_vi: "Analysis về muộn → mục nằm sổ pending, kỳ sau hiện với nhãn phát hiện muộn; backfill không mất"
@@ -1223,6 +1259,10 @@ scenarios:
     needs_live_or_human_vi: >
       Tỷ lệ xung đột thật trên metadata arXiv/OpenAlex thật chỉ đo được sau M2 (E3).
     status: NOT_RUN
+    partial_evidence_vi: >
+      Quarantine không-merge đã chạy (fixture c: COUNT(identity_merge_audit WHERE
+      resolution='auto') = 0, hai post giữ nguyên). Vế 'selection bỏ qua target quarantine' và
+      vế đếm/báo cáo riêng theo AMD-B15 thuộc card báo cáo.
 
   - id: SC24
     title_vi: "Đổi embedding generation giữa chừng → selection bị CHẶN, không trộn vector khác model/dimension"
@@ -1344,7 +1384,22 @@ scenarios:
     evidence_level_required: E2
     mockable_vi: "Disk-full inject được bằng filesystem giả hoặc quota; oracle là số hàng và hash."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
+      - "tests/integration/test_disk_full_no_ack.py"
+      - "tests/integration/test_readiness_independent_channel.py"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+    status_scope_vi: >
+      Fault injection thật (ổ đầy giữa ingest, mô phỏng ở tầng guard cộng một lần gọi
+      ingest.submit_batch thật): mọi mutation bị từ chối bằng STORAGE_WRITE_FAILED trước khi mở
+      transaction, COUNT(ingest_receipt) và checkpoint không đổi, sha256 của file DB không đổi,
+      và health.get_readiness đỏ trong khi health.get_liveness vẫn `up` — kênh health không phụ
+      thuộc việc ghi được vào DB. Nhánh còn restore_record chưa đối soát về recovery_required
+      chứ không về healthy. KHÔNG thiết lập: hành vi của SQLite trên một ổ đĩa đầy THẬT
+      (REQ-S9.3-08 vẫn NOT_RUN), và nhánh hồi phục write_blocked → healthy (chưa có bảng probe —
+      CR-TC-storage-04, F-A3R1-11 PARTIAL).
 
   - id: SC27
     title_vi: "Restore với outbox cũ → không gửi gì, không reset first_announced, dispatch khóa tới khi đối soát xong"
@@ -1484,7 +1539,18 @@ scenarios:
     evidence_level_required: E1
     mockable_vi: "Hoàn toàn offline; fixture đủ."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E1)"
+    status_evidence_refs:
+      - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
+      - "tests/integration/test_identity_merge_audit.py"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle của SC29 đo được và đã đo: COUNT(work)=0 và COUNT(identity_alias)=0 sau khi
+      phân giải một post chỉ có ảnh chụp, target trả về là nhánh `post` của target.schema.json
+      với đúng một id được đặt, và một scheme chỉ-alias (OpenAlex) bị từ chối bằng
+      VALIDATION_ERROR thay vì tạo work. KHÔNG thiết lập: tỷ lệ post không có định danh trên dữ
+      liệu X thật (E3/E4).
 
   - id: SC30
     title_vi: "arXiv v1 → v2: một work, hai work_version, generation phân tích mới, không phải phát hiện mới"
@@ -1524,6 +1590,10 @@ scenarios:
     mockable_vi: "Offline; fixture đủ."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Một work, hai work_version, đúng một is_current đã chạy (fixture g). Vế COUNT(analysis
+      WHERE analysis_key=K) tăng đúng 1 với generation 1 vẫn `valid` KHÔNG đo được: logic
+      analysis thuộc TC-analysis-once-per-generation.
 
   - id: SC31
     title_vi: "Wire schema ingest batch từ chối payload sai: năm ca âm và một ca dương"
@@ -1566,7 +1636,20 @@ scenarios:
     evidence_level_required: E1
     mockable_vi: "Thuần schema; chạy được ngay ở E0/E1 bằng jsonschema."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E1)"
+    status_evidence_refs:
+      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
+      - "tests/contract/test_ingest_batch_schema.py"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle của SC31 chạy được trong phạm vi card TC-ingest-idempotent-ack-lost và đã
+      chạy: ca dương validate sạch với ingest-batch.schema.json, năm ca âm sinh lỗi tại đúng
+      json_pointer mà fixture khai, và COUNT(post) không đổi ở cả năm ca vì service từ chối
+      trước khi mở transaction. Quy tắc wire của SRC-PLAN §5.1 (timestamp RFC 3339 mili giây,
+      additionalProperties:false, idempotency_key bắt buộc, payload_hash khớp mẫu) được ép ở mức
+      schema. KHÔNG thiết lập: hành vi của nguồn X thật, hay bất kỳ operation nào ngoài bốn
+      operation ingest mà card sản xuất.
 
   # ------------------------------------------------------------------------------------
   # SC32, SC44 — do PC01 đăng ký (ruling R-04 và ruling FIX3)
@@ -1777,6 +1860,11 @@ scenarios:
     mockable_vi: "Offline; inject write failure."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Cửa sổ write_blocked, kênh health độc lập và nhánh B (recovery_required) đã chạy (fixture
+      l). Nhánh hồi phục write_blocked → healthy chỉ chạy qua một probe được tiêm, KHÔNG qua một
+      lần ghi thật: bảng probe của T-ST-02 không tồn tại (CR-TC-storage-04). A3-R1 §4.1 và A3-R2
+      §5.1 loại trừ đúng nhánh này khỏi nhãn.
     notes_vi: >
       Fixture riêng được cấp ở đợt FIX5 (`collection/l-…`, ruling R5-02), phủ nhánh
       `write_blocked → recovery_required` của T-ST-08 mà `recovery/c-disk-full-mid-ingest.json`
@@ -1953,6 +2041,13 @@ scenarios:
       Tham số phiên đăng nhập (idle 12 h, absolute 30 d, Argon2id) là PROVISIONAL của PC08 và cần
       Owner xác nhận.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Ca không xác thực và ca thiếu CSRF đã chạy với 0 mutation
+      (tests/contract/test_auth_scheme_matrix.py, tests/integration/test_denied_edges.py).
+      Scenario KHÔNG chuyển vì hai lý do: bảng `tag` mà oracle đếm chưa tồn tại ở M1, và chính
+      literal mã lỗi của fixture recovery/h seq4 đang xung đột với hợp đồng — được giữ bằng
+      xfail(strict=True), CR-TC-AUTH-01. Một fixture-oracle đang tranh chấp không thể chống đỡ
+      một PASS.
 
   - id: SC41
     title_vi: "Token hợp lệ đi sai cạnh: collector token gọi Save và sửa tag → từ chối, đường ingest vẫn chạy"
@@ -1995,6 +2090,9 @@ scenarios:
     mockable_vi: "Offline; auth contract test."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Token collector đi sai cạnh bị từ chối bằng UNAUTHORIZED 401 và đường ingest vẫn chạy — đã
+      đo. Vế tag_config_version không đổi KHÔNG đo được: bảng `tag` chưa tồn tại.
     notes_vi: >
       `acceptance/fixtures/recovery/README.md` (bảng §fixture) vẫn mô tả ca này là
       `FORBIDDEN_EDGE`, trong khi chính fixture và ruling CR-PC08-04 nói `UNAUTHORIZED`; câu
@@ -2037,6 +2135,10 @@ scenarios:
     needs_live_or_human_vi: >
       Mệnh đề 7 theo thiết kế đòi một CON NGƯỜI xác nhận; không tự động hóa được.
     status: NOT_RUN
+    partial_evidence_vi: >
+      RESTORE_UNVERIFIED với details_safe nêu đích danh mệnh đề chưa đạt, và dispatch vẫn khóa —
+      đã chạy (fixture j). Vế COUNT(assignment_lease WHERE state='held') = 0 KHÔNG đo được (bảng
+      chưa tồn tại), và mệnh đề 7 theo thiết kế đòi một CON NGƯỜI xác nhận.
 
   - id: SC43
     title_vi: "Backup WAL-unsafe bị phát hiện: hash khớp và integrity_check ok nhưng counts lệch → snapshot invalid"
@@ -2448,6 +2550,14 @@ scenarios:
       được đầy đủ trên máy cá nhân có Chrome thật; cổng debug của Chrome phải bind loopback và
       không bao giờ mở ra LAN hay reverse proxy (REQ-S11.2-06).
     status: NOT_RUN
+    partial_evidence_vi: >
+      Quét default-deny đã chạy trên phần chạm được ở tầng HTTP/service. Phân hoạch 36 cạnh được
+      khẳng định bằng máy và tổng bằng 36 (A3-R2 §2, `F-A3R1-08` VERIFIED): **12 UNAUTHORIZED**
+      chạy qua quyết định scheme, **10 FORBIDDEN_EDGE** chạy qua `require_edge`, và **14
+      CAPABILITY_DENIED** giữ ở `NOT_TESTABLE_AT_THIS_LAYER` kèm lý do cho từng ref, được khẳng
+      định là rời nhau với tập đã chạy và KHÔNG được tính là đã pass. Oracle của SC49 đòi cả ba
+      cơ chế ép buộc (import/dependency, API auth, network/process capability), nên 22/36 chưa
+      đủ và scenario giữ NOT_RUN.
     notes_vi: >
       HAI THIẾU SÓT ĐÃ ĐO. (a) 26 trong 36 cạnh KHÔNG có `denied_cases[]` với
       `expected_error_code` được pin, nên scenario này có oracle "không đổi trạng thái" cho cả 36
@@ -2550,6 +2660,10 @@ scenarios:
       Một đợt chạy THẬT đầu-cuối (X thật, provider thật, Telegram thật) là E3 và thuộc SP1 +
       giai đoạn triển khai; giá trị của khối "hướng đang nổi" là E4 và cần 3–4 kỳ thật (REQ-A4).
     status: NOT_RUN
+    partial_evidence_vi: >
+      Hai trong 18 sự kiện của fixture e2e (`ingest.submit_batch` seq 4 và 5) chạy thật qua
+      service. 16 sự kiện còn lại — scheduling, enrichment, analysis, report, delivery — chưa có
+      code. Sáu đẳng thức của oracle không thể cùng đo.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`e2e/a-happy-path-schedule-to-delivered.json`, ruling R5-02),
       trong một thư mục mới `e2e/` và ở dạng `rows.<entity>[]` có cấu trúc để cửa kiểm cột không bị
@@ -2629,6 +2743,9 @@ scenarios:
       mặc định) đang CHẶN M0** và vẫn là câu hỏi mở số 1 của SRC-SPEC §13.1; D09 vẫn ở trạng thái
       `ĐX` trong một hạng mục P0 và PC09 KHÔNG promote nó.
     status: NOT_RUN
+    partial_evidence_vi: >
+      evidence_level_required là E3 và bước 5 (đăng nhập X trong Chrome thật) không mock được.
+      Phần cookie/CSRF của bước 1 đã chạy ở tầng contract test.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`ui/sc51-first-time-setup.json`, ruling R5-02), và ruling R5-03
       buộc `contracts/ui/screens.yaml` trích `REQ-S5.1-01..03`. Trước PC09, năm dòng

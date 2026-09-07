@@ -1566,3 +1566,285 @@ Chạy 2026-09-07T05:12:37Z → 05:12:49Z, tất cả **exit 0**:
 
 Lease `LEASE-PC02-e12` nhả lúc 2026-09-07T05:16Z. Không lệnh git mutation, không network, không
 file ngoài grant, không `__pycache__`.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX12 (F-A3R1-02/-06: `ENT-owner` nhận cột credential và lockout)
+
+## L1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX12` · authority `AUTH-COORD-PC02-FIX12` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC02-e13` (fencing 13) |
+| worker principal | `worker-W3n` (kế nhiệm `worker-W3`) · expires_at 2026-09-08T16:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `CONTRACT_READY` (data and identity) — **cần A3-R2 xác minh lại** |
+| ruling nguồn | `FIX-A3R1-rulings.md` hàng `F-A3R1-02` (HIGH); phục vụ cả `F-A3R1-06` (MEDIUM) và dọn đường cho `F-A3R1-01` |
+| next actor | Coordinator → WS (sinh lại `shared/rr_contracts`) → WA (migration + test) · `lease_released_at` 2026-09-07T11:12Z |
+
+`date -u` lúc bắt đầu = 2026-09-07T11:04:29Z, lúc kết thúc = 2026-09-07T11:09:25Z (trong hạn lease).
+Nguồn khớp baseline §2: plan `f65bb046…40`, spec `d35e1f2d…6e`.
+
+## L2. Delta (1) — `contracts/data/entities.yaml`
+
+`ENT-owner` nhận **đúng bốn** trường, chèn sau `created_at`; **không một byte nào** của năm trường cũ,
+của `keys`, hay của `unique_constraint_semantics` bị đụng tới:
+
+| Trường | Kiểu | Nullable | Điểm cốt lõi của `constraints` |
+| --- | --- | --- | --- |
+| `password_hash` | `string` | có | Chuỗi encoded Argon2id (dạng PHC, đã gồm salt + tham số) theo `secrets.md` §2.2. NULL = **chưa** bootstrap, không phải mật khẩu rỗng ⇒ `auth.login` trả `UNAUTHORIZED`. **KHÔNG BAO GIỜ** được trả bởi bất kỳ read model nào |
+| `password_updated_at` | `timestamp_utc_ms` | có | Mốc đổi mật khẩu gần nhất; đổi mật khẩu thu hồi MỌI session (`secrets.md` §2.3) |
+| `failed_login_count` | `integer` | **không** | `DEFAULT 0`; đăng nhập đúng đặt lại 0; ngưỡng 5 lần / 15 phút |
+| `locked_until` | `timestamp_utc_ms` | có | NULL = không khóa; khóa 15 phút ⇒ `RATE_LIMITED` kèm `retry_after`, không tiết lộ tài khoản tồn tại hay không |
+
+Ba thay đổi đi kèm trong cùng file:
+
+1. `version` **0.1.0 → 0.2.0**. Luật: `change-control.md` §2 hàng "thêm trường optional" = minor; và
+   mục 4 của chính file này liệt kê "cột nullable, hoặc cột NOT NULL kèm DEFAULT hằng số" là additive.
+   Không cột nào đổi ngữ nghĩa cột cũ, thu hẹp enum hay đổi khóa ⇒ **không** phải major.
+2. Mục mới **`0b. Amendment sau phê chuẩn`** với khối `AMD-ENT-owner-01`: before/after nguyên văn,
+   `decision_refs: [CR-TC-AUTH-02, CR-TC-AUTH-03]`, `finding_refs: [F-A3R1-02, F-A3R1-06]`,
+   `status: PROVISIONAL`, khối `ratification` ghi rõ đây là **amendment kỹ thuật của Coordinator**
+   (`AUTH-COORD-PC02-FIX12`, cha `AUTH-OWNER-20260907-03`) và Owner **có thể phản đối**.
+3. `decision_refs` của header thêm `AMD-ENT-owner-01`, `CR-TC-AUTH-02`, `CR-TC-AUTH-03`.
+   `ENT-owner` thêm `amendment_refs: [AMD-ENT-owner-01]` và hai dòng `non_goals` mới.
+
+**`claim_ceiling` giữ nguyên `CONTRACT_READY`** — phạm vi "Data and identity" mà `OD-20260907-01` §4
+phê chuẩn không bị thu hẹp. Nhưng khối amendment ghi thẳng rằng nội dung đã đổi **sau** lượt xác minh
+A2-R4, nên **A3-R2 PHẢI xác minh lại `ENT-owner` trên epoch mới**: nhãn hiện hành được cấp bởi một lượt
+audit chưa từng thấy bốn cột này.
+
+## L3. Delta (2) — `precode/change-control.md`
+
+Thêm §10 "Sổ CR đã áp dụng" với một khối CR đúng **chín trường** của §1
+(`cr_id`, `raised_by`, `addressed_to`, `status`, `source_of_change`, `before`, `after`, `reason`,
+`affected`, `migration`). `CR-TC-AUTH-02` và `CR-TC-AUTH-03` được xét như **một impact set** theo §6 —
+cùng một entity, cùng một file hợp đồng, cùng một migration; tách ra là tạo hai vòng xin phép cho cùng
+một phạm vi, đúng điều §6 cấm. `before` trích nguyên văn năm trường cũ (luật 1 của §1); `after` đủ cụ
+thể để Owner trả lời có/không (luật 2). `affected` liệt kê: `entities.yaml` (0.1.0 → 0.2.0),
+`shared/rr_contracts` (sinh lại), hai revision migration, và luật card: **mọi card pin hash
+`entities.yaml` ⇒ `STALE`** (§4, INV-06/INV-09). Version file 0.1.0 → **0.1.1** (patch — thêm bản ghi,
+không đổi quy trình; đây là luật §2 của chính file, packet không yêu cầu, tôi ghi ra để không lặng lẽ
+đổi nội dung mà giữ nguyên version).
+
+## L4. Delta (3) — `precode/decision-register.md`
+
+Thêm §8.11 "Amendment kỹ thuật của Coordinator sau audit A3-R1", một bảng **một dòng** cho
+`AMD-ENT-owner-01`, dùng đúng năm cột của §8.5 (`ID | Gói | Quyết định | Trạng thái | Đưa lên Owner ở
+mục`). Trạng thái ghi **`PROVISIONAL`**, đưa lên Owner ở mục **Vận hành và bảo mật**. Hai đoạn kèm theo
+nói rõ vì sao Coordinator ký được (amendment làm hợp đồng khớp với `secrets.md` mà Owner **đã** chấp
+nhận qua `PROV-PC08-01` — không thêm quyết định sản phẩm mới, đúng loại việc mà `change-control.md` §7
+giao cho ruling của Coordinator) và **ba điều nó không làm**: không mang nhãn `ACCEPTED (OD-20260907-01)`,
+không đóng `F-A3R1-02`/`F-A3R1-06`, không nâng trần claim. Version 0.1.0 → **0.1.1** (cùng lý do §L3).
+
+Vì sao đặt ở §8 chứ không ở §3: §3 chỉ chứa `AMD-B<nn>` sửa **câu chữ của đặc tả nguồn**, và cả mười
+sáu mục ở đó đã `ACCEPTED (OD-20260907-01)`. `AMD-ENT-owner-01` không sửa một câu nào của spec — nó vá
+một khoảng trống của hợp đồng — và nó **chưa** được Owner phê chuẩn. Trộn nó vào §3 sẽ làm một dòng
+`PROVISIONAL` trông như đã được phê chuẩn cùng mười sáu dòng kia.
+
+## L5. Điều tôi KHÔNG chạm (packet cấm, và tôi đã kiểm)
+
+`server/migrations/**`, `server/app/**`, `shared/rr_contracts/**`, `agent-tasks/**`,
+`acceptance/fixtures/**` — không file nào bị ghi. `git status --porcelain` sau khi làm chỉ khác trước
+khi làm ở đúng ba đường dẫn của packet cộng file handoff này. Không lệnh git mutation, không network,
+`PYTHONDONTWRITEBYTECODE=1`, không `__pycache__` nào ngoài `.venv/` (đã kiểm bằng `find … -not -path
+"*/.venv/*"` → rỗng). Mọi script chạy từ `…/scratchpad/w3n/`, không script nào nằm trong repo.
+
+## L6. Hash sau
+
+| Path | sha256 | Bytes | Trước |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `f5ea0511f885159fedbb48bf939a9bd1436707f12007403c57808c9f5026c77e` | `235547` | `766fe760…0ce7` / 228394 |
+| `precode/change-control.md` | `f0634166dd0c192063ffeb08a65329cc28b2d22655e42e1cadc49f69cbe29fcb` | `21545` | `5cc1e461…6468` / 15847 |
+| `precode/decision-register.md` | `56cd624f3d6a429888018abea9fb67e9dbe26aa6d202630c50ff8f989102c06d` | `117150` | `4d1a5d6e…7244` / 114327 |
+
+Nguồn không đổi: `research-radar-pre-code-plan.md` `f65bb046…7f40`, `research-radar-spec.md`
+`d35e1f2d…e0e26`.
+
+⚠️ **Card-pin.** `entities.yaml` bị pin bởi **18** task card và `decision-register.md` bởi **18** card;
+cả hai hash cũ cũng nằm trong `evidence/index.json`, `precode/baseline.json` và bốn evidence run E1 của
+đợt Giai đoạn 1. Theo `change-control.md` §4, **các card đó nay `STALE`** — chạy lại, không phải FAIL.
+Re-pin là việc của WP/PC10 (`PC10-PIN-…`), không phải của tôi. ⚠️ `entities.yaml` còn là **nguồn của bộ
+sinh**: `shared/rr_contracts` phải được WS sinh lại trước khi WA dùng bốn cột này.
+
+## L7. Evidence — `EV-PC02-09` (SELF_VALIDATION)
+
+Chạy 2026-09-07T11:08Z–11:09Z từ `…/scratchpad/w3n/`, `PYTHONDONTWRITEBYTECODE=1`:
+
+| Gate | Lệnh | Kết quả | exit |
+| --- | --- | --- | --- |
+| `verify_pc02.py` (EV-PC02-01…08) | `python3 verify_pc02.py` | **PASS (0 fail)** — YAML parse 60 entity, target schema, tập purge 37/21/2 phủ kín 60 | 0 |
+| fixture-field (R4-01) | `python3 fixture_field_gate.py` | **PASS** — 7 thư mục, 1667 cột kiểm, 0 chưa giải | 0 |
+| actor-edge | `python3 check_actor_edges_all.py` | **PASS (0 fail)** — 300 sự kiện | 0 |
+| prose-token (E0-04b/04c) | `python3 prose_token_gate.py` | **PASS** — 52 operation + 178 entity.column giải được, **0 chưa giải**; negative self-test bắt đúng 2 token đột biến | 0 |
+| ref PC01 | `python3 check_refs_pc01.py` | **PASS (0 fail)** | 0 |
+| **`evidence/tools/e0_check.py`** (gate chính thức, read-only) | `python3 /mnt/virtual/repo/xcrawl/evidence/tools/e0_check.py` | **24/24 PASS · FAIL 0 · BLOCKED 0 · violations 0** | 0 |
+
+Chi tiết đáng ghi của lượt E0: `E0-04c-prose-column-tokens` 215/0 (bốn cột mới nay là đích hợp lệ cho
+token dạng `owner.password_hash`), `E0-08-contract-header` 143/0, `E0-12-forbidden-strings` 743/0 (khối
+amendment mang `PROVISIONAL`, **không** mang từ vựng đã phê chuẩn), `E0-12b-ratification-refs` 50/0,
+`E0-15-fixture-field-existence` 1964/0.
+
+**Một lỗi thật do gate bắt được, đã sửa trước khi kết thúc.** Bản nháp đầu của khối amendment viết
+`additive_only_rules.allowed_without_major_bump` trong văn xuôi; gate prose-token đọc nó như
+`entity.column` và không giải được ⇒ FAIL. Tôi **không** nới gate: tôi viết lại câu thành "danh sách
+`allowed_without_major_bump` (mục 4, khóa `additive_only_rules`)". Gate xanh lại vì văn bản đúng, không
+vì oracle bị hạ.
+
+**`E0-19-generated-matches`: KHÔNG TỒN TẠI.** Packet dự liệu rằng nếu có, nó sẽ FAIL cho tới khi WS sinh
+lại `shared/rr_contracts`. `grep -n "E0-19" evidence/tools/e0_check.py` trả về **0 dòng** và tổng số
+check là 24, không phải 25. Vậy nên: **không** có FAIL nào để báo, và cũng **không** có gate máy nào
+hiện đang canh việc model sinh khớp `entities.yaml`. Tôi ghi điều đó ra như một khoảng trống, không như
+một lượt PASS: nghĩa vụ sinh lại của WS lúc này chỉ được canh bằng ruling và bằng test hợp đồng
+`tests/contract/test_schema_matches_entities.py` mà WA sẽ viết, chứ chưa có E0 nào bắt được nếu ai đó
+quên. Tôi **không** tự sinh lại — ngoài write set của packet.
+
+## L8. Chưa giải quyết và giới hạn
+
+- `AMD-ENT-owner-01` là **PROVISIONAL**. Owner phải được trình ở vòng kế tiếp (mục **Vận hành và bảo
+  mật**) và có thể phản đối; nếu phản đối, bốn cột bị gỡ và đó sẽ là thay đổi **major** kèm migration
+  thật, vì cột đã mang dữ liệu.
+- Gói này **không** đóng `F-A3R1-02` hay `F-A3R1-06`. Nó chỉ dựng chỗ chứa ở tầng hợp đồng. `F-A3R1-06`
+  chỉ thực sự hết khi WA ghi `failed_login_count`/`locked_until` **trong cùng transaction** đăng nhập và
+  chứng minh bằng test sống sót qua restart. `F-A3R1-01` cần WM + WA hội tụ `CREATE TABLE owner`.
+- `entities.yaml` vẫn **không** khai entity nào cho *lịch sử* từng lần đăng nhập. Ruling chỉ yêu cầu
+  trạng thái lockout hiện hành; tôi không phát minh bảng mới. Nếu sau này cần nhật ký đăng nhập, đó là
+  một CR khác.
+- Tự kiểm, không phải audit độc lập: mọi kết quả ở §L7 mang nhãn `SELF_VALIDATION`. Không có E1–E4 nào
+  trong gói này.
+
+## L9. Kết thúc
+
+Lease `LEASE-PC02-e13` (fencing 13) nhả lúc **2026-09-07T11:12Z**. Sau dòng này tôi không ghi thêm file
+nào, kể cả sửa lỗi đánh máy — sửa tiếp cần packet mới, baseline mới, lease mới.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX13 (F-A3R2-01/-04: sửa căn cứ version và đường xuống code)
+
+## M1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX13` · authority `AUTH-COORD-PC02-FIX13` (cha `AUTH-OWNER-20260907-03`) · lease `LEASE-PC02-e14` (fencing 14) |
+| worker principal | `worker-W3n` · expires_at 2026-09-08T16:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `CONTRACT_READY` (data and identity) |
+| trigger | `A3-R2-report.md` `F-A3R2-01` (MEDIUM) và `F-A3R2-04` (LOW) — cả hai nhắm vào **văn xuôi** của bản sửa FIX12, không vào bốn cột |
+| MODIFY grant | `contracts/data/entities.yaml` (chỉ văn xuôi trong khối amendment), `precode/change-control.md` |
+| next actor | Coordinator (→ WP re-pin: hash hai file đã đổi) · `lease_released_at` 2026-09-07T11:44Z |
+
+`date -u` 11:36Z → 11:40Z, trong hạn. Nguồn khớp baseline §2 (`f65bb046…`, `d35e1f2d…`).
+
+## M2. Điều KHÔNG đổi (kiểm bằng máy, không bằng lời)
+
+`version: 0.2.0` của `entities.yaml` **giữ nguyên** theo ruling; **không** trường nào của `ENT-owner`
+bị thêm, bớt hay sửa. Xác nhận sau khi sửa: `yaml.safe_load` cho `version = 0.2.0`, 60 entity, và
+danh sách trường của `owner` vẫn đúng chín tên theo thứ tự cũ. Chỉ văn xuôi trong `amendments[0]` đổi.
+Vì sao ruling giữ 0.2.0 mà tôi không tự nâng lên 1.0.0: bump lần nữa làm mọi card **vừa** re-pin
+`STALE` thêm một vòng, để sửa một **lỗi trích dẫn** — thay đổi thực chất của schema không đổi một byte.
+
+## M3. `F-A3R2-01` — căn cứ bậc version, viết lại theo luật CÓ THẬT
+
+Auditor đúng và tôi đã kiểm lại độc lập: `grep -rn "allowed_without_major_bump\|additive_only_rules"
+precode/` trả về **0 dòng**. Hai tên đó là khóa của **mục 4 trong chính `entities.yaml`**; câu cũ viết
+"(mục 4, khóa …)" ngay sau khi dẫn `precode/change-control.md` §2, nên đọc ra thành một luật của file
+quy trình — một luật không tồn tại. Đó là lỗi của tôi, không phải cách đọc khắt khe.
+
+`version_rule_vi` nay dẫn **nguyên văn** cả bốn hàng của §2 và nói rõ hàng nào phủ cái gì:
+
+| Cột | Hàng §2 phủ nó | Kết luận |
+| --- | --- | --- |
+| `password_hash`, `password_updated_at`, `locked_until` (nullable) | "Thêm trường **optional**, thêm mã lỗi mới, thêm operation mới \| minor" | minor, đúng nguyên văn |
+| `failed_login_count` (NOT NULL, DEFAULT 0) | **không hàng nào** | khoảng trống |
+
+Ba hàng còn lại được kiểm từng cái chứ không bỏ qua: major thứ nhất là "Đổi/**xóa** trường bắt buộc,
+đổi enum, đổi ngữ nghĩa, đổi `auth_scope`, đổi `idempotency` key, đổi commit point" — đây là **thêm**
+một trường mới, không phải đổi hay xóa một trường bắt buộc đang tồn tại; major thứ hai là "Đổi
+`transaction` / `commit_point` / invariant" — không mục nào bị đụng; patch là "sửa lỗi chính tả, làm rõ
+prose, không đổi hành vi" — quá nhẹ cho một cột mới.
+
+Vậy §2 **không cho phép và cũng không cấm**: nó có một khoảng trống. Tôi chọn nhánh thứ hai của ruling
+và khai thẳng, ở CẢ HAI file:
+
+- `entities.yaml` `amendments[0]`: `deviation_from` (§2, nêu đúng khoảng trống), `deviation_authority`
+  `AUTH-COORD-PC02-FIX13`, `deviation_parent_authority` `AUTH-OWNER-20260907-03`,
+  `deviation_change_request` `CR-PC10-13`, cộng `deviation_note_vi` nói vì sao không bump lại.
+- `change-control.md` §10: khối `version_rule` (bốn hàng nguyên văn) và khối `deviation` cùng nội dung.
+
+Cột NOT NULL được xử lý là additive **trên căn cứ `migration`, không trên căn cứ một hàng quy tắc**:
+DEFAULT hằng số, không backfill, đúng một hàng `owner` đang tồn tại nhận 0, không consumer nào đang đọc
+một cột chưa từng có. Mục 4 của `entities.yaml` nói đúng điều đó ở tầng schema — nhưng nó là luật của
+file đó, và trong bản mới tôi ghi thẳng rằng nó **không** tự cấp quyền chọn bậc version.
+
+**`CR-PC10-13` (mới, `OPEN`)** ghi ở §10 của `change-control.md` theo đúng định dạng chín trường của §1:
+PC10 thêm cho §2 một hàng cho "thêm trường bắt buộc kèm DEFAULT hằng số" — hoặc tuyên bố nó là major và
+nói lý do; điều quan trọng là §2 phải **trả lời**. Id `CR-PC10-13` còn trống (`CR-PC10-01…12` đã dùng).
+`migration` của CR ghi rõ: khi §2 có hàng mới, khối `deviation` được thay bằng trích dẫn hàng đó, và
+`entities.yaml` **giữ nguyên** 0.2.0 — bậc version không đổi, chỉ căn cứ đổi.
+
+## M4. `F-A3R2-04` — `entities.yaml` KHÔNG phải nguồn của bộ sinh
+
+Kiểm lại độc lập, không tin lời ai: `contracts/data/entities.yaml` xuất hiện **0 lần** trong
+`shared/rr_contracts/rr_contracts/generated/GENERATED_FROM.json` (15 nguồn: bảy schema JSON, năm state
+machine, `errors.yaml`, `ports.yaml`, `openapi.yaml`) và **0 lần** trong `web/src/generated/GENERATED_FROM.json`
+(một nguồn: `openapi.yaml`). `shared/rr_contracts/generate.py` dòng ~44–49 nói thẳng rằng một amendment
+với entity — **gọi đích danh `AMD-ENT-owner-01`** — "correctly produces **no diff** here", và ghi rằng
+việc mở rộng bộ sinh là `CR-P0-06`, ngoài phạm vi.
+
+Vậy câu "phải sinh lại" của tôi ở FIX12 mô tả một bước **không tồn tại**. Đã sửa ở hai chỗ:
+
+| Chỗ | Trước | Sau |
+| --- | --- | --- |
+| `entities.yaml` `amendments[0].downstream_vi` | "`shared/rr_contracts` (model sinh) phải sinh lại; …" | đường xuống code là **đúng hai** nhánh viết tay: DDL trong revision Alembic base `0002_base_entities` (nơi DUY NHẤT tạo `owner`) và `tests/contract/test_schema_matches_entities.py`; nêu `CR-P0-06` và hệ quả "hợp đồng ↔ migration chỉ được chứng minh **gián tiếp**" |
+| `change-control.md` §10 `affected` | `generated: [shared/rr_contracts]` "PHẢI sinh lại (chủ: WS)" | `generated: []` + khóa mới `reaches_code_through` liệt kê đúng hai file trên; đoạn kết viết lại và thêm một đoạn nêu số nguồn của cả hai manifest |
+| `entities.yaml` `not_claimed_vi[0]` | "… đó là việc của WS (sinh lại) và WA (test)" | "… do revision Alembic base và test hợp đồng chứng minh; sinh lại KHÔNG phải một bước ở đây (F-A3R2-04, CR-P0-06)" |
+
+Điều đáng ghi cho người đọc sau, và là lý do finding này không "vô hại": nếu hai file hợp đồng cứ khai
+một phụ thuộc mà manifest bộ sinh phủ nhận, thì một ngày nào đó ai đó sẽ tin rằng cây model sinh bám
+theo `entities.yaml` và bỏ qua test hợp đồng — đúng cái test đang gánh toàn bộ chứng minh.
+
+## M5. Hash sau
+
+| Path | sha256 | Bytes | Trước (FIX12) |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f` | `239261` | `f5ea0511…6c77e` / 235547 |
+| `precode/change-control.md` | `0427d5620500e0209cf3a9bbe383f65deba641266cad54e8b21c628b069b8270` | `26992` | `f0634166…9fcb` / 21545 |
+
+`precode/decision-register.md` **không** nằm trong grant lần này và **không** bị chạm: vẫn
+`56cd624f…2c06d`. Version: `entities.yaml` giữ **0.2.0** (ruling); `change-control.md` 0.1.1 → **0.1.2**
+(hàng patch của §2 nguyên văn "Sửa lỗi chính tả, làm rõ prose, không đổi hành vi" — mục §10 là bản ghi,
+sửa nó không đổi một quy tắc nào; ghi ra để không lặng lẽ đổi nội dung mà giữ version).
+
+⚠️ **Card re-pin lần nữa.** Hash `entities.yaml` đã đổi so với bản mà WP vừa pin sau FIX12. 18 card
+pin file này ⇒ `STALE` thêm một vòng. Packet đã lường trước ("hash will move, card re-pin will follow").
+
+## M6. Evidence — `EV-PC02-10` (SELF_VALIDATION)
+
+Chạy 2026-09-07T11:38Z–11:40Z từ `…/scratchpad/w3n/`, `PYTHONDONTWRITEBYTECODE=1`, tất cả exit 0:
+
+| Gate | Kết quả |
+| --- | --- |
+| `verify_pc02.py` (EV-PC02-01…08) | **PASS (0 fail)** — 60 entity, tập purge 37/21/2 phủ kín |
+| fixture-field / actor-edge / ref PC01 (chạy trong `verify_pc02.py`) | **PASS (0 fail)** |
+| `prose_token_gate.py` | **PASS** — 0 token chưa giải; negative self-test bắt đúng 2 token đột biến |
+| **`evidence/tools/e0_check.py`** | **25/25 PASS · FAIL 0 · BLOCKED 0 · violations 0** |
+
+**`E0-19-generated-matches` NAY ĐÃ TỒN TẠI và PASS (18 kiểm, 0 vi phạm).** Ở FIX12 tôi báo nó không tồn
+tại (24 check) và ghi đó là một khoảng trống. Chủ skeleton đã thêm nó; tổng nay là 25. Điều nó khẳng
+định lại đúng là điều `F-A3R2-04` nói: `entities.yaml` **cố ý** vắng mặt khỏi cả hai manifest bộ sinh
+(`CR-P0-06`), nên không có gì để sinh lại và không có diff nào để chờ. Nói cách khác, gate chính thức
+nay đứng về phía bản sửa này chứ không phải bản FIX12.
+
+## M7. Chưa giải quyết
+
+- `CR-PC10-13` **OPEN** — PC10 phải trả lời khoảng trống của §2. Tới lúc đó bậc version của
+  `AMD-ENT-owner-01` là một **deviation có thẩm quyền**, không phải một suy diễn từ luật.
+- `AMD-ENT-owner-01` vẫn **PROVISIONAL**; Owner có thể phản đối, và khi đó card `TC-owner-auth-session`
+  cùng verdict A3-R2 của nó mở lại (chính auditor đã viết điều này).
+- Gói này **không** đóng `F-A3R2-01` hay `F-A3R2-04`, cũng không đụng `F-A3R2-02` (guard dùng
+  `table_info` bỏ sót cột generated — của WA) và `F-A3R2-03` (ba manifest E1 cũ — của các card).
+- Tự kiểm, không phải audit độc lập: mọi kết quả §M6 mang nhãn `SELF_VALIDATION`.
+
+## M8. Kết thúc
+
+Lease `LEASE-PC02-e14` (fencing 14) nhả lúc **2026-09-07T11:44Z**. Không lệnh git mutation, không
+network, không file ngoài grant, không `__pycache__` ngoài `.venv/`. Sau dòng này tôi không ghi thêm.

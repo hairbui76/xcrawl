@@ -1,0 +1,68 @@
+# Job `e0` — the contract baseline's static gate.
+#
+# Two read-only tools, neither of which may write into the repository:
+#   * evidence/tools/e0_check.py   — 24 checks over contracts/, acceptance/, precode/,
+#                                     evidence/ (see evidence/tools/README.md);
+#   * evidence/tools/verify_cards.py — 13 checks over the 18 task cards: pinned hashes,
+#                                     pin-epoch consistency (cards AND the four files that
+#                                     assert a current pin), cited paths, operation ids,
+#                                     scenarios, error codes, modules, invariants, the FIX5
+#                                     obligations (SC49 + the R5-01 boundary table), the
+#                                     SRC-PLAN §2 claim-label allowlist, the PC09
+#                                     do-not-pin rule, the accepted stack, and the
+#                                     two-language layout rule (see evidence/tools/README.md
+#                                     §8).
+#
+# The card verifier fails loudly when a pinned contract changes without the cards being
+# re-pinned. That is the intended behaviour: a card whose pin no longer matches is STALE
+# (INV-06) and must not be executed.
+#
+# `--self-test` runs after it, always: a gate nobody proves still bites is a gate nobody
+# should trust. It injects one known defect per check in a scratch tree under RUNNER_TEMP —
+# never in the checkout — and fails if any check lets its own defect through (CR-PC10-11).
+name: e0
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --frozen
+
+      - name: E0 static checks (read-only)
+        run: uv run python evidence/tools/e0_check.py --repo . --json-out "${RUNNER_TEMP}/e0.json"
+
+      - name: Task card pins and layout rule
+        run: uv run python evidence/tools/verify_cards.py --repo . --json-out "${RUNNER_TEMP}/cards.json"
+
+      - name: Card verifier self-test (does each check still bite?)
+        if: always()
+        run: |
+          uv run python evidence/tools/verify_cards.py --repo . \
+            --self-test --self-test-dir "${RUNNER_TEMP}/verify-cards-selftest"
+
+      - name: Nothing was written into the repository
+        run: git diff --exit-code && test -z "$(git status --porcelain)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e0-reports
+          path: |
+            ${{ runner.temp }}/e0.json
+            ${{ runner.temp }}/cards.json
+          if-no-files-found: warn

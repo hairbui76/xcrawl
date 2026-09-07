@@ -28,6 +28,8 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # OWNER_DECISION `OD-20260907-01` — 2026-09-07
 
+> **Biên bản tiếp theo.** Vòng hai nằm ở `precode/owner-decisions-02.md` — `OD-20260907-02` (2026-09-07, authority `AUTH-OWNER-20260907-03`): phê chuẩn `ADR-0011`, mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`. Biên bản này **không** bị nó thay thế; hai biên bản cộng dồn.
+
 ## 1. Định danh
 
 | Trường | Giá trị |

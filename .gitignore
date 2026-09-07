@@ -1,0 +1,34 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node / web
+node_modules/
+web/dist/
+
+# Local data. The SQLite database, its WAL/SHM sidecars and any backup snapshot are
+# machine state, never repository content (contracts/ops/deployment.md).
+*.db
+*.db-wal
+*.db-shm
+var/
+
+# Secrets never enter the repository: they come from a restricted-permission file on the
+# machine (contracts/ops/secrets.md, PC08). `.env` is not the mechanism this project uses —
+# this line exists so an accidental one cannot be committed.
+.env
+.env.*
+
+# Chrome profile used by the collector (D09) — Owner-machine state.
+.chrome-profile/
+
+# Tool output
+.coverage
+coverage.xml
+htmlcov/
+playwright-report/
+test-results/

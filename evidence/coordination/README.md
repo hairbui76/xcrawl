@@ -1,11 +1,20 @@
 # Hồ sơ điều phối — Research Radar Pre-code
 
-Baseline điều phối, toàn bộ TASK_PACKET (PC00–PC10 và tám packet audit), các ruling của Coordinator sau mỗi
-vòng audit, **biên bản quyết định của Owner**, và sổ tiến độ của Coordinator. Lưu nguyên văn để chuỗi thẩm
-quyền của phiên còn kiểm lại được.
+Baseline điều phối, toàn bộ TASK_PACKET (PC00–PC10, mười một packet audit, hai packet giai đoạn mã và một
+template dispatch), các ruling của Coordinator sau mỗi vòng audit, **hai biên bản quyết định của Owner**, bảng
+CR hợp nhất của Giai đoạn 1, và sổ tiến độ của Coordinator. Lưu nguyên văn để chuỗi thẩm quyền của phiên còn
+kiểm lại được.
 
-Chuỗi thẩm quyền có **hai** authority Owner: `AUTH-OWNER-20260906-01` (cho phép phiên soạn tài liệu) và
-`AUTH-OWNER-20260907-02` (phê chuẩn 25 quyết định — xem `OWNER-DECISIONS-20260907.md`).
+Chuỗi thẩm quyền có **ba** authority Owner: `AUTH-OWNER-20260906-01` (cho phép phiên soạn **tài liệu**),
+`AUTH-OWNER-20260907-02` (phê chuẩn 25 quyết định — `OWNER-DECISIONS-20260907.md`) và
+`AUTH-OWNER-20260907-03` (phê chuẩn `ADR-0011` và mở lối vào Giai đoạn 0/1 —
+`OWNER-DECISIONS-20260907-02.md`). Bảng đầy đủ ba grant kèm phạm vi và evidence nằm ở
+`agent_profile/registry.json` khóa `authorities` và ở `precode/owner-decisions-02.md`.
+
+**Một ranh giới cần đọc kỹ.** Grant đầu tiên cho **tài liệu**, không cho mã. Việc ghi mã ở Giai đoạn 0/1 chạy
+dưới một ruling của Coordinator suy từ chỉ thị của Owner (`PROV-PC00-08`), **vẫn `PROVISIONAL`**, với rủi ro
+còn lại đã ghi: lease trong hai thư mục này là **kỷ luật bằng thông điệp**, không có cưỡng chế ở mức hệ điều
+hành.
 
 ## Vị trí của tập hồ sơ này trong chuỗi bằng chứng
 
@@ -17,9 +26,14 @@ evidence artifact trong packaging phase; không chèn report vào manifest mà r
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
 
-Thư mục được bổ sung hai lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới epoch 9
-và **thay** bản `coordinator-ledger.md` cũ bằng bản mới hơn (bản cũ dừng ở epoch 7). Mỗi lần chép đều
-`cmp`-verified và hash được tính lại sau khi chép.
+Thư mục được bổ sung **bốn** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
+epoch 9, `PKT-PC00-FIX18` chép mười file của giai đoạn mã, và `PKT-PC00-FIX19` chép lại sổ tiến độ trước khi
+commit. **Ba lần sau đều thay** bản `coordinator-ledger.md` bằng bản mới hơn; hash mỗi bản bị thay được ghi
+ngay trong hàng của nó. Mỗi lần chép đều `cmp`-verified và hash được tính lại sau khi chép.
+
+**Mười bản ghi mới nhất ra đời SAU `FC-P1` epoch 3 — epoch mà `A3-R3` audit; sổ tiến độ hiện tại còn muộn hơn
+`FC-P1` epoch 4.** Chúng nằm **ngoài mọi manifest đã được audit**, kể cả manifest mới nhất, đúng như chín bản
+trước đó nằm ngoài `FC-W4` epoch 9.
 
 **Nội dung là bản sao nguyên văn, không sửa một byte.** Mọi file ở đây được `cp` từ scratchpad của phiên và
 đã được `cmp` xác nhận byte-identical; SHA-256 dưới bảng được tính **sau khi chép**. Không file nào trong thư
@@ -39,7 +53,12 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A2-ratification-verify-packet.md` | TASK_PACKET cho `auditor-A2` — xác minh phần ratification (epoch 8) | `ad93f96eaf5f4488bb16376d61e9c097cf60e0a4fb08a27282d2b06f3b23c693` | 3981 |
 | `A2-rereview-packet.md` | TASK_PACKET cho `auditor-A2`, re-review có phạm vi (epoch 6/7) | `0731599209e4c61c4d7d07d2b5d37dcd88bdae9cb507f707b03a0480d71641ae` | 2005 |
 | `A2-verify-packet.md` | TASK_PACKET cho `auditor-A2`, xác minh remedy (epoch 5) | `a6a222d569afd1eb647fefcbbb12cd5ae58ae2483fd8043a4b24b8758e503054` | 2733 |
+| `A3-code-review-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 1 — audit **code** đầu tiên (`FC-P1` epoch 1) | `670da439c78156c3af4a48de2e382a1f14d1cf3b4f2f3f66f74e8e28bef5f218` | 3951 |
+| `A3-r2-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 2 — xác minh `F-A3R1-*` (`FC-P1` epoch 2) | `e55841a9b22b56fefbca24bebdab5bd532ac063125c41f90148e538097a69670` | 3309 |
+| `A3-r3-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 3 — xác minh `F-A3R2-*` + đăng ký của PC09 (`FC-P1` epoch 3) | `8f2fe8e7f0b3b41fdfae4a90c74d8ead9d43fb93ba625a2fac1b64920e72bd82` | 2444 |
+| `ADR-0011-frameworks-ruling.md` | Ruling của Coordinator chọn framework và toolchain cho stack B, dưới ủy quyền của Owner ("You pick, record as ADR") — bản gốc sinh ra `ADR-0011`. **Xem erratum ở "Cách đọc"** | `09050e65a0c1d6f16fb5463fe8fde1a567cefc9792b1c665ed8c04b2c660555f` | 4487 |
 | `FIX-A1R1-rulings.md` | Ruling R-01..R-09 sau AUDIT_REPORT A1-R1 | `94cdf17b1922dbff89273a316bb9e71e218f50d9f253a5f87cbae4769d1e1ff4` | 6380 |
+| `FIX-A3R1-rulings.md` | Ruling sau AUDIT_REPORT `A3-R1` — vòng ruling **đầu tiên về code**, gồm cả amendment `AMD-ENT-owner-01` | `ec3805a9682fe16784671258721a7337f386d82279e5a75426ebefaac004997d` | 4678 |
 | `FIX-R5-rulings.md` | Ruling sau AUDIT_REPORT `A2-R5` | `e2a0e26eb6686112aa8de5bed9c2a04adf1732555b005a3d8c4d98e7b0f12beb` | 3680 |
 | `FIX3-rulings.md` | Ruling đợt FIX3 (sau A1-R2 và các CR của PC03/PC04/PC08) | `8e3bc78ba76562d11731a590fd516d3df781f191f4a6f39b3bb71fd1d5072f14` | 4977 |
 | `FIX4-rulings.md` | Ruling R4-01..R4-04 sau A1-R3 | `66fa366bcea8b4a1d3746a40957dddad133f64cb147e2802950905821fdc11ee` | 2689 |
@@ -47,6 +66,7 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `FIX6-rulings.md` | Ruling sau A2-R1 (F-01..F-11) | `5efa475ff24a0f2dc035baaf9b10932c8eb71b9dc8fc767984714412ac9f69d0` | 4069 |
 | `FIX7-rulings.md` | Ruling đợt FIX7 | `0a4960a4ba9819ec400eb8e4023b2c04f5910e8868812036ddac8fc825e0861a` | 2183 |
 | `OWNER-DECISIONS-20260907.md` | **Biên bản quyết định của Owner** ngày 2026-09-07 (`OD-20260907-01`, authority `AUTH-OWNER-20260907-02`) — bản gốc do Coordinator phát; bản chuyển ngữ đầy đủ ở `precode/owner-decisions.md` | `31d496a04dc221b030b51f64da2e18a5231f219cbcd011467cf329d1208572c4` | 4750 |
+| `OWNER-DECISIONS-20260907-02.md` | **Biên bản quyết định của Owner, vòng hai** (`OD-20260907-02`, authority `AUTH-OWNER-20260907-03`): phê chuẩn `ADR-0011` và mở lối vào Giai đoạn 0/1 — bản gốc do Coordinator phát; bản chuyển ngữ đầy đủ ở `precode/owner-decisions-02.md` | `599d8427870ebdfc921d1ad105e7bf9e45b1f5b62eeb5f66f0dd31e31477245f` | 2455 |
 | `PC00-packet.md` | TASK_PACKET PC00 — khóa nguồn, nguyên tử hóa yêu cầu, xử lý mâu thuẫn | `0b474a977901722c649bea154b61689af6d967b59dbbe952d942a426af7f0aa9` | 6273 |
 | `PC01-packet.md` | TASK_PACKET PC01 — topology, ownership, capability | `cbe6da783a6492510fa7af567e034746d4cfb63245fea8a759ad201a0957c54f` | 6309 |
 | `PC02-packet.md` | TASK_PACKET PC02 — identity, entity, transaction | `e51760b57aae6b25e096613e02fecd088fa1b48e4b53ae80941c1b2ab9b3c52e` | 6318 |
@@ -57,9 +77,13 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `PC07-packet.md` | TASK_PACKET PC07 — app, Save, Telegram delivery | `2d0690a81b9889c751cbc4decf459548111e7a83fb27dac9a9befa0a1d445138` | 8269 |
 | `PC08-packet.md` | TASK_PACKET PC08 — secrets, Internet boundary, backup, recovery | `6845425e14d5b99fa391ce666fe33dc99eb5c4a08f10f88a5dde5672934769a7` | 7982 |
 | `PC09-packet.md` | TASK_PACKET PC09 — oracle, traceability, evidence, readiness | `a8eff8c99df5238e96a70bd9aee30400204df07ed15612cec4d6960f6d37ed43` | 6895 |
+| `PC09-PHASE1-packet.md` | TASK_PACKET `PKT-PC09-P1` — đăng ký bằng chứng Giai đoạn 0/1, cập nhật gate và luật E0 | `38cbf318942e056d934ed1231497b78ab1934a09c27d26f39e108d32f6fad51f` | 3933 |
 | `PC10-packet.md` | TASK_PACKET PC10 — task card cho coding, bàn giao bộ hợp đồng | `ebb5cee9c6c61acc07be033092c4257056592e553fe8df6c9e89880b245cac32` | 5642 |
+| `PHASE0-skeleton-packet.md` | TASK_PACKET `PKT-P0-SKELETON` — dựng bộ khung repo của Giai đoạn 0 (bảy trong tám cây; `tools/` nằm ngoài write set) | `ad76109b3130d3035ea3522c89ead65988314132a903e9c858dcc9a43303a513` | 8193 |
+| `PHASE1-card-dispatch-template.md` | Template dispatch dùng chung cho bốn card Giai đoạn 1 | `70630dfc6ab4718da09c5763dc0ec3803578836cb81b8cd71e9ff42cb3a1cc5f` | 3988 |
 | `PURGE-LIST-ruling.md` | Ruling chốt danh sách loại trừ của `data.purge_all` (theo mục 24 của biên bản Owner) | `6c320e312efb9ba9f68b3480f01052cb47f9c01852a6baf0af001c30854fe5b2` | 2520 |
-| `coordinator-ledger.md` | Sổ tiến độ của Coordinator (bản gốc `progress.md` trong scratchpad): dòng thời gian dispatch, freeze, audit và ruling của toàn phiên. **Bản 2026-09-07T12:33Z, thay thế bản chép ở PKT-PC00-FIX9** (`a8a7d319…`) — bản cũ dừng ở epoch 7, bản này chạy tới epoch 9 | `0369031b73e7550ec4fe7d63e8d206049a560528d3b97d8a5eca6e4eb6db4ac5` | 39468 |
+| `phase1-cr-consolidated.txt` | Bảng hợp nhất các CR do Giai đoạn 0 và bốn card Giai đoạn 1 phát ra, gom từ các handoff | `3c6433db66e10a510820c29d37dfbdac82d934564e12280eb387619666bea4a3` | 4452 |
+| `coordinator-ledger.md` | Sổ tiến độ của Coordinator (bản gốc `progress.md` trong scratchpad): dòng thời gian dispatch, freeze, audit và ruling của toàn phiên. **Bản chép ở `PKT-PC00-FIX19`, thay thế bản của `PKT-PC00-FIX18`** (`0a1187c5ac1725ad316ef78d65c56349df985d3adb9da4f061212fc01d9dc30a`, 52809 byte — bản đó dừng trước `A3-R4`, bản này chạy tới `FC-P1` epoch 4). Chuỗi bản bị thay: `PKT-PC00-FIX12` (`0369031b…`, 39468, dừng ở `FC-W4` epoch 9) và `PKT-PC00-FIX9` (`a8a7d319…`, dừng ở epoch 7) | `4e540086e1928ca315c727c247ff2f77e30a98525a2926730f2bd634268e8232` | 53839 |
 
 ## Cách đọc
 
@@ -72,10 +96,41 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   việc; việc xác minh thuộc auditor ở epoch kế tiếp.
 - **`coordinator-ledger.md`** là bản sao của `progress.md`: dòng thời gian dispatch → freeze → audit → ruling của
   cả phiên. Đây là bản ghi *do Coordinator viết*, nên nó là lời tự thuật của một bên, không phải bằng chứng
-  độc lập. Bản hiện tại chép ở `PKT-PC00-FIX12` và **thay thế** bản chép ở `PKT-PC00-FIX9` (`a8a7d319…`,
-  dừng ở epoch 7).
+  độc lập. Bản hiện tại chép ở `PKT-PC00-FIX19` và **thay thế** bản của `PKT-PC00-FIX18` (`0a1187c5…`, 52809),
+  bản đó thay bản của `PKT-PC00-FIX12` (`0369031b…`, dừng ở `FC-W4` epoch 9), bản đó lại thay bản của
+  `PKT-PC00-FIX9` (`a8a7d319…`, dừng ở epoch 7). Chỉ **một** bản được giữ mỗi lần; lịch sử các bản cũ nằm
+  trong git và trong hash ghi ở đây.
+- **Sổ này là một file ĐANG SỐNG ở phía nguồn.** Coordinator vẫn ghi tiếp `progress.md` trong lúc các gói
+  packaging chạy, và điều đó **đã xảy ra thật**: ở `PKT-PC00-FIX18`, bản chép đầu (`fd0116d3…`, 52444 byte)
+  lỗi thời trong vòng vài phút và phải chép lại (`0a1187c5…`, 52809) — rồi chính bản đó cũng lỗi thời trước
+  `PKT-PC00-FIX19`. Bản hiện tại được chép lúc **2026-09-07T12:45Z**, `cmp`-verified ngay sau đó, với hash
+  nguồn giống nhau **trước và sau** lần chép. Nó là một **ảnh chụp tại một thời điểm**, không phải bản mới
+  nhất, và gần như chắc chắn đã tụt lại ngay khi bạn đọc dòng này. Muốn bản mới nhất thì đọc nguồn, không đọc
+  bản chép. Điều bản chép bảo đảm là: **byte ở đây đúng bằng byte của nguồn tại 12:45Z**, không hơn.
 - **`OWNER-DECISIONS-20260907.md` là văn bản ràng buộc**, không phải một ruling: nó là biên bản của Owner.
   `precode/owner-decisions.md` chép lại đầy đủ 25 mục kèm phần PC00 ghi rõ những gì quyết định này **không**
   làm (`REQ-OQ03` vẫn mở; mọi mục `KC` vẫn `KC`; không finding audit nào bị đóng).
+- **ERRATUM — `ADR-0011-frameworks-ruling.md` (`CR-PC00-19`).** Bản ruling này khai rằng **cả bảy** thư mục
+  của bố cục repo "đã được `agent-tasks/README.md` §5.3 khai". Điều đó **sai** tại thời điểm ruling được viết:
+  §5.3 khi ấy khai **sáu**, và `shared/rr_contracts/` được giới thiệu lần đầu tại chính `ADR-0011`. Bố cục
+  cũng đã đổi từ đó: nay là **tám** cây (thêm `tools/`) và `tests/` không có `unit/`. Quy kết nguồn đã được
+  sửa ở `precode/adr/ADR-0011-frameworks-and-toolchain.md` qua `PKT-PC00-FIX14` (`F-A2R7-04`) và
+  `PKT-PC00-FIX17` (`CR-PC10-09`).
+  **File trong thư mục này KHÔNG được sửa, và đó là chủ ý:** nó là bản sao nguyên văn `cmp`-verified của một
+  văn bản lịch sử. Sửa một bản lưu trữ để nó "đúng hơn" là phá đúng thứ làm cho bản lưu trữ có giá trị. Erratum
+  vì vậy sống ở đây, cạnh bản gốc, chứ không nằm trong nó. Khi hai văn bản lệch nhau: **ADR hiện hành thắng**;
+  ruling chỉ nói ruling đã nói gì.
+- **Nhãn claim trong file `.md` của thư mục này KHÔNG được phép kiểm nào quét (`F-A3R4-01`, LOW, `PARKED`).**
+  `A3-R4` chứng minh: `claim_ceiling: PRODUCT_ACCEPTED` đặt trong front-matter một `.md` ở đây thì `E0-12`
+  vẫn **PASS**. Ghi chú của `e0_check.py` nói "structured fields are still checked" — đúng cho `.yaml`/`.json`,
+  **không** đúng cho front-matter Markdown. Coordinator đã `PARKED` finding này; cải tiến công cụ thuộc
+  `CR-PC09-18` ở vòng PC09 kế tiếp. Hệ quả thực tế cho người đọc thư mục này: **đừng tin một nhãn claim nào
+  xuất hiện trong các file ở đây** — không có gì kiểm nó. Điều đó ít nguy hiểm hơn vẻ ngoài vì các file này là
+  dispatch artefact, nhãn của chúng không mang hiệu lực bằng chứng; nhưng "không mang hiệu lực" là lý do để
+  bỏ qua nhãn, **không** phải lý do để tin nó.
+- **Hai file không phải packet cũng không phải ruling.** `phase1-cr-consolidated.txt` là bảng gom CR từ các
+  handoff — một công cụ làm việc, không phải văn bản có thẩm quyền; trạng thái CR chuẩn sống ở
+  `precode/review.md` §12. `PHASE1-card-dispatch-template.md` là **template**, không phải một packet đã phát:
+  nó không có lease, không có tập ghi cụ thể, và không cấp quyền cho ai.
 - **Nguồn đối chiếu:** `evidence/audits/` giữ báo cáo và manifest mà các ruling này phản hồi;
   `evidence/handoffs/` giữ HANDOFF của từng Worker.

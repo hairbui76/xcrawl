@@ -1,0 +1,47 @@
+# Job `python` — lint, types and tests for the whole Python workspace.
+#
+# `--frozen` makes the job fail rather than silently re-resolve if uv.lock is out of date
+# with the pyproject files: a lockfile that drifts is a build that is not reproducible.
+#
+# No live jobs (ADR-0011): nothing here reaches X, an AI provider or Telegram, no browser
+# is installed (`playwright install` is an Owner-machine step), and no embedding model is
+# downloaded — sentence-transformers is a declared optional extra and is not installed.
+name: python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install the workspace from the lockfile
+        run: uv sync --all-packages --frozen
+
+      - name: ruff (lint)
+        run: uv run ruff check .
+
+      - name: ruff (format)
+        run: uv run ruff format --check .
+
+      - name: mypy --strict (server core)
+        run: uv run mypy
+
+      - name: Generated models match contracts/
+        run: uv run python shared/rr_contracts/generate.py --check
+
+      - name: pytest (server, collector, worker, shared, tests/)
+        run: uv run pytest

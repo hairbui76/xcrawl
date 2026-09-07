@@ -1,0 +1,21 @@
+# rr-collector — Playwright collector that runs as a process on the Owner's personal
+# machine (REQ-S6.4-02) against the project's own Chrome profile (REQ-D09).
+# Virtual uv workspace member; files under `collector/app/` import as `collector.app.*`.
+#
+# Playwright is DECLARED here. Browsers are NOT installed by this repo: `playwright
+# install` is an Owner-machine step, never a CI or test step (no live jobs — ADR-0011).
+
+[project]
+name = "rr-collector"
+version = "0.1.0"
+description = "Research Radar X collector (Playwright, personal machine)"
+requires-python = "==3.12.*"
+dependencies = [
+  "playwright>=1.47,<2",
+  "httpx>=0.27,<0.29",
+  "pydantic>=2.9,<3",
+  "rr-contracts",
+]
+
+[tool.uv]
+package = false

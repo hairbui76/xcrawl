@@ -1,0 +1,206 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-canonical-identity-merge",
+  "created_at": "2026-09-07T10:26:00Z",
+  "producer_principal": "worker-WM",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd",
+      "precode/decision-register.md": "4d1a5d6e5d2a4f0aa3cf165913cc76f07442211715fd0bde9a12da51e82a7244",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7",
+      "contracts/data/identity.md": "71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd",
+      "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+      "contracts/schemas/target.schema.json": "d1ce487d2e4ba24b094f702b38a5fcac517443981fe8faea36472089124dc0fd",
+      "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+      "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+      "precode/adr/ADR-0009-identity-alias-target-union.md": "67844f12e4fe77a6a25b443a8fe84d053fbcfc9c30649296f55efc41befa4ee1",
+      "precode/adr/ADR-0004-tag-freeze-point.md": "4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f",
+      "acceptance/fixtures/identity/README.md": "ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14",
+      "acceptance/fixtures/identity/a-merge-doi-arxiv.json": "8726afee7b87cb0eeb294a91ac8b048f6fff53cd8f47e8e21480fdd04f71ff3a",
+      "acceptance/fixtures/identity/b-post-only-missing-ids.json": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+      "acceptance/fixtures/identity/c-identity-conflict.json": "0aac277eba619e7b2e191d3150bfb0d35af7929bec3768bf0f99b3a992657b63",
+      "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+      "acceptance/fixtures/identity/h-five-posts-thread-one-target.json": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+      "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+      "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
+    },
+    "implementation_revision": "da886f8 + uncommitted working tree (TC-canonical-identity-merge write set)"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "pydantic": "2.13.5",
+      "pytest": "8.4.2",
+      "jsonschema": "4.26.0",
+      "httpx": "0.28.1",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "uv": "0.12.9"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC07",
+      "SC09",
+      "SC23",
+      "SC29",
+      "SC30",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-D17",
+      "REQ-D26",
+      "REQ-D29",
+      "REQ-D31",
+      "REQ-D33",
+      "REQ-AC07",
+      "REQ-AC09",
+      "REQ-S9.3-01"
+    ],
+    "invariant_ids": [
+      "I03",
+      "I07",
+      "I08",
+      "I17"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/identity/a-merge-doi-arxiv.json",
+        "sha256": "8726afee7b87cb0eeb294a91ac8b048f6fff53cd8f47e8e21480fdd04f71ff3a",
+        "bytes": 19463
+      },
+      {
+        "path": "acceptance/fixtures/identity/b-post-only-missing-ids.json",
+        "sha256": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+        "bytes": 6258
+      },
+      {
+        "path": "acceptance/fixtures/identity/c-identity-conflict.json",
+        "sha256": "0aac277eba619e7b2e191d3150bfb0d35af7929bec3768bf0f99b3a992657b63",
+        "bytes": 9287
+      },
+      {
+        "path": "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json",
+        "sha256": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+        "bytes": 11420
+      },
+      {
+        "path": "acceptance/fixtures/identity/h-five-posts-thread-one-target.json",
+        "sha256": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+        "bytes": 11326
+      },
+      {
+        "path": "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json",
+        "sha256": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+        "bytes": 15344
+      }
+    ],
+    "seed": null,
+    "clock": "merge timestamps injected by the tests (now=...); no wall clock in an oracle",
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/contract/test_identity_normalization.py tests/integration/test_identity_merge_audit.py -p no:cacheprovider -p no:warnings",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-07T10:24:54Z",
+    "ended_at": "2026-09-07T10:25:04Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture là oracle, dùng làm dữ liệu chứ không diễn giải lại. (a) a-merge-doi-arxiv: sau merge COUNT(work)=2 nhưng chỉ 1 active, winner = work có canonical_doi theo quy tắc only_candidate_with_canonical_doi, alias map trỏ về winner, COUNT(identity_merge_audit) tăng đúng 1, moved_counts/preserved_counts khớp nguyên văn fixture, và tập {(id, target_key_at_save, content_hash)} của saved_snapshot TRƯỚC và SAU merge bằng nhau (I17). (b) c-identity-conflict: 0 merge, đúng 1 hàng identity_conflict state='open', hai work quarantined, KHÔNG tạo alias openalex. (c) b-post-only-missing-ids: 0 work, 0 alias, target là nhánh post. (d) g-arxiv-version-v1-v2: 1 work, 1 alias arxiv, canonical không mang hậu tố vN, 2 work_version với đúng 1 is_current. (e) h-five-posts-thread-one-target: 6 biến thể raw → 1 work + 1 alias, 6 post_work, work detail liệt kê 6 nguồn dẫn. (f) reporting/i: sau merge, hàng first_announced_ledger có hiệu lực của winner kế thừa cặp (first_report_id, first_announced_at) SỚM HƠN, hàng của loser nhận superseded_by_merge_id, moved_counts.first_announced = 2 (time-and-tags.md §8.3). (g) Mọi mục trong forbidden_effects của (a) và (c) được khẳng định là KHÔNG xảy ra. (h) Bảng ALLOWED_CALLERS trong code được so trực tiếp với contracts/modules.yaml.allowed_edges; caller ngoài registry nhận FORBIDDEN_EDGE (403), không phải UNAUTHORIZED.",
+    "expected": {
+      "winner_work_id": "01JW0RKA200000000000000000",
+      "winner_selection_rule": "only_candidate_with_canonical_doi",
+      "work_total_after_merge": 2,
+      "work_active_after_merge": 1,
+      "identity_alias_total_after_merge": 3,
+      "identity_alias_pointing_to_merged_work": 0,
+      "identity_merge_audit_after_merge": 1,
+      "saved_snapshot_digest_delta": 0,
+      "fixture_c_merges": 0,
+      "fixture_c_open_conflicts": 1,
+      "fixture_h_works": 1,
+      "fixture_h_source_posts": 6,
+      "fixture_i_moved_first_announced": 2,
+      "alembic_heads": 1,
+      "tests_passed": 114,
+      "tests_failed": 0,
+      "tests_xfailed": 2
+    },
+    "observed": {
+      "winner_work_id": "01JW0RKA200000000000000000",
+      "winner_selection_rule": "only_candidate_with_canonical_doi",
+      "work_total_after_merge": 2,
+      "work_active_after_merge": 1,
+      "identity_alias_total_after_merge": 3,
+      "identity_alias_pointing_to_merged_work": 0,
+      "identity_merge_audit_after_merge": 1,
+      "saved_snapshot_digest_delta": 0,
+      "fixture_c_merges": 0,
+      "fixture_c_open_conflicts": 1,
+      "fixture_h_works": 1,
+      "fixture_h_source_posts": 6,
+      "fixture_i_moved_first_announced": 2,
+      "alembic_heads": 1,
+      "tests_passed": 114,
+      "tests_failed": 0,
+      "tests_xfailed": 2
+    }
+  },
+  "result": "PASS",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 116,
+    "not_checked_vi": [
+      "E3/E4 KHÔNG chạy: không gọi arXiv/OpenAlex/X/AI thật. research.fetch_work_metadata được biểu diễn bằng chính bằng chứng mà fixture khai, không bằng một lần gọi mạng.",
+      "preserved_counts.published_report_item luôn = 0 vì bảng report/report_item chưa tồn tại (thuộc card báo cáo). Kỳ vọng 2 của fixture (i) được ghi lại bằng test xfail(strict=True), không bị bỏ im lặng — CR-TC-IDENTITY-03.",
+      "moved_counts.first_announced được hiện thực theo time-and-tags.md §8.3 (0 khi không bên nào có hàng); fixture (a) vẫn khai null của thời PC02 — test xfail(strict=True), CR-TC-IDENTITY-02.",
+      "Năm bảng mà merge move-set ghi (analysis, saved_item, saved_snapshot, work_label, first_announced_ledger) thuộc module khác nhưng phải được tạo ở migration của card này để transaction chạy được — CR-TC-IDENTITY-04.",
+      "Ngưỡng identity_merge_max_moved_rows = 100000 chỉ được kiểm bằng đường mã (không dựng 100k hàng thật); dữ liệu thật vượt ngưỡng là điểm dừng SG-02.",
+      "Fault injection (E2) chỉ ở MỘT mốc: lỗi tại điểm ghi identity_merge_audit. Chưa mô phỏng đĩa đầy, WAL hỏng hay mất điện.",
+      "Đường HTTP dùng authenticator giả trong bộ nhớ: phiên owner thật, cookie Secure và CSRF thật thuộc TC-owner-auth-session. Test khẳng định 401 khi chưa cấu hình và 403 CSRF_REJECTED khi thiếu token.",
+      "work.get_detail chỉ trả target object hợp lệ theo target.schema.json; read model rộng hơn mà ports.yaml mô tả chưa có wire schema — CR-TC-IDENTITY-06.",
+      "Không có race thật giữa hai tiến trình: CAS được kiểm bằng trạng thái đọc lại trong transaction, không bằng hai writer đồng thời.",
+      "Đây là SELF_VALIDATION. Không có audit độc lập; nhãn IMPLEMENTATION_VERIFIED cần Coordinator/Auditor xác nhận."
+    ],
+    "uncertainty_vi": "Hai oracle của fixture mâu thuẫn với hợp đồng mới hơn và ĐƯỢC GIỮ NGUYÊN: moved_counts.first_announced (fixture a: null; time-and-tags §8.3: số) và preserved_counts.published_report_item (fixture i: 2; bảng chưa tồn tại). Cả hai được ghi lại bằng test xfail(strict=True) thay vì sửa fixture. Ngoài ra card §8 viết '5 post → 1 target' còn fixture (h) mang 6 item và khai post=6; code và test theo fixture. Chín change request do card này mở mang dạng CR-TC-IDENTITY-nn và nằm trong evidence/handoffs/TC-canonical-identity-merge-handoff.md §6: mẫu `unresolved_issue_refs` của evidence/manifest.schema.json chỉ nhận CR-PC<nn>-<nn>, nên không khai được ở đây (CR-PC09-02).",
+    "unresolved_issue_refs": [
+      "CR-PC02-05",
+      "CR-PC02-06",
+      "CR-PC09-02"
+    ]
+  }
+}

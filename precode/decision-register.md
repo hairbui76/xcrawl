@@ -1,13 +1,13 @@
 ---
 contract_id: CT-precode-decision-register
-version: 0.1.0
+version: 0.1.1
 status: draft
 owner_role: requirements owner (PC00)
 source_refs:
   - SRC-SPEC §1.4, §2, §3, §4, §5, §6, §7, §8, §9, §10, §11, §12, §13
   - SRC-PLAN §3, §3.1, §6, §7, §8, §9, §10, §11, §12
 requirement_refs: [precode/requirements.csv — toàn bộ 246 dòng]
-decision_refs: [OD-20260907-01, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0010]
+decision_refs: [OD-20260907-01, OD-20260907-02, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0011]
 invariant_refs: [I01..I15]
 producers: [PC00]
 consumers: [PC01, PC02, PC03, PC04, PC05, PC06, PC07, PC08, PC09, PC10]
@@ -21,7 +21,9 @@ scope: >
   làm thay đổi hành vi đã cam kết, các mục P0 còn ở trạng thái ĐX, và các phát hiện mâu thuẫn
   mới do PC00 tìm ra. Cập nhật 2026-09-07: Owner đã phê chuẩn qua OD-20260907-01
   (precode/owner-decisions.md) — B01-B17 nay RATIFIED và các amendment tương ứng ACCEPTED.
-  REQ-OQ03 vẫn OWNER_DECISION_REQUIRED. File này KHÔNG đóng bất kỳ finding audit nào.
+  REQ-OQ03 vẫn OWNER_DECISION_REQUIRED. Cập nhật vòng hai 2026-09-07: OD-20260907-02
+  (precode/owner-decisions-02.md) phê chuẩn ADR-0011 và mở lối vào Giai đoạn 0 và 1 của
+  docs/master-plan.md. File này KHÔNG đóng bất kỳ finding audit nào.
 verification: E0 — self-validation bằng script kiểm đếm (EV-PC00-04); không có E1–E4.
 claim_ceiling: DRAFT_FOR_REVIEW
 ---
@@ -38,6 +40,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `PROVISIONAL` | Coordinator đã ghi nhận phương án theo PC-ĐX của SRC-PLAN dưới `AUTH-OWNER-20260906-01`; **chưa** phải quyết định của Owner |
 | `RATIFIED (OD-20260907-01)` | Owner đã phê chuẩn ngày 2026-09-07 — xem `precode/owner-decisions.md` |
 | `ACCEPTED (OD-20260907-01)` | Amendment hoặc quyết định đã được Owner chấp nhận trong cùng biên bản |
+| `ACCEPTED (OD-20260907-02)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng hai** — xem `precode/owner-decisions-02.md` |
 | `OWNER_DECISION_REQUIRED` | Không có phương án mặc định an toàn; phạm vi liên quan bị chặn tường minh |
 
 **Cập nhật 2026-09-07.** Owner đã trả lời bản yêu cầu quyết định. Biên bản `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`) phê chuẩn B01–B17 và các amendment tương ứng. `agent_profile/registry.json` nay có `open_product_blockers: []` và một danh sách `ratified_product_blockers` trích `evidence_ref`.
@@ -45,6 +48,8 @@ claim_ceiling: DRAFT_FOR_REVIEW
 Ba điều **không** đổi theo biên bản: `REQ-OQ03` vẫn `OWNER_DECISION_REQUIRED` và vẫn chặn M3; mọi mục `KC` vẫn `KC` (buổi phỏng vấn không tạo bằng chứng runtime nào); và không finding audit nào bị đóng — chúng theo vòng đời riêng của `protocol.md` §8.
 
 Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv` giữ nguyên như đặc tả, **trừ bốn dòng** mà biên bản chuyển tường minh: D08, D09, D42, D50 (`ĐX` → `XN`). Amendment ở §3 nay là văn bản **đã được chấp nhận**; việc phát hành một đặc tả v0.3 áp dụng chúng là công việc riêng, chưa được giao.
+
+**Cập nhật vòng hai 2026-09-07.** Biên bản thứ hai `OD-20260907-02` (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **hai** việc: phê chuẩn `ADR-0011` (nên `PROV-PC00-07` ở §8 nay `ACCEPTED (OD-20260907-02)`) và mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md` (§8.10). Nó **không** đổi trạng thái của một dòng nào trong `precode/requirements.csv`, **không** giải `REQ-OQ03`, **không** đổi một mục `KC` nào và **không** đóng finding nào. Chế độ vận hành cho việc ghi mã — hệ quả *hàm ý* của lối vào đó, do Coordinator ruling chứ không do Owner phát biểu — nằm ở `PROV-PC00-08` và vẫn là `PROVISIONAL`.
 
 ## 1. Bảng tổng hợp B01–B17
 
@@ -478,13 +483,14 @@ Lý do cho từng con số: N = 7 lấy nguyên văn đề xuất của SRC-SPEC
 
 ## 7. Chỉ mục ADR
 
-Xem `precode/adr/README.md`. Tương ứng: ADR-0001 (B12), ADR-0002 (B02), ADR-0003 (B03), ADR-0004 (B01), ADR-0005 (B11), ADR-0006 (stack), ADR-0007 (B08), ADR-0008 (B07), ADR-0009 (B06/B15), ADR-0010 (B13).
+Xem `precode/adr/README.md`. Tương ứng: ADR-0001 (B12), ADR-0002 (B02), ADR-0003 (B03), ADR-0004 (B01), ADR-0005 (B11), ADR-0006 (stack), ADR-0007 (B08), ADR-0008 (B07), ADR-0009 (B06/B15), ADR-0010 (B13), ADR-0011 (framework và toolchain cho stack B — `ACCEPTED (OD-20260907-02)`).
 
 ## 8. Quyết định tạm thời phát sinh sau audit A1-R1
 
 Mục này ghi các quyết định **không** thuộc B01–B17, phát sinh từ AUDIT_REPORT `PKT-A1-R1` và các ruling của
 Coordinator ngày 2026-09-06T18:00Z. Chúng theo cùng luật với §2. Mục nào được `OD-20260907-01` nêu tên thì nay là `ACCEPTED (OD-20260907-01)`;
-mục nào không được nêu thì **vẫn `PROVISIONAL`** — không suy rộng. Không mục nào được ghi `CLOSED`.
+mục nào được `OD-20260907-02` nêu tên thì là `ACCEPTED (OD-20260907-02)`; mục nào không được nêu ở biên bản nào
+thì **vẫn `PROVISIONAL`** — không suy rộng. Không mục nào được ghi `CLOSED`.
 
 ### PROV-PC00-01 — Ba thao tác xóa của REQ-S7.3-05 và phạm vi loại trừ của `data.purge_all`
 
@@ -571,10 +577,23 @@ baseline §3 đã được Coordinator sửa tương ứng), và `requirement_re
 
 - **Bối cảnh.** `OD-20260907-01` mục 3 chốt stack **B** ở mức ngôn ngữ, nhưng chưa chốt framework. Khi được hỏi, Owner trả lời **"You pick, record as ADR"** — ủy quyền lựa chọn kỹ thuật cho Coordinator với điều kiện nó được ghi thành một ADR.
 - **Quyết định.** `ADR-0011` chốt 14 tầng: Python 3.12 + `uv`; FastAPI + Pydantic v2 với model **sinh từ** `contracts/`; SQLAlchemy 2 Core + Alembic, WAL, Online Backup API; hàng đợi **bằng bảng DB** theo `entities.yaml` với vòng lặp scheduler in-process (không broker); Playwright for Python trên profile riêng; `subprocess` cho CLI/ACP; `sentence-transformers` ở server; **Bot API trực tiếp** cho Telegram; Vite + React + TS với client sinh từ `openapi.yaml`; cookie session + CSRF; `pytest` nạp fixture thẳng từ `acceptance/fixtures/**`; `ruff`/`mypy`/`eslint`; GitHub Actions không có job live; Docker Compose cho server.
-- **Trạng thái.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới quyền ủy nhiệm của `AUTH-OWNER-20260907-02`. **Owner có thể phản đối** — đưa vào vòng quyết định tiếp theo qua `precode/owner-decision-request.md`. Đây **không** phải một mục `ACCEPTED (OD-20260907-01)`: biên bản của Owner không phê chuẩn nội dung này, nó chỉ ủy quyền việc chọn.
+- **Trạng thái.** **`ACCEPTED (OD-20260907-02)`** — Owner phê chuẩn ngày 2026-09-07 bằng câu *"accept ADR-0011, start phase 0 and 1"* (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`). `ADR-0011` chuyển `provisional-accepted` → `accepted`, `ratified_by: OD-20260907-02`. `decision_owner` **giữ nguyên** là `Coordinator`: người *chọn* vẫn là Coordinator dưới ủy quyền; điều mới là có một quyết định của Owner phê chuẩn **nội dung** đã chọn.
+- **(Lịch sử) Trạng thái trước 2026-09-07 vòng hai.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới quyền ủy nhiệm của `AUTH-OWNER-20260907-02`; **Owner có thể phản đối**, đưa vào vòng quyết định tiếp theo qua `precode/owner-decision-request.md`. Khi đó đây **không** phải một mục `ACCEPTED (OD-20260907-01)`: biên bản vòng một không phê chuẩn nội dung này, nó chỉ ủy quyền việc chọn. Đoạn này giữ lại để truy vết.
+- **Phê chuẩn không xoá được bốn ô trống.** Bốn hàng `Test`, `Lint / format`, `CI`, `Đóng gói / triển khai` của `ADR-0011` được chính ADR ghi là **chưa từng cân nhắc phương án nào** (`F-A2R7-05`). Một phê chuẩn trọn gói **không** biến chúng thành đã-được-cân-nhắc; nó nói Owner chấp nhận chúng làm mặc định. Nếu Owner đảo một trong bốn hàng đó sau này, chi phí vẫn đúng như dòng dưới: chỉ card và mã.
 - **Vì sao ba lựa chọn đáng chú ý lại tối giản.** Ở đúng ba chỗ mà một framework thông dụng sẽ tự định nghĩa lại hành vi đã khóa trong hợp đồng, ADR chọn cách tối giản: **queue** dùng bảng DB thay vì broker (tránh chủ sở hữu trạng thái thứ hai); **Telegram** gọi thẳng API thay vì bot framework (retry của framework sẽ vi phạm `AMD-B03` — không tự gửi lại khi `unknown`); **CLI/ACP** dùng `subprocess` thay vì một lớp orchestration giấu tool call (LangChain bị loại thẳng vì lý do này — `ADR-0010` đòi chứng minh được tool bị khóa).
 - **Phạm vi ảnh hưởng nếu Owner đảo.** Chỉ card và mã. **Không** `contracts/`, không `acceptance/`, không `precode/`. Mọi lựa chọn nằm dưới lớp hợp đồng.
 - **Liên kết.** `ADR-0011`, `ADR-0006` (phụ thuộc), `ADR-0005`, `ADR-0010`, `AMD-B03`, `AMD-B11`, `REQ-D07`, `REQ-D09`, `REQ-D48`, `REQ-D49`, `REQ-D50`, `REQ-D59`, `REQ-S6.4-01..03`, I11, I15.
+
+### `PROV-PC00-08` — Chế độ vận hành khi bắt đầu ghi mã
+
+- **Bối cảnh.** `OD-20260907-02` mục 2 cho phép bắt đầu Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`. Owner **không** phát biểu gì về chế độ vận hành; biên bản tự khai mục này là *"hàm ý bởi mục 2"* và là một **ruling của Coordinator**, đã khai báo tường minh.
+- **Vấn đề.** `agent_profile/protocol.md` §2 giới hạn `DOCUMENTARY_DRAFT` cho *"draft documentation/contract/schema/examples, không code product"*, và đòi chế độ `ENFORCED` phải có capability broker, tool sandbox, authority/lease registry, danh tính đã xác thực, đồng hồ, lock/CAS + fencing tại commit và audit log bền vững. **Không guard nào trong số đó tồn tại** trong phiên này. Đọc nguyên văn hồ sơ thì việc ghi mã sản phẩm phải `BLOCKED`.
+- **Ruling.** Chỉ thị tường minh của Owner **đứng trên** hồ sơ đã pin — đó là `instruction_precedence` mà `agent_profile/registry.json` khai và là câu mở đầu của `protocol.md` ("Instruction Owner và ràng buộc nền tảng luôn đứng trên hồ sơ"). Vì vậy việc ghi mã tiến hành dưới **đúng** cơ chế đã dùng cho tài liệu: lease độc quyền theo dõi bằng thông điệp, tập ghi chính xác (exact write set) trong từng TASK_PACKET, và review độc lập theo route của `protocol.md` §7.
+- **Trạng thái.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới chỉ thị của Owner (`AUTH-OWNER-20260907-03`). **Owner có thể phản đối.** Đây **không** phải `ACCEPTED (OD-20260907-02)`: bốn mục kia trong biên bản là câu trả lời của Owner, mục này là suy luận của Coordinator từ một câu trả lời khác. Sự khác biệt đó phải giữ nguyên trong sổ.
+- **Rủi ro còn lại — phải đọc đúng.** "Lease độc quyền" ở giai đoạn mã vẫn là **kỷ luật bằng thông điệp**, không phải một khoá thật. Cụ thể: (a) một agent ghi ra ngoài tập ghi của mình sẽ **không** bị nền tảng chặn — chỉ bị phát hiện ở handoff hoặc audit, tức **sau** khi byte đã lên đĩa; (b) hai Worker chạy song song trên cùng một file không có fencing thực, nên "ghi đè im lặng" là một chế độ hỏng có thật, được giảm bằng cách Coordinator **không** cấp hai packet chồng path chứ không phải bằng cưỡng chế; (c) không có audit log bền vững do một service ghi — bằng chứng nằm ở handoff do chính Worker viết, nên nó chứng minh được *cái gì đã đổi* (hash trước/sau) nhưng **không** chứng minh được *không có gì khác đã đổi* ngoài phạm vi rehash. Ba điều này áp cho mã đúng như đã áp cho tài liệu; điều mới là **hậu quả** của một lần ghi sai giờ có thể là mã chạy được chứ không chỉ một câu văn sai.
+- **Ranh giới không được nới bởi ruling này.** Không secret; không gọi thật X/Telegram/AI (E3 vẫn `NOT_RUN`); mạng **chỉ** để cài gói đã khai báo từ PyPI/npm (mục 4 của biên bản), không cho mục đích nào khác. Trần claim của đầu ra Giai đoạn 0/1 là `IMPLEMENTATION_VERIFIED`, không bao giờ INTEGRATION/LIVE; `product_status` giữ `NOT_READY_FOR_PRODUCT_CODE` cho tới khi G5 đạt đầy đủ và bằng chứng Giai đoạn 1 được đăng ký.
+- **Nếu Owner phản đối.** Phương án thay thế duy nhất nhất quán với hồ sơ là dừng ghi mã cho tới khi có runtime guard thật (capability broker + lease service + fencing), tức hoãn Giai đoạn 0 và 1 vô thời hạn. Không có phương án trung gian nào: `protocol.md` §2 nói rõ *"Nếu không verify được runtime guards → BLOCKED, không fallback sang soft prompt"*, và ruling này **chính là** một fallback sang soft prompt — được biện minh bằng chỉ thị Owner, không bằng hồ sơ.
+- **Liên kết.** `OD-20260907-02` mục 3 và mục 4, `agent_profile/protocol.md` §2 và §7, `agent_profile/worker.md` §"Sáu điều kiện", `docs/master-plan.md` Giai đoạn 0 và 1, `PROV-PC00-07`, `ADR-0011`.
 
 ### 8.5 Đăng ký quyết định PROVISIONAL của các gói khác
 
@@ -696,3 +715,49 @@ Baseline §3 cho phép `I16+` **chỉ khi có decision record**. Hai invariant n
 **Lưu ý về cách diễn đạt hàng `CR-PC00-07`.** Hàng đó cố ý **không** viết ra id sai: id ấy đã bị PC01-FIX3 gỡ khỏi `ports.yaml` và không tồn tại trong `precode/requirements.csv`, nên nhắc lại nguyên văn sẽ tạo một token trông như trích dẫn hợp lệ và làm gate quét id báo động (`CR-PC01-12`). Nội dung của CR được giữ nguyên: id sai là gì (một REQ thuộc một mục §8.4 mà SRC-SPEC không có) và id đúng là `REQ-S9.3-08`. Đừng "khôi phục" id cũ vào file này.
 
 **Lưu ý về mức bằng chứng.** "Đã được đáp ứng ngược dòng" trong bảng này là **lời tự khai của gói nhận**, đúng như `review.md` ghi: PC09 ghi nhận chứ không tự xác minh từng cái. Không dòng nào ở đây là `CLOSED`; đóng một finding hay một CR cần authority được chỉ định sau khi có xác minh độc lập trên epoch mới, và người xác minh không được là người viết bản sửa.
+
+### 8.10 Quyết định của `OD-20260907-02` (vòng hai, 2026-09-07)
+
+Biên bản vòng hai — `precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence
+`session_0156UBBHDSeC9soECzSVUb3U` — có **năm** mục. Bảng dưới đây ghi chúng đúng như biên bản phân loại:
+mục nào là câu trả lời của Owner thì mang `ACCEPTED (OD-20260907-02)`, mục nào biên bản tự khai là *"hàm ý"*
+hoặc *"ruling của Coordinator"* thì **không** được mang nhãn đó.
+
+| # | Quyết định | Trạng thái | Ghi ở đâu |
+| --- | --- | --- | --- |
+| 1 | Phê chuẩn `ADR-0011` (framework và toolchain cho stack B, 14 tầng) | `ACCEPTED (OD-20260907-02)` | §8 `PROV-PC00-07`; `precode/adr/ADR-0011-frameworks-and-toolchain.md`; `precode/adr/README.md` |
+| 2 | **Lối vào Giai đoạn 0 và Giai đoạn 1** — bắt đầu ghi mã theo `docs/master-plan.md`: Giai đoạn 0 (bố cục repo + CI) đóng `G5-X4`; Giai đoạn 1 (M1: kho dữ liệu, ingest, auth, storage readiness) được cấp lối vào cổng G5 cho bốn card `TC-ingest-idempotent-ack-lost`, `TC-canonical-identity-merge`, `TC-owner-auth-session`, `TC-storage-write-blocked-readiness` | `ACCEPTED (OD-20260907-02)` | Hàng này; `docs/master-plan.md`; `precode/gates.yaml` G5 **chưa** được cập nhật — `CR-PC00-20` |
+| 3 | Chế độ vận hành cho mã (lease theo thông điệp, không có cưỡng chế OS) | `PROVISIONAL` | §8 `PROV-PC00-08` |
+| 4 | Tải phụ thuộc từ PyPI/npm được phép; không mạng cho việc khác, không secret, không gọi thật | `PROVISIONAL` (hàm ý, ghi kèm `PROV-PC00-08`) | §8 `PROV-PC00-08` mục "Ranh giới" |
+| 5 | Ngân sách tối đa 10 subagent Opus cho giai đoạn này | — (điều phối, không phải quyết định sản phẩm) | Sổ của Coordinator |
+
+**Ba điều hàng số 2 KHÔNG làm.** (a) Nó **không** tự chuyển `G5-X4` sang `met: true` — đó là kết quả của việc
+Giai đoạn 0 chạy xong và được xác minh, không phải của việc cấp phép bắt đầu; `precode/gates.yaml` thuộc PC09
+và không nằm trong tập ghi của gói này (`CR-PC00-20`). (b) Nó **không** nâng trần claim của một file hợp đồng
+nào: `OD-20260907-01` §4 vẫn là luật cho `precode/`, `contracts/` và `acceptance/`. (c) Nó **không** giải
+`REQ-OQ03` — provider và model vẫn `OWNER_DECISION_REQUIRED` và vẫn chặn M3, nên Giai đoạn 3 vẫn bị chặn
+đúng như trước.
+
+### 8.11 Amendment kỹ thuật của Coordinator sau audit A3-R1
+
+Tiếp nối §8.5 và §3. Khác với §3 — nơi mọi `AMD-B<nn>` đã `ACCEPTED (OD-20260907-01)` — mục này ghi
+amendment thực hiện **sau** khi một file hợp đồng đã `CONTRACT_READY`, dưới thẩm quyền kỹ thuật của
+Coordinator, và **chưa** có câu trả lời của Owner. PC00 **ghi nhận, không thẩm định lại** nội dung kỹ
+thuật; chủ sở hữu vẫn là gói gốc (PC02).
+
+| ID | Gói | Quyết định | Trạng thái | Đưa lên Owner ở mục |
+| --- | --- | --- | --- | --- |
+| `AMD-ENT-owner-01` | PC02 | `ENT-owner` (`contracts/data/entities.yaml`, 0.1.0 → 0.2.0) nhận đúng bốn trường: `password_hash` (chuỗi Argon2id encoded, nullable tới khi bootstrap, không read model nào trả về), `password_updated_at` (nullable), `failed_login_count` (NOT NULL DEFAULT 0), `locked_until` (nullable). Căn cứ `contracts/ops/secrets.md` §2.1–§2.3 (Argon2id; lockout 5 lần / 15 phút) và `REQ-D05`; thi hành qua `CR-TC-AUTH-02` + `CR-TC-AUTH-03` (`precode/change-control.md` §10); vá khoảng trống hợp đồng mà `F-A3R1-02` và `F-A3R1-06` chỉ ra | **PROVISIONAL** — amendment kỹ thuật dưới `AUTH-COORD-PC02-FIX12` (cha `AUTH-OWNER-20260907-03`); Owner phê chuẩn ở vòng kế tiếp và **có thể phản đối** | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: `owner` nay giữ credential và trạng thái lockout) |
+
+**Vì sao Coordinator ký được, và ký được tới đâu.** Amendment này làm hợp đồng dữ liệu khớp với một
+file Owner **đã** chấp nhận (`PROV-PC08-01`: Argon2id, login 5 lần/15 phút, lockout 15 phút); nó không
+đưa thêm một quyết định sản phẩm nào. Đó đúng là loại mâu thuẫn nội bộ giữa hai file đã đóng băng mà
+`precode/change-control.md` §7 nói ruling của Coordinator đóng được. Nó **không** vượt qua ba giới hạn:
+nó không mang nhãn `ACCEPTED (OD-20260907-01)` — biên bản ấy không hề nhắc bốn cột; nó **không** đóng
+`F-A3R1-02` hay `F-A3R1-06` (finding theo vòng đời riêng của `protocol.md` §8); và nó **không** nâng
+trần claim của `contracts/data/entities.yaml`, vốn giữ nguyên `CONTRACT_READY` — nhưng nội dung đã đổi
+sau lượt xác minh A2-R4, nên **A3-R2 phải xác minh lại `ENT-owner` trên epoch mới**.
+
+**Hệ quả đã biết.** `shared/rr_contracts` phải sinh lại; `owner` phải hội tụ về đúng một
+`CREATE TABLE` (`F-A3R1-01`); và mọi task card pin hash `contracts/data/entities.yaml` **và file này**
+chuyển `STALE` theo `precode/change-control.md` §4 (INV-06/INV-09) — chạy lại, không phải FAIL.

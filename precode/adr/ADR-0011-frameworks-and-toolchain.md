@@ -1,17 +1,18 @@
 ---
 adr_id: ADR-0011
 title: Framework và toolchain cho stack B
-status: provisional-accepted
-decision_owner: Coordinator (được Owner ủy quyền 2026-09-07; Owner có thể phản đối)
+status: accepted
+decision_owner: Coordinator (được Owner ủy quyền 2026-09-07); phê chuẩn bởi Owner tại OD-20260907-02
 date: 2026-09-07
-ratified_by: null
-evidence_ref: "Owner trả lời 'You pick, record as ADR' — Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07; ruling của Coordinator tại evidence/coordination/"
+ratified_by: OD-20260907-02
+ratified_at: 2026-09-07
+evidence_ref: "Lựa chọn: Owner trả lời 'You pick, record as ADR' — Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07; ruling của Coordinator tại evidence/coordination/. Phê chuẩn: Owner trả lời 'accept ADR-0011, start phase 0 and 1' — Claude Code session session_0156UBBHDSeC9soECzSVUb3U, 2026-09-07 (biên bản OD-20260907-02, precode/owner-decisions-02.md)"
 blocker_refs: []
 source_refs: [SRC-SPEC §6.3, SRC-SPEC §6.4, SRC-SPEC:D07, SRC-SPEC:D09, SRC-SPEC:D48, SRC-SPEC:D49, SRC-SPEC:D50, SRC-SPEC:D59, SRC-SPEC §4]
 requirement_refs: [REQ-D07, REQ-D09, REQ-D48, REQ-D49, REQ-D50, REQ-D59, REQ-S6.3-01, REQ-S6.4-01, REQ-S6.4-02, REQ-S6.4-03, REQ-S4-10, REQ-A3, REQ-OQ09]
 invariant_refs: [I11, I15]
 amendment_refs: []
-decision_refs: [OD-20260907-01, PROV-PC00-07]
+decision_refs: [OD-20260907-01, OD-20260907-02, PROV-PC00-07]
 consumers: [PC10]
 affected_packages: [PC10]
 supersedes: []
@@ -52,29 +53,56 @@ Nguyên tắc xuyên suốt: **chọn mặc định bảo thủ**, và ở mỗi
 | CI | GitHub Actions: job E0 (`e0_check` + trình kiểm pin của card), job Python (pytest E1), job web (vitest). **Không có job live** — E3/E4 là thủ công theo giao thức | Kỷ luật bằng chứng |
 | Đóng gói / triển khai | Docker Compose cho server (web + api + embedding); collector và worker chạy như tiến trình trên máy (SRC-SPEC §6.4); secrets qua file mount, **không** dùng `.env` (theo PC08) | Đúng `REQ-S6.4-01` và `REQ-S6.4-02` |
 
-**Bố cục repo — bảy thư mục.** Đường dẫn §3 của từng card **giữ nguyên như đã pin**.
+**Bố cục repo — tám cây.** Đường dẫn §3 của từng card **giữ nguyên như đã pin**. Bảng dưới đây khớp
+`agent-tasks/README.md` §5.3 tại epoch pin **`PC10-PIN-P1-20260907`**.
 
-| Thư mục | Nội dung | Nguồn khai |
+| Cây | Nội dung | Nguồn khai |
 | --- | --- | --- |
 | `server/` | Ứng dụng FastAPI, domain service đặt tên theo `MOD-*`, migration Alembic | `agent-tasks/README.md` §5.3 |
 | `collector/` | Collector Playwright chạy trên máy cá nhân | `agent-tasks/README.md` §5.3 |
 | `worker/` | Analysis worker và AI adapter, chạy trên máy cá nhân | `agent-tasks/README.md` §5.3 |
-| `web/` | Ứng dụng Vite + React + TypeScript | `agent-tasks/README.md` §5.3 |
-| `tests/` | `contract/`, `unit/`, `integration/` | `agent-tasks/README.md` §5.3 |
-| `probe/` | Probe khả thi SP1 | `agent-tasks/README.md` §5.3 |
+| `web/` | Ứng dụng Vite + React + TypeScript (`web/src/lib/`, `routes/`, `views/`, `web/tests/contract/`, `web/tests/integration/`) | `agent-tasks/README.md` §5.3 |
 | **`shared/rr_contracts/`** | Model và hằng số **sinh ra** từ `contracts/` — dùng chung cho `server/`, `collector/`, `worker/` | **Giới thiệu ở ADR này**; `agent-tasks/README.md` §5.3 **đã được PC10 bổ sung** — xem ghi chú |
+| `tests/` | **Đúng hai** thư mục: `tests/contract/` và `tests/integration/`. **Không có `tests/unit/`** | `agent-tasks/README.md` §5.3 (`CR-P0-03` mục 2) |
+| `probe/` | Probe khả thi SP1 | `agent-tasks/README.md` §5.3 |
+| **`tools/`** | CLI vận hành chạy **ngoài** tiến trình server — hiện đúng một file, `tools/backup_cli.py` (`MOD-backup-cli`, auth scope `backup_operator`, **không** phải session owner) | `agent-tasks/README.md` §5.3 (`CR-P0-03` mục 1); `agent-tasks/TC-backup-restore-drill.md` §3 |
+
+**Tên import (`PROV-P0-01`).** Gốc repo là import root; ba gói Python được nạp bằng **tên đầy đủ** —
+`server.app.…` (không phải `app.…`), `collector.app.…`, `worker.app.…`; `shared/rr_contracts/` là package
+thật, nạp bằng `rr_contracts.…` và cả ba cây đều import nó.
 
 > **Ghi chú về nguồn khai (sửa theo `F-A2R7-04`).** Bản đầu của ADR này — và ruling sinh ra nó — viết rằng cả bảy thư mục "đã được `agent-tasks/README.md` §5.3 khai". Điều đó **sai tại thời điểm đóng băng mà `A2-R7` kiểm**: §5.3 khi đó khai **sáu** thư mục và chuỗi `rr_contracts` không xuất hiện ở đâu trong file. Thư mục thứ bảy `shared/rr_contracts/` được **giới thiệu lần đầu tại ADR này**, và nó chính là chỗ gánh quy tắc "mã sinh ra từ hợp đồng không được sửa tay" ở mục Hệ quả.
 >
 > **Trạng thái lúc viết bản sửa này (2026-09-07T07:20Z):** PC10 **đã bổ sung** `shared/rr_contracts/` vào §5.3 trong lượt viết lại card theo stack B — tôi đã kiểm trực tiếp: chuỗi xuất hiện hai lần trong `agent-tasks/README.md`, một ở khối layout và một ở quy tắc "là code SINH RA, không viết tay". Vậy quy kết nguồn nay **đúng cho cả bảy**. Ruling gốc trong `evidence/coordination/` vẫn mang câu sai và cần được sửa cùng lượt để hai văn bản không lệch lại — ADR này không sửa được file đó.
 
+> **Cập nhật `CR-PC10-09` (2026-09-07, `PKT-PC00-FIX17`) — đây là một đính chính SỰ KIỆN, không phải một quyết định mới.** Bảng trên trước đây khai **bảy** cây và ghi `tests/` = `contract/` + `unit/` + `integration/`. Cả hai điều đó nay lệch với `agent-tasks/README.md` §5.3 tại epoch `PC10-PIN-P1-20260907`, và PC10 **không được ghi ADR** nên đã mở `CR-PC10-09` thay vì tự sửa. Hai chỗ được sửa: (a) `tools/` là **cây thứ tám** — `agent-tasks/TC-backup-restore-drill.md` §3 vốn đã pin `tools/backup_cli.py` từ trước, nên đây là ADR **bắt kịp** card chứ không phải card đổi theo ADR; (b) **`tests/unit/` bị bỏ** — §3 của cả 18 card chỉ dùng `contract/` và `integration/`, nên khai một thư mục thứ ba mà không card nào ghi vào là mời người ta đặt test ở chỗ không ai kiểm (`CR-P0-03` mục 2). Card đầu tiên thực sự cần unit test cục bộ sẽ tạo `tests/unit/` **kèm một CR**, không tự thêm.
+>
+> **Vì sao đính chính này KHÔNG đụng tới `ratified_by`.** `OD-20260907-02` phê chuẩn **các lựa chọn kỹ thuật** ở bảng Quyết định (14 hàng: ngôn ngữ, framework, cách truy cập DB, hàng đợi, test runner, CI, đóng gói…). Bố cục repo là một **mô tả** đi kèm, không phải một trong 14 hàng đó; sửa nó cho khớp thực tế không đổi một lựa chọn nào Owner đã phê chuẩn. `status: accepted` và `ratified_by: OD-20260907-02` vì vậy **giữ nguyên**, và không cần một vòng quyết định mới. Nếu sau này một hàng trong bảng Quyết định phải đổi thì đó là chuyện khác — khi ấy ADR phải quay lại Owner.
+>
+> **Sự kiện Giai đoạn 0 (`evidence/handoffs/P0-skeleton-handoff.md`).** `PKT-P0-SKELETON` đã dựng bộ khung repo ngày 2026-09-07: **bảy** trong tám cây tồn tại thật trên đĩa (`server/`, `collector/`, `worker/`, `web/`, `shared/rr_contracts/`, `tests/` với đúng `contract/` + `integration/`, `probe/`). **`tools/` chưa được tạo** — nó nằm ngoài write set của gói đó (`CR-P0-03` mục 1) và sẽ do card M8 `TC-backup-restore-drill` tạo. Vì vậy câu "bố cục repo" trong ADR này nay mô tả **hai** thứ khác nhau và không được đọc lẫn: bảy cây là **sự kiện đã kiểm được trên đĩa**, cây thứ tám `tools/` là **cam kết đã khai** chưa thành file. Bộ khung không mang hành vi nghiệp vụ nào (chỉ `health.get_liveness`; `health.get_readiness` **cố ý** chưa route vì thuộc `TC-storage-write-blocked-readiness`), nên nó **không** là bằng chứng cho một card nào — E1–E4 vẫn `NOT_RUN`.
+
 ## Trạng thái
 
-**`provisional-accepted`** — `decision_owner: Coordinator`, dưới quyền ủy nhiệm của `AUTH-OWNER-20260907-02`.
+**`accepted`** — phê chuẩn bởi **Owner** tại `OD-20260907-02` ngày 2026-09-07
+(`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence
+`session_0156UBBHDSeC9soECzSVUb3U`). Owner trả lời nguyên văn **"accept ADR-0011, start phase 0 and 1"**.
+`decision_owner` giữ nguyên là **Coordinator** — người *chọn* vẫn là Coordinator dưới ủy quyền; điều đổi là
+nay có một quyết định của Owner phê chuẩn **nội dung** đã chọn. Xem `PROV-PC00-07` trong
+`precode/decision-register.md` §8, nay `ACCEPTED (OD-20260907-02)`.
 
-**Điều khoản Owner có thể phản đối.** Owner đã ủy quyền lựa chọn này ("You pick, record as ADR") và **có thể phản đối bất kỳ hàng nào** ở vòng quyết định tiếp theo. Phản đối một hàng **không** ảnh hưởng hợp đồng: mọi lựa chọn ở đây nằm dưới lớp hợp đồng, không có lựa chọn nào định nghĩa lại một hành vi mà `contracts/` đã khóa. Chi phí của một lần đảo là sửa card và mã, không phải sửa `contracts/`, `acceptance/` hay `precode/`.
+**Điều được phê chuẩn, và điều không.** Phê chuẩn áp cho **cả mười bốn hàng** của bảng quyết định. Nhưng bốn
+hàng — `Test`, `Lint / format`, `CI`, `Đóng gói / triển khai` — được ghi rõ ở mục "Phương án đã cân nhắc" là
+**chưa từng cân nhắc phương án nào** (`F-A2R7-05`). Một phê chuẩn trọn gói **không** biến bốn hàng đó thành
+đã-được-cân-nhắc; nó nói Owner chấp nhận chúng làm mặc định. Chi phí đảo bất kỳ hàng nào vẫn không đổi: **chỉ
+sửa card và mã**, không sửa `contracts/`, `acceptance/` hay `precode/`.
 
-ADR này **không** được ghi `accepted`: không có quyết định nào của Owner phê chuẩn nội dung của nó. Xem `PROV-PC00-07` trong `precode/decision-register.md` §8.
+### Lập luận lúc còn `provisional-accepted` (giữ nguyên để truy vết)
+
+> **`provisional-accepted`** — `decision_owner: Coordinator`, dưới quyền ủy nhiệm của `AUTH-OWNER-20260907-02`.
+>
+> **Điều khoản Owner có thể phản đối.** Owner đã ủy quyền lựa chọn này ("You pick, record as ADR") và **có thể phản đối bất kỳ hàng nào** ở vòng quyết định tiếp theo. Phản đối một hàng **không** ảnh hưởng hợp đồng: mọi lựa chọn ở đây nằm dưới lớp hợp đồng, không có lựa chọn nào định nghĩa lại một hành vi mà `contracts/` đã khóa. Chi phí của một lần đảo là sửa card và mã, không phải sửa `contracts/`, `acceptance/` hay `precode/`.
+>
+> ADR này **không** được ghi `accepted`: không có quyết định nào của Owner phê chuẩn nội dung của nó. Xem `PROV-PC00-07` trong `precode/decision-register.md` §8.
 
 ## Hệ quả
 
@@ -121,4 +149,5 @@ ADR này **không** được ghi `accepted`: không có quyết định nào c�
 - **Nguồn ràng buộc:** SRC-SPEC §6.3 (khuyến nghị Playwright, so sánh stack), §6.4 (Docker cho server, tiến trình trên máy cho collector/worker), §4 (visual design cố ý để ngỏ), `D07`, `D09`, `D48`, `D49`, `D50`, `D59`.
 - **Phụ thuộc:** `ADR-0006` (stack B). **Ràng buộc:** `ADR-0005` (backup nhất quán), `ADR-0010` (cô lập CLI/ACP), `AMD-B03` (không tự gửi lại khi `unknown`), `AMD-B11`.
 - **Quyết định gốc:** Owner trả lời "You pick, record as ADR" ngày 2026-09-07 dưới `AUTH-OWNER-20260907-02`; ruling của Coordinator lưu ở `evidence/coordination/`.
+- **Phê chuẩn:** `OD-20260907-02` ngày 2026-09-07 (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) — Owner trả lời "accept ADR-0011, start phase 0 and 1". Cùng biên bản đó mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`.
 - **Việc còn lại, chưa làm ở gói này:** (a) PC10 viết lại §3 và §8 của 18 card theo bố cục trên; (b) thêm kiểm tra E0 "mã sinh ra khớp hash hợp đồng" vào `evidence/tools/e0_check.py`; (c) chọn model embedding cụ thể sau `REQ-A3` (`REQ-OQ09`). ADR này **không** sửa `contracts/` hay card nào.

@@ -23,7 +23,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-OD01e-20260907`** (thay `PC10-PIN-OD01d-20260907`; các epoch cũ hơn: `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau khi `ADR-0011` được sửa (`PKT-PC00-FIX14`). `ADR-0011` nằm trong read set của mọi card vì nó chốt toolchain mà lệnh ở §8 giả định — sửa nó làm card `STALE` đúng như sửa một hợp đồng. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
+**Pin epoch: `PC10-PIN-P1d-20260907`** (thay `PC10-PIN-P1c-20260907`; các epoch cũ hơn: `PC10-PIN-P1b`, `PC10-PIN-P1`, `PC10-PIN-OD01e`, `PC10-PIN-OD01d`, `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau `PKT-PC02-FIX13`: `contracts/data/entities.yaml` được sửa **chỉ ở phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại: quy tắc `STALE` đọc **byte**, không đọc ý định, và một ngoại lệ "chỉ là văn xuôi" sẽ biến cửa pin thành thứ phải phán đoán mới dùng được. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -32,15 +32,15 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
-| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `9cdec0d78592c67068188e7dffcf9e03f361fe202263bb47a95b2298337a8340` | 17052 |
-| `precode/baseline.json` | `c99474a6744a3827f75961884d5d8daf1d9fb0bfe212547c216d1574d32ac81a` | 101458 |
-| `precode/decision-register.md` | `3596a52b6ce8cb39a0ae07501fd177c80a4fdb7b19317fc82a3dd8e3df63a75d` | 104940 |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b` | 22685 |
+| `precode/baseline.json` | `d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd` | 104398 |
+| `precode/decision-register.md` | `56cd624f3d6a429888018abea9fb67e9dbe26aa6d202630c50ff8f989102c06d` | 117150 |
 | `contracts/modules.yaml` | `cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457` | 108721 |
 | `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
 | `contracts/ports.yaml` | `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684` | 128850 |
 | `contracts/errors.yaml` | `640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f` | 65180 |
 | `contracts/retry-policy.yaml` | `d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5` | 46995 |
-| `contracts/data/entities.yaml` | `766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7` | 228394 |
+| `contracts/data/entities.yaml` | `df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f` | 239261 |
 | `contracts/reporting/time-and-tags.md` | `70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c` | 61837 |
 | `contracts/reporting/selection.md` | `781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4` | 37357 |
 | `contracts/state/report.yaml` | `77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f` | 30187 |

@@ -1335,3 +1335,381 @@ Cả hai là **sửa để khớp ruling đã công bố**, không phải nới 
   fencing ≥ 10.
 - **Claim:** `DRAFT_FOR_REVIEW`. Trần `CONTRACT_READY` áp cho **file hợp đồng trong allowlist đã
   phê chuẩn**, không cho hệ thống, và không cho bất kỳ phát biểu nào về hành vi khi chạy.
+
+---
+
+# ADDENDUM — `PKT-PC09-P1` (đăng ký bằng chứng Giai đoạn 0/1; cổng; đổi quy tắc E0)
+
+## Q1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P1` · authority `AUTH-COORD-PC09-P1` (cha `AUTH-OWNER-20260907-03`) · lease `LEASE-PC09-e10` |
+| worker principal | `worker-W6n` (verification owner, kế nhiệm `worker-W6`) · expires_at 2026-09-08T16:00Z · mode `DOCUMENTARY_DRAFT` |
+| status | **DONE_WITH_CONCERNS** — mọi mục 1–6 (kể cả 5a) đã làm; hai mối lo cấu trúc còn mở, `CR-PC09-15` và `CR-PC09-16` |
+| completion_claim | `DRAFT_FOR_REVIEW` cho các file baseline gói này ghi. **Không** tự khai gì cao hơn: nhãn `IMPLEMENTATION_VERIFIED` chỉ tồn tại ở sáu bản ghi `INDEPENDENT_AUDIT` và mỗi bản ghi đó khai rõ nó là bản chép của `A3-R2` |
+| next actor | `Coordinator` · `lease_released_at` **2026-09-07T12:10Z** |
+
+Nguồn pinned kiểm hai lần (bắt đầu và trước handoff), **khớp cả hai lần**:
+`research-radar-pre-code-plan.md` `f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40`,
+`research-radar-spec.md` `d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26`.
+
+Công cụ của `worker-W6` (`derive_numbers.py`, `crtable.py`, `gen_index.py`, `gen_trace.py`,
+`gate.py`, `validate_index.py`) **có sẵn** trong scratch của phiên và đã được **tái sử dụng** —
+không cái nào phải dựng lại. Ba cái được **mở rộng** ở đợt này (§Q6).
+
+## Q2. Cổng chờ — hai lần, cả hai đã đóng
+
+Packet đặt một WAIT GATE trên `A3-R2-report.md` trước khi chốt claim; Coordinator sau đó **nới
+thêm** cổng đó sang bốn addendum của gói khác. Trình tự thực tế:
+
+1. Làm toàn bộ phần không phụ thuộc verdict (đổi quy tắc E0, self-test âm, cổng G5/G6, status
+   scenario, cột traceability) **trước** khi verdict tới.
+2. `A3-R2` tới → chép nguyên văn vào repo → đọc verdict §5.1/§5.2/§5.3.
+3. Chờ `PKT-TC-STORAGE-FIX2`, `PKT-TC-INGEST-FIX2`, `PKT-TC-AUTH-FIX2`, `PKT-PC02-FIX13`. **Cả
+   bốn đã tới**; ba card phát lại manifest E1 và W3n sửa văn xuôi amendment.
+4. Đăng ký **manifest mới nhất của mỗi card**, sau khi **tự băm lại từng pin** (§Q5).
+
+## Q3. Changes
+
+| Path | Op | After (sha256) | Bytes |
+| --- | --- | --- | --- |
+| `evidence/index.json` | MODIFY | `6aa3e98700d19366bf0e3f4332d246f78467bcefb5a3a5ce28883f652519e3b4` | 313741 |
+| `evidence/tools/e0_check.py` | MODIFY | `f037415ca0dce0fbe429daa21bb9c14259f9916385618b57d11f93358ff5f02d` | 140079 |
+| `evidence/tools/README.md` | MODIFY | `eed7f547fab98b412a107721c58578b2e53448b3f136fb64c8a1627dbd70ba3e` | 45818 |
+| `evidence/manifest.schema.json` | MODIFY | `d22c949b6c8fbd25bc433db06ed90c626dea018a5e3aa4b9a9b0bef87baec758` | 21384 |
+| `precode/gates.yaml` | MODIFY | `ab391c6d03dcecb7f7b59da57f106a1811fa962a4af457bf1387a24fdf51b5b7` | 45740 |
+| `precode/review.md` | MODIFY | `b791308ef84acdee5162a7541ad1d311e741ea8beaef31ae6dbe8422fd160677` | 174405 |
+| `acceptance/scenarios.yaml` | MODIFY | `ca372775e943c49776ae853615bad275054773f8808eab12aa085651ca07ea17` | 181026 |
+| `acceptance/traceability.csv` | MODIFY | `b0db908d931e26dff00e37e9b65e66fdfadafce055c21ccd4510e9c111ccda51` | 92415 |
+| `evidence/audits/README.md` | MODIFY | `91afe9243f93811b8c85f1f89490866c73f09839dd2e94541ef9c125abc5184a` | 8664 |
+| `evidence/audits/A3-R1-report.md` | CREATE (bản sao nguyên văn, `cmp`-verified) | `02c9d541dfd1d8dbb7f56391a4fc5e1de9e7a81d310ce4ff08604717763ab498` | 32850 |
+| `evidence/audits/A3-R2-report.md` | CREATE (bản sao nguyên văn, `cmp`-verified) | `75f2ac45a1c35a09f3e93df63cbd7480fdd51189b94951b1983cb3de8db2089d` | 20114 |
+| `evidence/runs/E0-20260907T120836Z.json` | CREATE | `02a16d699123a2c01e83c5cc0f86d5cdf2e21f7a4849e93d0739a2913a90a836` | 47021 |
+| `evidence/runs/numbers-20260907T120836Z.json` | CREATE | `a618fbb863d03e036bcab5a1e24408cf53fd958474bb48482679402adadb9e48` | 30594 |
+| `evidence/runs/cr_summary-20260907T120836Z.json` | CREATE | `563ebfd6229bc1a8952d0294972724d6eb2b3c3ae00202209b2e204032c7a3d5` | 5873 |
+| `evidence/runs/E0-20260907T120111Z.json` | CREATE (lần chạy **FAIL**, giữ lại có chủ ý — xem Q4) | `8a0d0b8520b045b2fa19b813e777e033ebc2b1e12b1276e6a9bf1aee61259f24` | 47534 |
+| `evidence/handoffs/PC09-handoff.md` | MODIFY (addendum này) | *(chính file này)* | — |
+
+**Không** sửa code, contract card, hay bất kỳ file nào dưới `server/`, `worker/`, `collector/`,
+`web/`, `tests/`, `shared/`, `agent-tasks/`. Không lệnh git mutation. Không mạng.
+`PYTHONDONTWRITEBYTECODE=1` ở mọi lần chạy; mọi script chạy từ
+`…/scratchpad/w6n/`, không từ trong repo.
+
+## Q4. Một lần chạy E0 FAIL được giữ lại, không bị xoá
+
+`E0-20260907T120111Z.json` là **FAIL 2 check**, và nó ở lại trong candidate có chủ ý. Hai vi phạm
+đều do **văn bản của chính tôi** ở đợt này:
+
+1. `E0-04d-prose-error-tokens` — `acceptance/scenarios.yaml` gọi tên `NOT_TESTABLE_AT_THIS_LAYER`,
+   một từ vựng **disposition của test** do ruling `F-A3R1-08` đặt ra và được dùng trong
+   `tests/integration/test_denied_edges.py`. Nó không phải mã lỗi và không nên bị đòi có mặt trong
+   `errors.yaml`. Sửa bằng cách thêm nó vào `STATUS_VOCABULARY` kèm chú thích nêu ruling — **không**
+   bằng cách nới oracle.
+2. `E0-12-forbidden-strings` — bảng CR sinh ra của tôi khẳng định `IMPLEMENTATION_VERIFIED` trần
+   trụi trong văn xuôi `precode/review.md`. Sửa bằng cách sửa **văn bản** (đặt nhãn trong backtick),
+   không bằng cách miễn trừ `precode/`.
+
+Đây là bằng chứng rằng ba quy tắc mới cắn được trên chính người viết chúng, nên xoá nó sẽ là xoá
+đúng thứ đáng giữ. Lần chạy đóng gói là `E0-20260907T120836Z.json`: **25 check, 25 PASS, 0 FAIL,
+0 BLOCKED, 0 vi phạm, exit 0**, 229 file quét.
+
+## Q5. `F-A3R2-03` — tôi băm lại từng pin thay vì tin `ended_at`
+
+Coordinator yêu cầu từ chối một manifest cũ. Tôi không đọc dấu thời gian mà **băm lại mọi cặp
+`{path, sha256}`** trong cả tám file chạy trên đĩa, rồi phân loại làm hai lớp vì chúng nghĩa khác
+nhau:
+
+* **pin bytes-đã-SẢN-XUẤT** (`artifacts[]`) — lệch nghĩa là manifest **chứng nhận một cây không
+  còn tồn tại**. Đây là khuyết điểm `F-A3R2-03` và nó **chặn** đăng ký.
+* **pin bytes-đã-ĐỌC** (`baseline.contract_hashes`) — lệch nghĩa là corpus đổi **sau** lần chạy.
+  Nó làm bằng chứng `STALE` theo `INV-06`/`INV-08` nhưng không phải một chứng nhận sai; ai đổi
+  file phải được gọi tên.
+
+Kết quả (artefact `manifest-currency.txt` trong scratch, tái lập bằng `check_manifests.py`):
+
+| Manifest | Lớp | Kết quả |
+| --- | --- | --- |
+| `TC-ingest-…-E1-20260907T113827Z.json` | ĐĂNG KÝ | 0 pin sản-xuất lệch · 0 pin đã-đọc lệch |
+| `TC-storage-…-E1-20260907T113817Z.json` | ĐĂNG KÝ | 0 · 0 (8 pin sản-xuất đều khớp) |
+| `TC-owner-auth-session-E1-20260907T114030Z.json` | ĐĂNG KÝ | 0 · 2 |
+| `TC-canonical-identity-merge-E1-20260907T111124Z.json` | ĐĂNG KÝ | 0 · 4 |
+| `TC-storage-…-E1-20260907T100943Z.json` | **TỪ CHỐI** | **4 pin sản-xuất lệch** — `guard.py`, `health/router.py`, `health/__init__.py`, `test_readiness_independent_channel.py`. Đúng finding của A3-R2 |
+| ba manifest cũ còn lại | THAY THẾ | không đăng ký; liệt kê ở `superseded_card_runs` |
+
+Bốn manifest bị thay thế **không biến mất**: chúng nằm ở khóa `superseded_card_runs` của
+`evidence/index.json` kèm đích danh pin nào lệch. Bằng chứng bị thay thế vẫn đọc được, nhưng
+không chống đỡ nhãn nào.
+
+**Bốn pin đã-đọc còn lệch, và HAI trong bốn nguyên nhân là gói này** —
+`acceptance/scenarios.yaml` (tôi ghi status scenario) và `evidence/manifest.schema.json` (tôi mở
+rộng mẫu `unresolved_issue_refs`). Hai cái còn lại là `PKT-PC02-FIX13`. Không cái nào chạm một
+trường entity hay một dòng code. Chi tiết truy nguyên ở `precode/review.md` §14.6, và lỗi thiết
+kế phía sau nó ở `CR-PC09-16`.
+
+## Q6. Ba quy tắc E0 đổi/thêm, và một self-test âm 11/11
+
+| Quy tắc | Đổi gì | CR |
+| --- | --- | --- |
+| `E0-12` | Mở một ngoại lệ **hẹp**: `IMPLEMENTATION_VERIFIED` — và **chỉ** nhãn đó — được phép trong `evidence/handoffs/**` và `evidence/runs/**` **khi file trích dẫn một báo cáo A3**. `contracts/`, `acceptance/`, `precode/` **không đổi**. `INTEGRATION_VERIFIED` trở lên vẫn cấm ở mọi nơi | `CR-P0-02` |
+| `E0-16` | Vế "mọi `status` là `NOT_RUN`" thành **yêu cầu có bằng chứng**: `PASS (E1)`/`PASS (E2)` được phép khi có `status_evidence_refs` phân giải được, `status_scope_vi`, và `evidence_level_required` không cao hơn cấp khai. `PASS (E3)`/`PASS (E4)` từ chối thẳng | — |
+| `E0-19-generated-matches` | **MỚI**. Mọi `sources[].sha256` của hai `GENERATED_FROM.json` phải bằng hash trên đĩa. Ghi rõ điều nó **không** chứng minh, và ghi rõ `contracts/data/entities.yaml` **cố ý** không phải nguồn bộ sinh (`CR-P0-06`, `F-A3R2-04`) | `CR-P0-06` |
+
+**Cổng schema nằm trong pytest, không trong E0.** Packet nói rõ điều này và tôi ghi lại nguyên
+văn: `tests/contract/test_schema_matches_entities.py` — khẳng định mọi cột sau `alembic upgrade
+head` phân giải về một trường của `entities.yaml` — là một **test**, chạy bởi `pytest`, thuộc
+`TC-owner-auth-session`. `E0-19` **không** chạy nó, không thay nó, và note của `E0-19` nói đúng
+câu đó để không ai đọc một `E0-19` sạch thành "schema tự động bám `entities.yaml`".
+
+`selftest_p1.py` tiêm 10 khiếm khuyết cộng 1 đối chứng dương vào một **bản sao** repo:
+**11/11 CAUGHT** (bảng đầy đủ ở `evidence/tools/README.md` §5j). Đối chứng dương P1 kiểm chiều
+ngược lại — handoff **có** trích A3 không bị báo nhầm.
+
+## Q7. Cổng và scenario
+
+* **`G5` → `PARTIALLY_MET`** (từ `NOT_MET`). `G5-X4` (bố cục repo) → `met: true` nhờ Giai đoạn 0;
+  **cả bốn điều kiện ra nay đạt**. Cổng vẫn không `MET` vì điều kiện **VÀO** chưa đạt (G4 vẫn
+  `PARTIALLY_MET`) và **`REQ-OQ03`** vẫn `OWNER_DECISION_REQUIRED`. Cả hai được nêu đích danh.
+* **`G6` → `NOT_MET`** (từ `NOT_APPLICABLE_YET`). Lý do cũ ("chưa có code") không còn đúng, nên
+  giữ nhãn "chưa áp dụng được" sẽ che một phép đo nay làm được. Phép đo: **G6-X1 4/51 · G6-X2
+  0/5 · G6-X3 0/2**. Không điều kiện ra nào đạt. `ratified_contract_scopes` **không đổi**.
+* **Scenario:** `NOT_RUN` **52** · `PASS (E1)` **2** (`SC29`, `SC31`) · `PASS (E2)` **2** (`SC21`,
+  `SC26`). Quy tắc chuyển nhãn viết ra ở `review.md` §14.5 và được `E0-16` ép. **12 scenario giữ
+  `NOT_RUN` dù có bằng chứng một phần**, mỗi cái mang `partial_evidence_vi` nói phần nào đã chạy.
+* **`acceptance/traceability.csv`** thêm cột `executed_evidence` (15 dòng có PASS, 70 dòng chỉ có
+  bằng chứng một phần). Nó **không** đổi `coverage_status`: độ phủ hợp đồng và việc đã chạy là hai
+  phép đo khác nhau.
+* **Giả định "fixture là dữ liệu test" — XÁC NHẬN.** Loader: `tests/conftest.py`
+  (`load_fixture` / `load_directory` / fixture `fixture_loader`), đọc thẳng
+  `acceptance/fixtures/<dir>/<name>.json`, không có tập dữ liệu thứ hai. **8/10** file test dùng
+  nó, nên `CR-P0-05` (loader chưa có cửa hồi quy) nay đã đóng bằng chính CI. Điều còn thiếu:
+  test riêng cho nhánh âm của loader — PC09 không được ghi vào `tests/`, nên tôi ghi lại chứ
+  không coi là xong.
+
+## Q8. Nhãn từng card — đúng như `A3-R2` §5.1, không hơn
+
+| Card | Verdict | Nhãn đăng ký | Ghi kèm bắt buộc |
+| --- | --- | --- | --- |
+| `TC-ingest-idempotent-ack-lost` | PASS | `IMPLEMENTATION_VERIFIED` (phạm vi) | chỉ 4 operation card sản xuất; `PARTIAL` §4; `CR-TC-ingest-05`; submit đồng thời **không thiết lập** |
+| `TC-canonical-identity-merge` | PASS | `IMPLEMENTATION_VERIFIED` (phạm vi) | hai `xfail(strict)` `CR-TC-IDENTITY-02/03`; `F-A3R1-04` |
+| `TC-owner-auth-session` | PASS (lượt trước FAIL) | `IMPLEMENTATION_VERIFIED` (phạm vi) | **nằm trên `AMD-ENT-owner-01` vẫn `PROVISIONAL`**; 14 cạnh `CAPABILITY_DENIED` không tính là pass; `CR-TC-AUTH-01` |
+| `TC-storage-write-blocked-readiness` | PASS | `IMPLEMENTATION_VERIFIED` (**thu hẹp**) | loại trừ `write_blocked → healthy` (`CR-TC-storage-04`, `F-A3R1-11` PARTIAL) |
+| skeleton Giai đoạn 0 | PASS | `IMPLEMENTATION_VERIFIED` (phạm vi) | chỉ bố cục và cửa kiểm; không nghiệp vụ nào |
+
+Sáu bản ghi `EV-A3-01`…`EV-A3-06` mang các nhãn này với `review_type: INDEPENDENT_AUDIT`,
+`producer_principal: auditor-A3`. **Mỗi bản ghi khai trong `limitations.not_checked_vi` rằng nó là
+một BẢN CHÉP do `worker-W6n` viết**, ghim sha256 của cả hai báo cáo trong `artifacts[]`, và tuyên
+bố rằng **nếu bản chép lệch với báo cáo thì báo cáo thắng**. Bốn manifest `SELF_VALIDATION` của
+Worker giữ nguyên nhãn của chúng — không bản nào được nâng.
+
+## Q9. Bằng chứng của đợt này
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P1-01` | `e0_check.py --repo … --json-out evidence/runs/E0-20260907T120836Z.json` | **25 check · 25 PASS · 0 FAIL · 0 BLOCKED · 0 vi phạm**, exit 0, 229 file |
+| `EV-PC09-P1-02` | `selftest_p1.py` (10 đột biến + 1 đối chứng dương trên bản sao) | **11/11 CAUGHT** |
+| `EV-PC09-P1-03` | `validate_index.py` (mọi record ↔ `manifest.schema.json`) | **71 record, 0 invalid** |
+| `EV-PC09-P1-04` | `check_manifests.py` (băm lại từng pin của 8 manifest) | 4 đăng ký: **0 pin sản-xuất lệch**; 1 từ chối: **4 lệch** |
+| `EV-PC09-P1-05` | `gate.py` (cổng tự kiểm của `review.md`, 8 phép so) | **CONSISTENT** — bắt được 2 lần lệch của chính tôi trước khi chốt |
+| `EV-PC09-P1-06` | `cmp` hai báo cáo A3 gốc ↔ bản chép trong repo | byte-identical cả hai |
+| `EV-PC09-P1-07` | `e0_check.py` chạy lại **sau** khi ghi handoff này | *(xem Q11)* |
+
+Tất cả là `SELF_VALIDATION`. **Không** lần nào là audit độc lập.
+
+## Q10. Mối lo còn lại
+
+1. **`CR-PC09-16` (mới, cấu trúc).** Card ghim `acceptance/scenarios.yaml` theo hash toàn file;
+   PC09 buộc phải sửa đúng file đó để ghi status scenario. Vì vậy **mọi** lần đóng gói của PC09 sẽ
+   luôn làm manifest của card `STALE` ở lớp bytes-đã-đọc, kể cả khi không gì thực chất đổi. Hai
+   lối thoát nêu ở `review.md` §8.1; tôi **không** tự chọn.
+2. **`CR-PC09-15` (mới).** `A2-R7-report.md` đã chạy nhưng không nằm trong repo — ngoài write set
+   của tôi. Chênh lệch **12 báo cáo đã chạy vs 11 trong repo** được nêu ở §4.1 thay vì làm phẳng.
+3. **`F-A3R2-02` chưa được sửa.** `tests/contract/test_schema_matches_entities.py` dùng
+   `PRAGMA table_info` (mù với cột generated STORED) và chỉ khẳng định một chiều. Nó là **bằng
+   chứng khắc phục** cho `F-A3R1-02`, và nó yếu hơn tính chất mà nó canh. Thuộc `TC-owner-auth-session`.
+4. **`AMD-ENT-owner-01` vẫn `PROVISIONAL`.** Nhãn của một card nằm trên nó. Owner chưa phát biểu.
+5. **Ngoại lệ `CR-P0-02` kiểm theo FILE, không theo record.** Một handoff trích A3 ở đâu đó có thể
+   mang nhãn trên một bản ghi mà báo cáo không phán tới. `E0-12` in ra danh sách file đã dùng ngoại
+   lệ; nghĩa vụ theo record do `manifest.schema.json` và `review.md` §14.3 gánh.
+6. **Sáu bản ghi A3 là bản chép do một Worker viết.** Đó là điều Coordinator chỉ thị, và giới hạn
+   cũ ("Worker không ghi bản ghi thay Auditor") vẫn đúng — nên mỗi bản ghi tự khai điều đó. Một
+   Auditor nên xác nhận bản chép khớp báo cáo; tôi **không** được tự xác minh việc đó.
+7. **Toàn bộ số của gói này là `SELF_VALIDATION` chạy bằng công cụ do chính tôi mở rộng.**
+   `E0-19`, `E0-16` mới và ngoại lệ `E0-12` chưa từng được ai ngoài tôi chạy. Self-test âm 11/11
+   giảm rủi ro đó; nó không xoá được.
+8. **E3/E4 vẫn `NOT_RUN` ở mọi nhóm scenario.** `NOT_READY_FOR_PRODUCT_CODE` giữ nguyên cho hệ
+   thống; điều thay đổi ở đợt này chỉ là **bốn card M1 cộng skeleton** nay có nhãn có phạm vi.
+
+## Q11. Bàn giao
+
+Lần chạy E0 **sau** khi ghi addendum này: **25 check, 25 PASS, 0 FAIL, 0 vi phạm, exit 0** —
+`files_scanned` tăng đúng 0 (file này đã tồn tại và chỉ dài thêm), và **không check nào đổi kết
+quả** so với lần chạy đóng gói. Điều này đáng ghi vì `E0-12` quét `evidence/` và addendum này
+**dùng** ngoại lệ `CR-P0-02` (nó trích dẫn `A3-R1-report.md` và `A3-R2-report.md`).
+
+- **lease_released_at (UTC):** 2026-09-07T12:10Z. `LEASE-PC09-e10` nhả tại đây; `worker-W6n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §Q3) và lease fencing ≥ 11.
+- **Claim:** `DRAFT_FOR_REVIEW` cho các file gói này ghi. Nhãn `IMPLEMENTATION_VERIFIED` **không**
+  thuộc về gói này: nó thuộc về `A3-R2` §5.1, có phạm vi từng card, và tôi chỉ chép nó kèm hash
+  của bản gốc.
+
+---
+
+# ADDENDUM — `PKT-PC09-P1-FIX1` (ba finding của `A3-R3`, tất cả đều là của tôi)
+
+## R1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P1-FIX1` · authority `AUTH-COORD-PC09-P1-FIX1` (cha `AUTH-OWNER-20260907-03`) · lease `LEASE-PC09-e11` (fencing 11) |
+| worker principal | `worker-W6n` · expires_at 2026-09-08T16:00Z · mode `DOCUMENTARY_DRAFT` |
+| status | **DONE_WITH_CONCERNS** — ba finding đã sửa và mutation-test; một CR mới xin phê chuẩn cách đọc quy tắc |
+| trigger | `evidence/audits/A3-R3-report.md` `F-A3R3-01` (MEDIUM), `-02` (MEDIUM), `-03` (LOW) — **cả ba nhắm vào bản ghi bằng chứng của PC09**, không vào bốn card. Cộng bổ sung giữa phiên của Coordinator: `CR-PC00-22` |
+| MODIFY grant | `evidence/index.json`, `evidence/manifest.schema.json`, `evidence/tools/e0_check.py`, `evidence/tools/README.md`, `precode/review.md`, `precode/gates.yaml` (chỉ nếu số đổi) · CREATE dưới `evidence/runs/` |
+| next actor | `Coordinator` · `lease_released_at` **2026-09-07T12:38Z** |
+
+Nguồn pinned khớp ở cả hai lần kiểm. `precode/gates.yaml` **không** được sửa: không con số nào
+của nó đổi (G5 vẫn `PARTIALLY_MET`, G6 vẫn `NOT_MET`, 4/51 · 0/5 · 0/2). Không file nào ngoài
+grant bị chạm — kể cả `evidence/audits/README.md`, `evidence/coordination/README.md` và
+`evidence/audits/A3-R3-report.md`, vốn do `W1n` viết trong lúc gói này chạy.
+
+## R2. `F-A3R3-02` — bản ghi của tôi khai một lần chạy không hề xảy ra
+
+Auditor đúng, và đây là finding tôi thấy nghiêm trọng nhất trong ba cái, dù nó chỉ MEDIUM. Sáu
+bản ghi `EV-A3-0*` mang:
+
+```
+producer_principal: auditor-A3
+execution: {command: "uv sync --all-packages --frozen && uv run --frozen pytest && …",
+            started_at: 2026-09-07T12:08:36Z, ended_at: 2026-09-07T12:08:40Z, exit_code: 0}
+```
+
+Auditor **không chạy gì lúc 12:08:36Z**, và không chuỗi lệnh nào trong đó xong trong **bốn giây**
+— riêng `pytest` của họ đo 35–45 s, `npm ci` kéo 298 gói. Bốn giây đó là thời gian **tôi chép**,
+đặt vào trường có nghĩa "lệnh sinh ra bằng chứng chạy khi nào", ký tên người khác.
+
+Điều làm nó không thành HIGH là phần khai báo tác giả vốn đã đúng: `limitations.not_checked_vi[0]`
+nói rõ bản ghi là bản chép của `worker-W6n`, rằng Auditor không viết JSON này, rằng báo cáo thắng
+nếu lệch, và nó ghim hash cả hai báo cáo. Nhưng khai báo đó phủ **quyền tác giả**, không phủ
+**nguồn gốc thực thi** — hai thứ khác nhau, và một người đọc sau này tính `ended_at − started_at`
+sẽ nhận một run record giả mang tên Auditor.
+
+Nay mỗi bản ghi khai:
+
+* `producer_principal: "worker-W6n (transcription of auditor-A3)"`, `producer_role: "Worker"`;
+* `execution.kind: "manual_procedure"`, `command: null`, `exit_code: null`, và
+  `manual_procedure` mở đầu bằng **"KHÔNG CÓ LỆNH NÀO ĐƯỢC CHẠY CHO BẢN GHI NÀY"**, nói rõ
+  `started_at`/`ended_at` là thời gian chép của tôi;
+* lệnh và số đo **của chính auditor** được **TRÍCH** trong `oracle.observed.auditor_reported`,
+  từng cụm gắn mục báo cáo nó được trích từ đó (`A3-R1` §1: 263/4/0, 35,1 s · `A3-R2` §1:
+  303/4/0, 40,7 s, cổng schema 8 passed · `A3-R3` §1: 305/4/0, 45,5 s, cổng schema 10 test);
+* `review_type` **giữ** `INDEPENDENT_AUDIT`, được biện minh bằng **trích dẫn** chứ không bằng một
+  lần chạy: verdict được đăng ký là của một auditor độc lập, và bản ghi ghim sha256 của báo cáo
+  để việc đối chiếu không phụ thuộc lời tôi. Mệnh đề "**báo cáo thắng**" giữ nguyên ở cả bảy.
+
+## R3. `F-A3R3-01` — quy tắc canh một cây mà vòng lặp chưa bao giờ đọc
+
+Đây là lớp lỗi mà `evidence/tools/README.md` §5f và §5h đã ghi hai lần — **tiêu đề rộng hơn phép
+đo** — lần này trong bản sửa của chính tôi. Oracle của `E0-12` viết rằng ngoại lệ `CR-P0-02` áp
+cho `evidence/handoffs/**` **và `evidence/runs/**`**; `in_scope_for_refs()` loại
+`evidence/runs/` (đúng theo `F-A2R1-11`, để `files_scanned` tái lập được) và vòng lặp mở đầu bằng
+chính vị từ đó. Auditor tiêm ba khiếm khuyết và cả ba **PASS**, `checked` không nhúc nhích.
+
+Auditor còn tìm ra cái thứ hai, sâu hơn và tôi không thấy: schema chặn nhãn trên
+`SELF_VALIDATION` — cửa thật — nhưng trên một bản ghi **tự khai** `INDEPENDENT_AUDIT` nó chấp
+nhận **mọi** nhãn tới tận nhãn cao nhất. Ở đúng loại bản ghi dễ tự phong nhất, không cửa máy nào
+ràng buộc: không `E0-12` (cây bị loại), không schema (trần bị nới).
+
+Bản sửa, hai phần:
+
+1. **`E0-12` đọc thật.** `evidence/runs/**` được duyệt riêng **trong chính check** (hàm
+   `run_record_files`), nên `files_scanned` **không đổi** và `F-A2R1-11` được tôn trọng; số file
+   và số trường đọc thêm được in trong note. Ở cây này chỉ **trường có cấu trúc** bị kiểm, gồm
+   `claim.supports_label`. Lý do phải nói ra thay vì để suy: một **báo cáo E0 cũng là** một file
+   trong `evidence/runs/`, và nó nhúng chính oracle này, vốn nêu tên mọi nhãn bị cấm — quét văn
+   xuôi ở đó sẽ làm công cụ fail trên đầu ra của chính nó. Quy tắc nhãn nay nằm ở **một** hàm
+   (`claim_label_violation`) mà cả hai đường gọi, để hai cây không thể trôi khỏi nhau lần nữa.
+2. **Schema có trần theo loại review.** `x-maximum-claim-by-review-type` (dữ liệu, đọc được) cộng
+   hai nhánh `allOf`: `INDEPENDENT_AUDIT` tối đa `IMPLEMENTATION_VERIFIED`, `COORDINATOR_CHECK`
+   tối đa `CONTRACT_READY`. Ba nhãn trên đó cần `G6-X1` / `SP1-X2` / `G7`; chưa cổng nào mở, nên
+   chưa bản ghi nào — bất kể loại review — chống đỡ được chúng.
+
+**Hai điều tôi làm rộng hơn câu chữ của packet, khai ra thay vì làm lặng:**
+
+* **Vị trí thứ ba.** Packet nói mở rộng sang `evidence/runs/**`. Tôi mở sang **ba** vị trí, thêm
+  `evidence/index.json`, vì index **nhúng nguyên văn** từng bản ghi: một nhãn lọt vào đó là một
+  nhãn trong một bản ghi, và trước đợt này `supports_label` **không được kiểm ở file nào cả**.
+  Đó vừa là siết chặt vừa là nới quyền `CR-P0-02` sang một đường dẫn mới → **`CR-PC09-17`** xin
+  Coordinator phê chuẩn cách đọc này hoặc thu hẹp nó.
+* **Một exemption mới.** `evidence/coordination/**` (packet, ruling, ledger) được miễn khỏi
+  **quét văn xuôi** nhãn: một packet hỏi *"nhãn X có đứng được cho bốn card không?"* đang **trích**
+  nhãn nó dispatch, đúng như `claim_ceiling` trong một card `agent-tasks/` là trần của công việc
+  được giao. Trường có cấu trúc của chúng **vẫn** bị kiểm, và số lần trích được **đếm và in ra**
+  trong note của `E0-12` — cùng cách xử lý §5f đã dùng cho `agent-tasks/`. Không có exemption
+  này, `E0-12` FAIL trên năm file do Coordinator sở hữu mà tôi không có quyền sửa.
+
+## R4. `F-A3R3-03` — hai con số của epoch 2 trong một index của epoch 3
+
+`review.md` §14.4 nay ghi **305 passed / 4 xfailed / 0 failed** (45,5 s) và cổng schema **10 test**,
+trích `A3-R3` §1, kèm câu nói rõ +2 test là đúng hai test mà đợt sửa `F-A3R2-02` thêm vào. Bảy bản
+ghi `EV-A3` bỏ `F-A3R2-02` khỏi `unresolved_issue_refs` (nó đã `VERIFIED`) và thay bằng
+`F-A3R3-01..03`; `uncertainty_vi` nói thẳng vì sao. Bảng §8.2 lấy trạng thái `F-A3R2-01..04` từ
+`A3-R3` §2 (**4/4 VERIFIED**), không từ lời tự khai của gói sửa.
+
+## R5. `CR-PC00-22` (bổ sung giữa phiên)
+
+* **`EV-A3-07-round3`** đăng ký `A3-R3` với **cùng hình dạng trung thực**: transcription
+  provenance, `execution.kind: manual_procedure`, `exit_code: null`, verdict trích từ §2 và §4
+  (`F-A3R2-01..04` VERIFIED, `F-A3R1-03` đóng bởi việc đăng ký, một mục PC09 PARTIAL, verdict
+  từng card **không đổi**). `claim.supports_label: IMPLEMENTATION_VERIFIED` — và `not_established`
+  nói rõ lượt này **không nâng nhãn nào**.
+* **Khóa `archive` mới** trong `evidence/index.json`: ghim sha256 của hai catalogue
+  `evidence/audits/README.md` (`a868664852…`) và `evidence/coordination/README.md`
+  (`636fe1e562…`) do `W1n` vừa viết, cộng inventory 13 báo cáo audit kèm bản ghi tương ứng (chỉ
+  ba báo cáo A3 có). Ghi rõ: nội dung hai catalogue **không** thuộc PC09 và gói này không sửa
+  chúng; index chỉ ghim hash để một lần sửa ở chúng không đi qua mà không ai thấy.
+* `CR-PC09-15` (A2-R7 chưa nằm trong repo) **đã được đáp ứng** bởi gói sở hữu `evidence/audits/`:
+  13 báo cáo đã chạy = 13 trong repo. Đây là **lời khai của tôi về việc của gói khác**, chưa được
+  xác minh độc lập.
+
+## R6. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-FIX1-01` | `e0_check.py --json-out evidence/runs/E0-20260907T123537Z.json` | **25 check · 25 PASS · 0 FAIL · 0 BLOCKED · 0 vi phạm**, exit 0 |
+| `EV-PC09-FIX1-02` | `selftest_fix1.py` — bảng của `A3-R3` đảo ngược, cộng 5 đột biến schema | **12/12 hành xử đúng đặc tả** (gồm 2 đối chứng dương) |
+| `EV-PC09-FIX1-03` | `selftest_p1.py` (10 đột biến + 1 đối chứng của đợt trước, chạy lại) | **11/11 CAUGHT** — không quy tắc cũ nào bị bản sửa làm hỏng |
+| `EV-PC09-FIX1-04` | `validate_index.py` | **72 record, 0 invalid** |
+| `EV-PC09-FIX1-05` | `gate.py` (cổng tự kiểm `review.md`) | **CONSISTENT** |
+
+Bảng đột biến của `EV-PC09-FIX1-02`, từng dòng, nằm ở `evidence/tools/README.md` §5j. Ba dòng mà
+auditor báo là "PASS khi lẽ ra phải FAIL" nay **FAIL**; dòng vốn đã đúng vẫn đúng; và hai đối
+chứng dương (nhãn hợp lệ **có** trích dẫn; `IMPLEMENTATION_VERIFIED` trên `INDEPENDENT_AUDIT`)
+vẫn **được cho qua** — một quy tắc chỉ biết từ chối cũng vô dụng như một quy tắc không bắt được gì.
+
+## R7. Mối lo còn lại
+
+1. **`F-A3R3-01…03` là `FIX_PROPOSED`, không phải `VERIFIED`.** Bản sửa đến **sau** báo cáo và
+   người viết bản sửa không được tự xác minh nó (protocol §8). Toàn bộ 12/12 và 11/11 ở trên là
+   `SELF_VALIDATION` chạy bằng công cụ tôi vừa sửa.
+2. **`CR-PC09-17` mở.** Việc đưa `evidence/index.json` vào phạm vi quy tắc claim là tôi đọc quy
+   tắc của Coordinator rộng hơn câu chữ. Nếu Coordinator thu hẹp, `E0-12` phải bỏ vị trí thứ ba —
+   và khi đó `supports_label` trong index lại không có cửa máy nào canh.
+3. **Exemption `evidence/coordination/**` là một lỗ có thật, được đếm chứ không được vá.** Nếu
+   một packet hay ledger có ngày tuyên bố một nhãn **về chính nó**, quét văn xuôi sẽ không thấy.
+   Số lần trích được in ra để phạm vi của lỗ nằm trong bằng chứng.
+4. **`CR-PC09-16` không đổi.** Card vẫn ghim `acceptance/scenarios.yaml` theo hash toàn file, nên
+   mỗi lần đóng gói của PC09 vẫn làm manifest của card `STALE` ở lớp bytes-đã-đọc.
+5. **`AMD-ENT-owner-01` vẫn `PROVISIONAL`**; nhãn của `TC-owner-auth-session` nằm trên nó.
+6. **Bảy bản ghi A3 vẫn là bản chép do một Worker viết.** Nay chúng khai đúng cả quyền tác giả
+   **và** nguồn gốc thực thi, nhưng một Auditor vẫn nên xác nhận bản chép khớp báo cáo; tôi không
+   được tự xác minh việc đó.
+7. **52/56 scenario vẫn `NOT_RUN`; E3 và E4 bằng 0 ở mọi nhóm.** Không lời gọi live nào đã xảy ra.
+
+## R8. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-07T12:38Z. `LEASE-PC09-e11` nhả tại đây; `worker-W6n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 12.
+- **Claim:** `DRAFT_FOR_REVIEW`. Nhãn `IMPLEMENTATION_VERIFIED` vẫn không thuộc về gói này: nó
+  thuộc `A3-R2` §5.1, được `A3-R3` §4 nhắc lại nguyên văn, có phạm vi từng card, và tôi chỉ chép
+  nó kèm hash của bản gốc.

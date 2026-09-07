@@ -1552,14 +1552,18 @@
           "label": "ADR-0011",
           "title_vi": "Framework va toolchain cho stack B",
           "source_file": "precode/adr/ADR-0011-frameworks-and-toolchain.md",
-          "status": "provisional-accepted",
-          "decision_owner": "Coordinator (Owner uy quyen 2026-09-07; Owner co the phan doi)",
-          "authority": "AUTH-OWNER-20260907-02",
+          "status": "accepted",
+          "decision_owner": "Coordinator (Owner uy quyen 2026-09-07); phe chuan boi Owner tai OD-20260907-02",
+          "authority": "AUTH-OWNER-20260907-02 (uy quyen chon); AUTH-OWNER-20260907-03 (phe chuan)",
+          "ratified_by": "OD-20260907-02",
+          "ratified_at": "2026-09-07",
+          "ratification_evidence": "precode/owner-decisions-02.md; Claude Code session session_0156UBBHDSeC9soECzSVUb3U",
           "depends_on": "ADR-0006 (stack B)",
-          "decision_record": "precode/decision-register.md §8 PROV-PC00-07",
-          "scope_note_vi": "Moi lua chon nam DUOI lop hop dong: Owner dao mot hang thi chi sua card va ma, khong sua contracts/, acceptance/ hay precode/.",
+          "decision_record": "precode/decision-register.md §8 PROV-PC00-07 (nay ACCEPTED (OD-20260907-02))",
+          "scope_note_vi": "Moi lua chon nam DUOI lop hop dong: Owner dao mot hang thi chi sua card va ma, khong sua contracts/, acceptance/ hay precode/. Phe chuan ap cho ca 14 hang, nhung bon hang Test / Lint / CI / Dong goi van duoc chinh ADR ghi la CHUA TUNG can nhac phuong an nao (F-A2R7-05) - phe chuan khong bien chung thanh da-duoc-can-nhac.",
           "registered_by_ruling": "PKT-PC00-FIX13",
-          "note_vi": "ADR-0001..ADR-0010 duoc anchor gian tiep qua precode/adr/README.md va khong can anchor rieng vi chung deu duoc OD-20260907-01 phe chuan; ADR-0011 co anchor rieng vi tham quyen cua no khac han."
+          "updated_by_ruling": "PKT-PC00-FIX15 (provisional-accepted -> accepted)",
+          "note_vi": "ADR-0001..ADR-0010 duoc anchor gian tiep qua precode/adr/README.md va khong can anchor rieng vi chung deu duoc OD-20260907-01 phe chuan; ADR-0011 giu anchor rieng vi tham quyen cua no khac han: Coordinator CHON, Owner PHE CHUAN o mot bien ban khac (OD-20260907-02)."
         }
       ],
       "owner_decisions": [
@@ -1593,6 +1597,39 @@
             "REQ-D50": "ĐX -> XN"
           },
           "stack_choice": "B (Python workers + TypeScript web) — thay the phuong an A"
+        },
+        {
+          "anchor_id": "OD-20260907-02",
+          "label": "OD-20260907-02",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-07, vong hai (5 muc)",
+          "source_file": "precode/owner-decisions-02.md",
+          "authority_created": "AUTH-OWNER-20260907-03",
+          "evidence_ref": "Claude Code session session_0156UBBHDSeC9soECzSVUb3U (tiep noi session_017QmDJtMqD9o1z79waqSB9W), 2026-09-07",
+          "verbatim_instruction": "accept ADR-0011, start phase 0 and 1",
+          "ratifies": [
+            "ADR-0011",
+            "PROV-PC00-07"
+          ],
+          "grants": [
+            "Loi vao Giai doan 0 (bo cuc repo + CI) - dong G5-X4",
+            "Loi vao Giai doan 1 (M1: kho du lieu, ingest, auth, storage readiness) cho bon card TC-ingest-idempotent-ack-lost, TC-canonical-identity-merge, TC-owner-auth-session, TC-storage-write-blocked-readiness"
+          ],
+          "coordinator_rulings_implied": [
+            "PROV-PC00-08 - che do van hanh khi ghi ma: lease theo thong diep, khong co cuong che OS; VAN LA PROVISIONAL, Owner co the phan doi",
+            "Tai phu thuoc PyPI/npm duoc phep; khong mang cho viec khac, khong secret, khong goi that X/Telegram/AI"
+          ],
+          "claim_ceiling_phase_0_1": "IMPLEMENTATION_VERIFIED (E1 contract test tren fixture + E2 fault injection noi card doi); KHONG BAO GIO INTEGRATION/LIVE",
+          "not_decided": [
+            "REQ-OQ03 (provider/model) - van OWNER_DECISION_REQUIRED, chan M3; bien ban vong hai khong nhac toi",
+            "moi muc KC van la KC; E3 va E4 van NOT_RUN",
+            "khong finding audit nao bi dong",
+            "khong nang tran claim cua mot file hop dong nao - OD-20260907-01 §4 van la luat cho precode/, contracts/, acceptance/",
+            "G5-X4 KHONG tu chuyen met: true - do la ket qua cua Giai doan 0 chay xong va duoc xac minh"
+          ],
+          "product_status_note_vi": "product_status giu NOT_READY_FOR_PRODUCT_CODE cho toi khi G5 dat day du va bang chung Giai doan 1 duoc dang ky.",
+          "decision_record": "precode/decision-register.md §8.10; PROV-PC00-07; PROV-PC00-08",
+          "registered_by_ruling": "PKT-PC00-FIX15",
+          "note_vi": "Bien ban vong hai KHONG thay the OD-20260907-01; hai bien ban cong don."
         }
       ],
       "invariants": [

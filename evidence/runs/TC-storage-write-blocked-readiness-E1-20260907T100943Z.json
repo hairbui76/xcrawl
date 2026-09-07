@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-storage-write-blocked-readiness",
+  "created_at": "2026-09-07T10:09:43Z",
+  "producer_principal": "worker-WR",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_versions": {
+      "CT-state-storage": "0.3.0"
+    },
+    "contract_hashes": {
+      "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7",
+      "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+      "precode/adr/ADR-0005-backup-method.md": "889de2812a8736e328eb7823a82e2b5dab1f46aee13257bfcfedd08d4668bd5c",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd",
+      "precode/decision-register.md": "4d1a5d6e5d2a4f0aa3cf165913cc76f07442211715fd0bde9a12da51e82a7244"
+    },
+    "implementation_revision": null
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic (x86_64)",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "pydantic": "2.13.5",
+      "pytest": "8.4.2",
+      "uv": "workspace (uv.lock pinned)"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC15",
+      "SC26",
+      "SC27",
+      "SC36",
+      "SC42",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-S9.3-08",
+      "REQ-S8.3-01",
+      "REQ-S8.3-02",
+      "REQ-S8.3-03",
+      "REQ-AC12",
+      "REQ-AC15",
+      "REQ-D58"
+    ],
+    "invariant_ids": [
+      "I02",
+      "I13",
+      "I15"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/recovery/c-disk-full-mid-ingest.json",
+        "sha256": "8f6379b4b0c633ca7d3b48be039671b17ece9da58c1f96067003bf2fb0194092",
+        "bytes": 3532
+      },
+      {
+        "path": "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json",
+        "sha256": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+        "bytes": 3665
+      },
+      {
+        "path": "acceptance/fixtures/collection/l-storage-write-blocked-mid-run.json",
+        "sha256": "7f5f751e9f23ea48ddb0623ce38a168967e621a014f2ca954b5852add193aeaf",
+        "bytes": 9225
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/identity/pos-ingest-batch-valid.json",
+        "sha256": "00886301c74078211be6720d3c6ec620a0a6355534cd58e73ce267073a0178f9",
+        "bytes": 4047
+      },
+      {
+        "path": "acceptance/fixtures/recovery/README.md",
+        "sha256": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+        "bytes": 12235
+      },
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      }
+    ],
+    "seed": null,
+    "clock": "2026-09-07T08:00:00Z",
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/integration/test_disk_full_no_ack.py tests/integration/test_readiness_independent_channel.py -q",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-07T10:05:00Z",
+    "ended_at": "2026-09-07T10:05:04Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture c: khi disk-full giữa ingest, mọi mutation bị từ chối bằng STORAGE_WRITE_FAILED, KHÔNG có câu lệnh nào chạm DB (statements_attempted == 0), sha256 file DB không đổi, readiness storage = down VÀ liveness = up cùng lúc. Fixture l: checkpoint không tiến; nhánh A về healthy (T-ST-02), nhánh B về recovery_required (T-ST-08). Fixture j: reconciliation_complete(RR-03) == false, dispatch và worker claim bị từ chối bằng RESTORE_UNVERIFIED, storage.health vẫn recovery_required, dispatcher_unlocked_at null. SC49: năm cạnh cấm vào MOD-data-store bị từ chối đúng mã đã pin trong fixture boundary (FE-01/05/15/18 = CAPABILITY_DENIED, FE-29 = FORBIDDEN_EDGE).",
+    "expected": {
+      "tests_passed": 46,
+      "tests_failed": 0,
+      "db_statements_during_readiness": 0,
+      "db_file_sha256_changed": false,
+      "reconciliation_complete_RR_03": false,
+      "boundary_edge_codes": {
+        "FE-01": "CAPABILITY_DENIED",
+        "FE-05": "CAPABILITY_DENIED",
+        "FE-15": "CAPABILITY_DENIED",
+        "FE-18": "CAPABILITY_DENIED",
+        "FE-29": "FORBIDDEN_EDGE"
+      }
+    },
+    "observed": {
+      "tests_passed": 46,
+      "tests_failed": 0,
+      "db_statements_during_readiness": 0,
+      "db_file_sha256_changed": false,
+      "reconciliation_complete_RR_03": false,
+      "boundary_edge_codes": {
+        "FE-01": "CAPABILITY_DENIED",
+        "FE-05": "CAPABILITY_DENIED",
+        "FE-15": "CAPABILITY_DENIED",
+        "FE-18": "CAPABILITY_DENIED",
+        "FE-29": "FORBIDDEN_EDGE"
+      }
+    }
+  },
+  "result": "STALE",
+  "artifacts": [
+    {
+      "path": "server/app/storage/health.py",
+      "sha256": "3d72bf1558e63a1bfde107ab757f5f6773d2415fce7e9b2269448ed2798a06f2",
+      "bytes": 19460,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "server/app/storage/guard.py",
+      "sha256": "c0b19706ca99563ac408626ca3385a05acd7c6ebbc624d6fe5ea9172f2867877",
+      "bytes": 17093,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "server/app/storage/__init__.py",
+      "sha256": "539e2d15ad3b7ce50be07bfa167ed1e5495edf1a7833b3d0e214dc16fe73f2bb",
+      "bytes": 1195,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "server/app/health/router.py",
+      "sha256": "7351fedde1963e130d53f7c4b1791dda7a2b99cab566d745bcfe3854c80e58e0",
+      "bytes": 11376,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "server/app/health/__init__.py",
+      "sha256": "3cdf6a70cf7f2a57378dbca2bf09bc21c4c5e8e2d4c3b894d72aa260931a4351",
+      "bytes": 751,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "server/app/db/faults.py",
+      "sha256": "035547f389346549729b15df3b3e8e253d3b6c48610ea5ea5e13520faaf2eb8c",
+      "bytes": 4274,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "tests/integration/test_disk_full_no_ack.py",
+      "sha256": "4196bb092e566e9e60eae60014a7e68f49ff09b2ce164c8f8bd4f02547d03140",
+      "bytes": 18743,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    },
+    {
+      "path": "tests/integration/test_readiness_independent_channel.py",
+      "sha256": "b0d9a4603fa8add3f04b060b8ae7a20afdb35526fe8f16d1b72f7132bc74d680",
+      "bytes": 20795,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test; không chứa secret."
+    }
+  ],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 46,
+    "not_checked_vi": [
+      "Hành vi THẬT của SQLite khi ổ đĩa đầy: lỗi được TIÊM qua server/app/db/faults.py, không phải một volume đầy thật. REQ-S9.3-08 ('không ghi hỏng file SQLite') vẫn NOT_RUN — cần drill live.",
+      "Probe hồi phục dùng đồng hồ tiêm (FrozenClock); 30 s và 3 lần liên tiếp chưa được đo trên đồng hồ thật.",
+      "Bảng probe riêng mà T-ST-02 mô tả KHÔNG tồn tại trong contracts/data/entities.yaml; probe được hiện thực như một cổng tiêm (record_probe), chưa phải một write thật xuống bảng. Xem CR-TC-storage-04.",
+      "reconciliation_complete() là interface trả False cho mọi restore; nội dung đối soát thật thuộc TC-backup-restore-drill (CR không cần — đây là phạm vi đã hoãn có chủ đích).",
+      "Không có migration Alembic nào được viết hay chạy: toàn bộ trạng thái của card sống trong bộ nhớ tiến trình theo T-ST-01.",
+      "Không có independent audit. Đây là SELF_VALIDATION: tôi viết cả code lẫn test kiểm nó.",
+      "health.get_readiness qua create_app() hiện raise RuntimeError vì app.state.auth_service chưa được nối (CR-TC-storage-03); test của card dùng app tối thiểu nên không bị che.",
+      "E3/E4 (live X / Telegram / AI) không chạy và không liên quan tới card này."
+    ],
+    "uncertainty_vi": "Bộ đếm câu lệnh chứng minh guard từ chối TRƯỚC khi mở transaction trong đường đi đã kiểm; nó không chứng minh mọi đường ghi tương lai đều gọi guard. Ràng buộc đó phải do từng card mutation tự giữ.",
+    "unresolved_issue_refs": [
+      "REQ-A1"
+    ]
+  },
+  "claim": {
+    "supports_label": "DRAFT_FOR_REVIEW",
+    "scope_vi": "storage.health T-ST-01..T-ST-09, guard từ chối mutation, kênh health độc lập DB (HC-01..HC-04), và default-deny trên storage.get_health. Trần của card là IMPLEMENTATION_VERIFIED nhưng evidence/manifest.schema.json giới hạn một bản ghi SELF_VALIDATION ở CONTRACT_READY; nâng nhãn cần review độc lập — xem CR-TC-storage-02.",
+    "not_established_vi": [
+      "KHÔNG chứng minh SQLite an toàn trên ổ đầy thật (REQ-S9.3-08 vẫn NOT_RUN).",
+      "KHÔNG chứng minh quy trình đối soát sau restore đúng — chỉ chứng minh cổng khóa khi vị từ false.",
+      "KHÔNG chứng minh UI phân biệt last-known (card 16); chỉ cung cấp as_of và storage_health cho nó.",
+      "KHÔNG phải independent audit.",
+      "KHÔNG chứng minh mọi đường ghi trong hệ thống gọi guard — chỉ đường ingest.submit_batch đã có mặt."
+    ]
+  },
+  "stale_reason": "SUPERSEDED BY evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json (EV-E1-04-tc-storage-write-blocked-readiness). Phát hiện A3-R2 F-A3R2-03: bốn artifact được pin ở đây đã đổi byte trong PKT-TC-STORAGE-FIX1 nên sha256 không còn khớp đĩa — server/app/health/router.py (thêm install_storage), server/app/health/__init__.py (export), server/app/storage/guard.py (docstring nêu app.state.storage_guard), và tests/integration/test_readiness_independent_channel.py (thêm 9 test bare-factory). Kết luận PASS ở bản ghi này vẫn ĐÚNG với đúng các byte đã pin (46/46 test xanh lúc 10:05Z); nó chỉ không còn mô tả cây mã hiện tại. Giữ lại, không xóa: SRC-PLAN §16. Schema đặt additionalProperties=false nên không có trường superseded_by; result=STALE + stale_reason là cách diễn đạt việc thay thế mà schema hỗ trợ."
+}

@@ -1,0 +1,202 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-owner-auth-session",
+  "created_at": "2026-09-07T10:16:00Z",
+  "producer_principal": "worker-WA",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd",
+      "precode/decision-register.md": "4d1a5d6e5d2a4f0aa3cf165913cc76f07442211715fd0bde9a12da51e82a7244",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "766fe760bf487781a0b75f070d21960d84d52bccff0465fdaac65dd6ad140ce7",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+      "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md": "aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "acceptance/fixtures/recovery/README.md": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+      "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+      "acceptance/fixtures/recovery/i-collector-token-calls-save.json": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+      "acceptance/fixtures/recovery/g-ssrf-redirect-private.json": "d5973052f973b738a66c926d98d662e2bb821e7de7e938acbf040f5328dec2ec",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
+      "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+      "acceptance/scenarios.yaml": "09099fad2fa0a5ed077e2d430c52e0a857aa212b4845d7c71120f91787b090d3",
+      "evidence/manifest.schema.json": "68d1da65e2c7a9530ac8692b918be9be1359217f7715d6ceacc6f3063c4f86cc"
+    },
+    "implementation_revision": "da886f8 + uncommitted working tree (TC-owner-auth-session write set)"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "argon2-cffi": "23.1.0",
+      "pydantic": "2.13.5",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "uv": "0.12.9"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC17",
+      "SC39",
+      "SC40",
+      "SC41",
+      "SC49",
+      "SC51"
+    ],
+    "requirement_ids": [
+      "REQ-D01",
+      "REQ-D04",
+      "REQ-D05",
+      "REQ-P0-01",
+      "REQ-S11.1-01",
+      "REQ-S11.2-01",
+      "REQ-S11.2-02"
+    ],
+    "invariant_ids": [
+      "I01",
+      "I11"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json",
+        "sha256": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+        "bytes": 4024
+      },
+      {
+        "path": "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+        "sha256": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+        "bytes": 5229
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/ui/sc51-first-time-setup.json",
+        "sha256": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+        "bytes": 13282
+      }
+    ],
+    "seed": null,
+    "clock": null,
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/contract/test_auth_scheme_matrix.py tests/integration/test_denied_edges.py -p no:warnings -q",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-07T10:15:14Z",
+    "ended_at": "2026-09-07T10:15:29Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture là oracle. (a) Mọi operation `mutation: true` với `auth_scope: owner_session` trong contracts/http/openapi.yaml mang CẢ `ownerSessionCookie` VÀ `ownerCsrfToken` trong MỘT security requirement; KHÔNG route owner mutation nào nhận cookie một mình. (b) Mọi route `backup.*` chỉ nhận `backupOperatorToken`. (c) recovery/h: request không xác thực ⇒ UNAUTHORIZED, 0 hàng đổi; thiếu hoặc lệch CSRF ⇒ CSRF_REJECTED 403, phiên KHÔNG bị hủy (ruling R5-01, scenarios.yaml SC40). (d) recovery/i: collector token gọi save.create/tag.update ⇒ UNAUTHORIZED, COUNT không đổi, ingest.submit_batch vẫn mở. (e) boundary/a: mỗi cạnh FE-nn có principal HTTP và `ENF-api-auth-test` trả đúng `expected_error_code` đã pin. (f) ui/sc51: auth.login tạo ĐÚNG một hàng session và không tồn tại endpoint signup.",
+    "expected": {
+      "owner_session_mutations_requiring_cookie_and_csrf": 17,
+      "owner_mutations_accepting_cookie_alone": 0,
+      "backup_routes_accepting_any_other_scheme": 0,
+      "auth_http_operations": [
+        "auth.login",
+        "auth.logout",
+        "auth.get_session"
+      ],
+      "signup_or_reset_endpoints": 0,
+      "session_rows_after_login": 1,
+      "missing_csrf_error_code": "CSRF_REJECTED",
+      "collector_token_on_forbidden_edge_error_code": "UNAUTHORIZED",
+      "bare_app_protected_route_status": 401,
+      "tests_passed": 43,
+      "tests_failed": 0,
+      "tests_xfailed": 2
+    },
+    "observed": {
+      "owner_session_mutations_requiring_cookie_and_csrf": 17,
+      "owner_mutations_accepting_cookie_alone": 0,
+      "backup_routes_accepting_any_other_scheme": 0,
+      "auth_http_operations": [
+        "auth.login",
+        "auth.logout",
+        "auth.get_session"
+      ],
+      "signup_or_reset_endpoints": 0,
+      "session_rows_after_login": 1,
+      "missing_csrf_error_code": "CSRF_REJECTED",
+      "collector_token_on_forbidden_edge_error_code": "UNAUTHORIZED",
+      "bare_app_protected_route_status": 401,
+      "tests_passed": 43,
+      "tests_failed": 0,
+      "tests_xfailed": 2,
+      "pytest_output_tail": "..............................x.............x  [100%]  exit 0"
+    }
+  },
+  "result": "STALE",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 45,
+    "not_checked_vi": [
+      "SUPERSEDED: mọi con số trong bản ghi này thuộc về cây trước PKT-TC-AUTH-FIX1/-FIX2. Đọc EV-E1-02-tc-owner-auth-session cho kết quả hiện hành.",
+      "E3/E4 chưa chạy: không trình duyệt thật, không TLS thật, không reverse proxy. Cờ `Secure` của cookie được khẳng định trên chuỗi Set-Cookie, KHÔNG phải trên một kết nối HTTPS thật.",
+      "Không có bearer token thật nào tồn tại: `TokenRegistry` rỗng theo mặc định, test nạp token giả trong bộ nhớ. Phát/lưu/xoay token collector, analysis worker và backup operator thuộc card khác.",
+      "26 trong 36 cạnh của boundary/a KHÔNG do lớp này quyết định: chúng cần import rule, process/network capability hoặc storage health guard (ruling R5-01 hàng 2 và 3). Test khẳng định điều đó chứ không bỏ qua im lặng.",
+      "`storage.get_health` mới là một Protocol; cửa `write_blocked` chưa nối với kênh health thật (TC-storage-write-blocked-readiness). Test tương ứng đánh dấu xfail.",
+      "Lockout đăng nhập là bộ đếm TRONG TIẾN TRÌNH: contracts/data/entities.yaml không khai entity nào để ghi, nên khởi động lại server xóa bộ đếm (CR-TC-AUTH-03).",
+      "Tham số Argon2id, idle 12 h, absolute 30 d, 5 lần/15 phút vẫn PROVISIONAL trong contracts/ops/secrets.md và cần Owner xác nhận; test chỉ khẳng định code KHỚP hợp đồng, không khẳng định con số là đúng.",
+      "Chưa chạy fault injection SQLite (E2) cho đường STORAGE_WRITE_FAILED của auth.login/auth.logout.",
+      "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy; nhãn IMPLEMENTATION_VERIFIED cần Coordinator/Auditor xác nhận."
+    ],
+    "uncertainty_vi": "recovery/h seq4 vẫn pin FORBIDDEN_EDGE cho ca thiếu CSRF, trong khi openapi.yaml (post-FIX1), contracts/errors.yaml, acceptance/scenarios.yaml SC40 và ruling R5-01 đều nói CSRF_REJECTED. Code theo R5-01; kỳ vọng nguyên văn của fixture được ghi lại bằng một test xfail(strict=True) thay vì sửa fixture. Xem CR-TC-AUTH-01.",
+    "unresolved_issue_refs": [
+      "CR-PC08-03",
+      "CR-PC08-04",
+      "CR-PC09-02",
+      "REQ-OQ03"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "contracts/http/openapi.yaml",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/ops/secrets.md",
+      "contracts/data/entities.yaml",
+      "contracts/modules.yaml",
+      "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json",
+      "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/ui/sc51-first-time-setup.json",
+      "acceptance/scenarios.yaml"
+    ]
+  },
+  "stale_reason": "Superseded by EV-E1-02-tc-owner-auth-session (evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json). Ruling F-A3R2-03: the bytes this record measured no longer exist. PKT-TC-AUTH-FIX1 rewrote the migration (0002_tc_owner_auth_session no longer creates `owner`; it now Revises 0002_base_entities), replaced the in-process login throttle with the durable owner.failed_login_count / locked_until columns of AMD-ENT-owner-01, made the SC49 sweep exhaustive over all 36 edges, and hashed the bearer tokens; PKT-TC-AUTH-FIX2 tightened the schema gate to PRAGMA table_xinfo with two-way containment. contracts/data/entities.yaml also changed under that amendment, which is an invalidated_by_path of this record. SRC-PLAN §16: an evidence record pinned to superseded bytes is STALE, not FAIL — nothing observed here was wrong when it was observed, it simply no longer describes the tree."
+}

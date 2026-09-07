@@ -35,6 +35,39 @@
     "B17"
   ],
   "ratification_evidence": "precode/owner-decisions.md (OD-20260907-01)",
+  "ratification_evidence_02": "precode/owner-decisions-02.md (OD-20260907-02)",
+  "authorities": [
+    {
+      "authority_id": "AUTH-OWNER-20260906-01",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-06",
+      "scope": "Documentary drafting session covering all Pre-code deliverables PC00-PC10 (SRC-PLAN §4); parent of every Coordinator->Worker/Auditor packet of that phase. Documents only: no product code, no external effect.",
+      "decision_record": null,
+      "evidence_ref": "Claude Code session session-01BAnmhQcMCXY2V66NH6c1PY, 2026-09-06 (Owner instruction quoted in the coordination baseline §1)"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260907-02",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-07",
+      "scope": "Ratifies OD-20260907-01 (25 items): B01-B17 RATIFIED, AMD-B01..B17 and ADR-0001..ADR-0010 ACCEPTED, stack option B; delegates the framework/toolchain choice to the Coordinator ('You pick, record as ADR') which produced ADR-0011. Does NOT decide REQ-OQ03 and does NOT create runtime evidence.",
+      "decision_record": "precode/owner-decisions.md",
+      "evidence_ref": "Claude Code session session_017QmDJtMqD9o1z79waqSB9W, 2026-09-07"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260907-03",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-07",
+      "scope": "Ratifies OD-20260907-02 (5 items): ADR-0011 accepted; entry granted to Phase 0 (repo layout + CI) and Phase 1 (M1: data store, ingest, auth, storage readiness) of docs/master-plan.md; parent of every Phase 0 / Phase 1 Worker packet. Claim ceiling for that output is IMPLEMENTATION_VERIFIED, never INTEGRATION/LIVE. Does NOT decide REQ-OQ03, does NOT change product_status, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-02.md",
+      "evidence_ref": "Claude Code session session_0156UBBHDSeC9soECzSVUb3U, 2026-09-07"
+    }
+  ],
+  "coding_phase": {
+    "status": "PHASE_0_1_IN_PROGRESS",
+    "authorised_by": "OD-20260907-02",
+    "mode": "message-tracked leases (PROV-PC00-08)",
+    "enforcement": "NOT_IMPLEMENTED"
+  },
   "instruction_precedence": [
     "platform_constraints",
     "explicit_owner_instructions",

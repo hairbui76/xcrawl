@@ -1,0 +1,85 @@
+# Research Radar — uv workspace root.
+#
+# Toolchain authority: precode/adr/ADR-0011-frameworks-and-toolchain.md (accepted, OD-20260907-02).
+# Repo layout authority: agent-tasks/README.md §5.3.
+#
+# This root project is VIRTUAL (`tool.uv.package = false`): it is not built or installed.
+# It exists to own the single lockfile, the shared dev toolchain and the pytest/ruff/mypy
+# configuration for the whole Python tree.
+#
+# Import names: `server`, `collector`, `worker`, `probe` are packages named after their
+# directory (each carries an `__init__.py`), so `server/app/...` imports as `server.app....`
+# and the three `app` subpackages never collide on one sys.path. The card-pinned file paths
+# in agent-tasks/**/§3 are unchanged by this.
+
+[project]
+name = "research-radar"
+version = "0.1.0"
+description = "Research Radar — implementation workspace (pre-product skeleton)"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.24,<0.25",
+  "hypothesis>=6.112,<7",
+  "ruff>=0.6,<0.7",
+  "mypy>=1.11,<2",
+  "openapi-spec-validator>=0.7,<0.8",
+  "datamodel-code-generator>=0.26,<0.27",
+  "pre-commit>=3.8,<4",
+  "PyYAML>=6.0,<7",
+  "jsonschema>=4.23,<5",
+  "httpx>=0.27,<0.29",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["server", "collector", "worker", "shared/rr_contracts"]
+
+[tool.uv.sources]
+rr-contracts = { workspace = true }
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+# The repo root is the import root for `server.*`, `collector.*`, `worker.*`, `probe.*`.
+pythonpath = ["."]
+testpaths = ["tests", "server/tests", "collector/tests", "worker/tests", "shared/rr_contracts/tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers --strict-config"
+filterwarnings = ["error::DeprecationWarning:rr_contracts.*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+# `generated/` is machine output (its style is datamodel-codegen's, not ours); `evidence/`
+# holds PC09's E0 tooling, which this repo's implementation packets may not modify.
+extend-exclude = [
+  "shared/rr_contracts/rr_contracts/generated",
+  "evidence",
+  "web",
+  "node_modules",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+# `mypy --strict` on the server core only (ADR-0011, row "Lint / format").
+# The strict gate is the server core (ADR-0011 row "Lint / format"). rr_contracts is
+# followed for its types but not held to the gate: it is machine output, and datamodel-
+# codegen's style is not ours to fix.
+files = ["server/app"]
+strict = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = ".:shared/rr_contracts"
+
+[[tool.mypy.overrides]]
+module = ["rr_contracts.generated.*"]
+ignore_errors = true

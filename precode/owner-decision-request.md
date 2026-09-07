@@ -30,6 +30,11 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > các amendment và ADR tương ứng `ACCEPTED`. **Một mục duy nhất chưa được trả lời:** `REQ-OQ03`
 > (provider và model) vẫn `OWNER_DECISION_REQUIRED` và vẫn chặn M3.
 >
+> **Vòng hai (2026-09-07).** Biên bản `OD-20260907-02` (`precode/owner-decisions-02.md`, authority
+> `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) trả lời nốt dòng `ADR-0011` đang
+> treo trong phiếu ở cuối file — **accept** — và mở lối vào Giai đoạn 0 và Giai đoạn 1 của
+> `docs/master-plan.md`. `REQ-OQ03` vẫn là mục duy nhất chưa được trả lời.
+>
 > File này được **giữ nguyên** làm bản ghi câu hỏi đã đặt ra; phiếu trả lời ở cuối file đã được điền.
 > Nội dung các mục bên dưới **không** được viết lại — chúng phản ánh tình trạng lúc hỏi, không phải
 > tình trạng hiện tại. Trạng thái hiện tại sống ở `precode/owner-decisions.md` và
@@ -442,11 +447,19 @@ PC08 vận hành: RPO 24 h · RTO 2 h · phiên đăng nhập 12 h
 CSRF_REJECTED là mã lỗi riêng: CÓ                   ✅
 run.resume từ blocked (bắt buộc ghi lý do): CÓ      ✅
 
-── CHỜ VÒNG SAU ────────────────────────────────────────────
-ADR-0011 frameworks: accept / object: ______________________
-   (Owner đã ủy quyền cho Coordinator chọn — "You pick, record as ADR".
-    Chi tiết 14 tầng ở precode/adr/ADR-0011-frameworks-and-toolchain.md.
-    Phản đối một hàng chỉ sửa card và mã, KHÔNG sửa contracts/.)
+── VÒNG HAI · ĐÃ TRẢ LỜI 2026-09-07 · OD-20260907-02 · AUTH-OWNER-20260907-03 ──
+ADR-0011 frameworks: accept                                 ✅
+   (Owner trả lời "accept ADR-0011, start phase 0 and 1".
+    Chi tiết 14 tầng ở precode/adr/ADR-0011-frameworks-and-toolchain.md;
+    ADR nay status accepted, ratified_by OD-20260907-02.
+    Bốn hàng Test / Lint / CI / Đóng gói vẫn là "chưa từng cân nhắc
+    phương án nào" — phê chuẩn không đổi điều đó; đảo vẫn chỉ sửa card và mã.)
+Bắt đầu Giai đoạn 0 và Giai đoạn 1 (docs/master-plan.md): CÓ  ✅
+   (Giai đoạn 0 đóng G5-X4; Giai đoạn 1 = M1 kho dữ liệu, ingest, auth,
+    storage readiness. Trần claim IMPLEMENTATION_VERIFIED, không bao giờ
+    INTEGRATION/LIVE; product_status giữ NOT_READY_FOR_PRODUCT_CODE.)
+
+── VẪN CHỜ ─────────────────────────────────────────────────
 OQ03 provider + model: ______________________________________
    (vẫn OWNER_DECISION_REQUIRED, vẫn chặn M3)
 ```

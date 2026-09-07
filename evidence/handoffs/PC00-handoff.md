@@ -1454,3 +1454,735 @@ Nay bố cục được ghi thành **một bảng bảy hàng**, mỗi hàng có
 - **next actor:** `Coordinator` — rehash `ADR-0011`; xử lý `CR-PC00-19`; giao W7 re-pin.
 - **lease_released_at (UTC):** 2026-09-07T07:21Z. `LEASE-PC00-e15` (fencing 15) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §N4) và lease fencing ≥ 16.
 - **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX15 (`OD-20260907-02`: phê chuẩn `ADR-0011`, lối vào Giai đoạn 0 và 1)
+
+## O1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX15` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX15` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC00-e16` (**fencing 16**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T09:05Z / 2026-09-07T09:22Z · lease expires 2026-09-08T12:00Z (`date -u` trước lần ghi cuối: 2026-09-07T09:20Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T09:22Z |
+| input | `…/scratchpad/packets/OWNER-DECISIONS-20260907-02.md` — biên bản Owner vòng hai do Coordinator phát |
+
+## O2. Đã làm gì
+
+**Tạo `precode/owner-decisions-02.md`** — chuyển ngữ biên bản `OD-20260907-02` theo đúng khuôn của
+`owner-decisions.md`: định danh, quy tắc chuyển ngữ, **năm** mục nguyên văn, trần claim của Giai đoạn 0/1
+nguyên văn, §4 "những gì quyết định này **không** làm" và §5 ghi chú về hai mục có sắc thái, §6 truy vết.
+Thêm một dòng trỏ ở đầu `precode/owner-decisions.md` nói rõ hai biên bản **cộng dồn**, biên bản vòng một
+không bị thay thế.
+
+**Một phân biệt tôi giữ nguyên chứ không làm phẳng.** Biên bản có năm hàng, nhưng chỉ **hai** trong số đó là
+câu trả lời của Owner (mục 1 `ADR-0011`, mục 2 lối vào giai đoạn). Mục 3 và mục 4 được **chính biên bản** khai
+là *"hàm ý bởi mục 2"* và là *"ruling của Coordinator, đã khai báo"*; mục 5 là điều phối. Vì vậy chỉ hai mục
+đầu mang nhãn `ACCEPTED (OD-20260907-02)`; mục 3 thành `PROV-PC00-08` với trạng thái **`PROVISIONAL`** và điều
+khoản Owner có thể phản đối. Gộp cả năm thành "Owner đã chấp nhận" sẽ là đúng thứ mà `protocol.md` §8 gọi là
+implied acceptance — một quyết định lớn (ghi mã sản phẩm không có runtime guard) mượn thẩm quyền của một câu
+trả lời về việc khác.
+
+**`ADR-0011` → `accepted`.** Front-matter: `status: accepted`, `ratified_by: OD-20260907-02`,
+`ratified_at: 2026-09-07`, `evidence_ref` nay có **hai** vế (lựa chọn: `session_017QmDJ…`; phê chuẩn:
+`session_0156UBBH…`), `decision_refs` thêm `OD-20260907-02`. **`decision_owner` giữ nguyên `Coordinator`** —
+hai trường trả lời hai câu hỏi khác nhau: *ai chọn* và *ai phê chuẩn*. Mục "Trạng thái" được viết lại kèm
+banner, và lập luận cũ được **giữ nguyên trong một blockquote** đúng cách mười ADR kia đã làm.
+
+**Điều tôi thêm mà biên bản không nói — và vì sao.** Mục "Trạng thái" mới ghi rõ: phê chuẩn áp cho cả 14 hàng,
+nhưng bốn hàng `Test` / `Lint / format` / `CI` / `Đóng gói / triển khai` vẫn là *chưa từng cân nhắc phương án
+nào* theo chính ADR (`F-A2R7-05`). Một phê chuẩn trọn gói **không** biến bốn ô trống thành một cuộc cân nhắc
+đã xảy ra. `FIX14` vừa bỏ công phân biệt đúng hai chuyện đó; nếu `FIX15` để nhãn `accepted` xoá mất phân biệt
+ấy thì bản sửa của `F-A2R7-05` mất tác dụng sau đúng hai giờ. Ghi chú tương ứng có ở `adr/README.md`,
+`PROV-PC00-07` và anchor baseline.
+
+**`precode/adr/README.md`** — hàng chỉ mục `ADR-0011` → `accepted (OD-20260907-02)`; bảng "Trạng thái được
+phép" ghi hai biên bản; đoạn "Cập nhật 2026-09-07" thành "cả mười một ADR"; đoạn "ngoại lệ về thẩm quyền" viết
+lại: nay là ADR **duy nhất** có `decision_owner: Coordinator` **và** `status: accepted`, có giải thích vì sao
+đó không phải mâu thuẫn; `scope` trong front-matter sửa lại (câu cũ "Không ADR nào ở trạng thái accepted" đã
+sai từ vòng một).
+
+**`precode/decision-register.md`** — bốn thay đổi: (a) `PROV-PC00-07` → **`ACCEPTED (OD-20260907-02)`**, trạng
+thái cũ giữ lại dưới nhãn "(Lịch sử)"; (b) mục mới **`PROV-PC00-08`** cho chế độ vận hành khi ghi mã; (c) mục
+mới **§8.10** ghi cả năm quyết định của biên bản kèm cột trạng thái, trong đó **hàng go-ahead** là một hàng
+quyết định riêng, nêu đích danh bốn card Giai đoạn 1 và `G5-X4`; (d) §0 thêm nhãn `ACCEPTED (OD-20260907-02)`,
+§7 thêm `ADR-0011`, front-matter và đoạn "Cập nhật" mở rộng.
+
+**`PROV-PC00-08` viết dày hơn một dòng, có chủ đích.** Đây là chỗ dự án rời khỏi hồ sơ của chính nó:
+`protocol.md` §2 nói thẳng *"Nếu không verify được runtime guards → BLOCKED, không fallback sang soft prompt"*,
+và ruling này **chính là** một fallback sang soft prompt. Nó hợp lệ vì chỉ thị Owner đứng trên hồ sơ, nhưng nếu
+sổ chỉ ghi "được phép ghi mã" thì lần đọc lại sau sẽ không thấy cái giá. Nên mục ghi ba chế độ hỏng cụ thể:
+(a) ghi ngoài tập ghi **không** bị chặn, chỉ bị phát hiện *sau* khi byte đã lên đĩa; (b) hai Worker song song
+trên cùng file không có fencing thật — "ghi đè im lặng" là chế độ hỏng có thật, giảm bằng cách Coordinator
+không cấp packet chồng path chứ không bằng cưỡng chế; (c) không có audit log bền vững do service ghi, nên
+handoff chứng minh được *cái gì đã đổi* nhưng **không** chứng minh được *không có gì khác đã đổi*. Cộng một
+dòng "nếu Owner phản đối" nêu phương án thay thế duy nhất nhất quán với hồ sơ (hoãn Giai đoạn 0 và 1 cho tới
+khi có guard thật) — vì một mục `PROVISIONAL` mà không có đường đảo thì không thật sự là `PROVISIONAL`.
+
+**`precode/owner-decision-request.md`** — khối "CHỜ VÒNG SAU" thành "VÒNG HAI · ĐÃ TRẢ LỜI", dòng `ADR-0011`
+điền **accept** kèm hệ quả, thêm dòng go-ahead Giai đoạn 0/1 với trần claim; `OQ03` chuyển sang khối "VẪN
+CHỜ". Banner đầu file thêm một đoạn về vòng hai.
+
+**`precode/baseline.json`** — anchor `ADR-0011` cập nhật (`accepted`, `ratified_by`, `ratified_at`,
+`ratification_evidence`, hai authority, `scope_note_vi` nay mang cả cảnh báo bốn hàng, `updated_by_ruling`);
+anchor mới `OD-20260907-02` trong `source_anchors.PROJECT.owner_decisions` với `ratifies` **chỉ** hai mục
+(`ADR-0011`, `PROV-PC00-07` — không suy rộng), `grants` (hai lối vào giai đoạn), `coordinator_rulings_implied`
+**tách riêng** khỏi `ratifies`, `claim_ceiling_phase_0_1`, và `not_decided` năm dòng gồm `REQ-OQ03` và
+"`G5-X4` KHÔNG tự chuyển `met: true`". JSON parse lại được sau khi sửa.
+
+**Không** chạm `precode/gates.yaml`, `precode/review.md`, `precode/requirements.csv`,
+`agent_profile/registry.json`, `contracts/`, `acceptance/`, `agent-tasks/` — đúng packet.
+
+## O3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/owner-decisions-02.md` | **CREATE** | ABSENT | `c2e6d70ba2f7f740167ab26d5f696f446d534a3da535cbf2e47e65a35ffe70c9` (9898) |
+| `precode/owner-decisions.md` | MODIFY | `c5d411e561d464cbb6a05b42938dd11b4925506b12b72736ab46b354ba9ad994` (12373) | `f608d2e9527061558e9c0247136c7d6d51f24d073981afd40c1f424ef7773bda` (12711) |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` ⚠ | MODIFY | `9cdec0d78592c67068188e7dffcf9e03f361fe202263bb47a95b2298337a8340` (17052) | `6be9189a5e61b03eb44bdbfb2ca6841b1ca2d04f9dbf140fcc39764be5a9b155` (18989) |
+| `precode/adr/README.md` ⚠ | MODIFY | `3e931f27583cc92f4ee394ad7d8dca590741644058380fec7dd307b9e3405374` (8192) | `097cd5f911a22d161703fc887ae7e4db503e1aee699b47455f00984cfb30dd52` (9226) |
+| `precode/decision-register.md` ⚠ | MODIFY | `3596a52b6ce8cb39a0ae07501fd177c80a4fdb7b19317fc82a3dd8e3df63a75d` (104940) | `4d1a5d6e5d2a4f0aa3cf165913cc76f07442211715fd0bde9a12da51e82a7244` (114327) |
+| `precode/owner-decision-request.md` | MODIFY | `572c2c11ecf18c8f958bb931d2aeafba1a2d64d3a42c674959562be05de3f56e` (56907) | `1a277fbca5c9b398dc95f4eb618cd8b0cd92e0167826fcc8eb9e217e10a2298f` (57906) |
+| `precode/baseline.json` ⚠ | MODIFY | `c99474a6744a3827f75961884d5d8daf1d9fb0bfe212547c216d1574d32ac81a` (101458) | `d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd` (104398) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `f363ab14a479e17df6d234d7f10f4f721a6f91df23ab582c163fd5b9c8a1d622` (168191) | *(file này)* |
+
+**⚠ Bốn file card-pinned vừa đổi:** `precode/baseline.json` (`d25e2edd…`, 104398),
+`precode/decision-register.md` (`4d1a5d6e…`, 114327), `precode/adr/README.md` (`097cd5f9…`, 9226),
+`precode/adr/ADR-0011-frameworks-and-toolchain.md` (`6be9189a…`, 18989). Thuộc `CR-PC00-15` — W7 re-pin một
+lượt. `precode/requirements.csv` **không** đổi (`fbe59d0e…`).
+
+**1 CREATE + 6 MODIFY + 1 APPEND.** Không đổi và đã rehash để chứng minh: `precode/gates.yaml`
+(`b5d9a79f…`), `precode/review.md` (`1da31eb0…`), `precode/requirements.csv` (`fbe59d0e…`),
+`agent_profile/registry.json` (`fd9d6d25…`), `precode/README.md` (`f98254c3…`), mười ADR còn lại. Nguồn
+`research-radar-spec.md` (`d35e1f2d…`) và `research-radar-pre-code-plan.md` (`f65bb046…`) rehash **khớp pin**
+cả trước và sau. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc` (kiểm bằng `find`); không network;
+không secret; mọi script chạy từ `…/scratchpad/w1/`.
+
+**Quan sát ngoài phạm vi (không phải của tôi).** `git status` cho thấy các đường dẫn chưa theo dõi
+`server/`, `collector/`, `worker/`, `shared/`, `probe/`, `pyproject.toml`, `uv.lock`, `.python-version` đã
+xuất hiện trên đĩa — đó là công việc Giai đoạn 0 của (các) Worker khác dưới cùng biên bản này. Tôi **không**
+chạm vào chúng và không kê hash của chúng: chúng không nằm trong tập ghi của tôi và đang có writer khác.
+
+## O4. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T09:20Z / 2026-09-07T09:20Z · **exit code 0** ·
+  **367 assertion, 367 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1n`.
+- **Mọi assertion cũ vẫn chạy.** `EV-PC00-01..07` không đổi một dòng nào và vẫn PASS — nguồn khớp pin, 246
+  dòng `requirements.csv`, B01..B17, 11 ADR, ngoại lệ header.
+- **`EV-PC00-08` được sửa cho đúng trạng thái mới** (không nới lỏng): khối `ADR-0011` nay đòi
+  `status: accepted`, `ratified_by: OD-20260907-02` **và** `ratified_at`, đòi evidence trỏ đúng
+  `session_0156UBBHDSeC9soECzSVUb3U` và `precode/owner-decisions-02.md`, đòi `decision_owner` **vẫn** là
+  `Coordinator`, đòi **không** có `ratified_by: OD-20260907-01` (chống quy sai thẩm quyền cho biên bản vòng
+  một), đòi blockquote lập luận cũ còn nguyên, và đòi mục "Trạng thái" nói rõ phê chuẩn không biến bốn hàng
+  trống thành đã-cân-nhắc. Hàng chỉ mục và anchor baseline kiểm theo giá trị mới; dòng phiếu trả lời phải là
+  `accept` **và** không còn ô trống `/ object`. `scrub` của `EV-PC00-04` nay nhận cả hai decision id nên luật
+  "không dùng `ACCEPTED` trần" vẫn nguyên hiệu lực.
+- **`EV-PC00-09` mới — 60 assertion** cho biên bản vòng hai: 19 trường front-matter; đúng **5** hàng theo thứ
+  tự; chép nguyên văn chỉ thị của Owner, bốn tên card, ngân sách subagent và trần claim; **năm** phát biểu
+  phạm-vi-không-quyết; `PROV-PC00-07` mang `ACCEPTED (OD-20260907-02)` **và** giữ đoạn lịch sử;
+  `PROV-PC00-08` là `PROVISIONAL`, có điều khoản phản đối, nêu `instruction_precedence`, "kỷ luật bằng thông
+  điệp", "ghi đè im lặng", `fencing`, cả hai chế độ của `protocol.md` §2, trần claim và `product_status`;
+  §8.10 có đúng 5 hàng, đúng **2** hàng `ACCEPTED (OD-20260907-02)` và **2** hàng `PROVISIONAL`, nêu `G5-X4`
+  không tự `met: true` và bốn card; anchor baseline `ratifies` **đúng hai** mục; và **ba assertion âm**:
+  `claim_ceiling` của bộ hợp đồng **không** đổi, `product_status` **không** đổi, `REQ-OQ03` **không** được
+  giải bởi biên bản này.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. Một phê chuẩn framework **không** tạo bằng chứng kỹ
+  thuật nào — không dòng mã nào của Giai đoạn 0/1 được tôi kiểm ở gói này.
+
+## O5. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-20` **(mới)** | `precode/gates.yaml` và `precode/review.md` (PC09) chưa phản ánh `OD-20260907-02`: G5 chưa ghi lối vào đã được cấp cho bốn card Giai đoạn 1, và `G5-X4` vẫn `met: false` (đúng — nó chỉ đổi khi Giai đoạn 0 chạy xong và **được xác minh**, không phải khi được cấp phép). Ngoài grant của gói này. |
+| `CR-PC00-21` **(mới)** | `agent_profile/registry.json` chưa có `OD-20260907-02` / `AUTH-OWNER-20260907-03`, và `instruction_precedence` — căn cứ trung tâm của `PROV-PC00-08` — chưa được trích dẫn ở đâu ngoài sổ. Ngoài grant của gói này. |
+| `CR-PC00-15` | W7 re-pin — nay gồm bốn file ở §O3 với hash mới |
+| `CR-PC00-19` | Ruling gốc `ADR-0011` trong `evidence/coordination/` vẫn mang câu quy kết sai về §5.3 |
+| `CR-PC00-16` | `ADR-0006` giữ tên file cũ trong khi nội dung là phương án B |
+| `CR-PC00-17`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3. Biên bản vòng hai **không nhắc tới nó** — im lặng không phải một quyết định. |
+| `PROV-PC00-08` | `PROVISIONAL`. Đây là mục duy nhất trong bộ mà một quyết định trọng yếu (ghi mã sản phẩm không có runtime guard) đứng trên một **suy luận** từ câu trả lời của Owner chứ không trên chính câu trả lời. Đề nghị Coordinator đưa nó lên Owner thành một câu hỏi tường minh ở vòng sau, không gộp. |
+
+**Vì sao status là `DONE_WITH_CONCERNS`.** Mọi mục của packet đã xong và validate exit 0. Concern nằm ở chỗ
+gói này ghi vào sổ một quyết định (`PROV-PC00-08`) cho phép **các Worker khác** đang chạy song song ghi mã
+sản phẩm, trong khi `agent_profile/protocol.md` §2 nói phải `BLOCKED`. Tôi không có thẩm quyền quyết điều đó
+và không quyết; tôi ghi lại nguyên trạng, giữ nó ở `PROVISIONAL`, và nêu rủi ro còn lại đủ cụ thể để Owner
+phản đối được nếu muốn. Nếu Owner phản đối sau khi Giai đoạn 0 và 1 đã ghi mã, chi phí không còn là sửa một
+tài liệu.
+
+## O6. Trạng thái bàn giao (FIX15)
+
+- **next actor:** `Coordinator` — rehash bảy file ở §O3; giao `CR-PC00-20` (PC09 gates/review) và
+  `CR-PC00-21` (registry); giao W7 re-pin bốn file card-pinned.
+- **lease_released_at (UTC):** 2026-09-07T09:22Z. `LEASE-PC00-e16` (fencing 16) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §O3) và lease fencing ≥ 17.
+- **Claim:** `DRAFT_FOR_REVIEW` cho gói này. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0 theo
+  `E0-20260907T044549Z`; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`. Trần claim
+  của đầu ra Giai đoạn 0/1 là `IMPLEMENTATION_VERIFIED` — gói này **không** tạo bằng chứng nào cho nó.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX16 (`CR-PC00-21`: registry ghi chuỗi authority và `coding_phase`)
+
+## P1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX16` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX16` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC00-e17` (**fencing 17**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T09:40Z / 2026-09-07T09:54Z · lease expires 2026-09-08T12:00Z (`date -u` trước lần ghi cuối: 2026-09-07T09:52Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T09:54Z |
+| nguồn | `CR-PC00-21` do chính tôi mở ở `PKT-PC00-FIX15` §O5 |
+
+## P2. Đã làm gì
+
+**`agent_profile/registry.json`** — chèn **ba** khóa mới ngay sau `ratification_evidence`, không đụng byte nào
+khác:
+
+- `ratification_evidence_02: "precode/owner-decisions-02.md (OD-20260907-02)"` — song song với khóa vòng một
+  chứ **không** thay thế nó; hai biên bản cộng dồn nên hai khóa cùng tồn tại.
+- `authorities` — ba grant của Owner, mỗi grant sáu trường (`authority_id`, `issuer`, `issued_at`, `scope`,
+  `decision_record`, `evidence_ref`).
+- `coding_phase` — `status: PHASE_0_1_IN_PROGRESS`, `authorised_by: OD-20260907-02`,
+  `mode: "message-tracked leases (PROV-PC00-08)"`, `enforcement: NOT_IMPLEMENTED`.
+
+**Ba điều tôi viết vào `scope` mà packet không đọc cho, và vì sao.** Một bảng authority chỉ có id và ngày thì
+không dùng được để chặn việc gì; giá trị của nó nằm ở chỗ nó ghi **ranh giới**. Nên mỗi `scope` mang cả vế
+phủ định:
+
+1. `AUTH-OWNER-20260906-01` ghi rõ *"Documents only: no product code, no external effect"*. Đây là grant
+   **duy nhất** trong ba grant bị `PROV-PC00-08` vượt qua; nếu bảng không nói grant đó chỉ cho tài liệu thì
+   người đọc sau sẽ tưởng việc ghi mã đã nằm trong nó từ đầu và `PROV-PC00-08` là thừa.
+2. `AUTH-OWNER-20260907-02` ghi rằng nó **ủy quyền việc chọn** framework, không phê chuẩn nội dung — đúng
+   phân biệt mà `ADR-0011` sống trên đó suốt hai gói vừa rồi.
+3. `AUTH-OWNER-20260907-03` mang trần claim `IMPLEMENTATION_VERIFIED, never INTEGRATION/LIVE` ngay trong
+   `scope`. Đây là grant mà mọi packet Giai đoạn 0/1 trích làm parent; đặt trần ngay tại grant khiến một
+   packet con không thể lặng lẽ đòi mức cao hơn cha.
+
+Cả hai grant 2026-09-07 đều ghi `REQ-OQ03` trong phần phủ định, vì đó là mục duy nhất còn treo và là chỗ dễ bị
+coi là "chắc đã giải ở đâu đó rồi".
+
+**`evidence_ref` là ba phiên khác nhau, không phải một.** Grant đầu trích
+`session-01BAnmhQcMCXY2V66NH6c1PY` (phiên 2026-09-06, nguyên văn chỉ thị nằm ở coordination baseline §1);
+hai grant sau trích `session_017QmDJ…` và `session_0156UBBH…`. `decision_record` của grant đầu là `null` —
+**có chủ đích**: nó là chỉ thị trực tiếp, chưa bao giờ được chuyển thành một biên bản `OD-…`. Ghi `null` trung
+thực hơn là trỏ nó vào một biên bản ra đời sau nó một ngày.
+
+**`precode/owner-decisions-02.md`** — thêm mục **"Chuỗi authority tính đến biên bản này"** ngay dưới bảng định
+danh, cùng ba hàng với `registry.json` (bản tiếng Việt, chi tiết hơn ở phần phạm vi), cộng một đoạn
+**"Điều bảng này không nói"**: không grant nào bật `ENFORCED`, `operational_enforcement_status` và
+`coding_phase.enforcement` đều `NOT_IMPLEMENTED`, lease giai đoạn mã vẫn là kỷ luật bằng thông điệp. Hàng
+`agent_profile/registry.json` trong bảng truy vết §6 đổi từ *"Chưa làm ở gói này"* thành nội dung thật của gói
+này, và `CR-PC00-21` được ghi là đã giải.
+
+**Không** chạm `precode/gates.yaml`, `precode/review.md`, `precode/decision-register.md`, `precode/adr/`,
+`precode/baseline.json`, `precode/requirements.csv`, `contracts/`, `acceptance/`, `agent-tasks/` — đúng packet.
+
+## P3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `agent_profile/registry.json` | MODIFY | `fd9d6d25f3ebf7e2f0dbbb269f3d72ce944edd9ba4c2b7552963b37b71383135` (3784) | `7f04465121241160363d3ab4ba3a0d2e9177e77f5cb27bf509759474c7effe88` (5909) |
+| `precode/owner-decisions-02.md` | MODIFY | `c2e6d70ba2f7f740167ab26d5f696f446d534a3da535cbf2e47e65a35ffe70c9` (9898) | `ba404207522d0d85a8f4e7d2f21660ad94f6aa0191fa260a9be7a48f8f8aa429` (12298) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `a224ca410ce53b411a5dc84f0440cb7667106fe0398ab7f8ab734d3ccea9f4b8` (184207) | *(file này)* |
+
+**2 MODIFY + 1 APPEND.** `agent_profile/registry.json` **không** phải file card-pinned; danh sách re-pin của
+`CR-PC00-15` **không** đổi so với `FIX15` (vẫn `baseline.json` `d25e2edd…`, `decision-register.md`
+`4d1a5d6e…`, `adr/README.md` `097cd5f9…`, `ADR-0011` `6be9189a…`). Đã rehash để chứng minh không đổi:
+`precode/baseline.json` (`d25e2edd…`), `precode/decision-register.md` (`4d1a5d6e…`), `precode/adr/README.md`
+(`097cd5f9…`), `precode/adr/ADR-0011-frameworks-and-toolchain.md` (`6be9189a…`),
+`precode/owner-decision-request.md` (`1a277fbc…`), `precode/owner-decisions.md` (`f608d2e9…`),
+`precode/gates.yaml` (`b5d9a79f…`), `precode/review.md` (`1da31eb0…`), `precode/requirements.csv`
+(`fbe59d0e…`). Nguồn `research-radar-spec.md` (`d35e1f2d…`) và `research-radar-pre-code-plan.md`
+(`f65bb046…`) rehash **khớp pin** cả trước và sau. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`;
+không network; không secret; script chạy từ `…/scratchpad/w1/`.
+
+## P4. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T09:52Z / 2026-09-07T09:52Z · **exit code 0** ·
+  **412 assertion, 412 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1n`.
+- **`EV-PC00-01..09` không đổi một dòng nào** và vẫn PASS — gói này không chạm file mà chúng kiểm, trừ
+  `owner-decisions-02.md`, và `EV-PC00-09` (60 assertion về biên bản vòng hai, gồm quy tắc "đúng 5 hàng theo
+  thứ tự") vẫn PASS sau khi bảng authority được chèn: bảng mới cố ý **không** dùng cột đầu là số.
+- **`EV-PC00-10` mới — 45 assertion:** `ratification_evidence_02`; ba `authority_id` **đúng thứ tự thời
+  gian**; **sáu** trường bắt buộc trên **từng** grant; mọi `issuer` bắt đầu bằng `Owner`; mọi `evidence_ref`
+  trỏ về một phiên thật; `decision_record` đúng cho từng grant kể cả `null` của grant đầu; **ba evidence_ref
+  là ba phiên khác nhau** (chống lỗi chép đè — lỗi im lặng nhất mà một bảng như thế này có thể mắc); grant
+  2026-09-06 vẫn là grant *chỉ tài liệu*; grant 03 mang trần claim; hai grant 2026-09-07 đều nêu `REQ-OQ03`;
+  `coding_phase` khớp **đúng** bốn khóa và bốn giá trị packet yêu cầu, so sánh bằng `==` chứ không bằng
+  `in`; và bảng trong biên bản vòng hai khớp registry theo từng `authority_id`.
+- **Bảy assertion âm** — điều gói này **không** được phép làm: `operational_enforcement_status` vẫn
+  `NOT_IMPLEMENTED`, `session_drafting_mode` vẫn `DOCUMENTARY_DRAFT`, `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`, `status` vẫn `DRAFT_FOR_REVIEW`, khối `roles` (gồm `Specialist` disabled và
+  `Coordinator.physical_write: false`) không bị đụng, khối blocker không bị đụng, và
+  `instruction_precedence` — căn cứ trung tâm của `PROV-PC00-08` — còn nguyên **và** vẫn xếp
+  `explicit_owner_instructions` **trên** `pinned_agent_protocol`. Nếu ai đó sau này đảo hai dòng đó thì
+  `PROV-PC00-08` mất căn cứ, nên nó phải là một assertion chứ không phải một câu văn.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. Ghi một bảng authority **không** làm cho authority đó
+  được cưỡng chế — `enforcement: NOT_IMPLEMENTED` là mô tả đúng, không phải một mục cần làm sau.
+
+## P5. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-21` | **Đã giải ở gói này.** Lưu ý mức bằng chứng: đây là lời tự khai của Worker; đóng CR cần xác minh độc lập trên epoch mới và không được do tôi ký. |
+| `CR-PC00-20` | **Vẫn mở** — `precode/gates.yaml` và `precode/review.md` (PC09) chưa phản ánh `OD-20260907-02`. Ngoài grant của cả `FIX15` lẫn `FIX16`. |
+| `CR-PC00-15` | W7 re-pin — danh sách **không đổi** so với `FIX15` (registry không phải file card-pinned) |
+| `CR-PC00-19`, `CR-PC00-17`, `CR-PC00-16`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+| `PROV-PC00-08` | Vẫn `PROVISIONAL`. Gói này **làm nó dễ thấy hơn** (`coding_phase` trong registry) chứ không làm nó vững hơn: `enforcement: NOT_IMPLEMENTED` nói đúng rằng chưa có gì cưỡng chế. Đề nghị của `FIX15` giữ nguyên — đưa lên Owner thành câu hỏi riêng. |
+
+## P6. Trạng thái bàn giao (FIX16)
+
+- **next actor:** `Coordinator` — rehash hai file ở §P3; `CR-PC00-20` còn mở.
+- **lease_released_at (UTC):** 2026-09-07T09:54Z. `LEASE-PC00-e17` (fencing 17) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §P3) và lease fencing ≥ 18.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX17 (`CR-PC10-09`: bố cục repo của `ADR-0011` khớp §5.3)
+
+## Q1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX17` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX17` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC00-e18` (**fencing 18**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T09:58Z / 2026-09-07T10:05Z · lease expires 2026-09-08T16:00Z (`date -u` trước lần ghi cuối: 2026-09-07T10:03Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T10:05Z |
+| nguồn | `CR-PC10-09` (PC10 nêu trong `agent-tasks/README.md` §5.3: PC10 không được ghi ADR nên phải raise CR) |
+
+## Q2. Đã làm gì
+
+**Bảng bố cục viết lại: bảy thư mục → tám cây**, khớp `agent-tasks/README.md` §5.3 tại epoch pin
+`PC10-PIN-P1-20260907` (epoch được trích ngay trong bảng, để lần lệch sau nhìn thấy được):
+`server/`, `collector/`, `worker/`, `web/`, `shared/rr_contracts/`, `tests/`, `probe/`, **`tools/`**.
+
+- **`tools/` là cây thứ tám.** `agent-tasks/TC-backup-restore-drill.md` §3 **vốn đã pin** `tools/backup_cli.py`
+  từ trước; §5.3 và ADR mới là bên đi sau. Nên tôi ghi hàng này là ADR **bắt kịp card**, không phải card đổi
+  theo ADR — kèm lý do đường dẫn: `MOD-backup-cli` là một tiến trình CLI riêng với auth scope
+  `backup_operator`, **không** phải session owner; đặt nó dưới `server/` làm mờ ranh giới ấy ngay ở tầng
+  đường dẫn.
+- **`tests/` bỏ `unit/`.** Hàng cũ ghi `contract/`, `unit/`, `integration/`. §3 của cả 18 card chỉ dùng hai
+  thư mục, và Giai đoạn 0 chỉ tạo hai (`CR-P0-03` mục 2). Hàng mới nói **thẳng** "Không có `tests/unit/`" thay
+  vì chỉ im lặng bỏ tên đi — một thư mục biến mất không lời giải thích là thứ người đọc sau sẽ "khôi phục".
+- **Tên import `PROV-P0-01`** được thêm thành một đoạn riêng: `server.app.…`, `collector.app.…`,
+  `worker.app.…`, `rr_contracts.…`, kèm câu **"không phải `app.…`"**. Đây là chỗ dễ sai nhất và là thứ bộ
+  khung đã cố định — card không được tự đổi.
+- Hàng `web/` được ghi chi tiết hơn (`src/lib/`, `routes/`, `views/`, `tests/contract/`, `tests/integration/`)
+  cho khớp §5.3.
+
+**Ghi chú `CR-PC10-09` mới, ba đoạn — và vì sao ba chứ không một.**
+
+1. *Đây là đính chính **sự kiện**, không phải quyết định mới.* Nói rõ hai chỗ được sửa và rằng `tools/` đã
+   được card pin từ trước.
+2. *Vì sao `ratified_by` không đụng tới.* `OD-20260907-02` phê chuẩn **14 hàng của bảng Quyết định** (ngôn
+   ngữ, framework, DB, hàng đợi, test runner, CI, đóng gói…). Bố cục repo là **mô tả đi kèm**, không phải một
+   trong 14 hàng; sửa nó cho khớp thực tế không đổi một lựa chọn nào Owner đã phê chuẩn. Nên `status:
+   accepted` và `ratified_by: OD-20260907-02` **giữ nguyên** và không cần vòng quyết định mới — kèm câu ràng
+   buộc ngược lại: nếu sau này một hàng **trong** bảng Quyết định phải đổi thì ADR phải quay lại Owner.
+3. *Sự kiện Giai đoạn 0.* Trích `evidence/handoffs/P0-skeleton-handoff.md`.
+
+**Một chỗ tôi không viết theo packet, có chủ đích.** Packet nói ghi "the Phase 0 fact that the skeleton
+exists". Tôi kiểm trực tiếp trên đĩa trước khi viết: **bảy** trong tám cây tồn tại; **`tools/` chưa được
+tạo** — nó nằm ngoài write set của `PKT-P0-SKELETON` (`CR-P0-03` mục 1) và sẽ do card M8
+`TC-backup-restore-drill` tạo. Viết "bộ khung của tám cây đã tồn tại" sẽ là một câu sai kiểm được, đúng loại
+lỗi mà `F-A2R7-04` đã phạt ADR này một lần rồi (quy kết cả bảy thư mục cho §5.3 khi §5.3 mới khai sáu). Nên
+ghi chú tách bạch hai thứ và **không** cho phép đọc lẫn: bảy cây là **sự kiện đã kiểm trên đĩa**, cây thứ tám
+là **cam kết đã khai** chưa thành file. Thêm câu: bộ khung không mang hành vi nghiệp vụ nào (chỉ
+`health.get_liveness`; `health.get_readiness` **cố ý** chưa route vì thuộc `TC-storage-write-blocked-readiness`)
+nên nó **không** là bằng chứng cho card nào — E1–E4 vẫn `NOT_RUN`.
+
+**Ghi chú `F-A2R7-04` cũ giữ nguyên từng chữ** ở trên ghi chú mới. Nó ghi lịch sử "§5.3 khi đó khai sáu"; viết
+đè lên nó sẽ xoá đúng thứ mà `FIX14` dựng lên.
+
+## Q3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` ⚠ | MODIFY | `6be9189a5e61b03eb44bdbfb2ca6841b1ca2d04f9dbf140fcc39764be5a9b155` (18989) | `da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b` (22685) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `058b9827a80aa743d8da149cfed3b4b58bea2ce5922925bfb7e60aa5077e725c` (194212) | *(file này)* |
+
+**⚠ `ADR-0011` là card-pinned** và nằm trong read set của **cả 18 card** — hash mới `da5181b2…` (22685) làm
+mọi card `STALE` theo `INV-06`, đúng như lần `FIX15` đã làm. Coordinator đã báo trước là sẽ xếp **một** lượt
+re-pin sau Giai đoạn 1; tôi **không** raise một CR mới cho việc đó, chỉ ghi hash ở đây để lượt re-pin lấy
+đúng giá trị. Danh sách re-pin của `CR-PC00-15` nay là: `ADR-0011` `da5181b2…` (22685), `baseline.json`
+`d25e2edd…` (104398), `decision-register.md` `4d1a5d6e…` (114327), `adr/README.md` `097cd5f9…` (9226).
+
+**1 MODIFY + 1 APPEND.** Đã rehash để chứng minh không đổi: `agent-tasks/README.md`
+(`e73f7e8f…` — **không** chạm, nó là nguồn tôi khớp theo, không phải đích), `precode/baseline.json`
+(`d25e2edd…`), `precode/decision-register.md` (`4d1a5d6e…`), `precode/adr/README.md` (`097cd5f9…`),
+`precode/owner-decisions-02.md` (`ba404207…`), `precode/owner-decisions.md` (`f608d2e9…`),
+`precode/owner-decision-request.md` (`1a277fbc…`), `agent_profile/registry.json` (`7f044651…`),
+`precode/gates.yaml` (`b5d9a79f…`), `precode/review.md` (`1da31eb0…`), `precode/requirements.csv`
+(`fbe59d0e…`), mười ADR còn lại. Nguồn `research-radar-spec.md` (`d35e1f2d…`) và
+`research-radar-pre-code-plan.md` (`f65bb046…`) rehash **khớp pin**. Không chạm `agent-tasks/`,
+`contracts/`, `acceptance/`, `server/`, `collector/`, `worker/`, `web/`, `tests/`, `shared/`, `probe/`.
+Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+## Q4. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T10:03Z / 2026-09-07T10:03Z · **exit code 0** ·
+  **450 assertion, 450 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1n`.
+- **`EV-PC00-01..07`, `EV-PC00-09`, `EV-PC00-10` không đổi một dòng nào** và vẫn PASS. Khối `F-A2R7-04` của
+  `EV-PC00-08` giữ nguyên, gồm cả phép kiểm chéo trên đĩa (`rr_contracts` có trong `agent-tasks/README.md`
+  ⇔ ADR nói "PC10 đã bổ sung").
+- **38 assertion mới trong `EV-PC00-08`:** bảng bố cục có **đúng 8 hàng** và không còn chữ "bảy thư mục";
+  epoch `PC10-PIN-P1-20260907` được trích; hàng `tests/` **không** còn `unit/` **và** nói thẳng "Không có
+  `tests/unit/`"; hàng `tools/` nêu `backup_cli.py` và `CR-P0-03`; năm chuỗi import của `PROV-P0-01` kể cả
+  câu "không phải `app.…`"; ADR tự khai là đính chính sự kiện; `ratified_by: OD-20260907-02` **vẫn** ở
+  front-matter và ADR nói rõ nó giữ nguyên.
+- **Bảy assertion **đối chiếu thực tế**, không phải đối chiếu văn bản với chính nó** — đây là phần đáng tin
+  nhất của lượt này: bảy cây `server`, `collector`, `worker`, `web`, `shared/rr_contracts`, `tests`, `probe`
+  phải **tồn tại thật** trên đĩa; `evidence/handoffs/P0-skeleton-handoff.md` phải tồn tại; và hai phép kiểm
+  hai chiều — *"`tools/` vắng trên đĩa" ⇔ "ADR nói `tools/` chưa được tạo"* và *"`tests/unit/` vắng trên đĩa"
+  ⇔ "ADR nói không có `tests/unit/`"*. Nếu ai đó tạo `tools/` mà không sửa ADR, hoặc sửa ADR mà không tạo
+  `tools/`, validate **FAIL** thay vì ADR âm thầm nói sai.
+- **Bốn assertion đối chiếu ADR với `agent-tasks/README.md` §5.3 thật** (đọc trực tiếp file, không chép giá
+  trị): tám cây đều xuất hiện trong §5.3, và §5.3 cũng nói "Không có `tests/unit/`" — hai văn bản phải cùng
+  nói một điều, không chỉ mỗi văn bản tự nhất quán.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. Bộ khung Giai đoạn 0 **không** được tôi chạy hay kiểm
+  chức năng ở gói này — tôi chỉ kiểm **sự tồn tại của thư mục**, và evidence record nói đúng chừng đó.
+
+## Q5. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC10-09` | **Đã giải ở gói này** (tự khai; đóng CR cần xác minh độc lập, không do tôi ký). |
+| `CR-P0-03` mục 1 | **Vẫn mở về mặt file:** `tools/` đã được §5.3 và ADR khai nhưng **chưa tồn tại**. Card M8 `TC-backup-restore-drill` phải tạo nó. ADR nay ghi rõ khoảng cách đó thay vì che. |
+| `CR-PC00-15` | Re-pin — danh sách cập nhật ở §Q3; Coordinator xếp **một** lượt sau Giai đoạn 1 |
+| `CR-PC00-20` | **Vẫn mở** — `precode/gates.yaml` / `precode/review.md` (PC09) chưa phản ánh `OD-20260907-02` |
+| `CR-PC00-19` | Ruling gốc `ADR-0011` trong `evidence/coordination/` vẫn mang câu quy kết sai về §5.3 — **nay lệch thêm một mức** (nó nói bảy thư mục và có `tests/unit/`) |
+| `CR-PC00-16`, `CR-PC00-17`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+| `PROV-PC00-08` | Vẫn `PROVISIONAL` — khuyến nghị của `FIX15` (đưa lên Owner thành câu hỏi riêng) giữ nguyên |
+
+## Q6. Trạng thái bàn giao (FIX17)
+
+- **next actor:** `Coordinator` — rehash `ADR-0011`; đưa hash mới vào lượt re-pin sau Giai đoạn 1;
+  `CR-PC00-20` và `CR-P0-03` mục 1 còn mở.
+- **lease_released_at (UTC):** 2026-09-07T10:05Z. `LEASE-PC00-e18` (fencing 18) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §Q3) và lease fencing ≥ 19.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX18 (packaging: `A2-R7`, `A3-R3`, ba manifest `FC-P1`, mười file điều phối)
+
+## R1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX18` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX18` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC00-e19` (**fencing 19**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / gate mở / finished (UTC) | 2026-09-07T12:14Z / **2026-09-07T12:22Z** / 2026-09-07T12:28Z · lease expires 2026-09-08T16:00Z (`date -u` trước lần ghi cuối: 2026-09-07T12:26Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T12:28Z |
+
+## R2. Wait gate — đã tôn trọng, có bằng chứng
+
+Packet cấm ghi cho tới khi `…/scratchpad/audits/A3-R3-report.md` tồn tại. Tôi arm một poller nền
+(`until [ -f … ]; do sleep 60; done`, trần 45 phút) và **không ghi một byte nào vào repo** trong lúc chờ.
+Poller thoát với `GATE_OPEN after 8m: 14574 bytes`; lệnh `cp` đầu tiên chạy **sau** dấu đó.
+
+Trong lúc chờ tôi chỉ làm việc **chỉ đọc**, và nó có ích: `cmp` lại **toàn bộ 49 bản sao đã có từ trước**
+(20 ở `evidence/audits/`, 29 ở `evidence/coordination/`) so với nguồn scratchpad — **49/49 byte-identical**,
+nên `A3-R1`/`A3-R2` **không** cần chép lại và **không** bị nhân bản, đúng như packet dự liệu.
+
+## R3. Đã chép gì
+
+**16 file** (`cp -p`, mỗi file `cmp`-verified; hash nguồn ghi **trước** khi chép vào `…/w1/src_fix18.sha`).
+
+`evidence/audits/` — 5 CREATE:
+
+| File | sha256 sau khi chép | Bytes |
+| --- | --- | --- |
+| `A2-R7-report.md` | `12b0dbcc39919cc4c74bccaae24670ea480660ab1a945d06a0bc2ab28dd74880` | 17667 |
+| `A3-R3-report.md` | `5d9a4ce609f24b785f7d2d5753602f5f52008e01bc01886e2667807adfce6284` | 14574 |
+| `FC-P1-manifest.txt` | `9553f45aaab6087969eb8538421be1ed62cef076fbc104041b82af2115092985` | 56259 |
+| `FC-P1e2-manifest.txt` | `0d172d4c394728f359996e66d773387d4180e8c96698912a03dc1e11fb282bb9` | 56885 |
+| `FC-P1e3-manifest.txt` | `1a736950d1244c6bfc74d224d31c72d92b94a84528627850f1f0c459d11912d9` | 58266 |
+
+`evidence/coordination/` — 10 CREATE + 1 REPLACE:
+
+| File | sha256 sau khi chép | Bytes |
+| --- | --- | --- |
+| `OWNER-DECISIONS-20260907-02.md` | `599d8427870ebdfc921d1ad105e7bf9e45b1f5b62eeb5f66f0dd31e31477245f` | 2455 |
+| `PHASE0-skeleton-packet.md` | `ad76109b3130d3035ea3522c89ead65988314132a903e9c858dcc9a43303a513` | 8193 |
+| `PHASE1-card-dispatch-template.md` | `70630dfc6ab4718da09c5763dc0ec3803578836cb81b8cd71e9ff42cb3a1cc5f` | 3988 |
+| `A3-code-review-packet.md` | `670da439c78156c3af4a48de2e382a1f14d1cf3b4f2f3f66f74e8e28bef5f218` | 3951 |
+| `A3-r2-packet.md` | `e55841a9b22b56fefbca24bebdab5bd532ac063125c41f90148e538097a69670` | 3309 |
+| `A3-r3-packet.md` | `8f2fe8e7f0b3b41fdfae4a90c74d8ead9d43fb93ba625a2fac1b64920e72bd82` | 2444 |
+| `FIX-A3R1-rulings.md` | `ec3805a9682fe16784671258721a7337f386d82279e5a75426ebefaac004997d` | 4678 |
+| `PC09-PHASE1-packet.md` | `38cbf318942e056d934ed1231497b78ab1934a09c27d26f39e108d32f6fad51f` | 3933 |
+| `ADR-0011-frameworks-ruling.md` | `09050e65a0c1d6f16fb5463fe8fde1a567cefc9792b1c665ed8c04b2c660555f` | 4487 |
+| `phase1-cr-consolidated.txt` | `3c6433db66e10a510820c29d37dfbdac82d934564e12280eb387619666bea4a3` | 4452 |
+| `coordinator-ledger.md` **(REPLACE)** | `0a1187c5ac1725ad316ef78d65c56349df985d3adb9da4f061212fc01d9dc30a` | 52809 |
+
+**Bản `coordinator-ledger.md` bị thay:** `0369031b73e7550ec4fe7d63e8d206049a560528d3b97d8a5eca6e4eb6db4ac5`
+(39468 byte, chép ở `PKT-PC00-FIX12`, dừng ở `FC-W4` epoch 9). Bản trước nữa: `a8a7d319…` (`PKT-PC00-FIX9`).
+
+## R4. Sổ tiến độ là một file đang sống — và điều đó suýt lọt qua
+
+Đây là chỗ đáng nói nhất của gói này. Tôi chép `progress.md` lúc ~12:22Z (`fd0116d3…`, 52444 byte), `cmp` đạt.
+Ở **lượt kiểm thứ hai** trước handoff, `cmp` báo **DIFF**: Coordinator đã ghi tiếp nguồn lúc 12:22:45Z
+(52809 byte). Bản chép của tôi không hỏng — nó vẫn là ảnh chụp đúng của nguồn tại thời điểm chép — nhưng nếu
+tôi chỉ `cmp` **một lần** thì README sẽ mang một hash mà người đọc sau tưởng là "bản mới nhất".
+
+Xử lý: chép **lại** đúng một lần lúc 12:26Z, hash nguồn **trước và sau** lần chép **giống nhau**
+(`0a1187c5…` cả hai), rồi `cmp` ngay. Tôi **không** lặp vô hạn để đuổi theo một file đang được ghi — điều đó
+không kết thúc được. Thay vào đó README nay nói thẳng: đây là **ảnh chụp tại 12:26Z**, gần như chắc chắn đã
+tụt lại khi bạn đọc, và thứ bản chép bảo đảm là *byte ở đây đúng bằng byte của nguồn tại 12:26Z* — không hơn.
+Bản chép đầu (`fd0116d3…`) được ghi lại ở đây và trong README như một bản trung gian đã bị thay trong cùng gói.
+
+**Bốn mươi chín bản sao còn lại `cmp` đạt ở cả hai lượt**, nên chúng ổn định; chỉ mỗi sổ này sống.
+
+## R5. Hai README
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `evidence/audits/README.md` | MODIFY | `4e527ba0846c7f0f129256ccad58c32cbc04d7017275dc720769da359be9905d` (6558) | `a868664852efa37e594c8062180cfd09d58d055a2226d91d81b292b2ba6d53a9` (12372) |
+| `evidence/coordination/README.md` | MODIFY | `907fc734411ce70f87c41c6ab193b59217aba2fe2e24391fda29ee365cd8755c` (9445) | `636fe1e562d42a3891f173c8f3737d80b6366b4023e1868ff3d9286899511c22` (15799) |
+
+`evidence/audits/README.md`: đếm lại (**13** báo cáo, **12** manifest, `auditor-A2` ×7, `auditor-A3` ×3); năm
+hàng mới; và **hai** đoạn mà tôi thêm vì bảng số không nói được:
+
+- **`A2-R7` là ngoại lệ về hình dạng.** Nó là báo cáo duy nhất **không có manifest** — Coordinator dispatch
+  lúc 18 card đang re-pin, nên auditor hash hai file trong phạm vi ở đầu và cuối vòng thay cho manifest. Cột
+  "Candidate / epoch" của nó ghi *(không epoch)* thay vì bịa một `FC-` không tồn tại.
+- **`A3-R3` PASS **không** nghĩa là mọi thứ nó chạm đều sạch.** Cùng bản đó mở `F-A3R3-01`: `E0-12` bắt được
+  nhãn claim sai **ngoài** hai cây bằng chứng nhưng **không** bắt được nhãn đặt **trong** `evidence/runs/`,
+  chứng minh bằng bốn mutation mà ba lẽ ra phải FAIL lại PASS. Một README chỉ chép chữ "PASS" sẽ làm người
+  đọc bỏ qua đúng dòng quan trọng nhất. Tôi cũng ghi rằng `A3-R3` **mutation-test chính guard của Worker** —
+  đó là khác biệt thật giữa nó và hai vòng trước, không phải một câu khen.
+
+`evidence/coordination/README.md`: **ba** authority Owner (không còn hai) kèm ranh giới "grant đầu chỉ cho tài
+liệu, việc ghi mã chạy dưới `PROV-PC00-08` vẫn `PROVISIONAL`"; 13 hàng mới; đoạn "bổ sung ba lần"; và **ba**
+ghi chú:
+
+- **ERRATUM `ADR-0011-frameworks-ruling.md` (`CR-PC00-19`)** — ruling khai "cả bảy thư mục đã được §5.3 khai",
+  **sai** lúc viết (§5.3 khi ấy khai sáu; `shared/rr_contracts/` sinh ra tại chính ADR), và bố cục nay là
+  **tám** cây với `tests/` không có `unit/`. Quy kết đã được sửa ở ADR qua `FIX14` và `FIX17`.
+  **File lưu trữ KHÔNG bị sửa** — như tôi đã báo trước khi chạy: sửa một bản sao nguyên văn để nó "đúng hơn"
+  phá đúng thứ làm bản lưu trữ có giá trị, nên erratum sống **cạnh** bản gốc với luật giải quyết tường minh
+  (**ADR hiện hành thắng**; ruling chỉ nói ruling đã nói gì). `cmp` của file vẫn đạt.
+- **Hai file không phải packet cũng không phải ruling.** `phase1-cr-consolidated.txt` là bảng gom CR —
+  công cụ làm việc, **không** có thẩm quyền; trạng thái CR chuẩn ở `precode/review.md` §12.
+  `PHASE1-card-dispatch-template.md` là **template**: không lease, không tập ghi, **không cấp quyền cho ai**.
+  Không nói ra thì một template nằm cạnh 14 packet thật rất dễ bị đọc như packet thứ 15.
+- **Sổ tiến độ đang sống** (§R4).
+
+**Kiểm đủ danh mục bằng máy:** mọi file trong hai thư mục (25 và 40, trừ README) đều xuất hiện trong README
+tương ứng — **0 thiếu**.
+
+## R6. Đính chính lỗi của chính tôi ở `PKT-PC00-FIX17`
+
+§Q3 của addendum `PKT-PC00-FIX17` viết `agent-tasks/README.md` là `e73f7e8f…`. **Giá trị đó tôi không hề
+tính — nó sai.** Hash đúng tại thời điểm đó là
+`871a2cffd79fb321bec18e6b3eebe81259131a0f4ab4c6cd36d53b731a0a024f`. File **không** bị tôi chạm ở gói đó;
+sai sót nằm ở dòng "đã rehash để chứng minh không đổi", tức đúng dòng lẽ ra để chứng minh một điều.
+
+**Đính chính ghi ở đây, addendum `FIX17` giữ nguyên từng byte** — `worker.md` cấm ghi tiếp sau khi handoff
+đã release, kể cả để sửa lỗi, và một bản ghi bằng chứng bị sửa lặng lẽ còn tệ hơn một bản ghi sai có đính
+chính. Khi hai chỗ lệch nhau: **addendum này thắng**.
+
+**Ghi chú cho người đọc sau:** `agent-tasks/README.md` **đã đổi lần nữa** kể từ đó — `34b4dbf122a5376eb6eb0d041a321edacaf640be52943fd2f3747dae871eb6a3` lúc 2026-09-07T12:26Z — vì PC10 đang
+ghi song song. Cả `871a2cff…` lẫn `34b4dbf1…` đều là giá trị của **file của người khác ở hai thời điểm**, không
+phải thứ tôi ghi.
+
+## R7. Evidence
+
+- **Gate:** `until [ -f …/audits/A3-R3-report.md ]; do sleep 60; done` chạy nền, **exit 0**, output
+  `GATE_OPEN after 8m: 14574 bytes`. Không có `cp` nào trước dấu đó.
+- **Chép và kiểm:** hash nguồn ghi trước khi chép (`…/w1/src_fix18.sha`, 16 dòng), `cp -p` 16 file, rồi `cmp`
+  **toàn bộ 65 bản sao** của cả hai thư mục (không chỉ 16 file mới). Lượt 1: 64/65 đạt, 1 DIFF
+  (`coordinator-ledger.md` — nguồn đã tiến, §R4). Sau khi chép lại: **65/65 đạt**.
+- **`validate.py`:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py` — **exit code 0**,
+  **450 assertion, 450 PASS, 0 FAIL**, chạy 2026-09-07T12:25Z. Không assertion nào đổi: gói packaging không
+  chạm file mà `EV-PC00-01..10` kiểm; chạy lại để chứng minh **không có hồi quy**.
+- **Danh mục README:** kiểm bằng script — 25/25 và 40/40 file được liệt kê, 0 thiếu.
+- Tất cả là `SELF_VALIDATION`, producer `worker-W1n`.
+- **`NOT_RUN`:** không có audit độc lập nào cho chính hai thư mục này; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.
+  **Bản sao giống nguồn không chứng minh nội dung của chúng đúng** — chỉ chứng minh chúng chưa bị sửa. Cụ
+  thể: tôi **không** xác minh một verdict nào của `A3-R3`, **không** tính lại `manifest_sha256` của ba
+  manifest `FC-P1` (con số `5f5b8aa4…` trong hàng `FC-P1e3` là **trích từ báo cáo**, không phải tôi tính), và
+  **không** kiểm bảng CR hợp nhất so với các handoff gốc.
+
+## R8. Không đổi
+
+`precode/**` (gồm `baseline.json` `d25e2edd…`, `decision-register.md` `4d1a5d6e…`, `adr/README.md`
+`097cd5f9…`, `ADR-0011` `da5181b2…`, `owner-decisions-02.md` `ba404207…`, `gates.yaml` `b5d9a79f…`,
+`review.md` `1da31eb0…`), `agent_profile/registry.json` (`7f044651…`), `contracts/`, `acceptance/`,
+`agent-tasks/`, `server/`, `collector/`, `worker/`, `web/`, `tests/`, `shared/`, `probe/`,
+`evidence/handoffs/` khác. Nguồn `research-radar-spec.md` (`d35e1f2d…`) và `research-radar-pre-code-plan.md`
+(`f65bb046…`) rehash **khớp pin** cả trước và sau. **Không sửa một byte nào trong scratchpad nguồn.** Không
+lệnh git thay đổi repo; không network; không secret. Không `__pycache__`/`.pyc` do tôi sinh — các `__pycache__`
+trên đĩa nằm dưới `.venv/` của Giai đoạn 0 và `.venv` đã `.gitignore` (kiểm bằng `git check-ignore`).
+
+## R9. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC09-15` | **Đã giải** — `A2-R7-report.md` nay đã được lưu (tự khai; xác minh thuộc người khác). |
+| `CR-PC00-19` | **Đã giải theo hướng erratum**, không sửa bản lưu trữ. Nếu Coordinator muốn một ruling đính chính riêng thì đó là một gói khác. |
+| `CR-PC00-22` **(mới)** | `A3-R3` **chưa** có bản ghi trong `evidence/index.json` — nó ra đời sau lượt đăng ký của `PKT-PC09-P1`. Thuộc một vòng PC09 sau. |
+| `CR-PC00-23` **(mới)** | `F-A3R3-01` (lỗ `E0-12`: nhãn claim trong `evidence/runs/` không bị kiểm) chưa có ai nhận. Nó là một **lỗ trong công cụ bằng chứng**, nên mọi claim dựa trên `evidence/runs/` yếu hơn vẻ ngoài cho tới khi vá. |
+| `CR-PC00-20` | **Vẫn mở** — `gates.yaml`/`review.md` phản ánh `OD-20260907-02`; lưu ý `A3-R3` ghi `review.md` đang **chậm một epoch** (`F-A3R3-03`). |
+| `CR-PC00-15` | Re-pin — danh sách không đổi so với `FIX17`; Coordinator xếp một lượt sau Giai đoạn 1 |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng **chưa tồn tại** |
+| `CR-PC00-17`, `CR-PC00-16`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+| `PROV-PC00-08` | Vẫn `PROVISIONAL` |
+
+**Vì sao `DONE_WITH_CONCERNS`.** Mọi mục của packet đã xong, 65/65 `cmp` đạt, validate exit 0. Concern: hai
+thư mục lưu trữ này **lại** đang bắt kịp một mục tiêu đang chạy — sổ tiến độ đã tụt lại ngay trong lúc tôi
+chép, và mỗi epoch mới sẽ khiến chúng tụt tiếp. Đây là lần thứ ba bắt kịp. Nếu còn nhiều vòng nữa, nên chốt
+một quy ước thay vì lặp lại: hoặc đánh phiên bản sổ theo epoch (`coordinator-ledger-p1e3.md`), hoặc chấp nhận
+tường minh rằng chỉ ảnh chụp mới nhất được giữ và lịch sử nằm trong git — hiện tôi theo cách thứ hai vì packet
+nói "replaces", và đã ghi rõ điều đó cùng hash bản bị thay.
+
+## R10. Trạng thái bàn giao (FIX18)
+
+- **next actor:** `Coordinator` — rehash hai README và 16 bản sao; `CR-PC00-22`, `CR-PC00-23`, `CR-PC00-20`
+  còn mở. Nếu có epoch mới, đưa hai thư mục này vào với role `EVIDENCE`, không phải `CANDIDATE`.
+- **lease_released_at (UTC):** 2026-09-07T12:28Z. `LEASE-PC00-e19` (fencing 19) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 20.
+- **Claim:** `DRAFT_FOR_REVIEW` cho gói này. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX19 (packaging cuối trước commit: `A3-R4`, manifest epoch 4, sổ tiến độ)
+
+## S1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX19` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX19` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC00-e20` (**fencing 20**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T12:44Z / 2026-09-07T12:48Z · lease expires 2026-09-08T16:00Z (`date -u` trước lần ghi cuối: 2026-09-07T12:47Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T12:48Z |
+
+## S2. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `evidence/audits/A3-R4-report.md` | **CREATE** | ABSENT | `1bb41470b4730a25e199be3f367da24b51d89856248f35a681cb61c9c66bf08e` (8672) |
+| `evidence/audits/FC-P1e4-manifest.txt` | **CREATE** | ABSENT | `736ca1ab7f061b05dd050bcf41e9dd8562db5b3a5920b35c94fd6b0dd3af241b` (60916) |
+| `evidence/coordination/coordinator-ledger.md` | REPLACE | `0a1187c5ac1725ad316ef78d65c56349df985d3adb9da4f061212fc01d9dc30a` (52809) | `4e540086e1928ca315c727c247ff2f77e30a98525a2926730f2bd634268e8232` (53839) |
+| `evidence/audits/README.md` | MODIFY | `a868664852efa37e594c8062180cfd09d58d055a2226d91d81b292b2ba6d53a9` (12372) | `0adbb32dd28111037585d7fa6b93721b2f648f69af3864db48f89adff6c7c6a5` (14510) |
+| `evidence/coordination/README.md` | MODIFY | `636fe1e562d42a3891f173c8f3737d80b6366b4023e1868ff3d9286899511c22` (15799) | `f96f59db4db99618d6bb0d4ebdee972b1578f73839cde855f25f5707a170c6c8` (17168) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `1223b3a6e217f0487c770fc95de0b8145e667c7889728a7cca6186928ce3ac88` | *(file này)* |
+
+**`A3-r3-packet.md` — đã xác minh, không chép lại.** `cmp` với nguồn: **byte-identical**;
+`8f2fe8e7f0b3b41fdfae4a90c74d8ead9d43fb93ba625a2fac1b64920e72bd82` (2444), y như `PKT-PC00-FIX18` đã ghi.
+Không tạo bản trùng.
+
+**Sổ tiến độ, lần thay thứ ba.** Chuỗi đầy đủ nay là `a8a7d319…` (FIX9, tới epoch 7) → `0369031b…` (FIX12,
+39468, tới `FC-W4` epoch 9) → `0a1187c5…` (FIX18, 52809) → **`4e540086…` (FIX19, 53839, tới `FC-P1` epoch
+4)**. Hash nguồn **giống nhau trước và sau** lần chép, `cmp` đạt ngay sau đó. Cả bốn giá trị được ghi trong
+`evidence/coordination/README.md` để không bản nào biến mất khỏi hồ sơ.
+
+## S3. `F-A3R4-01` — điều packet yêu cầu một dòng, tôi viết thành một đoạn
+
+Packet yêu cầu ghi **một dòng** rằng `F-A3R4-01` (LOW) được Coordinator `PARKED`, cải tiến công cụ giao cho
+`CR-PC09-18`. Tôi ghi đủ điều đó, và thêm ba chi tiết mà một dòng không chở được — vì cả ba đều nằm trong
+chính báo cáo, và bỏ chúng đi sẽ làm `PARKED` đọc thành "không sao":
+
+1. **Hệ quả thực tế**, không phải mô tả trừu tượng: `evidence/coordination/*.md` hiện **không có** phép kiểm
+   nhãn claim nào. Prose sweep là cái duy nhất từng chạm tới chúng, và exemption đã gỡ nó. Tôi ghi câu này
+   vào **cả hai** README — ở `audits/` như một finding, ở `coordination/` như một cảnh báo cho người đọc đúng
+   thư mục bị ảnh hưởng: *đừng tin một nhãn claim nào xuất hiện trong các file ở đây.*
+2. **Ràng buộc remediation nguyên văn của auditor:** hoặc mở rộng phép quét structured sang front-matter
+   `.md`, **hoặc** sửa ghi chú thành "structured `.yaml`/`.json` fields" — và **không** được để nguyên một
+   ghi chú tự nhận một tầm với mà phép kiểm không có, vì đó **chính là** loại lỗi mà `F-A3R3-01` đã phạt.
+   Một `CR` chỉ nói "cải tiến công cụ" cho phép người sửa chọn cách rẻ nhất là viết lại ghi chú cho đúng —
+   điều đó **được auditor cho phép**, nhưng chỉ khi biết rằng nó là một trong hai lựa chọn hợp lệ, không phải
+   một cách lách.
+3. **`PARKED` không phải `CLOSED`.** Ghi thẳng, vì `protocol.md` §8 không có trạng thái `PARKED`: nó là một
+   quyết định điều phối về *thứ tự làm việc*, không phải một disposition. Không ai được coi finding này đã
+   được xử lý.
+
+Tôi **không** tự sửa `e0_check.py` hay ghi chú của nó — ngoài grant, và `worker.md` cấm sửa một phép kiểm để
+nó trông đúng hơn.
+
+## S4. Hai README
+
+`evidence/audits/README.md`: đếm lại (**14** báo cáo, **13** manifest, `auditor-A3` ×4, chuỗi epoch tới
+`FC-P1` 4); hai hàng mới (`A3-R4-report.md`, `FC-P1e4-manifest.txt` — hàng manifest ghi 413 entry và
+`manifest_sha256 = 576a7572…` **trích từ báo cáo**, không phải tôi tính); đoạn `F-A3R4-01` ở §S3; và sửa dòng
+đăng ký `evidence/index.json`: `EV-A3-07-round3` **đã** được thêm cho vòng 3, nên file còn thiếu bản ghi nay
+là **`A3-R4`**, không phải `A3-R3` — `CR-PC00-22` được trỏ lại cho đúng thay vì để nguyên một câu đã cũ.
+
+`evidence/coordination/README.md`: "bổ sung **bốn** lần"; hàng ledger mang chuỗi bốn bản; cảnh báo
+`F-A3R4-01`; và đoạn "sổ đang sống" được viết lại theo **điều đã thực sự xảy ra hai lần** — bản chép đầu của
+FIX18 lỗi thời trong vài phút, rồi bản thay của nó cũng lỗi thời trước FIX19 — với mốc ảnh chụp mới
+(**12:45Z**) thay cho 12:26Z.
+
+**Kiểm đủ danh mục bằng máy:** 27/27 và 40/40 file được liệt kê, **0 thiếu**.
+
+## S5. Evidence
+
+- **Chép và kiểm:** hash nguồn ghi trước khi chép (`…/w1/src_fix19.sha`), `cp -p` 3 file, `cmp` từng file
+  ngay sau khi chép, rồi `cmp` **toàn bộ 67 bản sao** của cả hai thư mục — **67/67 byte-identical**.
+- **`validate.py`:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py` — **exit code 0**,
+  **450 assertion, 450 PASS, 0 FAIL**, chạy 2026-09-07T12:47Z. Không assertion nào đổi; chạy lại để chứng
+  minh **không có hồi quy** (gói này không chạm `precode/` hay `agent_profile/`).
+- **Danh mục README:** kiểm bằng script — 0 thiếu ở cả hai thư mục.
+- Tất cả là `SELF_VALIDATION`, producer `worker-W1n`.
+- **`NOT_RUN` / giới hạn:** tôi **không** xác minh một verdict nào của `A3-R4`, **không** tự tính lại
+  `manifest_sha256` của `FC-P1e4` (con số `576a7572…` là **trích từ báo cáo**), và **không** tái lập phép thử
+  front-matter của `F-A3R4-01`. Bản sao giống nguồn chỉ chứng minh chúng chưa bị sửa. E1–E4 vẫn `NOT_RUN` ở
+  phạm vi PC00.
+
+## S6. Không đổi
+
+`precode/**` (`baseline.json` `d25e2edd…`, `decision-register.md` `4d1a5d6e…`, `adr/README.md` `097cd5f9…`,
+`ADR-0011` `da5181b2…`, `owner-decisions-02.md` `ba404207…`, `owner-decisions.md` `f608d2e9…`,
+`owner-decision-request.md` `1a277fbc…`, `gates.yaml` `b5d9a79f…`, `review.md` `1da31eb0…`),
+`agent_profile/registry.json` (`7f044651…`), `contracts/`, `acceptance/`, `agent-tasks/`, và toàn bộ cây mã
+(`server/`, `collector/`, `worker/`, `web/`, `tests/`, `shared/`, `probe/`). 65 bản sao cũ trong hai thư mục
+lưu trữ không đổi. Nguồn `research-radar-spec.md` (`d35e1f2d…`) và `research-radar-pre-code-plan.md`
+(`f65bb046…`) rehash **khớp pin**. **Không sửa một byte nào trong scratchpad nguồn.** Không lệnh git thay đổi
+repo; không `__pycache__`/`.pyc` do tôi sinh; không network; không secret.
+
+## S7. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC09-18` **(mới, do Coordinator giao)** | Mở rộng phép quét claim structured sang front-matter `.md`, **hoặc** thu hẹp ghi chú của `E0-12` cho đúng tầm với thật. Hai lựa chọn đều được `A3-R4` chấp nhận; để nguyên **không** phải một lựa chọn. |
+| `F-A3R4-01` | **`PARKED`**, không phải `CLOSED`. `PARKED` không tồn tại trong `protocol.md` §8 — nó là quyết định về thứ tự làm việc, không phải disposition. |
+| `CR-PC00-22` | Nay trỏ vào **`A3-R4`** (chưa có bản ghi trong `evidence/index.json`); `A3-R3` đã có `EV-A3-07-round3`. |
+| `CR-PC00-23` | `F-A3R3-01` — nay đã **VERIFIED** bởi `A3-R4`; phần còn lại là `F-A3R4-01`/`CR-PC09-18`. |
+| `CR-PC00-20` | `gates.yaml`/`review.md` phản ánh `OD-20260907-02` — lưu ý `A3-R4` xác minh `F-A3R3-03`, nên phần "chậm một epoch" của `review.md` đã được xử lý. |
+| `CR-PC00-15` | Re-pin — danh sách không đổi; Coordinator xếp một lượt sau Giai đoạn 1 |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng **chưa tồn tại** |
+| `CR-PC00-19`, `CR-PC09-15` | Đã giải ở `FIX18` (tự khai; xác minh thuộc người khác) |
+| `CR-PC00-17`, `CR-PC00-16`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+| `PROV-PC00-08` | Vẫn `PROVISIONAL` — khuyến nghị từ `FIX15` (đưa lên Owner thành câu hỏi riêng) chưa được thực hiện |
+
+**Một lưu ý cho lượt commit sắp tới.** Hai thư mục này nay chứa 67 bản sao và hai README mô tả chúng. Chúng là
+**bằng chứng**, không phải candidate: nếu Coordinator đóng băng một epoch mới sau commit, hai thư mục phải vào
+manifest với role `EVIDENCE`. Và sổ tiến độ sẽ lỗi thời **lần nữa** ngay khi Coordinator ghi dòng tiếp theo —
+README đã nói thẳng điều đó thay vì để người đọc tự phát hiện.
+
+## S8. Trạng thái bàn giao (FIX19)
+
+- **next actor:** `Coordinator` — rehash sáu file ở §S2; `CR-PC09-18`, `CR-PC00-22`, `CR-PC00-20`,
+  `CR-P0-03` mục 1 còn mở.
+- **lease_released_at (UTC):** 2026-09-07T12:48Z. `LEASE-PC00-e20` (fencing 20) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 21.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.

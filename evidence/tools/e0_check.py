@@ -231,6 +231,15 @@ STATUS_VOCABULARY = {
     "AUTHORITY_REVOCATION", "REVIEW_WAIVED", "NOT_APPLICABLE_FREEFORM",
     # baseline §3 requirement-status vocabulary
     "XN", "UQ", "KC",
+    # Test-disposition vocabulary introduced by the Coordinator ruling on `F-A3R1-08`
+    # (post-A3-R1 fix wave, 2026-09-07T11:00Z) and shipped in
+    # `tests/integration/test_denied_edges.py`: the 14 `CAPABILITY_DENIED` sweep edges are
+    # process/network-capability edges that no HTTP or service-layer test can reach, so they are
+    # asserted as NOT_TESTABLE_AT_THIS_LAYER with the enforcing mechanism named per
+    # `contracts/modules.yaml` — and are never counted as passed. It is a status word about a
+    # test, not an error code, which is why `E0-05`/`E0-04d` must not demand it be in
+    # `errors.yaml`. Added at PKT-PC09-P1.
+    "NOT_TESTABLE_AT_THIS_LAYER",
 }
 # A requirement id has one of the exact registry forms (baseline §3). Range notations such as
 # `REQ-D01..REQ-D59` are prose, not citations, and are excluded by the trailing `(?!\.\.)`.
@@ -242,6 +251,9 @@ REQ_RE = re.compile(
 # Any REQ-looking token, used only to spot malformed citations.
 REQ_LOOSE_RE = re.compile(r"\bREQ-[A-Za-z0-9._-]*[A-Za-z0-9]\b")
 SC_RE = re.compile(r"\bSC[0-9]{2,3}\b(?!\+)")
+# The only executed statuses a scenario may carry this session (E0-16). E3/E4 are deliberately
+# NOT in the pattern: nothing live and nothing multi-period has been run.
+SCENARIO_PASS_RE = re.compile(r"PASS \((E1|E2)\)")
 # A range marker such as `SC49+` / `SC54+` is prose meaning "from here on", not a citation.
 SC_RANGE_RE = re.compile(r"\bSC[0-9]{2,3}\+")
 INV_RE = re.compile(r"(?<![A-Za-z0-9_])I[0-9]{2}(?![0-9A-Za-z_])")
@@ -1548,6 +1560,97 @@ CLAIM_LABELS_ABOVE_CONTRACT_READY = [
     "LIVE_FEASIBILITY_VERIFIED", "PRODUCT_ACCEPTED",
 ]
 
+# CR-P0-02. Until Phase 0/1, this check's oracle said "no code exists, so nothing above
+# CONTRACT_READY is establishable", and that sentence was true. It stopped being true when the
+# skeleton and the four Phase 1 cards shipped code that an independent auditor (A3) reproduced.
+# The rule is therefore narrowed rather than dropped:
+#
+#   * `IMPLEMENTATION_VERIFIED` — and NOTHING above it — may appear in a file under
+#     `evidence/handoffs/**` or `evidence/runs/**` THAT CITES AN A3 REPORT. The citation is what
+#     makes the label an evidence reference instead of a self-award: a Worker's own run cannot
+#     raise its own ceiling (`evidence/manifest.schema.json` caps a `SELF_VALIDATION` record at
+#     `CONTRACT_READY`, and that cap is unchanged).
+#   * `contracts/**`, `acceptance/**` and `precode/**` are UNCHANGED: every label above
+#     CONTRACT_READY stays forbidden there, cited or not. A contract does not become verified
+#     because code that reads it passed a test.
+#   * `INTEGRATION_VERIFIED`, `LIVE_FEASIBILITY_VERIFIED` and `PRODUCT_ACCEPTED` stay forbidden
+#     everywhere in the scanned scope: no integration run, no live probe and no owner acceptance
+#     has happened.
+#
+# Granularity, stated so the oracle is not read as wider than the measurement: the citation is
+# checked PER FILE, not per record. A handoff that cites an A3 report anywhere may therefore
+# carry the label on a record the report did not verdict. The per-record obligation is enforced
+# by `evidence/manifest.schema.json` and by the review, not here.
+PHASE1_CLAIM_LABEL = "IMPLEMENTATION_VERIFIED"
+PHASE1_CLAIM_PREFIXES = ("evidence/handoffs/", "evidence/runs/")
+# The three places an evidence RECORD can live. `evidence/index.json` is the registry: it embeds
+# each record verbatim, so a label smuggled into it is a label in a record. It is added here at
+# PKT-PC09-P1-FIX1 for the same reason `evidence/runs/` is (F-A3R3-01): the rule text is about
+# records, and a rule that names a tree it never reads is worse than no rule. This is a
+# TIGHTENING relative to the previous wave, in which `claim.supports_label` was checked in no
+# file at all — but it also EXTENDS the CR-P0-02 permission to a third path, which is a Worker
+# reading a Coordinator rule slightly wider than its literal text. `CR-PC09-17` asks the
+# Coordinator to ratify this reading or narrow it; until then the extension is declared here,
+# in the check's oracle, and in the handoff, rather than applied quietly.
+EVIDENCE_RECORD_LOCATIONS = ("evidence/handoffs/", "evidence/runs/", "evidence/index.json")
+# Records ABOUT the work rather than claims made BY a file: packets, rulings, the ledger. A
+# dispatch that asks "may IMPLEMENTATION_VERIFIED stand for these four cards?" is quoting the
+# label it is asking about, exactly as an `agent-tasks/` card's `claim_ceiling` names the ceiling
+# of the work it orders. The free-text claim sweep therefore skips this ONE prefix and counts
+# what it skipped (below), the same treatment `agent-tasks/` already gets. `evidence/handoffs/`
+# is deliberately NOT here: a handoff is where a package states its own completion claim, which
+# is precisely what CR-P0-02 governs.
+DISPATCH_RECORD_PREFIXES = ("evidence/coordination/",)
+# Claim fields as they are spelled in a manifest record, in addition to `status_keys`.
+RECORD_CLAIM_KEYS = ("supports_label",)
+A3_REPORT_RE = re.compile(r"\bA3-R\d+-report\.md\b|\bAUDIT_REPORT\s+`?A3-R\d+`?")
+
+
+def in_evidence_record_tree(rel: str) -> bool:
+    return rel == "evidence/index.json" or rel.startswith(PHASE1_CLAIM_PREFIXES)
+
+
+def cites_a3_report(repo, rel: str) -> bool:
+    """True when this file cites an A3 independent-audit report by name."""
+    return bool(A3_REPORT_RE.search(repo.text.get(rel, "")))
+
+
+def phase1_label_allowed(repo, rel: str, label: str) -> bool:
+    """CR-P0-02: is `label` permitted in `rel`?"""
+    if label != PHASE1_CLAIM_LABEL:
+        return False
+    if not in_evidence_record_tree(rel):
+        return False
+    return cites_a3_report(repo, rel)
+
+
+def run_record_files(repo) -> "list[str]":
+    """`evidence/runs/**` paths, read on demand.
+
+    `Repo._scan` deliberately excludes this tree so that `files_scanned` is reproducible across
+    runs (F-A2R1-11) — a run writes its own report into it. That exclusion is right for
+    `files_scanned` and wrong for the claim rule, which the oracle says covers run records
+    (F-A3R3-01). So the tree is walked HERE, for this check only, and the files are counted in
+    this check's `items_checked` and in a note — never in `files_scanned`.
+
+    Only STRUCTURED claim fields are examined in this tree. The free-text sweep is deliberately
+    not applied: an E0 report is itself a run file, and it embeds this very oracle, which names
+    every forbidden label. Sweeping prose here would make the tool fail on its own output. A run
+    file is a JSON record; its claim lives in a field, and that is what is checked.
+    """
+    base = os.path.join(repo.root, "evidence", "runs")
+    if not os.path.isdir(base):
+        return []
+    out = []
+    for dirpath, dirnames, filenames in os.walk(base):
+        dirnames[:] = [x for x in dirnames if x not in (".git", "__pycache__")]
+        for fn in sorted(filenames):
+            if fn.endswith(".pyc"):
+                continue
+            out.append(repo.rel(os.path.join(dirpath, fn)))
+    return sorted(out)
+
+
 _ALLOWLIST_CACHE = {}
 
 
@@ -1620,6 +1723,31 @@ def ratification_ref_of(repo: Repo, rel: str):
     return None
 
 
+def claim_label_violation(c, repo, rel: str, path: str, v: str) -> bool:
+    """One rule, one place: is claim label `v` at `rel`:`path` permitted? Fails `c` if not.
+
+    Applied identically to files inside `repo.files` and to `evidence/runs/**` files walked
+    separately, so the two trees cannot drift apart the way they did before F-A3R3-01.
+    """
+    if v not in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+        return False
+    if phase1_label_allowed(repo, rel, v):
+        return False
+    if in_evidence_record_tree(rel):
+        if v == PHASE1_CLAIM_LABEL:
+            c.fail(rel, "claims %s but this record cites no A3 report; a Worker may not raise "
+                        "its own ceiling (CR-P0-02)" % v, at=path)
+        else:
+            c.fail(rel, "claims %s inside an evidence-record tree; CR-P0-02 opened those trees "
+                        "for %s ONLY, and no gate for %s is open (G6-X1 / SP1-X2 / G7)"
+                   % (v, PHASE1_CLAIM_LABEL, v), at=path)
+    else:
+        c.fail(rel, "claim %r exceeds CONTRACT_READY and this file is outside the evidence-record "
+                    "trees CR-P0-02 opened (%s)" % (v, ", ".join(EVIDENCE_RECORD_LOCATIONS)),
+               at=path)
+    return True
+
+
 def check_forbidden_strings(repo: Repo, idx: Index) -> None:
     c = new_check(
         "E0-12-forbidden-strings",
@@ -1630,11 +1758,21 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
         "confined to the four ratified scopes — a file outside them may not claim it however it "
         "is annotated — eligibility is the explicit allowlist in %s, so a file not named there is "
         "ineligible by default. Claims ABOVE CONTRACT_READY are forbidden THROUGHOUT THE SCANNED SCOPE "
-        "(%s): no code exists. `agent-tasks/` is NOT scanned by this tool; the cards there use "
+        "(%s) with ONE narrowed exception (CR-P0-02): `IMPLEMENTATION_VERIFIED` — and nothing above "
+        "it — is permitted inside the three places an evidence RECORD lives (%s) when the file CITES "
+        "an A3 independent-audit report by name; contracts/, acceptance/ and precode/ are unchanged, "
+        "and `INTEGRATION_VERIFIED` / `LIVE_FEASIBILITY_VERIFIED` / `PRODUCT_ACCEPTED` stay forbidden "
+        "everywhere because no integration run, live probe or owner acceptance exists. "
+        "`evidence/runs/**` is walked separately for this rule (it is excluded from `files_scanned` "
+        "by F-A2R1-11, which is why F-A3R3-01 found the oracle describing a tree the loop never "
+        "read) and is examined in STRUCTURED claim/status fields only, `supports_label` included. "
+        "The citation is checked per FILE, not per record — see the notes below. `agent-tasks/` is "
+        "NOT scanned by this tool; the cards there use "
         "`claim_ceiling` with a different meaning (the ceiling the ordered work may reach) and "
         "are counted in a note below rather than silently omitted. "
         "`TBD` remains forbidden as a value, and `CLOSED` as a status."
-        % (RATIFICATION_ID, RATIFIED_SCOPES_FILE, ", ".join(SCAN_DIRS)),
+        % (RATIFICATION_ID, RATIFIED_SCOPES_FILE, ", ".join(SCAN_DIRS),
+           ", ".join(EVIDENCE_RECORD_LOCATIONS)),
     )
     status_keys = ("status", "claim_ceiling", "completion_claim", "coverage_status",
                    "evidence_status", "decision_status", "finding_status")
@@ -1667,7 +1805,12 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
         if is_structured(rel):
             for path, val in structured_strings(repo, rel):
                 leaf = path.rsplit(".", 1)[-1].split("[")[0]
-                if leaf not in status_keys:
+                # `supports_label` is a manifest record's claim field. It is examined only where
+                # records live, because that is the only place it means anything — and because
+                # before PKT-PC09-P1-FIX1 it was examined NOWHERE, which is how six records could
+                # carry IMPLEMENTATION_VERIFIED with no machine check on the label at all.
+                keys = status_keys + (RECORD_CLAIM_KEYS if in_evidence_record_tree(rel) else ())
+                if leaf not in keys:
                     continue
                 node = path.rsplit(".", 1)[0]
                 c.checked += 1
@@ -1677,9 +1820,7 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
                                 "the designated disposition authority (protocol §8)", at=path)
                 if v == "TBD":
                     c.fail(rel, "value TBD is forbidden (baseline §3: no vagueness)", at=path)
-                if v in CLAIM_LABELS_ABOVE_CONTRACT_READY:
-                    c.fail(rel, "claim %r exceeds CONTRACT_READY; no code exists, so nothing "
-                                "above it is establishable" % v, at=path)
+                claim_label_violation(c, repo, rel, path, v)
                 if v in ratified_words and not (has_rat or under_precode
                                                 or node in ratified_nodes):
                     c.fail(rel, "uses ratified vocabulary %r without `ratification_ref: %s`"
@@ -1694,6 +1835,10 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
 
         txt = repo.text.get(rel, "")
         for label in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+            if phase1_label_allowed(repo, rel, label):
+                continue
+            if rel.startswith(DISPATCH_RECORD_PREFIXES):
+                continue        # quotation in a dispatch record, not a claim; counted below
             for m in re.finditer(r"\b%s\b" % label, txt):
                 start = txt.rfind("\n", 0, m.start()) + 1
                 end = txt.find("\n", m.end())
@@ -1737,6 +1882,107 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
                     if val.startswith(label):
                         above.append("agent-tasks/%s -> %s" % (fn, label))
                         break
+    # ---- F-A3R3-01: the tree the rule names but the scan never reached.
+    # `Repo._scan` skips `evidence/runs/` so that `files_scanned` stays reproducible. The claim
+    # rule still has to reach it, so it is walked here, structured fields only (see
+    # `run_record_files`). These files are counted in this check's `items_checked` and named in a
+    # note; they are NOT added to `files_scanned`.
+    run_files = run_record_files(repo)
+    run_fields_checked = 0
+    for rel in run_files:
+        try:
+            with open(repo.abs(rel), "r", encoding="utf-8") as fh:
+                txt_run = fh.read()
+        except Exception as exc:
+            c.fail(rel, "evidence/runs record is unreadable: %s" % exc)
+            continue
+        if not is_structured(rel):
+            continue
+        try:
+            doc = json.loads(txt_run) if rel.endswith(".json") else yaml.safe_load(txt_run)
+        except Exception as exc:
+            c.fail(rel, "evidence/runs record does not parse: %s" % exc)
+            continue
+        # a local citation test: the run file itself, not repo.text (which has no entry for it)
+        cited = bool(A3_REPORT_RE.search(txt_run))
+
+        def walk(node, where="$"):
+            global_hits = []
+            if isinstance(node, dict):
+                for k, val in node.items():
+                    p = "%s.%s" % (where, k)
+                    if isinstance(val, str) and k in (status_keys + RECORD_CLAIM_KEYS):
+                        global_hits.append((p, val))
+                    global_hits.extend(walk(val, p))
+            elif isinstance(node, list):
+                for i, val in enumerate(node):
+                    global_hits.extend(walk(val, "%s[%d]" % (where, i)))
+            return global_hits
+
+        for path, val in walk(doc):
+            run_fields_checked += 1
+            c.checked += 1
+            v = val.strip()
+            if v == "CLOSED":
+                c.fail(rel, "status value 'CLOSED' is forbidden (protocol §8)", at=path)
+            if v == "TBD":
+                c.fail(rel, "value TBD is forbidden (baseline §3)", at=path)
+            if v in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+                if v == PHASE1_CLAIM_LABEL and cited:
+                    continue
+                if v == PHASE1_CLAIM_LABEL:
+                    c.fail(rel, "claims %s but this run record cites no A3 report (CR-P0-02)" % v,
+                           at=path)
+                else:
+                    c.fail(rel, "claims %s in a run record; CR-P0-02 opened the evidence trees "
+                                "for %s ONLY, and no gate for %s is open"
+                           % (v, PHASE1_CLAIM_LABEL, v), at=path)
+    c.note("F-A3R3-01: `evidence/runs/` is excluded from `files_scanned` (F-A2R1-11) but is NOT "
+           "excluded from this claim rule any more. %d run file(s) walked separately, %d "
+           "structured claim/status field(s) examined in them. Structured fields ONLY: an E0 "
+           "report is itself a run file and embeds this oracle, which names every forbidden "
+           "label, so a prose sweep here would make the tool fail on its own output. The count "
+           "of run files grows by one each closing run — that is why it is reported here and "
+           "not folded into `files_scanned`."
+           % (len(run_files), run_fields_checked))
+
+    # CR-P0-02 exception accounting. A widened rule that nobody can see the reach of is a rule
+    # nobody can review, so the files that USED the exception are named, not just permitted.
+    used_exception = sorted(
+        rel for rel in repo.files
+        if in_evidence_record_tree(rel)
+        and PHASE1_CLAIM_LABEL in repo.text.get(rel, "")
+        and cites_a3_report(repo, rel))
+    no_citation = sorted(
+        rel for rel in repo.files
+        if in_evidence_record_tree(rel)
+        and PHASE1_CLAIM_LABEL in repo.text.get(rel, "")
+        and not cites_a3_report(repo, rel))
+    c.note("CR-P0-02 exception: %d file(s) under %s contain the token %s AND cite an A3 report, "
+           "so the label is permitted there outright: %s. %d file(s) contain the token WITHOUT "
+           "an A3 citation and stay under the ordinary rule — they pass today only because "
+           "every occurrence in them is backticked, quoted or negated, and a bare assertion "
+           "would FAIL: %s. The citation is checked per FILE, not per record; the per-record "
+           "obligation is enforced by evidence/manifest.schema.json and by precode/review.md, "
+           "not by this check."
+           % (len(used_exception), ", ".join(EVIDENCE_RECORD_LOCATIONS), PHASE1_CLAIM_LABEL,
+              ", ".join(used_exception) if used_exception else "none",
+              len(no_citation), ", ".join(no_citation) if no_citation else "none"))
+    quoted = {}
+    for rel in repo.files:
+        if not rel.startswith(DISPATCH_RECORD_PREFIXES):
+            continue
+        for label in CLAIM_LABELS_ABOVE_CONTRACT_READY:
+            n = len(re.findall(r"\b%s\b" % label, repo.text.get(rel, "")))
+            if n:
+                quoted[label] = quoted.get(label, 0) + n
+    c.note("dispatch records (%s) are exempt from the free-text claim sweep because a packet or "
+           "ruling QUOTES the label it is dispatching about; their STRUCTURED fields are still "
+           "checked. Occurrences skipped, counted rather than hidden: %s. If one of these files "
+           "ever states a claim about ITSELF, this exemption will not catch it — that is the "
+           "cost, and it is why the count is printed."
+           % (", ".join(DISPATCH_RECORD_PREFIXES),
+              ", ".join("%s×%d" % (k, v) for k, v in sorted(quoted.items())) or "none"))
     c.note("scan scope is %s; agent-tasks/ is NOT scanned. %d task card(s) there declare a "
            "claim_ceiling above CONTRACT_READY, which in a card denotes the ceiling of the "
            "work it orders, not a claim about the card: %s"
@@ -2120,7 +2366,15 @@ def check_scenarios(repo: Repo, idx: Index) -> None:
         "every AC-01..AC-18 has a scenario; every scenario id is unique and contiguous from "
         "SC01; every fixture_refs path exists on disk or is the literal MISSING; every "
         "error_refs code is registered; every requirement_refs id resolves; every scenario "
-        "declares an evidence level and status NOT_RUN",
+        "declares an evidence level; and every scenario status is either NOT_RUN or one of "
+        "`PASS (E1)` / `PASS (E2)` — the only two levels anything has actually been run at. A "
+        "PASS status is only accepted when (i) the scenario's evidence_level_required is at or "
+        "below the level claimed, (ii) `status_evidence_refs` is non-empty and every path in it "
+        "exists on disk, and (iii) `status_scope_vi` says what the run did and did not "
+        "establish. `PASS (E3)` / `PASS (E4)` are rejected outright: no live probe and no "
+        "multi-period review has run. Before Phase 0/1 this leg read 'status must be NOT_RUN'; "
+        "it is now a backing requirement rather than a ban, because four scenarios really were "
+        "executed and reproduced by an independent auditor.",
     )
     sc = repo.parsed.get("acceptance/scenarios.yaml")
     if not isinstance(sc, dict):
@@ -2163,9 +2417,31 @@ def check_scenarios(repo: Repo, idx: Index) -> None:
         lvl = s.get("evidence_level_required")
         if lvl not in valid_levels:
             c.fail("acceptance/scenarios.yaml", "%s evidence_level_required %r invalid" % (sid, lvl))
-        if s.get("status") != "NOT_RUN":
-            c.fail("acceptance/scenarios.yaml", "%s status %r must be NOT_RUN this session"
-                   % (sid, s.get("status")))
+        st = (s.get("status") or "").strip()
+        if st != "NOT_RUN":
+            m = SCENARIO_PASS_RE.fullmatch(st)
+            if not m:
+                c.fail("acceptance/scenarios.yaml",
+                       "%s status %r is outside the vocabulary {NOT_RUN, 'PASS (E1)', "
+                       "'PASS (E2)'}" % (sid, st))
+            else:
+                claimed = m.group(1)
+                if not isinstance(lvl, str) or lvl > claimed:
+                    c.fail("acceptance/scenarios.yaml",
+                           "%s claims %s but evidence_level_required is %r — a scenario cannot "
+                           "pass below the level it requires" % (sid, st, lvl))
+                refs = s.get("status_evidence_refs") or []
+                if not isinstance(refs, list) or not refs:
+                    c.fail("acceptance/scenarios.yaml",
+                           "%s claims %s with no status_evidence_refs" % (sid, st))
+                else:
+                    for ref in refs:
+                        if not os.path.isfile(repo.abs(str(ref))):
+                            c.fail("acceptance/scenarios.yaml",
+                                   "%s status_evidence_refs path %r does not exist" % (sid, ref))
+                if not str(s.get("status_scope_vi") or "").strip():
+                    c.fail("acceptance/scenarios.yaml",
+                           "%s claims %s without status_scope_vi" % (sid, st))
         if (s.get("polarity") or "").lower() not in ("positive", "negative", "mixed"):
             c.fail("acceptance/scenarios.yaml", "%s polarity %r invalid" % (sid, s.get("polarity")))
         for i in s.get("invariant_refs") or []:
@@ -2459,6 +2735,112 @@ def check_declared_deviations(repo: Repo, idx: Index) -> None:
 
 
 # --------------------------------------------------------------------------------------
+# CHECK 19 — generated code still matches the contracts it was generated from
+#
+# ADR-0011 has a "generate, don't hand-edit" rule, and until now it was carried entirely by
+# `pytest` / `vitest` (`shared/rr_contracts/tests/test_generated_matches_contracts.py` and
+# `web/scripts/generate.mjs --check`). Those gates run the generators; this one does not run
+# anything. It reads the two `GENERATED_FROM.json` manifests as DECLARATIONS and asks the only
+# question a static check can answer honestly: are the source hashes the generated tree claims
+# to have been built from still the hashes on disk?
+#
+# What this proves: a contract cannot be edited without either regenerating or leaving a visible
+# mismatch here. What it does NOT prove: that the generator output is correct, or that a
+# generated file was not hand-edited — a hand-edited output leaves these source hashes intact,
+# and only re-running the generator catches it. That is why this check ADDS to the pytest/vitest
+# gates and does not replace them.
+#
+# CR-P0-06 / F-A3R2-04: `contracts/data/entities.yaml` is deliberately NOT a generator source.
+# The database shape reaches code by hand — the Alembic revisions and
+# `tests/contract/test_schema_matches_entities.py` — and that pair is checked by pytest, not
+# here. This check states that absence out loud so nobody reads a clean E0-19 as "the schema
+# tracks entities.yaml automatically". It does not.
+# --------------------------------------------------------------------------------------
+
+GENERATED_FROM_MANIFESTS = (
+    "shared/rr_contracts/rr_contracts/generated/GENERATED_FROM.json",
+    "web/src/generated/GENERATED_FROM.json",
+)
+# The contract whose absence from every manifest is intentional, not an oversight.
+NOT_A_GENERATOR_SOURCE = "contracts/data/entities.yaml"
+
+
+def check_generated_matches(repo: Repo, idx: Index) -> None:
+    c = new_check(
+        "E0-19-generated-matches",
+        "Every GENERATED_FROM.json source hash equals the contract on disk today",
+        "For each manifest in %s: the file parses, declares `generator` and a non-empty "
+        "`sources` list, and every `sources[].path` exists with `sha256` equal to the file's "
+        "current SHA-256 (and `bytes`, when declared, equal to its size). A mismatch means the "
+        "contract moved without the generated tree being rebuilt — the 'generate, don't "
+        "hand-edit' rule of ADR-0011 as a static check. It does NOT prove the generated output "
+        "is correct or unedited: only re-running the generator (pytest "
+        "`shared/rr_contracts/tests/test_generated_matches_contracts.py`, vitest / "
+        "`node web/scripts/generate.mjs --check`) proves that, and those gates stay. "
+        "`%s` is intentionally absent from both manifests (CR-P0-06, F-A3R2-04): the database "
+        "shape is hand-written in the Alembic revisions and is checked by the pytest gate "
+        "`tests/contract/test_schema_matches_entities.py`, which is a test, not an E0 check."
+        % (", ".join(GENERATED_FROM_MANIFESTS), NOT_A_GENERATOR_SOURCE),
+    )
+    seen_sources = set()
+    for rel in GENERATED_FROM_MANIFESTS:
+        c.checked += 1
+        path = repo.abs(rel)
+        if not os.path.isfile(path):
+            c.fail(rel, "GENERATED_FROM manifest is absent; the generated tree declares no "
+                        "provenance and this check cannot verify it")
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except Exception as exc:
+            c.fail(rel, "GENERATED_FROM manifest does not parse: %s" % exc)
+            continue
+        if not str(doc.get("generator") or "").strip():
+            c.fail(rel, "manifest declares no `generator`")
+        sources = doc.get("sources")
+        if not isinstance(sources, list) or not sources:
+            c.fail(rel, "manifest declares no `sources`; a provenance record with no sources "
+                        "asserts nothing and would pass this check vacuously")
+            continue
+        for entry in sources:
+            c.checked += 1
+            if not isinstance(entry, dict):
+                c.fail(rel, "sources entry is not an object: %r" % (entry,))
+                continue
+            src = str(entry.get("path") or "")
+            declared = str(entry.get("sha256") or "")
+            if not src or not declared:
+                c.fail(rel, "sources entry missing path or sha256: %r" % (entry,))
+                continue
+            seen_sources.add(src)
+            spath = repo.abs(src)
+            if not os.path.isfile(spath):
+                c.fail(rel, "declared source %s does not exist" % src)
+                continue
+            actual = sha256_file(spath)
+            if actual != declared:
+                c.fail(rel, "%s changed since the tree was generated: manifest says %s, disk is "
+                            "%s. Regenerate (or the generated tree is stale)."
+                       % (src, declared[:16] + "…", actual[:16] + "…"))
+                continue
+            size = entry.get("bytes")
+            if isinstance(size, int) and size != os.path.getsize(spath):
+                c.fail(rel, "%s size %d != declared %d (hash matched: declaration is "
+                            "internally inconsistent)" % (src, os.path.getsize(spath), size))
+    c.note("%s appears in %d of the %d manifests. Absence is INTENTIONAL (CR-P0-06, "
+           "F-A3R2-04): the generated trees do not track it, so a change to it is caught by "
+           "the Alembic revisions plus tests/contract/test_schema_matches_entities.py under "
+           "pytest — the schema gate lives in pytest, not in E0."
+           % (NOT_A_GENERATOR_SOURCE,
+              1 if NOT_A_GENERATOR_SOURCE in seen_sources else 0,
+              len(GENERATED_FROM_MANIFESTS)))
+    if NOT_A_GENERATOR_SOURCE in seen_sources:
+        c.note("%s is NOW a declared generator source; the note above and CR-P0-06 are stale "
+               "and must be rewritten." % NOT_A_GENERATOR_SOURCE)
+
+
+# --------------------------------------------------------------------------------------
 # Runner
 # --------------------------------------------------------------------------------------
 
@@ -2495,6 +2877,7 @@ def main(argv=None) -> int:
     check_scenarios(repo, idx)
     check_purge_sets(repo, idx)
     check_declared_deviations(repo, idx)
+    check_generated_matches(repo, idx)
 
     for _c in CHECKS:
         _c.finalize()

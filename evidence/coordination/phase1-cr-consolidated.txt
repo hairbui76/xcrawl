@@ -1,0 +1,37 @@
+## P0-skeleton
+- CR-P0-01`. Tôi **không** sửa card và
+- CR-P0-02`. |
+- CR-PC10-07` vẫn mở). `CR-P0-01` mà packet dự phòng cho trường hợp validator FAIL vì vậy **không** được raise. |
+- CR-P0-05`. |
+- CR-P0-03` — hai đường dẫn card nằm ngoài "bảy thư mục"
+- CR-P0-04` — quy chủ sở hữu `web/src/lib/api.ts` trong amendment của Coordinator lệch với card
+## TC-ingest-idempotent-ack-lost
+- CR-P0-01` của `P0-skeleton-handoff` đã báo.
+- CR-PC10-09`) và khớp.
+- CR-PC04-03`), cấp `ingest_sequence` đơn điệu theo owner, dedup theo `x_post_id`, ghi đơn điệu
+- CR-PC02-12`, append-only) | **Không trigger**: checkpoint là append-only, không UPDATE tại chỗ; có test so tập `(id, sequence, acked_through)` trước/sau. |
+## TC-canonical-identity-merge
+- CR-PC02-06`, và `acceptance/scenarios.yaml` (sha256
+- CR-TC-IDENTITY-01` | PC10 / Coordinator | Card §8 viết "Fixture `h`: **5 post** → 1 target, provenance liệt kê đủ 5". Fixture (h) mang **6** item (5 post độc lập + 1 post mở đầu thread của tác giả)
+- CR-TC-IDENTITY-02` | PC02 / PC04 | Fixture (a) khai `moved_counts.first_announced = null`; `contracts/reporting/time-and-tags.md` §8.3 (ACCEPTED, đóng `CR-PC02-06`) nói `null` chỉ là chỗ giữ tạm và
+- CR-TC-IDENTITY-03` | Coordinator | `preserved_counts.published_report_item` không đo được: `report` và `report_item` thuộc card báo cáo, chưa tồn tại ở M1. Fixture (i) kỳ vọng `2` → `xfail(strict=T
+- CR-TC-IDENTITY-04` | Coordinator | `TXN-identity-merge` bắt buộc ghi `work_label`, `analysis`, `saved_item` (và đọc `saved_snapshot`), cộng `first_announced_ledger` theo §8.3 — **năm bảng thuộc `MO
+- CR-TC-IDENTITY-05` | PC10 / PC02 | Mâu thuẫn mã lỗi khi vượt `identity_merge_max_moved_rows`: card §7 nói `CONFLICT`; `contracts/errors.yaml` (`IDENTITY_CONFLICT.forbidden_vi`) và `openapi.yaml` nó
+- CR-TC-IDENTITY-06` | PC01 / PC10 | `work.get_detail`: `openapi.yaml` ghim response 200 vào `target.schema.json` (hai nhánh đều `additionalProperties: false`), trong khi `ports.yaml` mô tả read mode
+- CR-TC-IDENTITY-07` | PC02 | `ports.yaml` đòi idempotency theo `request_id` cho `identity.resolve_conflict` và theo `conflict_fingerprint` cho `identity.quarantine_conflict`, nhưng `entities.yaml.id
+- CR-TC-IDENTITY-08` | PC02 | Move-set không nêu quy tắc va chạm cho `work_label` (`ux_work_label_owner_target_label_gen`), trong khi `analysis` và `saved_item` đều có. Hiện thực: hàng va chạm **ở lạ
+- CR-TC-IDENTITY-09` | PC10 | Card §7 gọi trường envelope là `retry_after`; `contracts/errors.yaml` gọi là `retry_after_ms`. Code theo hợp đồng. |
+- CR-TC-IDENTITY-10` | PC09 | Fixture (a) kỳ vọng alias `openalex` **được tạo trong** `TXN-identity-merge` (`_created_in_transaction`), nhưng `merge_move_set` của `entities.yaml` không liệt kê việc t
+- CR-PC09-02`).
+- CR-PC02-05`); chỉ nhánh mã được kiểm, không dựng 100 000 hàng.
+## TC-owner-auth-session
+- CR-TC-AUTH-01` — là mâu thuẫn **thật** giữa một fixture đã pin và bốn nguồn
+- CR-TC-AUTH-02`, `CR-TC-AUTH-03`) là chỗ hợp đồng entity **thiếu** một nơi để
+- CR-P0-01` báo. Card đã được re-pin trên đĩa trong lúc gói này chạy và mọi hash nay khớp; tôi **không** sửa card.) |
+- CR-TC-AUTH-06`). Test của tôi nhắm đúng revision của card.
+- CR-PC08-03` bên trong fixture chính là yêu cầu sửa này. **Đề nghị:** PC08 đổi `seq4.error_code` thành `CSRF_REJECTED` và cập nhật `reason_vi`. Code theo R5-01; drift được ghi bằng `test_fixt
+- CR-TC-AUTH-03` | **Không có entity cho login attempt / lockout.** `secrets.md` §2.3 chốt "5 lần / 15 phút ⇒ khóa 15 phút, trả `RATE_LIMITED` kèm `retry_after`", nhưng `entities.yaml` không khai
+- CR-TC-AUTH-04` | **`ports.yaml` và `errors.yaml` không liệt kê `RATE_LIMITED` cho `auth.login`.** `openapi.yaml` khai response `429 RATE_LIMITED` (kèm header `Retry-After`) cho `/v1/auth/login`
+- CR-TC-AUTH-05` | **Bộ sinh chưa phơi bốn thứ mà code cần.** `rr_contracts.generated` có `ErrorCode`, `SCOPE`, `RETRY_CLASS`, `OWNER_MODULE`, `TRANSPORT`, `MUTATION`, `SECURITY_SCHEMES` — nhưng 
+- CR-PC07-04`, SP1, REQ-OQ03) **giữ nguyên**.
+## TC-storage-write-blocked-readiness

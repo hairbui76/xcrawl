@@ -1,0 +1,19 @@
+# rr-worker — analysis worker + AI provider adapters, running as a process on the Owner's
+# personal machine. API-family providers go over httpx; the CLI/ACP family goes over
+# `subprocess` with tool/network flags from contracts/ai/providers.yaml, because ADR-0010's
+# isolation requirement is a PROCESS-level requirement (ADR-0011).
+# Virtual uv workspace member; files under `worker/app/` import as `worker.app.*`.
+
+[project]
+name = "rr-worker"
+version = "0.1.0"
+description = "Research Radar analysis worker (AI adapters, personal machine)"
+requires-python = "==3.12.*"
+dependencies = [
+  "httpx>=0.27,<0.29",
+  "pydantic>=2.9,<3",
+  "rr-contracts",
+]
+
+[tool.uv]
+package = false

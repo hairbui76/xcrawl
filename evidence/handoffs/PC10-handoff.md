@@ -2155,3 +2155,711 @@ OpenAPI 3.1 `NOT_RUN`.
 ---
 
 *PKT-PC10-FIX14 · worker-W7 · `lease_released_at` 2026-09-07T07:52Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX15 (re-pin Giai đoạn 1 + CR-P0-03/-04 + PROV-P0-01)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX15` · authority `AUTH-COORD-PC10-FIX15` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC10-e16` (fencing 16) |
+| expires_at | 2026-09-08T12:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` (kế nhiệm `worker-W7`) |
+| trigger | `OD-20260907-02`: Owner phê chuẩn `ADR-0011` và ra lệnh bắt đầu Giai đoạn 0/1. `CR-P0-01` (18 card `STALE`), `CR-P0-03`, `CR-P0-04`, `PROV-P0-01` từ `evidence/handoffs/P0-skeleton-handoff.md` §7–§8 |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T10:00Z / 2026-09-07T10:40Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T10:40Z |
+| **pin epoch mới** | **`PC10-PIN-P1-20260907`** (thay `PC10-PIN-OD01e-20260907`) |
+
+## O.0 Xác nhận đầu vào
+
+Nguồn khớp baseline §2 trước và sau: `research-radar-spec.md` `d35e1f2daab30e7a…`, `research-radar-pre-code-plan.md`
+`f65bb04657f30f1d…`. Không STALE_BASELINE.
+
+Ba file đã pin đổi byte trong lúc `PKT-P0-SKELETON` chạy (`CR-P0-01`, BLOCKING):
+
+| File | Pin cũ (`OD01e`) | Trên đĩa (nay pin ở `P1`) |
+| --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `9cdec0d78592…` / 17052 | `6be9189a5e61…` / 18989 |
+| `precode/baseline.json` | `c99474a6744a…` / 101458 | `d25e2edd0543…` / 104398 |
+| `precode/decision-register.md` | `3596a52b6ce8…` / 104940 | `4d1a5d6e5d2a…` / 114327 |
+
+Packet còn nêu `precode/adr/README.md` (`097cd5f9…`). **Nó không được card nào pin** — kiểm bằng
+`grep -l 'precode/adr/README.md' agent-tasks/TC-*.md` (0 kết quả) và bằng chính hai verifier (0 hàng hash
+cho file đó). Không có gì để pin lại; ghi ra đây để lần sau không ai đi tìm.
+
+`CR-P0-01` **đóng** với gói này. Ba file kia vẫn nằm trong read set của **mọi** card, nên chúng vẫn kéo
+`STALE` toàn bộ nếu bị sửa tiếp.
+
+## O.1 Re-pin
+
+Tập pin: **501 dòng hash / 144 file**, không đổi số lượng — chỉ ba file đổi nội dung.
+
+Cách kiểm tôi tự đặt ra cho mình trước khi ghi: chạy generator **chưa sửa** rồi diff với bản trên đĩa. Kết
+quả đúng 144 dòng diff = 18 card × (2 dòng header + 3 dòng cũ + 3 dòng mới) — nghĩa là generator tái tạo
+byte-for-byte mọi thứ ngoài ba hàng hash. Chỉ sau đó tôi mới sửa generator. Sau khi sinh lại, một phép kiểm
+thứ hai băm riêng hai vùng của từng card (front-matter + phần trước `## §0.`; và `## §1.` → hết file) và so
+với bản trước: **18/18 card giống hệt ngoài §0**. Đó là bằng chứng cho điều kiện của packet — Worker Giai
+đoạn 1 đang đọc §1–§13 **trong lúc** tôi ghi, và không chữ nào trong đó đổi.
+
+## O.2 `dispatch_status` trên bốn card M1
+
+`TC-ingest-idempotent-ack-lost`, `TC-canonical-identity-merge`, `TC-owner-auth-session`,
+`TC-storage-write-blocked-readiness` nhận một dòng ở **§0**:
+
+`**\`dispatch_status: DISPATCHED (OD-20260907-02, 2026-09-07)\`**`
+
+Ba điều dòng này **cố ý không** làm, vì chúng nằm ngoài quyền của một Worker và ngoài packet:
+
+1. **Không vào front-matter.** README §5.1 khai front-matter của card đúng 12 khóa; thêm khóa thứ 13 sẽ
+   làm card lệch khỏi luật của chính thư mục.
+2. **Không nói `SG-G5` đã thỏa.** Điểm dừng ở §10 giữ nguyên hiệu lực; dòng chỉ ghi rằng Owner đã ra lệnh
+   bắt đầu và cấp G5 entry cho bốn card M1 (`OD-20260907-02` mục 2).
+3. **Không thay TASK_PACKET.** Quyền ghi đến từ packet (lease + write set), không từ một dòng trong card.
+
+`agent-tasks/TEMPLATE.md` §0 nay mô tả `dispatch_status` là **tùy chọn** với đúng ba giới hạn trên, để card
+sau không có một trường xuất hiện từ hư không — và để không ai viết `dispatch_status: NOT_DISPATCHED`.
+
+## O.3 `CR-P0-03` — layout đã hòa giải (README §5.3)
+
+**Mục 1 — `tools/` là cây thứ tám.** §5.3 nay khai `tools/` cùng lý do có căn cứ trong hợp đồng chứ không
+theo khẩu vị: `contracts/modules.yaml` khai `MOD-backup-cli` là **một tiến trình CLI riêng**, gọi
+`backup.create_snapshot`, `backup.verify_snapshot`, `backup.restore_snapshot`,
+`backup.reconcile_after_restore` qua loopback với auth scope `backup_operator` — **không** phải session
+owner. Principal khác + tiến trình khác ⇒ không nằm trong gói ứng dụng server. Không đường dẫn nào ở §3 của
+`TC-backup-restore-drill` đổi; đổi là §5.3 nay khai đúng cây mà card đã pin. Tiêu đề §5.3 đổi thành
+"Layout hai ngôn ngữ, **tám cây**".
+
+**Mục 2 — `tests/unit/` bị bỏ, không được biện minh.** §3 của cả 18 card chỉ dùng `tests/contract/` và
+`tests/integration/`; Giai đoạn 0 chỉ tạo hai thư mục đó. Khai một thư mục thứ ba mà không card nào ghi vào
+là mời người ta đặt test ở chỗ không phép kiểm nào chạy qua. Card đầu tiên thực sự cần unit test cục bộ sẽ
+tạo `tests/unit/` **kèm một CR** sửa §5.3.
+
+> Lưu ý: chuỗi `tests/unit/` **không** có trong `agent-tasks/README.md` trước gói này — mâu thuẫn mà
+> `CR-P0-03` mô tả nằm giữa **`precode/adr/ADR-0011`** (bảng bố cục: `tests/` = `contract/`, `unit/`,
+> `integration/`, quy nguồn cho §5.3) và §5.3 thật. Nay §5.3 nói thẳng là không có `unit/`, nên hàng của
+> ADR-0011 sai. PC10 không được ghi `precode/adr/**` ⇒ **`CR-PC10-09`** (mới, dưới đây). ADR-0011 cũng vẫn
+> nói "bố cục repo — **bảy** thư mục" và không có `tools/`.
+
+## O.4 `CR-P0-04` — quy chủ `web/src/lib/api.ts`: card đúng, amendment lệch
+
+Tôi đọc thẳng `TC-owner-auth-session` §3 trước khi kết luận. Bảng write set của nó gồm **chỉ**
+`server/app/auth/service.py`, `csrf.py`, `middleware.py`, `router.py`, `tests/contract/…`,
+`tests/integration/…`, cộng **một hàng phủ định tường minh**: *"nửa trình duyệt của CSRF **không** thuộc
+card này … do card `TC-ui-runs-three-states` / `TC-ui-reports-detail` sở hữu (Stack B)"*.
+
+Nghĩa là: card **không** mâu thuẫn với §5.3, nên theo đúng điều kiện của packet tôi **không sửa §3 của card
+đó** — và cũng không có lý do để sửa. Thứ lệch là **amendment giữa phiên của Coordinator**, thứ không có
+pin. §5.3 nay ghi lại xác nhận này thành một gạch đầu dòng để hai văn bản không lệch tiếp: nửa server (đặt
+cookie `rr_csrf`, kiểm header `X-CSRF-Token`) thuộc `TC-owner-auth-session`; nửa trình duyệt (đọc cookie,
+gắn header) thuộc hai card UI, card nào chạy trước tạo file, card sau mở rộng.
+
+Ghi chú của `P0-skeleton-handoff` về `api.ts` viết tay đứng trên `web/src/generated/openapi.d.ts` sinh máy
+là một câu hỏi **khác** (§5.3 hiện viết "client sinh từ `contracts/http/openapi.yaml`"). Nó không thuộc
+packet này và tôi **không** sửa mô tả đó; nó vẫn mở, xem `CR-PC10-10`.
+
+## O.5 `PROV-P0-01` + bộ khung Giai đoạn 0 (README §5.5, mới)
+
+README có mục **§5.5** ghi hai điều mà Worker Giai đoạn 1 cần biết trước khi viết dòng import đầu tiên:
+
+- Bộ khung tám cây **đã tồn tại** (`PKT-P0-SKELETON`, `evidence/handoffs/P0-skeleton-handoff.md`). Hành vi
+  nghiệp vụ vẫn bằng không: chỉ `health.get_liveness`; `health.get_readiness` **cố ý không được route** vì
+  nó thuộc `TC-storage-write-blocked-readiness`. Chưa card nào chạy; E1–E4 vẫn `NOT_RUN`.
+- Tên import là `server.app.*`, `collector.app.*`, `worker.app.*`, `rr_contracts.*` — **không** phải
+  `app.*`. Lý do là một lỗi thật đã xảy ra (`import file mismatch` của pytest khi ba cây cùng khai một
+  package top-level tên `app`, trong khi `tests/contract/` cần hai trong ba cùng lúc), không phải khẩu vị.
+  **Không đường dẫn file nào ở §3 của bất kỳ card nào đổi vì điều này**; thứ bị ràng buộc là lệnh và tên
+  module ở **§8**, đúng chỗ card đã khai `PROVISIONAL`.
+
+## O.6 Changes
+
+23 file MODIFY (18 card + 4 file khung + handoff này). 0 CREATE, 0 DELETE. Đúng grant
+(`agent-tasks/*`, `precode/README.md`, addendum này). Không lệnh git, không mạng,
+`PYTHONDONTWRITEBYTECODE=1`, script chạy từ `…/scratchpad/wp/`, không `__pycache__` mới trong repo.
+
+| Path | Op | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `65f4a00f7cd26165` / 23815 | `930d8cf8a3b0f878740933c7af8700cc5f7bf6d0ca4578a314d30ea25552628e` / 24066 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `589ca882e951cb2f` / 21925 | `9716d29be0fdf6f3c1e43c556836fb5f1c92bd7751ffc63462168664f7204719` / 22176 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `5b8b4a93c62ff2ae` / 21062 | `83d875ff8a5cc6ce843861183e13a856f7a1420ac573fa8b59420a69b6180b57` / 21313 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `1037599bf5e542fd` / 21038 | `0e508d17b093b1218602b58486fbdb80e856127842c60469edee4b4769a0a8f5` / 21289 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `75d2f2d2ea6938dd` / 22067 | `e663ea45fc3b65cc1924f45abb271be610b124fd1e2d49672b440814279fb789` / 23107 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `7a9a911aa8c2fdb8` / 24583 | `2387b52da063e1dac9050d0f652f7dcb079da31eaa402406133f7b73ce41c203` / 24834 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `8892095810fe73b3` / 20100 | `1b7d4d2e960567a7bc2b7e6ad763e2f633ada09a6ffbd4a200ebf3623a89734f` / 20351 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `336a30f6a752cd86` / 26153 | `109b891c67e4c943d04438555945ebdbf0c2bb3fcd7e8e0c75a31a46c20b58be` / 27193 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `59b7b2ac6cf37943` / 20930 | `8a77b911e265241ce8276148aed85caef9a488a884f1a8b353228cf8796ccc56` / 21970 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `7079468b7238b2c1` / 25061 | `6aeefd1a5dd87e7e5e23854c768d412ea7ddc86279d13b402c809c79411c28ea` / 25312 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `4df0106a24a21a9c` / 21677 | `524bfa61fdfbc3d4130b9c56013995a2bae287fdeca5b7cf35120fa5f2e20ff2` / 21928 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `1ae9a8eda56506d8` / 23787 | `f2fb378f75e012adee8d7981df344c07235831894057dba7f34c55b41c0c2e64` / 24038 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `5cbdde74447a63d8` / 20947 | `1a47c615647d66941a962035c0be1c60d0c226f339975138865c429ed5dd4a0f` / 21987 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `408ad3d11970b443` / 22022 | `cac0fc095a5bc2d5fa62d99d6cb8ebe68c16b50b4de5fdbe7d956c3b7a191fab` / 22273 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `68710b735b089fa9` / 23268 | `4c78aa6d28117be700b732520840d126b8571184ba69085334c3e4e8ff8c0d44` / 23519 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `6fc278ebd38d4d5e` / 21616 | `47a307289b38ed404e92aee61c9e38fbcf087b30f092c9d23233900b30c2db6a` / 21867 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `4df9ea34ea0aa079` / 21892 | `69ca845883aa4016edbcabf7e972e1c449e95292f7c35cd7d518baacceb738c1` / 22143 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `8f8b163cdef9d92a` / 19117 | `a6ebce8121142a72b276bfe0d1a0b360abc36c240eceae41e5b26d27e97c9a30` / 19368 |
+| `agent-tasks/README.md` | MODIFY | `8204861dee721d2b` / 20844 | `871a2cffd79fb321bec18e6b3eebe81259131a0f4ab4c6cd36d53b731a0a024f` / 26203 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `1660ba17bc0cc555` / 12203 | `06930275675dd0fb737a4f85bcae5e0f08ed1eee15f1cdf611273e3f0d5f2c28` / 12783 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `74bfdd16d01e3e3b` / 17478 | `2fa7fac602fc0a5eae17f4de3b7d5763bef9d4b98ee8f40616cf4579254dd499` / 17526 |
+| `precode/README.md` | MODIFY | `0ebc5d6b58cb5a53` / 22451 | `2862f9ab9896aeb49950498c6eba14f2375346aba4b35bfe638057f5759f6348` / 22478 |
+
+**Drift baseline đã quan sát, không tự sửa:** `precode/README.md` khi tôi bắt đầu là
+`0ebc5d6b58cb5a53…` / 22451 B, **không** phải `f98254c3…` / 21663 B như `PKT-PC10-FIX14` §N.4 ghi. Một gói
+khác (wave `OD-20260907-02` của PC00) đã ghi file này giữa hai packet. 18 card + 3 file khung của
+`agent-tasks/` thì khớp chính xác giá trị FIX14 — không drift. File này không phải nguồn được pin, nên
+không phải STALE_BASELINE; ghi lại để Coordinator biết ai đã ghi cái gì.
+
+## O.7 Evidence (chạy lại lần 15)
+
+**EV-PC10-01 (lần 15):** `SELF_VALIDATION`, generator verifier
+(`…/scratchpad/w7/verify.py`, 13 phép kiểm (a)…(m)), 2026-09-07T10:36Z, exit 0, **PASS: no failures**.
+epoch từ card `PC10-PIN-P1-20260907` (18/18 đồng thuận); **501 dòng hash / 144 file khớp 100 %**; 687 path;
+155 operation ID; 116 SC; 99 mã lỗi §7; 18/18 có `SC49` + bảng R5-01 + fixture boundary; 0 nhãn claim ngoài
+SRC-PLAN §2; 0 file PC09 bị pin hash; 0 epoch stale ở bốn file khẳng định pin; 0 dấu vết stack A; 0 vi phạm
+quy ước ngôn ngữ Stack B.
+
+**EV-PC10-02 (lần 15):** 18/18 card đủ `## §0.`…`## §13.` + front-matter. exit 0, **PASS**.
+
+**EV-PC10-08 (mới):** `uv run python evidence/tools/verify_cards.py`, 2026-09-07T10:37Z, exit 0 —
+**9/9 check PASS, 2897 assertion, 0 violation** (`pins` 501, `epoch` 18, `paths` 705, `operations` 133,
+`scenarios` 268, `errors` 100, `modules` 96, `invariants` 122, `layout` 954). Trước khi tôi ghi, cùng lệnh
+đó cho **8 PASS / 1 FAIL, 54 violation** — đúng 3 file × 18 card của `CR-P0-01`, và generator verifier báo
+đúng **cùng 54** dòng đó. Hai công cụ **không mâu thuẫn** ở bất kỳ khẳng định nào, trước hay sau.
+
+**Chênh lệch phạm vi giữa hai verifier (không phải mâu thuẫn):** bản port trong repo chạy 9 check; bản
+generator chạy 13. Bốn phép kiểm chỉ có ở bản generator: **(h)** `SC49` + bảng ranh giới R5-01 + fixture
+boundary trên mọi card; **(i)** nhãn claim phải nằm trong SRC-PLAN §2; **(j)** sáu file PC09 **không** được
+pin hash; **(l)** không card nào còn trình bày Stack A như stack được chọn. Và **(k)** có ở cả hai nhưng
+**hẹp hơn** trong port: port chỉ kiểm 18 card đồng thuận epoch, còn generator kiểm thêm rằng
+`precode/README.md`, `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md` nêu **đúng** epoch hiện hành
+và epoch cũ chỉ xuất hiện kèm dấu hiệu kể lịch sử — đúng phép kiểm đã bắt lỗi thật hai lần (`F-A2R1-03`,
+và §N.3 của FIX14). Bản port là thứ chạy được trong CI; bản generator sẽ biến mất cùng scratch dir. Tôi
+**không** làm yếu bên nào ⇒ **`CR-PC10-10`**.
+
+**Vẫn `NOT_RUN`:** `evidence/tools/e0_check.py` (E0 lint), validator OpenAPI 3.1, mọi test E1–E4, probe SP1,
+probe CLI/ACP.
+
+*Giới hạn:* toàn bộ là `SELF_VALIDATION` — hai script đọc lại khai báo, không có script nào đọc **nghĩa**
+của card. `audit_route` là `INDEPENDENT_REQUIRED`; không mục nào ở đây là independent audit.
+
+## O.8 CR
+
+**Đóng:** `CR-P0-01` (18 card đã pin lại sang `PC10-PIN-P1-20260907`; cả hai verifier PASS).
+**Trả lời:** `CR-P0-03` (§5.3 nay tám cây, `tests/unit/` bị bỏ có lý do), `CR-P0-04` (card đúng, amendment
+lệch; card **không** bị sửa).
+
+**Mới:**
+
+- **`CR-PC10-09` — `precode/adr/ADR-0011-frameworks-and-toolchain.md` bảng bố cục nay sai hai chỗ.**
+  (a) `tests/` ghi `contract/`, `unit/`, `integration/` và quy nguồn cho `agent-tasks/README.md` §5.3,
+  nhưng §5.3 nay khai **không có** `unit/`; (b) bảng ghi "bố cục repo — **bảy** thư mục" và thiếu `tools/`,
+  trong khi §5.3 nay khai **tám** và `TC-backup-restore-drill` §3 pin `tools/backup_cli.py`. Chủ sở hữu:
+  PC00. **Sửa ADR-0011 sẽ làm 18 card `STALE` lần nữa** (nó nằm trong read set của mọi card) — nên nó nên
+  đi cùng một wave với bất kỳ thay đổi pin nào khác, không đi một mình.
+- **`CR-PC10-10` — `evidence/tools/verify_cards.py` hẹp hơn oracle mà nó thay thế.** Thiếu (h), (i), (j),
+  (l) và bản (k) đầy đủ (xem §O.7). Bản generator sống trong scratch dir và sẽ mất; khi đó bốn ràng buộc
+  kia **không còn được máy kiểm ở đâu cả**. Đề nghị port nốt vào `verify_cards.py`. Chủ sở hữu: gói sở hữu
+  `evidence/tools/`. Kèm theo, câu hỏi mở của `P0-skeleton-handoff` §8 về `api.ts` (viết tay đứng trên kiểu
+  sinh máy, so với chữ "client sinh từ `openapi.yaml`" ở §5.3) chưa được trả lời — nó cần một quyết định,
+  không phải một lần sửa chữ.
+
+**Còn mở từ trước:** `CR-PC10-05`, `-07`, `-08`; `CR-P0-02` (cửa `E0-12` giả định "chưa có code"), `CR-P0-05`;
+`CR-PC07-04`; `CR-PC05-03`; `CR-PC06-04`; `REQ-OQ03` (chặn M3); SP1 và E1–E4 `NOT_RUN`; validator OpenAPI 3.1
+`NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX15 · worker-WP · `lease_released_at` 2026-09-07T10:40Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX16 (đóng `CR-PC10-10`: port đủ oracle vào `verify_cards.py`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX16` · authority `AUTH-COORD-PC10-FIX16` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC10-e17` (fencing 17) |
+| expires_at | 2026-09-08T16:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` |
+| trigger | `CR-PC10-10` do chính tôi mở ở `PKT-PC10-FIX15` §O.7 |
+| status | `DONE_WITH_CONCERNS` (một FAIL thật, không do gói này gây ra — xem §P.5) |
+| started / finished (UTC) | 2026-09-07T10:45Z / 2026-09-07T11:20Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T11:20Z |
+
+## P.1 Đã port gì
+
+`evidence/tools/verify_cards.py` nay chạy **13 check** — bằng đúng oracle của `EV-PC10-01`, không
+hơn không kém. Bốn check mới và một check được mở rộng:
+
+| Check | (chữ của EV-PC10-01) | Đo gì |
+| --- | --- | --- |
+| `obligations` | **(h)** | mọi card mang `SC49`, bảng ranh giới R5-01 ở §5 (`UNAUTHORIZED`, `FORBIDDEN_EDGE`, `CAPABILITY_DENIED`, `CSRF_REJECTED`) và fixture `boundary/a-default-deny-sweep-36-edges.json` |
+| `claim_labels` | **(i)** | nhãn claim chỉ từ SRC-PLAN §2 |
+| `pc09_unpinned` | **(j)** | sáu file PC09 + `e0_check.py` **không** được pin hash ở §0 |
+| `stack` | **(l)** | không card nào trình bày Stack A như stack được chọn; mọi card nêu `Option B` và trích `OD-20260907-01` |
+| `epoch` | **(k) bản đầy đủ** | ngoài "18 card đồng thuận một epoch", nay kiểm cả **bốn file khẳng định pin** (`precode/README.md`, `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md`) phải nêu **đúng** epoch của card; epoch cũ chỉ được xuất hiện trong đoạn có dấu hiệu kể lịch sử |
+
+`layout` (m) và (a)–(g) giữ nguyên. Số assertion: 2 905 → **3 205**.
+
+Hai thứ nhỏ đi kèm, cả hai đều là "đừng im lặng bỏ qua":
+
+- **Check đọc 0 mục nay là `BLOCKED`, không phải `PASS`** — đúng quy tắc `evidence/tools/README.md`
+  §7.3 mà `e0_check.py` đã có còn công cụ này thì chưa. Exit code nay khác 0 cho cả `FAIL` lẫn
+  `BLOCKED`.
+- **`--only` với id lạ nay thoát 2**, thay vì chọn rỗng rồi thoát 0. Một lệnh gõ sai không được
+  trông giống một lần chạy sạch.
+
+## P.2 `--json` và báo cáo dùng chung
+
+`--json` in báo cáo ra stdout; `--json-out <path>` vẫn ghi ra file. Cả hai dùng **một** hàm
+`build_report()`, nên hai đường ra không thể lệch nhau. Báo cáo nay có `totals.pass/fail/blocked`
+và `evidence_kind: SELF_VALIDATION` — nhãn nằm **trong** dữ liệu, để không ai trích một con số ra
+khỏi ngữ cảnh của nó.
+
+## P.3 Self-test âm — `--self-test`
+
+Dựng một **shadow tree** trong thư mục scratch: `agent-tasks/` và `precode/` được **sao thật**, mọi
+entry còn lại ở gốc repo là **symlink**. Cái bóng vì vậy tốn vài trăm KB chứ không phải một
+checkout, mà `layout` vẫn quét được file thật trên đĩa. Tiêm đúng **một** khiếm khuyết cho mỗi
+check (14 đột biến cho 13 check — `epoch` có hai: một card bị pin lại một mình, và
+`agent-tasks/README.md` bị bỏ lại ở epoch đã bị thay).
+
+Hai điều làm nó khác một self-test trang trí:
+
+1. **Mọi lần tiêm được xác nhận đã landing.** `_mutate()` thoát khác 0 nếu chuỗi đích vắng mặt.
+   `evidence/tools/README.md` §5b ghi lại chính xác chuyện gì xảy ra khi thiếu điều này: đột biến
+   không landing, check báo `PASS`, và self-test chứng minh **không gì cả** theo đúng cách trông
+   giống thành công. Tôi không muốn lặp lại lỗi đó ở công cụ thứ hai.
+2. **So sánh theo số vi phạm, đo baseline cho từng check.** Bản đầu tôi viết đòi cái bóng sạch
+   trước đã. Nó **BLOCKED ngay lần chạy đầu**, vì `pins` đang FAIL thật (§P.5) — nghĩa là thiết
+   kế đó tự tắt self-test đúng lúc cần nhất. Nay một đột biến được tính "CAUGHT" khi nó làm
+   **tăng** số vi phạm của check sở hữu nó, nên `pins` vẫn được chứng minh là cắn ngay trên một
+   cây đang stale. Khi baseline không sạch, đầu ra nói thẳng và nhắc rằng self-test **không** nói
+   repo đang PASS.
+
+Cái bóng bị xóa sau khi chạy. Không byte nào vào repo.
+
+## P.4 Changes
+
+| Path | Op | Before sha256 / bytes | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `evidence/tools/verify_cards.py` | MODIFY | `<untracked, 20382 B>` | `a2487c97e1e984a66e3046b228b35548e10c15c30f5ef3b9eac41673b8dc6e80` / 41457 |
+| `evidence/tools/README.md` | MODIFY | `<+ §8 ở cuối>` | `beb26951e70749db9c0f48a03959a8cac8d014691f9c2bfb34b79525dfc2b916` / 39362 |
+
+**2 file MODIFY.** `.github/workflows/e0.yml` **không** bị chạm: cờ gọi không đổi
+(`--repo . --json-out …` vẫn đúng), và grant chỉ mở file đó nếu cờ đổi. Không lệnh git, không
+mạng, `PYTHONDONTWRITEBYTECODE=1`, self-test chạy trong `…/scratchpad/wp/selftest` và tự dọn.
+Không chạm card, `contracts/`, `precode/`.
+
+## P.5 `pins` đang FAIL — và đó là cửa hoạt động đúng, không phải hồi quy
+
+Trong lúc gói này chạy, `PKT-PC00-FIX17` sửa `precode/adr/ADR-0011-frameworks-and-toolchain.md`
+(`6be9189a5e61…` / 18 989 → `da5181b28886…` / 22 685, mtime 2026-09-07T10:02Z) để **thi hành
+`CR-PC10-09`** mà tôi mở ở FIX15: bảng bố cục nay khai **tám** cây, có `tools/`, và ghi
+`tests/` = đúng hai thư mục, không có `unit/`.
+
+`ADR-0011` nằm trong read set của **mọi** card ⇒ **18 card `STALE` lần nữa**, đúng 18 vi phạm
+`pins`, một cho mỗi card. Không phải lỗi của việc port: cả hai verifier báo **cùng 18 dòng đó**
+(generator: `FAIL: 18`; port: `pins FAIL, 18 violations`) — bằng chứng thêm rằng hai oracle nay
+khớp nhau cả khi có lỗi, chứ không chỉ khi sạch.
+
+**Tôi không pin lại.** Packet này cấm chạm card, `contracts/` và `precode/`; và một pin lệch
+**là** tín hiệu `INV-06` dựng lên — tự gỡ nó ở đây sẽ là lần thứ hai ai đó im lặng tắt đúng cái
+chuông vừa kêu. Cần một packet mới cho epoch kế tiếp (đề nghị `PC10-PIN-P1b-20260907`); công việc
+đúng 5 phút vì generator đã có sẵn và §1–§13 của card không đổi.
+
+## P.6 Evidence
+
+**EV-PC10-09 (`SELF_VALIDATION`, 2026-09-07T11:08Z):**
+`uv run python evidence/tools/verify_cards.py` — **13 check, 12 PASS, 1 FAIL, 0 BLOCKED, 3 205
+assertion, 18 violation**. Năm check vừa port đều PASS trên cây hiện tại: `epoch` 22 (18 card + 4
+file khẳng định), `obligations` 90, `claim_labels` 45, `pc09_unpinned` 126, `stack` 18. FAIL duy
+nhất là `pins` (§P.5). exit 1.
+
+**EV-PC10-10 (self-test âm, 2026-09-07T11:14Z):** `--self-test` → **14/14 đột biến bị bắt**,
+exit 0. Mỗi đột biến in kèm dòng vi phạm mà nó tạo ra. `pins` được chứng minh trên baseline không
+sạch bằng phép so số vi phạm (18 → 19).
+
+**EV-PC10-11 (hồi quy E0, 2026-09-07T11:11Z):** `uv run python evidence/tools/e0_check.py` —
+**24/24 PASS, 0 violation**. Sửa của gói này không làm E0 xấu đi.
+
+*Giới hạn:* toàn bộ `SELF_VALIDATION`. Người viết check cũng là người vừa viết một phần văn bản mà
+check đọc. Self-test chứng minh check **bắt được lỗi nó tuyên bố bắt**; nó không chứng minh oracle
+là oracle đúng, và không có check nào đọc **nghĩa** của card.
+
+## P.7 CR
+
+**Đóng: `CR-PC10-10`** — bản port nay bằng oracle của generator; script scratch có thể biến mất mà
+không mất phép kiểm nào.
+
+**Mới:**
+
+- **`CR-PC10-11` — `.github/workflows/e0.yml` mô tả công cụ đã lỗi thời.** Comment đầu file viết
+  *"pinned hashes, pin-epoch unanimity, and the two-language layout rule"* — nay là **13 check**,
+  gồm `pc09_unpinned`, `claim_labels`, `stack`, `obligations` và bản `epoch` đầy đủ. Cờ gọi
+  **không** đổi nên tôi không chạm file (grant có điều kiện). Cùng lượt, đề nghị thêm một step
+  `verify_cards.py --self-test` vào job `e0`: một cửa không có self-test trong CI là một cửa
+  không ai biết còn cắn hay không. Chủ sở hữu: gói sở hữu CI.
+- **`CR-PC10-12` — front-matter của `evidence/tools/README.md` nay hẹp hơn nội dung.** `scope`
+  viết *"Một file duy nhất, `e0_check.py`, chạy 19 check"* — thư mục có **hai** công cụ (và
+  `e0_check.py` chạy 24 check, không phải 19). Grant của tôi là "verifier section only" nên tôi
+  **không** sửa front-matter. Chủ sở hữu: PC09.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-09` (ADR-0011 đã sửa ⇒ cần re-pin, xem §P.5);
+`CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC05-03`; `CR-PC06-04`; `REQ-OQ03`; SP1 và E1–E4
+`NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX16 · worker-WP · `lease_released_at` 2026-09-07T11:20Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX17 (re-pin `P1b` + CR-PC10-11 + CR-PC10-12)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX17` · authority `AUTH-COORD-PC10-FIX17` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC10-e18` (fencing 18) |
+| expires_at | 2026-09-08T16:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` |
+| trigger | `pins` FAIL ở `PKT-PC10-FIX16` §P.5 (`ADR-0011` bị `PKT-PC00-FIX17` sửa) + `CR-PC10-11`, `CR-PC10-12` do chính tôi mở |
+| status | `DONE` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T11:30Z / 2026-09-07T11:55Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T11:55Z |
+| **pin epoch mới** | **`PC10-PIN-P1b-20260907`** (thay `PC10-PIN-P1-20260907`) |
+
+## Q.1 Re-pin — đúng một file đổi
+
+`precode/adr/ADR-0011-frameworks-and-toolchain.md`: `6be9189a5e61…` / 18 989 →
+**`da5181b28886…` / 22 685** (`PKT-PC00-FIX17` thi hành `CR-PC10-09`: bảng bố cục nay khai **tám**
+cây gồm `tools/`, và `tests/` đúng hai thư mục, không có `unit/`). `precode/baseline.json` và
+`precode/decision-register.md` **không** đổi so với `P1`. Tập pin vẫn **501 dòng hash / 144 file**.
+
+Cùng phép kiểm tự đặt như hai lần trước, và nó vẫn là điều kiện quan trọng nhất của gói: băm riêng
+hai vùng của từng card (front-matter + phần trước `## §0.`; và `## §1.` → hết file) rồi so với bản
+trước khi ghi. **18/18 card giống hệt ngoài §0.** Worker Giai đoạn 1 đang đọc §1–§13 trong lúc tôi
+ghi; không chữ nào trong đó đổi. Dòng `dispatch_status` của bốn card M1 giữ nguyên, nay dẫn cả hai
+epoch mà nội dung nghĩa vụ đã đi qua không đổi (`P1`, `P1b`).
+
+Bốn file khẳng định pin đã cập nhật: `agent-tasks/README.md` §4, `agent-tasks/TEMPLATE.md` §0,
+`agent-tasks/WALKTHROUGH.md` (hai chỗ), `precode/README.md` §7. Epoch cũ chỉ xuất hiện kèm dấu hiệu
+kể lịch sử — phép kiểm `epoch` ép điều này bằng máy, và nó là phép kiểm đã bắt lỗi thật hai lần.
+
+## Q.2 `CR-PC10-11` — CI (`.github/workflows/e0.yml`)
+
+Comment đầu file nay mô tả **13 check** và gọi tên chúng, thay cho câu cũ *"pinned hashes,
+pin-epoch unanimity, and the two-language layout rule"*. Thêm một step:
+
+```yaml
+      - name: Card verifier self-test (does each check still bite?)
+        if: always()
+        run: |
+          uv run python evidence/tools/verify_cards.py --repo . \
+            --self-test --self-test-dir "${RUNNER_TEMP}/verify-cards-selftest"
+```
+
+Hai chi tiết có chủ đích: **`if: always()`** để self-test vẫn chạy khi `pins` FAIL — đúng lúc cây
+đang stale là lúc người đọc cần biết cửa còn cắn hay không; và **`--self-test-dir` trỏ vào
+`RUNNER_TEMP`**, ngoài checkout, nên step *"Nothing was written into the repository"* ngay sau đó
+vẫn đúng. YAML đã parse lại được; job có 8 step. Cờ của hai step cũ **không** đổi.
+
+## Q.3 `CR-PC10-12` — front-matter của `evidence/tools/README.md`
+
+`scope` nay ghi **hai** công cụ với số check đúng: `e0_check.py` **24 check** (không phải 19) và
+`verify_cards.py` **13 check** cộng self-test âm. Thêm `agent-tasks/` vào `dependencies` — nó là
+thứ công cụ thứ hai đọc, và một dependency không khai là một dependency không ai kiểm khi nó đổi.
+Thêm một dòng định hướng ngay dưới tiêu đề. Không mục nào khác của front-matter bị chạm.
+
+## Q.4 Changes
+
+**26 file MODIFY** (18 card + 3 file khung `agent-tasks/` + `precode/README.md` +
+`.github/workflows/e0.yml` + `evidence/tools/README.md` + addendum này). 0 CREATE, 0 DELETE. Đúng
+grant. Không lệnh git, không mạng, `PYTHONDONTWRITEBYTECODE=1`, script chạy từ `…/scratchpad/wp/`.
+**Không chạm** `server/`, `tests/`, `evidence/runs/`, `evidence/handoffs/` (trừ file này),
+`contracts/`, `acceptance/`, hay bất kỳ file nào của Worker Giai đoạn 1 đang chạy song song.
+
+| Path | Op | After sha256 / bytes |
+| --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `53298c9f6e7758db9db458bb8b7ec33cd892527dd879af5a31673035daf34a1c` / 24049 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `54e366bd53384b5031220051fcd504765a3b41eee9f365626904a2beed7f5d26` / 22159 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `6112c784a96c82405d8b3e1c010fa8b1ad470980b6425714d1c95d9ad8eecdf3` / 21296 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `205de1716136791f79060f9ed9f0b5ae55a254ed6c7120a3f5720813ef018e85` / 21272 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `d254e4196a91284effdad5e9f2e4d2a3d5eed3cde26d8e46374273af956303e5` / 23135 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `49248d0f29094b537b7e9b5bce2db182d7a9ec07bc8cd0773c021e1adc492523` / 24817 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `c852ba9213806f130554547c5b73aa81e4b978c6b981a1f5c5c58e04ad56a7cb` / 20334 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `1c58e57db526594d4285951660208e60ded441f80344826502f640ff3547576b` / 27221 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `1da9bec05b56c53ddc6fade8ba5648356ba00279d47c8a8fdfea062720f31365` / 21998 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `72e7807deba888685360765d9729e805c2988f799a39e7b044a01da65974c3a6` / 25295 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `a639303e8c2f2ee3f9870b68e35b740a50b5f77ed8dfdd9581089a7e43d44256` / 21911 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `60f4cfb45bf33a3b92e4630bfbc9f23f9a766e2ef397039f5d8102acc95a5233` / 24021 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `58a45dacde1b4ca349ad3317acf77c8d12806c0a4f78203b5e89aebe0c02f81f` / 22015 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `084f9d46e04a5d03dfc14d32f6243b05f7f46e5522c2a62ea4106bf1f3edfe25` / 22256 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `64c50e318bd69332886aef6e47096daf03e42c0c6b5939e0df3c5586fa4c2827` / 23502 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `cd26d0316d6e0673d62005271441a17992112cdb7c5654259d1f496d9b7f0de7` / 21850 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `805ea719cff2dc6a66223e1b20327544be0a1f9207a4074d82a056e24f94fca7` / 22126 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `9a76d2f7670a7820f59dfd4771335da95e17b7aab3b182cda3bd75ac61e1f8d8` / 19351 |
+| `agent-tasks/README.md` | MODIFY | `e436ad1ab09575ddffc3c243bc50a39478ce929711bccee6faf100511cf8d68e` / 26384 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `2ff282d89e7a8b277f587656fcf917a14ac74cc8697f22a2f85ae1528b90648d` / 12781 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `96cf7f4e3d4cbd3cfe34e019541015b124a7a28e975835f5b50c760f727ed556` / 17576 |
+| `precode/README.md` | MODIFY | `677d5f227dc0890bc3f43d58dcf6596774873db073bffe136968159cfefe5e1b` / 22506 |
+| `.github/workflows/e0.yml` | MODIFY | `7da07c53388a784ed6e3d520c916a5227d37fdadd4675a5a4ec176a596a892d5` / 2799 |
+| `evidence/tools/README.md` | MODIFY | `a422da528dfc5b52cf2b7dc3557cb19f818c94c4c38c760cf2b1557e76a54e69` / 39793 |
+
+## Q.5 Evidence (chạy lại lần 16)
+
+**EV-PC10-12 (`SELF_VALIDATION`, 2026-09-07T11:47Z):** `uv run python evidence/tools/verify_cards.py`
+— **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 207 assertion, 0 violation.** `pins` 501 (144 file),
+`epoch` 22 → `PC10-PIN-P1b-20260907`, `paths` 705, `operations` 133, `scenarios` 268, `errors` 100,
+`modules` 96, `invariants` 122, `obligations` 90, `claim_labels` 45, `pc09_unpinned` 126, `stack` 18,
+`layout` 981. exit 0.
+
+**EV-PC10-01/02 (generator, lần 16):** **PASS: no failures**; 501 dòng hash / 144 file; epoch từ card
+`PC10-PIN-P1b-20260907` (18/18 đồng thuận); 18/18 card đủ `## §0.`…`## §13.`. exit 0. **Hai verifier
+khớp nhau lần thứ ba liên tiếp** — lần này ở trạng thái sạch, sau khi đã khớp ở trạng thái lỗi.
+
+**EV-PC10-10 (self-test âm, chạy lại 11:49Z):** **14/14 đột biến bị bắt**, exit 0, baseline sạch
+(không còn dòng cảnh báo "không sạch" của FIX16).
+
+**EV-PC10-11 (hồi quy E0, 11:52Z):** `e0_check.py` **24/24 PASS, 0 violation** sau khi sửa
+front-matter của `evidence/tools/README.md`.
+
+*Giới hạn:* toàn bộ `SELF_VALIDATION`; `audit_route` là `INDEPENDENT_REQUIRED`. Không phép kiểm nào
+đọc **nghĩa** của card. Số `layout` nhích lên giữa các lần chạy vì Worker Giai đoạn 1 đang tạo file
+thật dưới `server/` và `tests/` — đó là đếm file trên đĩa, không phải khai báo của card.
+
+## Q.6 CR
+
+**Đóng:** `CR-PC10-09` (ADR-0011 đã sửa bởi `PKT-PC00-FIX17`, và card đã pin lại theo nó),
+`CR-PC10-11` (CI), `CR-PC10-12` (front-matter). `pins` FAIL của FIX16 §P.5 đã hết.
+
+**Không CR mới.**
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`; `CR-P0-02` (cửa `E0-12` giả định "chưa có code"), `CR-P0-05`;
+`CR-PC07-04`; `CR-PC05-03`; `CR-PC06-04`; `REQ-OQ03` (chặn M3); SP1 và E1–E4 `NOT_RUN`; validator
+OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX17 · worker-WP · `lease_released_at` 2026-09-07T11:55Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX18 (re-pin `P1c` sau `AMD-ENT-owner-01` + ghi nhận tiến độ Giai đoạn 1)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX18` · authority `AUTH-COORD-PC10-FIX18` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-PC10-e19` (fencing 19) |
+| expires_at | 2026-09-08T16:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` |
+| trigger | `AMD-ENT-owner-01` (`PKT-PC02-FIX12`, worker-W3n) sửa `contracts/data/entities.yaml`; `precode/decision-register.md` và `precode/change-control.md` thêm hàng |
+| status | `DONE` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T11:05Z / 2026-09-07T11:25Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T11:25Z |
+| **pin epoch mới** | **`PC10-PIN-P1c-20260907`** (thay `PC10-PIN-P1b-20260907`) |
+
+## R.0 Wait gate — mở sau 8 phút
+
+Packet cấm pin lại trước khi `PKT-PC02-FIX12` nhả lease, vì pin vào byte đang được ghi sẽ tạo ra
+một epoch chết ngay khi sinh. Poll `evidence/handoffs/PC02-handoff.md` mỗi 60 s (trần 45 phút),
+predicate: có addendum `PKT-PC02-FIX12` **và** sau nó có `lease_released_at`. Mở ở **phút thứ 8**:
+addendum dòng 1572, `status: DONE`, `completion_claim: CONTRACT_READY (data and identity)`,
+`lease_released_at 2026-09-07T11:12Z`, next actor Coordinator → WS (sinh lại `shared/rr_contracts`)
+→ WA (migration + test). **Không byte nào của repo bị chạm trước lúc đó.**
+
+## R.1 Re-pin — hai file đã pin đổi
+
+| File đã pin | Trước (`P1b`) | Nay (`P1c`) |
+| --- | --- | --- |
+| `contracts/data/entities.yaml` | `766fe760bf487781…` | `f5ea0511f885159f…` |
+| `precode/decision-register.md` | `4d1a5d6e5d2a4f0a…` | `56cd624f3d6a4298…` |
+
+`precode/change-control.md` cũng đổi (`5cc1e461…` → `f0634166…`) nhưng **không** có card nào pin
+nó — nó được dẫn bằng đường dẫn ở §2 của card. Ghi ra để lần sau không ai đi tìm một hàng hash
+không tồn tại.
+
+`entities.yaml` là hợp đồng dữ liệu nằm trong `BASE_READ` của **mọi** card, nên một byte đổi ở đó
+làm cả 18 card `STALE`. Đó không phải phiền toái mà là chính cơ chế: `AMD-ENT-owner-01` thêm cột
+credential và lockout cho `ENT-owner` — thứ mà `TC-owner-auth-session` đã thi công **trước khi**
+hợp đồng có cột. Card phải được pin lại vào bản hợp đồng mới thì lần audit sau mới so đúng thứ.
+
+Tập pin vẫn **501 dòng hash / 144 file**. Phép kiểm tự đặt (băm riêng front-matter + phần trước
+`## §0.`, và `## §1.` → hết file, so với bản trước khi ghi): **18/18 card giống hệt ngoài §0.**
+Bốn file khẳng định pin đã cập nhật; epoch cũ chỉ xuất hiện kèm dấu hiệu kể lịch sử.
+
+## R.2 Ghi nhận tiến độ Giai đoạn 1 — hai chỗ, cả hai đều nói rõ giới hạn
+
+**§5.3** thêm một gạch đầu dòng: bốn card M1 nay **đã có code thật** dưới `server/` và `tests/`
+(`TC-ingest-idempotent-ack-lost`, `TC-canonical-identity-merge`, `TC-owner-auth-session`,
+`TC-storage-write-blocked-readiness`; handoff ở `evidence/handoffs/TC-*-handoff.md`), nên đường dẫn
+§3 của bốn card đó không còn là dự định — đổi chúng là đổi code.
+
+**§5.4** thêm một khối "Cập nhật tiến độ (2026-09-07)". Nó nói ba điều mà tôi cố ý **không** làm
+mờ đi: cả bốn handoff tự khai `DONE_WITH_CONCERNS` với `review_type: SELF_VALIDATION`; **chưa có
+audit độc lập nào** (đang chờ **A3-R2**); và vì vậy **không con số nào ở §5.4 được nâng lên**.
+Câu cũ "Chưa card nào chạy; E1–E4 vẫn `NOT_RUN`" nay sai một nửa nên đã được viết lại: phép đo phủ
+P0 chạy khi chưa card nào chạy và **không** được cập nhật theo tiến độ code; E1 đã chạy thật trong
+phạm vi bốn card, E2–E4 vẫn `NOT_RUN`; 14 card còn lại chưa bắt đầu.
+
+Tôi **không** đổi bảng phủ P0, không đổi bất kỳ con số nào, và không viết chữ nào ám chỉ bốn card
+đó đã được kiểm độc lập. Một handoff tự khai không phải bằng chứng đã được xác minh.
+
+## R.3 Changes
+
+**22 file MODIFY** (18 card + `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md` +
+`precode/README.md`), cộng addendum này. 0 CREATE, 0 DELETE. Đúng grant. Không lệnh git, không
+mạng, `PYTHONDONTWRITEBYTECODE=1`, generator chạy từ `…/scratchpad/wp/`. **Không chạm**
+`contracts/`, `acceptance/`, `server/`, `tests/`, `evidence/runs/`, `evidence/handoffs/TC-*` —
+mọi file của Worker đang chạy song song.
+
+| Path | Op | After sha256 / bytes |
+| --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `1730ea028e2d3d6aa399e19c8894a935ee3a3205d22522fec82551638e9b2034` / 23951 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `7e64779015bc1395ee50a274f4c9dc8bc4d6bc94e9a3d7c09be2d0fa22da133e` / 22061 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `c6700197e72d46376e9c6d1d9fb9fcff9344fdd60ea06ad941d5bbff45ad4e7e` / 21198 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `378267577030d80bb6d4a42acf5e53a4e4204b63ffaab14bfc8626fb179913c4` / 21174 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `a0545fc84134bd802e214a3764dd976baf4c0de427740c3c4be724b44aa3824c` / 23062 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `6bb00c6ae7a84a15d0d963a70f43135ae326831646bf5d3c069db4536104afb6` / 24719 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `00ed533b793805f0215633c84a5af5f9eb02c5b716af2281e55ad16076ccbdf2` / 20236 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `c4359ebca95083ee172cf1bc738fc571bc39b82bf9e3ea7da7d4286d3a32f8c6` / 27148 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `456e50d2997fc545b4e171c24d03df0a8f684cc4b90342cfdeacbcd1343baa65` / 21925 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `2404f513004ed0bfe22ce8a2d5c1ae62a3032fcdb7ce8d509a446896c020ca4c` / 25197 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `c24ecfc1bcc4b0439fc86e8c129cda11ba097669742111719da6a86c85d3ee0d` / 21813 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `88cedc1b400c279b97cfaddba3eb4f0a86f616477057809ba912c43170b57456` / 23923 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `42fdf7ea3f6ac07d074ad7b7db99240ffb1eb4cafb2b68b82267cc1c3225a42a` / 21942 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `cce8c95208d726393d479037d0912a9a7904ef9d798012719400c1b3246e2e28` / 22158 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `f1b1b190eb54383575dd0dc27ffde7ba251e737466112d52a1c7dbf8709c7d20` / 23404 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `6f192c4dd6a6c956b13f1335c71c1515e848782617e43d72b5ef6c4432d214e7` / 21752 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `716fd96ddd1f5c5033ddb5e4aad68dd8d68757650edea012ef8b0bc4f0801ba0` / 22028 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `38b0b129e00c04832a165fb36dd82e7b69f1ec0c1fec3d3f47c885c8a9f71725` / 19253 |
+| `agent-tasks/README.md` | MODIFY | `c24763b757ac0e3e5b0557e235a39c662ed035637f17866781054f95322c965f` / 27660 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `c6fe7752001c3e478684ffaca436172c42df21da42bbc9c3e0a0374408582cfb` / 12782 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `d917351cc3c30cf86b37052625dcc383d0feeb5e8f186f793cedc2e2d23cfc2b` / 17626 |
+| `precode/README.md` | MODIFY | `315374695993e810b98a309ecc287988a04f9eeaa899c08a8bb100f07aa623ab` / 22534 |
+
+## R.4 Evidence (chạy lại lần 17)
+
+**EV-PC10-12 (`SELF_VALIDATION`, 2026-09-07T11:20Z):** `uv run python evidence/tools/verify_cards.py`
+— **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 213 assertion, 0 violation.** `pins` 501 (144 file), `epoch` 22
+→ `PC10-PIN-P1c-20260907`, `paths` 705, `operations` 133, `scenarios` 268, `errors` 100, `modules` 96,
+`invariants` 122, `obligations` 90, `claim_labels` 45, `pc09_unpinned` 126, `stack` 18, `layout` 987.
+exit 0.
+
+**EV-PC10-01/02 (generator, lần 17):** **PASS: no failures**; 501 dòng hash / 144 file; epoch từ card
+`PC10-PIN-P1c-20260907` (18/18 đồng thuận); 687 path; 155 operation; 116 SC; 99 mã lỗi; 18/18 card đủ
+`## §0.`…`## §13.`. exit 0. Hai verifier khớp nhau lần thứ tư.
+
+**EV-PC10-10 (self-test âm, 11:22Z):** **14/14 đột biến bị bắt**, exit 0, baseline sạch.
+
+*Giới hạn:* `SELF_VALIDATION`. `layout` đếm 987 (tăng từ 981) vì Worker Giai đoạn 1 đang tạo file
+thật dưới `server/`/`tests/` — đó là đếm file trên đĩa, không phải khai báo của card, và **không**
+là bằng chứng cho card nào.
+
+## R.5 CR
+
+Không CR mới, không CR nào đóng bởi gói này. `AMD-ENT-owner-01` mang `status: PROVISIONAL` và là
+**amendment kỹ thuật của Coordinator**, chưa phải quyết định của Owner — card nay pin vào bản hợp
+đồng mang amendment đó, nên nếu Owner bác amendment thì cả 18 card `STALE` lần nữa. Đây là hệ quả
+đã biết của việc pin, không phải một vấn đề mới.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC05-03`;
+`CR-PC06-04`; `REQ-OQ03`; **A3-R2 chưa chạy** cho bốn card M1; SP1 và E2–E4 `NOT_RUN`; validator
+OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX18 · worker-WP · `lease_released_at` 2026-09-07T11:25Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX19 (re-pin `P1d` sau bản sửa văn xuôi của `PKT-PC02-FIX13`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX19` · authority `AUTH-COORD-PC10-FIX19` · lease `LEASE-PC10-e20` (fencing 20) |
+| expires_at | 2026-09-08T16:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` |
+| trigger | `PKT-PC02-FIX13` sửa **văn xuôi** khối amendment trong `contracts/data/entities.yaml`; `precode/change-control.md` được sửa (không pin) |
+| status | `DONE` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T11:38Z / 2026-09-07T11:52Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T11:52Z |
+| **pin epoch mới** | **`PC10-PIN-P1d-20260907`** (thay `PC10-PIN-P1c-20260907`) |
+
+## S.0 Wait gate — mở sau 6 phút
+
+Cùng predicate như FIX18: addendum `PKT-PC02-FIX13` **và** một mốc `lease_released_at` sau nó. Mở ở
+phút thứ 6 — `status: DONE`, `completion_claim: CONTRACT_READY (data and identity)`,
+`lease_released_at 2026-09-07T11:44Z`, next actor ghi thẳng "→ WP re-pin: hash hai file đã đổi".
+Không byte nào của repo bị chạm trước lúc đó.
+
+## S.1 Re-pin — một file đã pin đổi, và nó **chỉ** đổi văn xuôi
+
+| File | Trước (`P1c`) | Nay (`P1d`) | Pin? |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `f5ea0511f885159f…` | `df5e023124a910d7…` | **có** |
+| `precode/change-control.md` | `0427d56205…` (đã đổi lần nữa ở gói này) | — | không |
+| `precode/decision-register.md` | `56cd624f3d6a4298…` | **không đổi** | có |
+
+**Vì sao vẫn pin lại toàn bộ 18 card cho một bản sửa văn xuôi.** Vì quy tắc `STALE` đọc **byte**,
+không đọc ý định. Một ngoại lệ "lần này chỉ là văn xuôi, bỏ qua đi" nghe hợp lý đúng một lần, rồi
+biến cửa pin thành thứ phải phán đoán mới dùng được — mà phán đoán chính là thứ cơ chế này tồn tại
+để khỏi cần. Không có công cụ nào ở đây đọc được YAML đủ sâu để chứng minh "không trường nào đổi"
+một cách độc lập với lời khai của gói viết nó, nên khẳng định đó là **lời khai của PC02**, không
+phải kết quả đo của tôi. §0 của card nay nói đúng điều đó, không hơn.
+
+Tập pin: **501 dòng hash / 144 file**, không đổi số lượng. Phép kiểm hai vùng như mọi lần:
+**18/18 card giống hệt ngoài §0** — front-matter và §1–§13 không đổi một byte.
+
+Bốn file khẳng định pin đã cập nhật (`agent-tasks/README.md` §4, `TEMPLATE.md` §0, `WALKTHROUGH.md`
+hai chỗ, `precode/README.md` §7); epoch cũ chỉ xuất hiện kèm dấu hiệu kể lịch sử.
+
+## S.2 Changes
+
+**22 file MODIFY** (18 card + `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md` +
+`precode/README.md`), cộng addendum này. 0 CREATE, 0 DELETE. Đúng grant; "nothing else" được tuân
+thủ — không có sửa nội dung nào ngoài dòng epoch. Không lệnh git, không mạng,
+`PYTHONDONTWRITEBYTECODE=1`.
+
+| Path | Op | After sha256 / bytes |
+| --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `42fa97f1612f95127fafbf2dfa0e16a7e869fb18a2886c9efc7de2be84766c8b` / 24039 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `65607bc3f3eea7c0340ac11f54704fb1813fdd083aeeffd0de0b80a0c8a1ac4a` / 22149 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `1e5905a3c69ac6c1ad8e457aff429869862d2079822634863874611bed231300` / 21286 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `aa36753a86d1b606f23c2e6f52e87015fc52ba4d148cd7c52bfaa78eec94e66c` / 21262 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `fab81bd10a954d51dbfb43ea5d3df80c0890a88101d5bf595cadcb401637d9d5` / 23175 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `b7f6f3e6cf8e25cf25da84775e112787c081ecabdfe09f7654ab0c9da92eeee2` / 24807 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `adf3ede3c60abdc26f370548d2c57497e04da1c285f93fd465551962ee4e1bbf` / 20324 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `c84a12e90c2ab015b29a41e8fb27cd0c0ba5250f79eaf02a16ca71ecb422d38f` / 27261 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `55191588d53f5c5e103e3b883fe1212116df732f5a45e6c07f1a7024b3c69911` / 22038 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `4ad6a9cbac15613e215dd318370bdea1545237438917ce2320233018c94004d1` / 25285 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `44c048596562296c83e43a6cc1f53fc0f12bebdd0a9629b33e2d750c88a7120f` / 21901 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `79cdcb3d03b5b7855439ec98bf9a4f608f0e15f1c51f0431a27ed8d638c8f9f6` / 24011 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `02636cb8a4fad73f01982b12cbe59a9bd9f6badb81128f9b5aa241077dfce15c` / 22055 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `db7dbe705d485fbba3c622c87506c044ca908fe0ed2b3b828db46f322d702b81` / 22246 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `de7ce832e5a2f2afaa4451cb7f2552d2c160539c5ed91bbafea1f2075fae56c7` / 23492 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `febbdb183381ed418d6fe377739cf20fbb08931b42758f0aa69eb0b19ec243b0` / 21840 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `8f20ff778068409171aa96900400167f27002e56913184eb42cb135bea1b4737` / 22116 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `b5c4e3c66ebf9111332539a2ee4cc2a2737fa5a510ebc7dd69bfce9be1b0c78f` / 19341 |
+| `agent-tasks/README.md` | MODIFY | `34b4dbf122a5376eb6eb0d041a321edacaf640be52943fd2f3747dae871eb6a3` / 27790 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `223d6abcc537a3893dc43dcbbd983012bdf5dcea56583cc02814c932db3214a3` / 12782 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `02b9eba933a66b6a0536848305b416cf2ed1f2cea2d41083bfd9694abaa766eb` / 17676 |
+| `precode/README.md` | MODIFY | `103c770b5ad929c3bdd7a79721cbdf2e97032796cfecf120129ff5050abe9c37` / 22562 |
+
+## S.3 Evidence (chạy lại lần 18)
+
+**EV-PC10-12:** `uv run python evidence/tools/verify_cards.py` — **13/13 PASS, 0 FAIL, 0 BLOCKED,
+3 214 assertion, 0 violation**; `epoch` → `PC10-PIN-P1d-20260907`. exit 0.
+
+**EV-PC10-01/02 (generator):** **PASS: no failures**; 501 dòng hash / 144 file; epoch từ card
+`PC10-PIN-P1d-20260907` (18/18 đồng thuận). exit 0. Hai verifier khớp nhau lần thứ năm.
+
+**EV-PC10-10 (self-test âm):** **14/14 đột biến bị bắt**, exit 0, baseline sạch.
+
+*Giới hạn:* `SELF_VALIDATION`. Không phép kiểm nào đọc nghĩa của card, và **không** phép kiểm nào
+xác minh độc lập lời khai "không trường nào đổi" của `PKT-PC02-FIX13`.
+
+## S.4 CR
+
+Không CR mới, không CR nào đóng. Còn mở như ở `PKT-PC10-FIX18` §R.5, gồm **A3-R2 chưa chạy** cho
+bốn card M1 và `AMD-ENT-owner-01` vẫn `PROVISIONAL`.
+
+---
+
+*PKT-PC10-FIX19 · worker-WP · `lease_released_at` 2026-09-07T11:52Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

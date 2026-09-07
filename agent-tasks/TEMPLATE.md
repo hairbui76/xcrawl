@@ -52,7 +52,7 @@ Chưa đủ bốn điều kiện thì card tồn tại như tài liệu review, 
 
 *Bảng hash là hợp đồng của card. Không viết "latest", không viết "bản mới nhất".*
 
-**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-OD01e-20260907; epoch cũ ví dụ PC10-PIN-OD01d-20260907>`
+**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-P1d-20260907; epoch cũ ví dụ PC10-PIN-P1c-20260907>`
 
 *Card là nguồn chuẩn của tên epoch. File nào khác khẳng định pin hiện hành thì phải đọc tên từ card, không
 chép tay — finding `F-A2R1-03`; EV-PC10-01 phép kiểm (k) ép điều này bằng máy.* — nói rõ hash được **tính lại trực tiếp** hay **chép từ
@@ -66,6 +66,12 @@ frozen candidate** nào; nếu có file lệch khỏi frozen candidate, liệt k
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
 | `<path>` | `<sha256>` | `<bytes>` |
+
+**`dispatch_status:`** *(tùy chọn — chỉ có trên card đã được Coordinator phát packet).* Một dòng ở §0,
+dạng `dispatch_status: DISPATCHED (<decision id>, <ngày>)`. Nó là **trạng thái điều phối**, không phải một
+mục nghĩa vụ: nó không được đổi §1–§13, không được nới điểm dừng ở §10, và **không** thay TASK_PACKET —
+quyền ghi vẫn đến từ packet (lease + write set), không từ dòng này. Card chưa được phát packet thì bỏ dòng
+này đi, đừng viết `dispatch_status: NOT_DISPATCHED`.
 
 Liệt kê rõ file **cố ý không pin hash** và lý do. Hiện tại đó là sáu file của PC09 (`acceptance/scenarios.yaml`,
 `acceptance/traceability.csv`, `precode/gates.yaml`, `precode/review.md`, `evidence/manifest.schema.json`,

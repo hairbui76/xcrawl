@@ -1,0 +1,31 @@
+# rr-server — FastAPI application (MOD-* domain services, scheduler, report, delivery,
+# auth, storage). Virtual uv workspace member: dependencies are resolved into the shared
+# lockfile, but the project itself is not built or installed. Import root is the repo root,
+# so files under `server/app/` import as `server.app.*`.
+#
+# Toolchain authority: precode/adr/ADR-0011-frameworks-and-toolchain.md.
+
+[project]
+name = "rr-server"
+version = "0.1.0"
+description = "Research Radar server (FastAPI + SQLAlchemy 2 Core + Alembic on SQLite/WAL)"
+requires-python = "==3.12.*"
+dependencies = [
+  "fastapi>=0.115,<0.116",
+  "pydantic>=2.9,<3",
+  "sqlalchemy>=2.0,<3",
+  "alembic>=1.13,<2",
+  "httpx>=0.27,<0.29",
+  "argon2-cffi>=23.1,<24",
+  "uvicorn>=0.30,<0.36",
+  "rr-contracts",
+]
+
+[project.optional-dependencies]
+# Declared, NOT installed by `uv sync --all-packages --frozen`. sentence-transformers pulls
+# PyTorch (ADR-0011 "Tiêu cực và chi phí"); the embedding model itself is REQ-OQ09 / REQ-A3
+# and is not chosen yet. No model is ever downloaded by this repo's test or CI paths.
+embedding = ["sentence-transformers>=3.0,<4"]
+
+[tool.uv]
+package = false

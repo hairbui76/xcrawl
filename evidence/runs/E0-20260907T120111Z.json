@@ -1,0 +1,603 @@
+{
+  "tool": "evidence/tools/e0_check.py",
+  "tool_version": "0.1.0",
+  "evidence_level": "E0",
+  "review_type": "SELF_VALIDATION",
+  "repo": "/mnt/virtual/repo/xcrawl",
+  "started_at": "2026-09-07T12:01:11Z",
+  "ended_at": "2026-09-07T12:01:15Z",
+  "environment": {
+    "python": "3.12.3",
+    "pyyaml": "6.0.1",
+    "jsonschema": "4.10.3",
+    "platform": "linux"
+  },
+  "files_scanned": 229,
+  "summary": {
+    "checks": 25,
+    "pass": 23,
+    "fail": 2,
+    "blocked": 0,
+    "not_applicable": 0,
+    "total_violations": 2
+  },
+  "checks": [
+    {
+      "check_id": "E0-01-parse",
+      "title": "Every YAML/JSON file under contracts/, acceptance/, precode/, evidence/ parses",
+      "oracle": "yaml.safe_load / json.load returns without exception for every .yaml/.yml/.json file",
+      "status": "PASS",
+      "items_checked": 114,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-02-metaschema",
+      "title": "Every *.schema.json is a valid JSON Schema draft 2020-12 document",
+      "oracle": "Draft202012Validator.check_schema() raises nothing",
+      "status": "PASS",
+      "items_checked": 8,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [
+        {
+          "where": "evidence/manifest.schema.json",
+          "id": "DEV-PC09-01",
+          "rule": "agent_profile/protocol.md §10 — 'Schema Draft 2020-12 dùng oneOf discriminated type'",
+          "deviation": "Schema này dùng `allOf` gồm bảy nhánh `if/then` thay vì `oneOf`.",
+          "reason": "Bảy nhánh ở đây KHÔNG phải một union phân biệt theo `type`: chúng là các ràng buộc CÓ ĐIỀU KIỆN trên cùng MỘT loại đối tượng (result=NOT_APPLICABLE ⇒ bắt buộc not_applicable_reason; execution.kind=command ⇒ bắt buộc command; review_type=SELF_VALIDATION ⇒ giới hạn claim.supports_label). Một manifest phải thoả TẤT CẢ các điều kiện áp dụng cho nó, không phải đúng một trong bảy. Diễn đạt bằng `oneOf` sẽ sai về ngữ nghĩa: một bản ghi vừa NOT_APPLICABLE vừa có execution.kind=not_executed sẽ khớp hai nhánh và bị `oneOf` từ chối. Đối tượng vẫn đóng kín: additionalProperties=false ở mọi object definition.",
+          "evidence_refs": [
+            "R4-04 (Coordinator, FIX4 wave) — allOf + if/then được chấp nhận là tương đương chức năng",
+            "F-A1R3-05 (cùng lớp, đã ratify cho contracts/schemas/analysis-result.schema.json)",
+            "EV-PC09-02 — evidence/index.json validate được với chính schema này"
+          ]
+        }
+      ],
+      "notes": [
+        "declared deviation at evidence/manifest.schema.json: agent_profile/protocol.md §10 — 'Schema Draft 2020-12 dùng oneOf discriminated type'"
+      ]
+    },
+    {
+      "check_id": "E0-03-fixture-schema",
+      "title": "Fixtures that declare a JSON Schema validation target validate (or fail) as declared",
+      "oracle": "expected_validation 'accept' => every payload validates; 'reject'/'reject_schema' => the negative payload raises at least one error; 'reject_semantic' => the payload validates (rejection is a downstream semantic gate, SRC-PLAN §10); 'not_applicable' => skipped with a reason. A validation_target that is not a *.schema.json path is a contract reference, not a schema, and is NOT_APPLICABLE.",
+      "status": "PASS",
+      "items_checked": 28,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": [
+        "acceptance/fixtures/ai/h-provider-unavailable-no-fallback.json: expected_validation not_applicable; no schema validation attempted",
+        "acceptance/fixtures/ai/i-crash-after-provider-completion.json: expected_validation not_applicable; no schema validation attempted"
+      ]
+    },
+    {
+      "check_id": "E0-04-operation-refs",
+      "title": "Every operation id cited in a structured field exists in contracts/ports.yaml",
+      "oracle": "for each `operation`/`operation_id`/`*_operation`/`operations[]` value, the id is a key of the ports.yaml inventory",
+      "status": "PASS",
+      "items_checked": 895,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-05-error-code-refs",
+      "title": "Every error code cited in a structured field exists in contracts/errors.yaml",
+      "oracle": "for each `error_code`/`error_codes[]`/`expected_error_code` value, the code is registered in errors.yaml",
+      "status": "PASS",
+      "items_checked": 758,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-04b-prose-op-tokens",
+      "title": "Operation-shaped tokens in prose resolve against contracts/ports.yaml",
+      "oracle": "Single source of the rule: contracts/ports.yaml conventions.prose_token_rule_vi. A backticked `<a>.<b>` must resolve to an operation of ports.yaml OR an entity.column of entities.yaml; tokens whose first segment is neither a known operation domain nor a known entity name (file paths, YAML structural keys, hosts, library idioms) are ignored. This check reports the operation half. E0-04 reads structured fields only; this reaches the sentences, where F-A2R1-01 lived.",
+      "status": "PASS",
+      "items_checked": 286,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-04c-prose-column-tokens",
+      "title": "Column-shaped tokens in prose resolve against contracts/data/entities.yaml",
+      "oracle": "Single source of the rule: contracts/ports.yaml conventions.prose_token_rule_vi. This check reports the column half. Splitting it out of E0-04b (ruling FIX7) keeps 'someone named an operation that does not exist' distinct from 'someone named a column that does not exist' — different owners, different fixes.",
+      "status": "PASS",
+      "items_checked": 215,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-04d-prose-error-tokens",
+      "title": "Error-code-shaped tokens in prose are registered codes or listed vocabulary",
+      "oracle": "A backticked SCREAMING_SNAKE token must be a code in contracts/errors.yaml or a word in the tool's STATUS_VOCABULARY — which covers the baseline §3 status/claim vocabularies and the protocol.md message types (Coordinator ruling, FIX7 wave). This is how F-A2R1-06 (SAVE_ALREADY_EXISTS) was found.",
+      "status": "FAIL",
+      "items_checked": 161,
+      "violation_count": 1,
+      "violations": [
+        {
+          "where": "acceptance/scenarios.yaml",
+          "detail": "prose names 'NOT_TESTABLE_AT_THIS_LAYER', which is neither a registered error code nor a listed vocabulary word"
+        }
+      ],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-06-requirement-refs",
+      "title": "Every REQ-* id cited anywhere resolves to a row in precode/requirements.csv",
+      "oracle": "regex-extracted REQ-* tokens over all in-scope files are a subset of the registry",
+      "status": "PASS",
+      "items_checked": 2417,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-07-id-refs",
+      "title": "Every SC / I / B / ADR / AMD id cited anywhere is defined",
+      "oracle": "SC ids resolve in acceptance/scenarios.yaml; I ids in SRC-PLAN §7 plus invariants.md; B01..B17; ADR ids to a file in precode/adr/; AMD ids to a section of decision-register.md",
+      "status": "PASS",
+      "items_checked": 3319,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-08-contract-header",
+      "title": "Every contract / schema / fixture / registry file carries the baseline §3 header",
+      "oracle": "YAML: the 14 fields are top-level keys. Markdown: they are in the YAML front-matter. JSON Schema: $id/title/description plus an x-contract object. Fixture JSON: an x-contract object or the directory README lists the file (ruling in baseline §3). ADRs use the R-05 field set instead.",
+      "status": "PASS",
+      "items_checked": 143,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-09-state-lint",
+      "title": "State machines: closed state enums, reachability, terminal states have no outgoing rows",
+      "oracle": "every token in a transition from/to resolves to a value of that file's primary state enum (alternatives separated by '|' are split; trailing parentheticals are commentary; a creation sentinel means the row is created); every state listed as terminal or non-terminal is reachable from the initial state; a terminal state has no outgoing transition unless the file names that transition in terminal_state_rule; the terminal / non-terminal / quasi-terminal lists partition the enum.",
+      "status": "PASS",
+      "items_checked": 67,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-10a-denied-edge-scenario",
+      "title": "Every forbidden edge in contracts/modules.yaml is covered by a scenario",
+      "oracle": "for each forbidden_edges[].id there is a scenario in acceptance/scenarios.yaml whose forbidden_edge_refs contains it",
+      "status": "PASS",
+      "items_checked": 36,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-10b-denied-edge-oracle",
+      "title": "Forbidden edge ↔ denied case ↔ boundary fixture event is a content-matching bijection",
+      "oracle": "For each forbidden_edges[] entry: exactly ONE denied_cases[] entry references it, and that entry's attempted_edge.caller/callee equal the edge's caller/callee and its expected_error_code is a registered code; AND exactly ONE event in the boundary sweep fixture references it, with actor == caller, callee == callee, denied_case_ref == that case's id, the same expected_error_code, and (when it names an operation) the same operation. A named operation must be OWNED BY the callee when the callee is a MOD-* module (F-A2R1-05); when the callee is an EXT-* system it names the internal port whose effect is attempted, per the convention declared in modules.yaml default_deny. Nothing may reference an unknown edge, and nothing may be referenced twice. Presence of a pinned case is NOT sufficient (CR-PC01-11).",
+      "status": "PASS",
+      "items_checked": 36,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": [
+        "bijection checked over 36 forbidden edges, 36 denied cases, 36 sweep events"
+      ]
+    },
+    {
+      "check_id": "E0-11a-no-orphan",
+      "title": "No P0 requirement with status XN or UQ is an ORPHAN in acceptance/traceability.csv",
+      "oracle": "traceability.csv has one row per requirements.csv row and no row with priority==P0 and status in {XN, UQ} carries coverage_status == ORPHAN",
+      "status": "PASS",
+      "items_checked": 246,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-11b-invariant-polarity",
+      "title": "Every invariant has a dedicated positive scenario AND a dedicated negative scenario",
+      "oracle": "for each invariant id, acceptance/scenarios.yaml contains at least one scenario citing it declared polarity 'positive' and at least one declared 'negative'. Ruling F-A2R1-10: 'mixed' counts for NEITHER pole — a combined scenario is not a dedicated counterexample, and the check must not claim more than its oracle delivers.",
+      "status": "PASS",
+      "items_checked": 17,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-12-forbidden-strings",
+      "title": "Ratified vocabulary is used only where the Owner ratified it; nothing claims more",
+      "oracle": "After OD-20260907-01: `ACCEPTED` / `RATIFIED` / `CONTRACT_READY` are permitted only in a file that carries `ratification_ref: OD-20260907-01`, or anywhere under precode/ (the register and the ADRs are where the ratification is recorded). `CONTRACT_READY` is additionally confined to the four ratified scopes — a file outside them may not claim it however it is annotated — eligibility is the explicit allowlist in precode/gates.yaml, so a file not named there is ineligible by default. Claims ABOVE CONTRACT_READY are forbidden THROUGHOUT THE SCANNED SCOPE (contracts, acceptance, precode, evidence) with ONE narrowed exception (CR-P0-02): `IMPLEMENTATION_VERIFIED` — and nothing above it — is permitted inside `evidence/handoffs/**` and `evidence/runs/**` when the file CITES an A3 independent-audit report by name; contracts/, acceptance/ and precode/ are unchanged, and `INTEGRATION_VERIFIED` / `LIVE_FEASIBILITY_VERIFIED` / `PRODUCT_ACCEPTED` stay forbidden everywhere because no integration run, live probe or owner acceptance exists. The citation is checked per FILE, not per record — see the note below. `agent-tasks/` is NOT scanned by this tool; the cards there use `claim_ceiling` with a different meaning (the ceiling the ordered work may reach) and are counted in a note below rather than silently omitted. `TBD` remains forbidden as a value, and `CLOSED` as a status.",
+      "status": "FAIL",
+      "items_checked": 756,
+      "violation_count": 1,
+      "violations": [
+        {
+          "where": "precode/review.md",
+          "detail": "claim label IMPLEMENTATION_VERIFIED asserted in text: | `CR-P0-02` | PC09 | FIXED_THIS_PACKET | E0-12 nay cho IMPLEMENTATION_VERIFIED trong evidence/handoffs|runs khi co trich dan A3 | `evidence/handoffs/P0-skeleto"
+        }
+      ],
+      "declared_deviations": [],
+      "notes": [
+        "CR-P0-02 exception: 1 file(s) under evidence/handoffs//, evidence/runs/ contain the token IMPLEMENTATION_VERIFIED AND cite an A3 report, so the label is permitted there outright: evidence/handoffs/P0-skeleton-handoff.md. 7 file(s) contain the token WITHOUT an A3 citation and stay under the ordinary rule — they pass today only because every occurrence in them is backticked, quoted or negated, and a bare assertion would FAIL: evidence/handoffs/PC00-handoff.md, evidence/handoffs/PC09-handoff.md, evidence/handoffs/PC10-handoff.md, evidence/handoffs/TC-canonical-identity-merge-handoff.md, evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md, evidence/handoffs/TC-owner-auth-session-handoff.md, evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md. The citation is checked per FILE, not per record; the per-record obligation is enforced by evidence/manifest.schema.json and by precode/review.md, not by this check.",
+        "scan scope is contracts, acceptance, precode, evidence; agent-tasks/ is NOT scanned. 18 task card(s) there declare a claim_ceiling above CONTRACT_READY, which in a card denotes the ceiling of the work it orders, not a claim about the card: agent-tasks/TC-analysis-adapter-validation.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-analysis-once-per-generation.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-backfill-pending-ledger.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-backup-restore-drill.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-canonical-identity-merge.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-collector-checkpoint-resume.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-embedding-generation-switch.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-ingest-idempotent-ack-lost.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-owner-auth-session.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-report-coverage-publish-cas.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-saved-snapshot.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-scheduler-lease-claim.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-storage-write-blocked-readiness.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-telegram-linking-auth.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-telegram-unknown-delivery.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-ui-reports-detail.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-ui-runs-three-states.md -> IMPLEMENTATION_VERIFIED; agent-tasks/TC-x-feasibility-probe.md -> LIVE_FEASIBILITY_VERIFIED"
+      ]
+    },
+    {
+      "check_id": "E0-12b-ratification-refs",
+      "title": "Every CONTRACT_READY file cites a ratification that resolves to the Owner's record",
+      "oracle": "A file whose claim_ceiling is CONTRACT_READY must carry `ratification_ref` naming OD-20260907-01 IN ITS PARSED CONTRACT HEADER (front-matter, top-level key, or `x-contract`) — a prose mention does not count (F-A2R5-03 mutation M6b) — and precode/owner-decisions.md must exist and contain that id. The eligible set is the explicit allowlist in precode/gates.yaml. A ceiling raised on a citation that does not resolve, or on a sentence, is a claim with no authority behind it.",
+      "status": "PASS",
+      "items_checked": 50,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-13-coverage-windows",
+      "title": "Coverage windows in reporting fixtures are half-open and contiguous",
+      "oracle": "for every fixture that carries coverage_window rows: window_from < window_to for each row, and for consecutive sequence numbers window_to[n] == window_from[n+1] (no gap, no overlap)",
+      "status": "PASS",
+      "items_checked": 13,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-14-fixture-actor-edge",
+      "title": "Every fixture event names an allowed caller of the operation (rulings R-02, R4-02)",
+      "oracle": "events[].actor is in ports.yaml caller_modules for events[].operation AND the triple (actor, owner_module, operation) is in modules.yaml allowed_edges. `performed_by` is the executing service and is never read as a caller assertion. An event marked `edge_assertion: forbidden` asserts the opposite: the triple must be ABSENT from allowed_edges and the fixture must expect one of UNAUTHORIZED / FORBIDDEN_EDGE / CAPABILITY_DENIED. An event that carries an actor but no recognised operation key fails loudly rather than being skipped (F-A1R3-02).",
+      "status": "PASS",
+      "items_checked": 455,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-15-fixture-field-existence",
+      "title": "Every column named in given.rows and expected.rows exists in entities.yaml (R4-01)",
+      "oracle": "for each table name under given.rows / expected.rows, every object key is either (a) a declared field of that entity in contracts/data/entities.yaml, (b) an annotation whose key starts with '_', or (c) a column carrying an in-file `pending_cr: CR-…` marker. No per-package allowlist (ruling R4-01).",
+      "status": "PASS",
+      "items_checked": 1964,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": [
+        "dir ai         files=11  with_rows=2   without_rows=9   columns_checked=40    unresolved=0   annotations_skipped=0    -> PASS",
+        "dir boundary   files=1   with_rows=0   without_rows=1   columns_checked=0     unresolved=0   annotations_skipped=0    -> NOT_APPLICABLE_FREEFORM",
+        "dir collection files=12  with_rows=4   without_rows=8   columns_checked=176   unresolved=0   annotations_skipped=25   -> PASS",
+        "dir e2e        files=1   with_rows=1   without_rows=0   columns_checked=297   unresolved=0   annotations_skipped=12   -> PASS",
+        "dir identity   files=14  with_rows=8   without_rows=6   columns_checked=372   unresolved=0   annotations_skipped=52   -> PASS",
+        "dir recovery   files=13  with_rows=3   without_rows=10  columns_checked=231   unresolved=0   annotations_skipped=77   -> PASS",
+        "dir reporting  files=14  with_rows=13  without_rows=1   columns_checked=475   unresolved=0   annotations_skipped=29   -> PASS",
+        "dir telegram   files=18  with_rows=13  without_rows=5   columns_checked=252   unresolved=0   annotations_skipped=29   -> PASS",
+        "dir ui         files=2   with_rows=2   without_rows=0   columns_checked=121   unresolved=0   annotations_skipped=13   -> PASS"
+      ],
+      "detail": {
+        "per_directory": {
+          "ai": {
+            "files": 11,
+            "files_with_rows": 2,
+            "files_without_rows": 9,
+            "columns_checked": 40,
+            "unresolved": 0,
+            "annotations_skipped": 0,
+            "verdict": "PASS"
+          },
+          "boundary": {
+            "files": 1,
+            "files_with_rows": 0,
+            "files_without_rows": 1,
+            "columns_checked": 0,
+            "unresolved": 0,
+            "annotations_skipped": 0,
+            "verdict": "NOT_APPLICABLE_FREEFORM"
+          },
+          "collection": {
+            "files": 12,
+            "files_with_rows": 4,
+            "files_without_rows": 8,
+            "columns_checked": 176,
+            "unresolved": 0,
+            "annotations_skipped": 25,
+            "verdict": "PASS"
+          },
+          "e2e": {
+            "files": 1,
+            "files_with_rows": 1,
+            "files_without_rows": 0,
+            "columns_checked": 297,
+            "unresolved": 0,
+            "annotations_skipped": 12,
+            "verdict": "PASS"
+          },
+          "identity": {
+            "files": 14,
+            "files_with_rows": 8,
+            "files_without_rows": 6,
+            "columns_checked": 372,
+            "unresolved": 0,
+            "annotations_skipped": 52,
+            "verdict": "PASS"
+          },
+          "recovery": {
+            "files": 13,
+            "files_with_rows": 3,
+            "files_without_rows": 10,
+            "columns_checked": 231,
+            "unresolved": 0,
+            "annotations_skipped": 77,
+            "verdict": "PASS"
+          },
+          "reporting": {
+            "files": 14,
+            "files_with_rows": 13,
+            "files_without_rows": 1,
+            "columns_checked": 475,
+            "unresolved": 0,
+            "annotations_skipped": 29,
+            "verdict": "PASS"
+          },
+          "telegram": {
+            "files": 18,
+            "files_with_rows": 13,
+            "files_without_rows": 5,
+            "columns_checked": 252,
+            "unresolved": 0,
+            "annotations_skipped": 29,
+            "verdict": "PASS"
+          },
+          "ui": {
+            "files": 2,
+            "files_with_rows": 2,
+            "files_without_rows": 0,
+            "columns_checked": 121,
+            "unresolved": 0,
+            "annotations_skipped": 13,
+            "verdict": "PASS"
+          }
+        },
+        "counting_method": "one unit per non-underscore key occurrence under rows.<entity>[], counted once per row"
+      }
+    },
+    {
+      "check_id": "E0-16-scenario-catalogue",
+      "title": "acceptance/scenarios.yaml is internally complete",
+      "oracle": "every AC-01..AC-18 has a scenario; every scenario id is unique and contiguous from SC01; every fixture_refs path exists on disk or is the literal MISSING; every error_refs code is registered; every requirement_refs id resolves; every scenario declares an evidence level; and every scenario status is either NOT_RUN or one of `PASS (E1)` / `PASS (E2)` — the only two levels anything has actually been run at. A PASS status is only accepted when (i) the scenario's evidence_level_required is at or below the level claimed, (ii) `status_evidence_refs` is non-empty and every path in it exists on disk, and (iii) `status_scope_vi` says what the run did and did not establish. `PASS (E3)` / `PASS (E4)` are rejected outright: no live probe and no multi-period review has run. Before Phase 0/1 this leg read 'status must be NOT_RUN'; it is now a backing requirement rather than a ban, because four scenarios really were executed and reproduced by an independent auditor.",
+      "status": "PASS",
+      "items_checked": 84,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": []
+    },
+    {
+      "check_id": "E0-18-purge-set-agreement",
+      "title": "The ratified data.purge_all sets partition the entities and every artefact agrees",
+      "oracle": "contracts/data/entities.yaml `TXN-purge-all.tables` is the authoritative enumeration (OD-20260907-01 item 24). The three sets must be pairwise disjoint and cover `entities` exactly. Any artefact that enumerates five or more entity names inside a purge-context span must yield a set EQUAL to one of the three. No artefact may still mark the purge scope undecided (OWNER_DECISION_REQUIRED / PROV-PC00-01 / PROV-PC01-03) except on a line that also names the ratification or the finding that closed it.",
+      "status": "PASS",
+      "items_checked": 17,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": [
+        "authoritative sets: purged 37 · retained 21 · never_purged 2 · union 60 of 60 entities"
+      ]
+    },
+    {
+      "check_id": "E0-17-declared-deviations",
+      "title": "Every declared deviation is well formed and every header exemption is written down",
+      "oracle": "an x-contract.deviations entry carries rule / deviation / reason / evidence_refs. Every path in HEADER_EXEMPT / HEADER_EXEMPT_PREFIX has its exception declared in a readable place (baseline §3 as amended by ruling R-05, precode/adr/README.md, or precode/baseline.json.requirements_csv_contract_header).",
+      "status": "PASS",
+      "items_checked": 5,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [
+        {
+          "where": "contracts/schemas/analysis-result.schema.json",
+          "rule": "[\"TASK_PACKET PKT-PC06 write target: 'output schema ref (analysis-result.schema.json with task-specific `oneOf`)'\", \"agent_profile/protocol.md §10: 'Schema Draft 2020-12 dùng oneOf discriminated `type",
+          "id": "DEV-PC06-01",
+          "declared_fields_ok": true,
+          "synonyms_used": {
+            "rule": "convention_deviated_from",
+            "deviation": "what_this_schema_does_instead",
+            "reason": "reason_vi",
+            "evidence_refs": "finding_ref"
+          }
+        },
+        {
+          "where": "evidence/manifest.schema.json",
+          "rule": "agent_profile/protocol.md §10 — 'Schema Draft 2020-12 dùng oneOf discriminated type'",
+          "id": "DEV-PC09-01",
+          "declared_fields_ok": true,
+          "synonyms_used": {}
+        }
+      ],
+      "notes": [
+        "contracts/schemas/analysis-result.schema.json: deviation 'DEV-PC06-01' uses non-ratified field names deviation->what_this_schema_does_instead, evidence_refs->finding_ref, reason->reason_vi, rule->convention_deviated_from (content present; ruling names are rule/deviation/reason/evidence_refs)",
+        "declared deviation at contracts/schemas/analysis-result.schema.json: [\"TASK_PACKET PKT-PC06 write target: 'output schema ref (analysis-result.schema.json with task-specific `oneOf`)'\", \"agent_profile/protocol.md §10: 'Schema Draft 2020-12 dùng oneOf discriminated `type",
+        "declared deviation at evidence/manifest.schema.json: agent_profile/protocol.md §10 — 'Schema Draft 2020-12 dùng oneOf discriminated type'"
+      ]
+    },
+    {
+      "check_id": "E0-19-generated-matches",
+      "title": "Every GENERATED_FROM.json source hash equals the contract on disk today",
+      "oracle": "For each manifest in shared/rr_contracts/rr_contracts/generated/GENERATED_FROM.json, web/src/generated/GENERATED_FROM.json: the file parses, declares `generator` and a non-empty `sources` list, and every `sources[].path` exists with `sha256` equal to the file's current SHA-256 (and `bytes`, when declared, equal to its size). A mismatch means the contract moved without the generated tree being rebuilt — the 'generate, don't hand-edit' rule of ADR-0011 as a static check. It does NOT prove the generated output is correct or unedited: only re-running the generator (pytest `shared/rr_contracts/tests/test_generated_matches_contracts.py`, vitest / `node web/scripts/generate.mjs --check`) proves that, and those gates stay. `contracts/data/entities.yaml` is intentionally absent from both manifests (CR-P0-06, F-A3R2-04): the database shape is hand-written in the Alembic revisions and is checked by the pytest gate `tests/contract/test_schema_matches_entities.py`, which is a test, not an E0 check.",
+      "status": "PASS",
+      "items_checked": 18,
+      "violation_count": 0,
+      "violations": [],
+      "declared_deviations": [],
+      "notes": [
+        "contracts/data/entities.yaml appears in 0 of the 2 manifests. Absence is INTENTIONAL (CR-P0-06, F-A3R2-04): the generated trees do not track it, so a change to it is caught by the Alembic revisions plus tests/contract/test_schema_matches_entities.py under pytest — the schema gate lives in pytest, not in E0."
+      ]
+    }
+  ],
+  "baseline_hashes": {
+    "acceptance/fixtures/ai/README.md": "6b7ede2bc9866eed00ecdd45d52009fe7c3b895ed3c64764694b42c1f577c6a0",
+    "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+    "acceptance/fixtures/ai/b-instruction-injection-in-post.json": "94db889e48aac2a74c3e645d44143075309d33bbef6010593db64340fee6c05b",
+    "acceptance/fixtures/ai/c-citation-to-unknown-source.json": "c91286d2106f8de49c0bfb0a158157321bb76de21cb03a29816933f886ba6a65",
+    "acceptance/fixtures/ai/d-schema-valid-but-uncited.json": "cf4662a1713d11fd4c60698cc416b0637bd1cfbfb35dce3a86b298e26c52bcbe",
+    "acceptance/fixtures/ai/e-transcript-secret-canary.json": "17c41531562ad41c9a869aa201df018e2973a7df319bff6009dfe7239e125ee1",
+    "acceptance/fixtures/ai/f-tool-request-in-transcript.json": "dac72388abd272b69e62333aecf1b817923807a5726424d342e0b758a17fdedd",
+    "acceptance/fixtures/ai/g-cli-json-embedded-in-prose.json": "d8136a15657e3032a2c1e1b58b4ab04df98c45ff3c6dd63c46d557a79bbf865d",
+    "acceptance/fixtures/ai/h-provider-unavailable-no-fallback.json": "202895c3a8d9816878fc67962286e6da0d0a331b6d81cb1a8c541c48c881545e",
+    "acceptance/fixtures/ai/i-crash-after-provider-completion.json": "0e7563734963fb71666f023d5d84b3a2d819afc3bb76cd9b1de9c3cc2c0dead0",
+    "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json": "9bc1dc1b6404dd1892ce291dd23136f2291e8a40816c4cafbe8d4814516e76f9",
+    "acceptance/fixtures/ai/k-zero-api-key-all-tasks-via-cli.json": "8f46b4c4205f82f72e2093b654b1972344746d6af84369020d4e75f2cef6912f",
+    "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+    "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+    "acceptance/fixtures/collection/a-feed-layout-changed.json": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+    "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+    "acceptance/fixtures/collection/c-challenge-mid-batch.json": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+    "acceptance/fixtures/collection/d-duplicate-ingest-replay.json": "1dc4318167004f3d085fff0b402c9c7bf6c220854db3130c51eb5900d85120fe",
+    "acceptance/fixtures/collection/e-limit-reached-stop.json": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+    "acceptance/fixtures/collection/f-two-workers-claim-same-assignment.json": "92939afbb6896caae0510ea2d34e638ba5a8d74ea94be89bd9755de33dbe0518",
+    "acceptance/fixtures/collection/g-schedule-due-claim.json": "32a9defa30bbbbe334b6e28378b8bcf09f2bc1d002a2fc2275886b6df5ca60ba",
+    "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+    "acceptance/fixtures/collection/i-run-now-while-active.json": "b2b809e1e3fb4ca5553d29ab4eeb3400cdf5af9056e3f96d73eaff1dc64a074e",
+    "acceptance/fixtures/collection/j-dst-boundary-occurrences.json": "d709a547e557842d021e1b65d5a63f4c009e71e06578d3daae2dfff96b5983de",
+    "acceptance/fixtures/collection/k-cancel-from-every-non-terminal.json": "4c7a46b976baac02a2fbe95064f5620c22ac8ae04b84a2fd1f36321a3cb06d76",
+    "acceptance/fixtures/collection/l-storage-write-blocked-mid-run.json": "7f5f751e9f23ea48ddb0623ce38a168967e621a014f2ca954b5852add193aeaf",
+    "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+    "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+    "acceptance/fixtures/identity/README.md": "ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14",
+    "acceptance/fixtures/identity/a-merge-doi-arxiv.json": "8726afee7b87cb0eeb294a91ac8b048f6fff53cd8f47e8e21480fdd04f71ff3a",
+    "acceptance/fixtures/identity/b-post-only-missing-ids.json": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+    "acceptance/fixtures/identity/c-identity-conflict.json": "0aac277eba619e7b2e191d3150bfb0d35af7929bec3768bf0f99b3a992657b63",
+    "acceptance/fixtures/identity/d-concurrent-save-app-telegram.json": "2b5e250ee3c21cd62e3cd87b42939cc0ed00b7d5167ab43ab67958477432b4ae",
+    "acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json": "c2fd418bf32e5870b304508443144e6637355b81526c393a2f0ead3f445900c5",
+    "acceptance/fixtures/identity/f-ingest-replay-idempotent.json": "27839c63e322c1dbdd9fbe98a7d98acc2cd37fa1d1a66f8a9f66ac36aa73a32b",
+    "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+    "acceptance/fixtures/identity/h-five-posts-thread-one-target.json": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+    "acceptance/fixtures/identity/neg-ingest-batch-bad-payload-hash.json": "d52521fa8a72dcab4631e49d99dee5112d97c499f19b2c801335a138042a9f08",
+    "acceptance/fixtures/identity/neg-ingest-batch-empty-items.json": "bc0d2deb84b51e3a254113470a1de07324086a56e88d467af1973c9c9e8fa227",
+    "acceptance/fixtures/identity/neg-ingest-batch-missing-idempotency-key.json": "a6424d8023a43ae94457a3dc77f551b91252daa1da8d2ce9d35f2c2d434b384c",
+    "acceptance/fixtures/identity/neg-ingest-batch-timestamp-precision.json": "39a5c2deab2a7f215d48bfb7c1d6b0590da103ac0b6f4bc5e00c5492dd204151",
+    "acceptance/fixtures/identity/neg-ingest-batch-unknown-field.json": "c57bdd621e1ca75dba3888458ce29c29f972ee6b320fefe0f167acf7e8d17020",
+    "acceptance/fixtures/identity/pos-ingest-batch-valid.json": "00886301c74078211be6720d3c6ec620a0a6355534cd58e73ce267073a0178f9",
+    "acceptance/fixtures/recovery/README.md": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+    "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json": "e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838",
+    "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json": "4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c",
+    "acceptance/fixtures/recovery/c-disk-full-mid-ingest.json": "8f6379b4b0c633ca7d3b48be039671b17ece9da58c1f96067003bf2fb0194092",
+    "acceptance/fixtures/recovery/d-wal-unsafe-copy-detected.json": "64d11f5541826f64888a29b4fcc97af020715370a3d5237bfc9d371b4367a804",
+    "acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json": "3630edc83719ada07cae9b39f5da7ad8d1894379509c96bb1128cf958ca6ea0b",
+    "acceptance/fixtures/recovery/f-secret-canary-injection.json": "3f3a754bd3aed6b0ce56321584f3eadf17df69b0ff08d2cfaea8a13af6617d15",
+    "acceptance/fixtures/recovery/g-ssrf-redirect-private.json": "d5973052f973b738a66c926d98d662e2bb821e7de7e938acbf040f5328dec2ec",
+    "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+    "acceptance/fixtures/recovery/i-collector-token-calls-save.json": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+    "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+    "acceptance/fixtures/recovery/k-delete-target-preserves-saved.json": "0a02102333a7701b92c2b1c5b22032940cc0710d8b5faf98d67181ac16606486",
+    "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json": "9cd382e270e581b1b4ea69ac78f9ddb7730d215d34fadf6ce537a4e1f0dc053a",
+    "acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json": "90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94",
+    "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+    "acceptance/fixtures/reporting/a-tag-removed-before-publish.json": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+    "acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json": "57d26a0a8381b1b76c0c3109358e132a40bd3a2b5873c515bb5c5dcc828bc1c3",
+    "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+    "acceptance/fixtures/reporting/d-empty-period-coverage-only.json": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+    "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+    "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1",
+    "acceptance/fixtures/reporting/g-concurrent-publishers-cas.json": "825a383b20576864f45a8d9fb9be23bc01d04fe8103f9cf0e8275cff8052980e",
+    "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+    "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+    "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json": "b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a",
+    "acceptance/fixtures/reporting/k-builder-crash-backfill-not-consumed.json": "9fce157821143ef6d852a688e033424d8f4191dbedfb47caaa80d9ba9a3b6f82",
+    "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json": "e911021ea43f8d9168ea64da6919735a58c41a379a7e926b566128030939a359",
+    "acceptance/fixtures/reporting/m-density-worked-example.json": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+    "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json": "98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f",
+    "acceptance/fixtures/telegram/README.md": "dbb368afae93bd40530a153769106995643996669a57a26dd2e55fb1ef905863",
+    "acceptance/fixtures/telegram/a-multipart-part2-unknown-no-resend.json": "555bf7edf28f1d7b8b27718bf54d77f79046720cd47035db09a8d9a45846bed6",
+    "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
+    "acceptance/fixtures/telegram/c-permanent-failure-report-intact.json": "2d15cca5df3249dc1d52f94648b617c7bf2cb2a702000f97a5ad5bd1b5631d2b",
+    "acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json": "248cda9cfe131aa4f6f72d36289082895d9d4162e93c7c195f239059d38ece95",
+    "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json": "9289f962019f337d542fe0f044e2d99e1eeb42aa48e7b7605c013b1a2f48ab91",
+    "acceptance/fixtures/telegram/f-stale-callback-no-save.json": "c364bd77a60ac71f2c534714e77329a019756c8198ff353c6ed5052189b4f495",
+    "acceptance/fixtures/telegram/g-link-code-used-twice.json": "db813e76477f1be7d940d30205be25409d4e4b345bc4cc77e28e3b718506ae7b",
+    "acceptance/fixtures/telegram/h-unknown-chat-status-silent.json": "1e368114fb976d708aa131518afe36db932c4df5e42c6dad17c2aa6078032ed2",
+    "acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json": "8fa94e8db3007272fd7888e29778a383d354f8ba79380eaf3fc1186422e0d253",
+    "acceptance/fixtures/telegram/j-concurrent-save-app-telegram.json": "1df94cec7d7b44998cd07ebb5fd6d493f4d33327f7b3190aa6f0929137b8ff5b",
+    "acceptance/fixtures/telegram/k-save-then-source-deleted.json": "8a27e20ffb5611374b3ff566b78e95fe0e3f621fc05bd4787a2f29c94a82b434",
+    "acceptance/fixtures/telegram/l-run-now-while-needs-user.json": "504781a5e21794e0774f9efaae0bbafb5eff92e7945b94e399d36ff5dd1e5350",
+    "acceptance/fixtures/telegram/m-three-run-states-distinct-text.json": "950b336ba3eb0dad18287ec273430235d8e125278fa332cabece5d7e19af33e2",
+    "acceptance/fixtures/telegram/neg-saved-snapshot-bad-hash-format.json": "2b02188603feda3f9050f74bf8345bc3fd2f28aff39dc2633825b4f80a5bb0ac",
+    "acceptance/fixtures/telegram/neg-saved-snapshot-item-without-snapshot.json": "76454f6e05984d307c91526b844f640bd4dd4ea8140024041ecb2a3ef3308acd",
+    "acceptance/fixtures/telegram/neg-saved-snapshot-missing-content-hash.json": "254528d628f9f5e855650ea15045ba9f8af8d28e48ee96b048399945d6f813de",
+    "acceptance/fixtures/telegram/neg-saved-snapshot-summary-missing-limitation.json": "ff348f509d050cb27435d46203ea8bd77b43a6d8ab0e539bf0d5a474f0968df4",
+    "acceptance/fixtures/telegram/neg-saved-snapshot-target-both-ids.json": "2cd134a69a7e83696c25541664cfb8a554b3fba14e5bec22ddda641a37c2c95d",
+    "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
+    "acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json": "5b6e4f52b7558533b0555362fd38cad17ea23bb2349fe6600d08d311b9c5b8d8",
+    "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+    "acceptance/scenarios.yaml": "ca372775e943c49776ae853615bad275054773f8808eab12aa085651ca07ea17",
+    "acceptance/traceability.csv": "b0db908d931e26dff00e37e9b65e66fdfadafce055c21ccd4510e9c111ccda51",
+    "contracts/ai/grounding.md": "b54cec8b3f9f6a9cb2221daaafe8a61a149d0a6686d0d23dcbf7bf9f17995172",
+    "contracts/ai/providers.yaml": "462e5321543df781e53d62b54cdffc819765e56f4d2842c871b82fe068dc1bbc",
+    "contracts/ai/tasks.yaml": "0048bbdd3185fc4b7719014e7d70238c50720766f19e2968cb8e25101bbc05e7",
+    "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+    "contracts/data/entities.yaml": "df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f",
+    "contracts/data/identity.md": "71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd",
+    "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+    "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+    "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+    "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+    "contracts/ops/backup-restore.md": "826655daa469e3e8e2fbd54263f13be78f4e9a17fd490524a3b07f894989ad4f",
+    "contracts/ops/cli-acp-probe.md": "d78f546fdfbeff0388c4d89171179082da6477aea0bdfcd7c85e995fa3f0909b",
+    "contracts/ops/collector-probe.md": "03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1",
+    "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+    "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+    "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+    "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+    "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+    "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+    "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+    "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
+    "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
+    "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
+    "contracts/schemas/report.schema.json": "8bf6bc9ccd6040c06f4ba709ea638e647ab8349e1bac4f26cd6049df76b7ba60",
+    "contracts/schemas/saved-snapshot.schema.json": "1178d314deb8dfdfbe24a9bd4645fd0fd34424fa1db0c237971b3dba3705ce3c",
+    "contracts/schemas/target.schema.json": "d1ce487d2e4ba24b094f702b38a5fcac517443981fe8faea36472089124dc0fd",
+    "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
+    "contracts/state/analysis.yaml": "06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce",
+    "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807",
+    "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+    "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+    "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+    "contracts/telegram/commands.yaml": "fc1a18dac332ea51e63721536d6a47b1d5a3048ed408af24ae787a91874e3556",
+    "contracts/telegram/delivery.md": "cb3a4b30a26f2a5ca5cf9d11359b84ce5612c003dfe51c3acbdbba5d7fde226c",
+    "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+    "precode/baseline.json": "d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd",
+    "precode/requirements.csv": "fbe59d0eaf73ff69281515fc2d03c2673c7dfa3aaa57f110b2ecba079f0c52e8",
+    "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40"
+  },
+  "limitations": [
+    "E0 only. Nothing here proves that any code exists or that any guard runs (SRC-PLAN §14.2).",
+    "Reference checks find dangling references, not missing ones: a relationship nobody wrote down cannot be detected.",
+    "No OpenAPI 3.1 validator is installed in this environment, so contracts/http/openapi.yaml is checked only as YAML plus reference integrity.",
+    "Fixture semantics are read, not executed. A fixture that parses and whose columns resolve is not a passing test.",
+    "The free-text half of E0-12 is heuristic: it reports lines and a human must read them; it can over-report."
+  ]
+}

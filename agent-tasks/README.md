@@ -117,8 +117,13 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-OD01e-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
-pin. Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01d-20260907` ←
+**Pin hiện tại: `PC10-PIN-P1d-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+pin. Lần pin này chạy sau `PKT-PC02-FIX13` (release 11:44Z): `contracts/data/entities.yaml` được sửa **chỉ ở
+phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại, và
+đó là điểm mấu chốt: quy tắc `STALE` đọc **byte**, không đọc ý định. Một ngoại lệ "chỉ là văn xuôi" sẽ biến
+cửa pin thành thứ phải phán đoán mới dùng được, và phán đoán là thứ cơ chế này tồn tại để khỏi cần. Epoch cũ,
+theo thứ tự bị thay: `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
+`PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
 `PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 **Tên epoch được đọc từ card, không chép tay.** Finding `F-A2R1-03` cho thấy vì sao: hai file `precode/` từng
@@ -192,7 +197,7 @@ Bốn file khung của thư mục này — `README.md`, `TEMPLATE.md`, `WALKTHRO
 đặt nhãn mới. Ba ID space do PC10 đưa vào đã được Coordinator chấp nhận: `EVM-<Task ID>` (evidence manifest),
 `SG-<nn>` (stop condition trong card), `PC10-PIN-<epoch>` (pin epoch).
 
-## 5.3 Layout hai ngôn ngữ — Stack B (ACCEPTED)
+## 5.3 Layout hai ngôn ngữ, tám cây — Stack B (ACCEPTED)
 
 Owner chốt **Option B** ngày 2026-09-07 (`OD-20260907-01` mục 3; ADR-0006 nay `accepted`). Phân chia ngôn
 ngữ là **ACCEPTED**; đường dẫn cụ thể vẫn `PROVISIONAL` cho tới khi có repo triển khai; **framework chưa
@@ -204,7 +209,8 @@ collector/  Python   collector chạy trên máy cá nhân (Playwright Python, C
 worker/     Python   analysis worker + AI adapter trên máy cá nhân
 probe/      Python   kịch bản probe SP1 (M0), đầu ra là bằng chứng
 shared/rr_contracts/  Python  model và hằng số **SINH RA** từ contracts/ (Pydantic + enum)
-tests/      Python   tests/contract/… và tests/integration/… cho toàn bộ cây Python
+tools/      Python   CLI vận hành chạy ngoài tiến trình server — hiện đúng một file: tools/backup_cli.py
+tests/      Python   đúng hai thư mục: tests/contract/… và tests/integration/… cho toàn bộ cây Python
 web/        TypeScript
   web/src/lib/       api.ts (client sinh từ contracts/http/openapi.yaml), kiểu dùng chung
   web/src/routes/    read model cho từng SCR-*
@@ -229,7 +235,33 @@ Quy tắc bắt buộc:
   TypeScript (`web/src/lib/api.ts`) đều sinh từ `contracts/`. Sửa tay một file sinh ra là làm code
   và hợp đồng trôi khỏi nhau **âm thầm** — E0 sẽ có thêm phép kiểm "file sinh khớp hash hợp đồng".
   Muốn đổi hành vi ⇒ sửa hợp đồng ⇒ sinh lại ⇒ card `STALE` theo `INV-06`. Xem `precode/adr/ADR-0011`.
+- **`tools/` là cây thứ tám, và nó phải là một cây riêng** (`CR-P0-03` mục 1). `TC-backup-restore-drill` §3
+  pin `tools/backup_cli.py`; đó là `MOD-backup-cli`, thứ mà `contracts/modules.yaml` khai là **một tiến
+  trình CLI riêng** gọi `backup.create_snapshot`, `backup.verify_snapshot`, `backup.restore_snapshot`,
+  `backup.reconcile_after_restore` qua loopback với auth scope `backup_operator` — **không** phải session
+  owner. Một principal khác và một tiến trình khác thì không nằm trong gói ứng dụng server: đặt file này
+  dưới `server/` sẽ làm ranh giới ấy mờ đi ngay ở tầng đường dẫn. Không đường dẫn nào ở §3 của card đổi;
+  đổi là §5.3 nay khai đúng cây mà card đã pin. `evidence/tools/verify_cards.py` đã tính `tools/` là cây
+  Python, nên phép kiểm (m) không báo động sai.
+- **Không có `tests/unit/`** (`CR-P0-03` mục 2 — mâu thuẫn đã gỡ theo hướng **bỏ**). §3 của cả 18 card chỉ
+  dùng `tests/contract/` và `tests/integration/`; Giai đoạn 0 chỉ tạo hai thư mục đó (`tests/README.md`).
+  Khai một thư mục thứ ba mà không card nào ghi vào là mời người ta đặt test ở chỗ không ai kiểm. Card đầu
+  tiên thực sự cần unit test cục bộ sẽ tạo `tests/unit/` **kèm một CR** sửa §5.3, không tự thêm. Lưu ý:
+  `precode/adr/ADR-0011-frameworks-and-toolchain.md` bảng bố cục còn ghi `tests/` = `contract/`, `unit/`,
+  `integration/` và quy nguồn cho §5.3 này — nay lệch. PC10 không được ghi ADR ⇒ `CR-PC10-09`.
+- **Quy chủ `web/src/lib/api.ts` — xác nhận, không đổi** (`CR-P0-04`). File này do **hai card UI**
+  (`TC-ui-runs-three-states`, `TC-ui-reports-detail`) sở hữu, đúng như hai gạch đầu dòng trên. §3 của
+  `TC-owner-auth-session` **ghi server side only** — bảng write set của nó chỉ có `server/app/auth/*` và
+  `tests/*`, kèm một hàng nói thẳng *"nửa trình duyệt của CSRF **không** thuộc card này"*. Card và §5.3
+  **không** mâu thuẫn nhau, nên PC10-FIX15 **không sửa** card đó; thứ lệch là amendment giữa phiên của
+  Coordinator, và văn bản có pin thắng. Nửa server (đặt cookie `rr_csrf`, kiểm header `X-CSRF-Token`) là
+  của `TC-owner-auth-session`; nửa trình duyệt (đọc cookie, gắn header) là của hai card UI.
 - Đổi layout chỉ sửa **§3 và §8** của card. §2, §4, §5, §6, §7 không đổi — hợp đồng độc lập framework.
+- **Bốn card M1 nay đã có code thật dưới `server/` và `tests/`** — `TC-ingest-idempotent-ack-lost`,
+  `TC-canonical-identity-merge`, `TC-owner-auth-session`, `TC-storage-write-blocked-readiness`; handoff ở
+  `evidence/handoffs/TC-*-handoff.md`, cả bốn `DONE_WITH_CONCERNS` và `SELF_VALIDATION`, **đang chờ audit
+  độc lập A3-R2**. Bố cục ở trên vì vậy không còn hoàn toàn là dự định: đường dẫn §3 của bốn card đó nay
+  là file có thật, và đổi chúng là đổi code, không chỉ đổi giấy.
 
 ## 5.2 Scenario và nghĩa vụ default-deny
 
@@ -290,7 +322,46 @@ phải** lỗ hổng, nhưng chúng cũng **chưa được chứng minh** bởi 
 ### Điều phép đo này **không** nói
 
 Nó đo **khả năng với tới của card**, không đo implementation và không đo test. Một REQ "phủ mạnh" chỉ có
-nghĩa là *có một card đáng lẽ phải chứng minh nó*. Chưa card nào chạy; E1–E4 vẫn `NOT_RUN`.
+nghĩa là *có một card đáng lẽ phải chứng minh nó*. Phép đo này chạy khi **chưa card nào chạy**, và nó
+không được cập nhật theo tiến độ code.
+
+**Cập nhật tiến độ (2026-09-07).** Bốn card M1 — `TC-ingest-idempotent-ack-lost`,
+`TC-canonical-identity-merge`, `TC-owner-auth-session`, `TC-storage-write-blocked-readiness` — **đã được
+thi công** (`OD-20260907-02`; handoff ở `evidence/handoffs/TC-*-handoff.md`) và **đang chờ A3-R2**. Cả bốn
+handoff tự khai `DONE_WITH_CONCERNS` với `review_type: SELF_VALIDATION`; **chưa có audit độc lập nào**,
+nên không con số nào ở §5.4 được nâng lên vì việc này. E1 đã chạy thật trong phạm vi bốn card đó; E2–E4
+vẫn `NOT_RUN`. Mười bốn card còn lại chưa bắt đầu.
+
+## 5.5 Bộ khung Giai đoạn 0 đã tồn tại — và tên module để import
+
+**Repo triển khai không còn rỗng.** Owner ra lệnh bắt đầu Giai đoạn 0 và 1 (`OD-20260907-02` mục 2); gói
+`PKT-P0-SKELETON` đã dựng bộ khung của tám cây ở §5.3 (`evidence/handoffs/P0-skeleton-handoff.md`). Điều
+này đổi **hai** thứ cho người đọc card, và không đổi gì khác:
+
+1. Câu "chưa có repo triển khai" trong §3 của card nay **đã hết đúng** cho phần bộ khung. Đường dẫn ở §3
+   vẫn được giữ nguyên chữ như đã pin — chúng vẫn `PROVISIONAL` theo nghĩa *chưa file nghiệp vụ nào tồn
+   tại*, nhưng **thư mục gốc và cách gói được nạp thì đã cố định** và card không được tự đổi.
+2. Hành vi nghiệp vụ vẫn bằng không. Bộ khung chỉ có `health.get_liveness`; `health.get_readiness` **cố ý
+   không được route** vì nó thuộc `TC-storage-write-blocked-readiness`. Không card nào đã chạy; E1–E4 vẫn
+   `NOT_RUN`.
+
+**Tên import (`PROV-P0-01`).** Gốc repo là import root. Ba gói Python được nạp bằng **tên đầy đủ**:
+
+| Cây | Import như thế nào | Không phải |
+| --- | --- | --- |
+| `server/app/…` | `server.app.auth.service`, `server.app.ingest.router`, … | `app.auth.service` |
+| `collector/app/…` | `collector.app.reader`, … | `app.reader` |
+| `worker/app/…` | `worker.app.…` | `app.…` |
+| `shared/rr_contracts/` | `rr_contracts.…` (package thật, cả ba cây đều import) | — |
+
+Lý do là một lỗi thật, không phải khẩu vị: nếu ba cây cùng khai một package top-level tên `app` thì chúng
+**đè lên nhau** trên cùng `sys.path`, và `tests/contract/` cần hai trong ba cùng lúc — `pytest` đã báo
+`import file mismatch` ngay lượt chạy đầu của Giai đoạn 0. `server`, `collector`, `worker` vì vậy là
+workspace member **ảo** (không build/cài), còn `shared/rr_contracts` là package thật.
+
+**Không đường dẫn file nào ở §3 của bất kỳ card nào bị đổi vì điều này.** Thứ bị ràng buộc là **lệnh và
+tên module ở §8**, đúng chỗ card đã khai là `PROVISIONAL`. Card nào cần một tên import khác thì DỪNG và
+raise CR; sửa ngầm sẽ làm hai cây test không cùng nạp được.
 
 ## 6. Đọc thêm
 

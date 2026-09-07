@@ -2,7 +2,7 @@
 # Ngôn ngữ: văn xuôi tiếng Việt; mọi identifier/key/enum bằng tiếng Anh (baseline §3).
 
 contract_id: CT-data-entities
-version: 0.1.0
+version: 0.2.0
 status: accepted
 ratification_ref: OD-20260907-01
 owner_role: data contract owner
@@ -60,6 +60,9 @@ decision_refs:
   - B17
   - AMD-B05
   - ADR-0002
+  - AMD-ENT-owner-01
+  - CR-TC-AUTH-02
+  - CR-TC-AUTH-03
 invariant_refs: [I02, I03, I04, I08, I12, I15, I16, I17]
 producers:
   - MOD-ingest-service
@@ -152,6 +155,103 @@ ratification:
     items:
       - {item: "entities[provider_config].terms_doc_ref", why_vi: "REQ-A5: điều khoản của từng nhà AI chưa được đọc (Pre-code không có mạng). Cột khóa chỗ để ghi; CHECK ck_provider_config_terms_before_enable giữ adapter ở enabled=false cho tới khi có người đọc thật."}
       - {item: "identity.md §9 non-goals (fuzzy title merge, author+year merge, OCR, undo merge)", why_vi: "KC theo thiết kế: cần dữ liệu có nhãn để đánh giá, không phải thiếu quyết định."}
+
+# ---------------------------------------------------------------------------
+# 0b. Amendment sau phê chuẩn
+# ---------------------------------------------------------------------------
+# Mục này ghi mọi thay đổi hợp đồng thực hiện SAU khi file đã ở `CONTRACT_READY`
+# (OD-20260907-01). Quy trình: precode/change-control.md §1 (định dạng CR) và §2 (luật
+# tăng version). Một amendment ở đây KHÔNG tự nâng hay hạ claim_ceiling; nó ghi rằng
+# nội dung đã đổi sau lần phê chuẩn gần nhất, nên phải có một lượt xác minh độc lập mới.
+amendments:
+
+  - amendment_id: AMD-ENT-owner-01
+    date: "2026-09-07"
+    status: PROVISIONAL
+    subject_vi: "`ENT-owner` nhận bốn cột credential và lockout đăng nhập."
+    decision_refs: [CR-TC-AUTH-02, CR-TC-AUTH-03]
+    finding_refs: [F-A3R1-02, F-A3R1-06]
+    version_change: "0.1.0 → 0.2.0"
+    version_rule_vi: >-
+      Sửa theo F-A3R2-01. Bản trước dẫn một khóa quy tắc KHÔNG tồn tại trong
+      `precode/change-control.md`; hai tên đó là khóa của mục 4 trong CHÍNH file này, không phải
+      của file quy trình. Dưới đây chỉ dẫn nguyên văn những hàng thực sự có trong §2 của
+      `precode/change-control.md`. (a) Ba cột nullable rơi đúng hàng minor, nguyên văn:
+      "Thêm trường **optional**, thêm mã lỗi mới, thêm operation mới | minor (`0.1.0 → 0.2.0`)".
+      (b) Ba hàng còn lại của §2 KHÔNG phủ bốn cột này: hàng major thứ nhất nói
+      "Đổi/xóa trường bắt buộc, đổi enum, đổi ngữ nghĩa, đổi `auth_scope`, đổi `idempotency` key,
+      đổi commit point" — đây là THÊM một trường mới, không phải đổi hay xóa một trường bắt buộc
+      đang tồn tại; hàng major thứ hai là "Đổi `transaction` / `commit_point` / invariant" — không
+      mục nào bị đụng; hàng patch là "sửa lỗi chính tả, làm rõ prose, không đổi hành vi" — quá nhẹ.
+      (c) Vậy `failed_login_count` (NOT NULL kèm DEFAULT hằng số) rơi vào một KHOẢNG TRỐNG của §2:
+      §2 không cho phép nó, cũng không cấm nó — §2 chỉ không nói tới việc thêm một cột bắt buộc
+      có DEFAULT hằng số. Nó được xử lý là additive vì bằng chứng migration, không vì một hàng
+      quy tắc: DEFAULT hằng số, không backfill, đúng một hàng `owner` đang tồn tại nhận giá trị 0,
+      không consumer nào đang đọc cột chưa từng có. Mục 4 của chính file này (khóa
+      `additive_only_rules`, danh sách `allowed_without_major_bump`) nói đúng điều đó cho tầng
+      schema — nhưng nó là luật của file này, KHÔNG phải của `precode/change-control.md`, và nó
+      không tự cấp quyền chọn bậc version.
+    deviation_from: "precode/change-control.md §2 (khoảng trống: không có hàng nào cho việc thêm cột NOT NULL có DEFAULT hằng số)"
+    deviation_authority: AUTH-COORD-PC02-FIX13
+    deviation_parent_authority: AUTH-OWNER-20260907-03
+    deviation_change_request: CR-PC10-13
+    deviation_note_vi: >-
+      Ruling của Coordinator (PKT-PC02-FIX13): GIỮ version 0.2.0, KHÔNG bump lại. Lý do ghi ra
+      chứ không giấu: đổi version lần nữa làm mọi card vừa re-pin STALE thêm một vòng để sửa một
+      lỗi TRÍCH DẪN, trong khi thay đổi thực chất của schema không đổi. `CR-PC10-13` yêu cầu PC10
+      bổ sung một hàng cho §2 ("thêm cột NOT NULL kèm DEFAULT hằng số" = minor, kèm điều kiện
+      không backfill) ở bản change-control kế tiếp; tới lúc đó, bậc version ở đây là một
+      DEVIATION có thẩm quyền, không phải một suy diễn từ luật.
+    before_vi: >-
+      `ENT-owner` khai đúng năm trường: `id`, `singleton_guard`, `display_name`,
+      `timezone_iana`, `created_at`. Không trường nào lưu được credential, và không entity nào
+      khác trong file giữ credential của owner.
+    after_vi: >-
+      `ENT-owner` khai thêm đúng bốn trường: `password_hash`, `password_updated_at`,
+      `failed_login_count`, `locked_until`. Mọi trường và ràng buộc cũ giữ nguyên từng chữ.
+    reason_vi: >-
+      `contracts/ops/secrets.md` §2.1–§2.3 (Owner đã chấp nhận qua `PROV-PC08-01`) bắt buộc
+      đúng một tài khoản `owner` với mật khẩu băm Argon2id, và chốt lockout 5 lần đăng nhập
+      sai trong 15 phút ⇒ khóa 15 phút, trả `RATE_LIMITED` kèm `retry_after`. `REQ-D05` nói
+      tài khoản đăng nhập duy nhất, không signup, không quên-mật-khẩu tự động — nên `owner`
+      là entity DUY NHẤT có thể giữ credential đó. Hợp đồng thiếu chỗ lưu là khoảng trống của
+      hợp đồng, không phải chi tiết hiện thực: thiếu nó thì `auth.login` không có state được
+      khai, và lockout buộc phải sống trong bộ nhớ tiến trình (F-A3R1-06 — mất khi khởi động lại).
+    ratification:
+      kind: coordinator_technical_amendment
+      authority: AUTH-COORD-PC02-FIX12
+      parent_authority: AUTH-OWNER-20260907-03
+      basis_vi: >-
+        Amendment kỹ thuật làm hợp đồng khớp với `contracts/ops/secrets.md` mà Owner ĐÃ chấp
+        nhận; nó không thêm một quyết định sản phẩm mới. Vì vậy Coordinator ký được.
+      owner_disclosure_vi: >-
+        Phải trình Owner ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối; nếu phản đối thì
+        bốn cột bị gỡ và credential phải chuyển sang một entity khác do Owner chỉ định.
+        Trạng thái ở đây là `PROVISIONAL`, KHÔNG phải `ACCEPTED (OD-20260907-01)`: biên bản
+        đó không hề nhắc bốn cột này.
+    claim_ceiling_effect_vi: >-
+      `claim_ceiling` của file GIỮ NGUYÊN `CONTRACT_READY` (phạm vi "Data and identity" mà
+      OD-20260907-01 §4 phê chuẩn không bị thu hẹp). Nhưng nội dung đã đổi sau lần xác minh
+      gần nhất, nên A3-R2 PHẢI xác minh lại `ENT-owner` trên epoch mới: bản `CONTRACT_READY`
+      hiện hành được kiểm bởi A2-R4, và A2-R4 không thấy bốn cột này.
+    downstream_vi: >-
+      Sửa theo F-A3R2-04. Bản trước viết `shared/rr_contracts` "phải sinh lại"; điều đó SAI.
+      File này KHÔNG phải nguồn của bộ sinh: nó không xuất hiện trong manifest nguồn của
+      `shared/rr_contracts` (15 nguồn: bảy schema JSON, năm state machine, errors, ports, openapi)
+      cũng như của `web/src/generated`, và `shared/rr_contracts/generate.py` nói thẳng rằng một
+      amendment với entity "correctly produces no diff here". Đây là chủ ý, đã ghi ở `CR-P0-06`.
+      Amendment này tới được code bằng ĐÚNG HAI đường, cả hai viết tay: (1) DDL trong revision
+      Alembic base `0002_base_entities` — nơi DUY NHẤT tạo `owner`, mà revision auth phụ thuộc vào
+      (F-A3R1-01); (2) `tests/contract/test_schema_matches_entities.py` — kiểm thường trực rằng mọi
+      cột sau `alembic upgrade head` phân giải về một trường của file này, kèm NOT NULL/UNIQUE/CHECK
+      mà entity khai. Hệ quả cần nhớ: hợp đồng ↔ migration chỉ được chứng minh GIÁN TIẾP qua test đó
+      (`CR-P0-06` đề xuất một registry entity sinh được để bỏ khâu trung gian; ngoài phạm vi ở đây).
+      Và: mọi task card pin hash của file này chuyển `STALE` (`precode/change-control.md` §4,
+      INV-06/INV-09).
+    not_claimed_vi:
+      - "KHÔNG khẳng định schema đang chạy đã khớp bốn cột này — điều đó do revision Alembic base và `tests/contract/test_schema_matches_entities.py` chứng minh, không do file này. Sinh lại bộ model KHÔNG phải một bước ở đây (F-A3R2-04, CR-P0-06)."
+      - "KHÔNG đóng F-A3R1-02 hay F-A3R1-06; đóng finding thuộc thẩm quyền disposition sau xác minh độc lập."
+      - "KHÔNG khai entity riêng cho login attempt: lockout được đếm TRÊN hàng owner, không có bảng lịch sử đăng nhập."
 
 # ---------------------------------------------------------------------------
 # 1. Quy ước chung
@@ -488,12 +588,21 @@ entities:
       - {name: display_name, type: string, nullable: false, constraints: "1..120 ký tự. Chỉ để hiển thị."}
       - {name: timezone_iana, type: string, nullable: false, constraints: "IANA timezone do owner xác nhận (B08). Giá trị **ACCEPTED**: `Asia/Ho_Chi_Minh` (OD-20260907-01 mục 4)."}
       - {name: created_at, type: timestamp_utc_ms, nullable: false, constraints: "Giờ server."}
+      # --- credential và lockout đăng nhập (AMD-ENT-owner-01; secrets.md §2.1-§2.3, REQ-D05) ---
+      - {name: password_hash, type: string, nullable: true, constraints: "Chuỗi encoded của Argon2id (dạng PHC `$argon2id$...`, đã gồm salt và tham số), theo contracts/ops/secrets.md §2.2. NULL cho tới khi bootstrap đặt mật khẩu lần đầu; NULL nghĩa là CHƯA có credential, không phải mật khẩu rỗng, và `auth.login` phải trả UNAUTHORIZED. KHÔNG BAO GIỜ được trả về bởi bất kỳ read model nào — không nằm trong response schema, không log, không backup config export. Không lưu mật khẩu gốc ở bất kỳ đâu."}
+      - {name: password_updated_at, type: timestamp_utc_ms, nullable: true, constraints: "Lần đặt/đổi mật khẩu gần nhất, giờ server. NULL khi `password_hash` còn NULL. Đổi mật khẩu thu hồi MỌI session (secrets.md §2.3), nên cột này là mốc đối chiếu cho việc thu hồi."}
+      - {name: failed_login_count, type: integer, nullable: false, constraints: "DEFAULT 0. Số lần đăng nhập sai liên tiếp trong cửa sổ hiện hành; đăng nhập đúng đặt lại về 0. Ngưỡng `login_fail_threshold` = 5 lần / 15 phút (secrets.md §2.3, PROV-PC08-01). Cột này ở TRÊN hàng owner để bộ đếm bền qua khởi động lại tiến trình (F-A3R1-06); ghi trong CÙNG transaction với lần thử đăng nhập."}
+      - {name: locked_until, type: timestamp_utc_ms, nullable: true, constraints: "NULL = không bị khóa. Khi `failed_login_count` chạm ngưỡng, đặt `locked_until` = thời điểm hiện tại + `lockout_duration` (15 phút, secrets.md §2.3). Trong khi `locked_until` > giờ hiện tại, `auth.login` trả `RATE_LIMITED` kèm `retry_after`, KHÔNG tiết lộ tài khoản có tồn tại hay không."}
     keys:
       primary: [id]
       unique:
         - {name: ux_owner_singleton, columns: [singleton_guard]}
     versioning: "Không phiên bản hóa. Đổi `timezone_iana` là thao tác settings có audit ở PC03."
-    non_goals: ["Không có bảng user thứ hai, không role, không permission, không signup (REQ-D05)."]
+    amendment_refs: [AMD-ENT-owner-01]
+    non_goals:
+      - "Không có bảng user thứ hai, không role, không permission, không signup (REQ-D05)."
+      - "Không có bảng lịch sử đăng nhập: bốn cột trên chỉ giữ trạng thái HIỆN HÀNH của lockout, không phải nhật ký từng lần thử. Nhật ký thao tác secret thuộc `secret_audit` (PC08)."
+      - "Không có kênh khôi phục mật khẩu tự động (email/SMS): đặt lại credential là thao tác vận hành tại chỗ, ghi vào `secret_audit` (secrets.md §2.1, REQ-S11.1-01)."
 
   - name: settings
     entity_id: ENT-settings

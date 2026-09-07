@@ -1,0 +1,37 @@
+# Job `openapi` — validate contracts/http/openapi.yaml against a real OpenAPI 3.1 validator.
+#
+# docs/master-plan.md §2.4 puts this job FIRST and for a specific reason: the Pydantic
+# models and the TypeScript client are both generated from this one file, so a structural
+# error in it propagates into generated code on BOTH sides. Until Phase 0 nothing had ever
+# validated it (master-plan §1.5, "Validator OpenAPI 3.1 — chưa validator nào chạy").
+#
+# Tool: openapi-spec-validator (the Python option ADR-0011 left PROVISIONAL between it and
+# Redocly CLI). It is pinned in uv.lock together with the rest of the toolchain.
+#
+# This job has NO continue-on-error: the file validates clean as of the Phase 0 run
+# (evidence/handoffs/P0-skeleton-handoff.md, EV-P0-05), so a failure here is a real
+# regression and must block the generation jobs.
+name: openapi
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --frozen
+      - name: Validate the HTTP wire contract (OpenAPI 3.1)
+        run: uv run openapi-spec-validator contracts/http/openapi.yaml
