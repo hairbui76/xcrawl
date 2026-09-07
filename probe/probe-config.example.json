@@ -1,0 +1,49 @@
+{
+  "_doc": "MẪU cấu hình probe SP1. Chép thành file của bạn (KHÔNG commit) rồi sửa. Xem probe/README.md.",
+  "_doc_secrets": "File này KHÔNG chứa secret: không token, không cookie, không mật khẩu. Phiên X nằm trong profile Chrome, không nằm ở đây.",
+
+  "chrome_user_data_dir": "/home/<bạn>/rr-x-profile",
+  "_doc_profile": "BẮT BUỘC là thư mục RIÊNG của dự án (REQ-D09, prerequisite P1). Probe từ chối chạy nếu đường dẫn này là profile Chrome mặc định của bạn.",
+
+  "chrome_channel": "chrome",
+  "x_base_url": "https://x.com",
+
+  "search_terms": ["protein folding", "graph neural networks"],
+  "_doc_terms": "Tag ở đây CHỈ để tìm kiếm trên X (REQ-D24), không phải bộ lọc báo cáo.",
+
+  "output_dir": "evidence/runs/SP1-x-feasibility",
+
+  "max_posts_per_run": 200,
+  "max_duration_s": 1800,
+  "request_min_interval_ms": 2000,
+  "max_scroll_steps_per_term": 60,
+  "_doc_budget": "collector-probe.md §3.2. Có thể đặt THẤP hơn, không bao giờ cao hơn; request_min_interval_ms là SÀN.",
+
+  "owner_confirmations": {
+    "d09_project_chrome_profile": {
+      "confirmed": true,
+      "evidence_ref": "OD-20260907-01 mục 1"
+    },
+    "budget_and_stop_conditions": {
+      "confirmed": false,
+      "evidence_ref": ""
+    },
+    "go_no_go_criteria": {
+      "confirmed": false,
+      "evidence_ref": ""
+    },
+    "account_risk_understood": {
+      "confirmed": false,
+      "evidence_ref": ""
+    }
+  },
+  "_doc_gate": "Bốn xác nhận của collector-probe.md §6. Ba mục dưới đang là OWNER_DECISION_REQUIRED tính đến 2026-09-07: probe TỪ CHỐI mở trình duyệt cho tới khi cả bốn có confirmed=true VÀ evidence_ref trỏ tới câu trả lời BẰNG VĂN BẢN của Owner. Đặt true mà không có văn bản là tự cấp phép cho mình, không phải cấu hình.",
+
+  "extra_markers": {
+    "challenge": [],
+    "session_expired": [],
+    "blocked": [],
+    "rate_limited": []
+  },
+  "_doc_markers": "Chuỗi BỔ SUNG cho bộ dò tín hiệu §4, theo đúng chữ mà tài khoản của bạn thấy. Chỉ thêm được, không xóa được marker mặc định."
+}

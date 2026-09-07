@@ -2863,3 +2863,403 @@ bốn card M1 và `AMD-ENT-owner-01` vẫn `PROVISIONAL`.
 ---
 
 *PKT-PC10-FIX19 · worker-WP · `lease_released_at` 2026-09-07T11:52Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX20 (card thứ 19 cho Giai đoạn 2B + re-pin `P2`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX20` · authority `AUTH-COORD-PC10-FIX20` (parent `AUTH-OWNER-20260907-04`) · lease `LEASE-PC10-e21` (fencing 21) |
+| expires_at | 2026-09-08T20:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| worker | `worker-WP` |
+| trigger | `OD-20260907-03` mục 3: Owner ra lệnh bắt đầu Giai đoạn 2. 2B (`docs/master-plan.md` §3) **không có card** |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T13:05Z / 2026-09-07T13:45Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T13:45Z |
+| **pin epoch mới** | **`PC10-PIN-P2-20260907`** (thay `PC10-PIN-P1d-20260907`) · **19 card** |
+
+## T.0 Wait gate — mở sau 8 phút
+
+Hai điều kiện, cả hai phải đúng: addendum `PKT-PC02-FIX14` trong `PC02-handoff.md` **và** `PKT-PC00-FIX20`
+trong `PC00-handoff.md`, mỗi cái kèm một mốc nhả lease. Mở ở phút thứ 8 (`lease_released_at` 13:27Z và
+13:29Z). Card mới được **soạn** trong scratch trước khi cổng mở — soạn không phải ghi — và **không byte nào
+của repo** bị chạm trước 13:29Z. Trước khi ghi thật, tôi chạy thử card mới trên một **shadow tree** (repo
+symlink + `agent-tasks/` chép, cards sinh vào thư mục tạm): 12/12 check áp dụng được đều PASS, chỉ `epoch`
+bị loại vì bốn file khẳng định pin lúc đó còn ở `P1d`.
+
+## T.1 Card mới — `TC-research-connector-metadata`
+
+| Trường | Giá trị |
+| --- | --- |
+| sha256 / bytes | `1dad8bd2cf20f0af8f233f44d8ee2262e3c3368bdfa5e99f2587f6cd5e9d0853` / 26 381 |
+| milestone / gate | M2 / G5 · owner module `MOD-research-connector` |
+| produces | `research.fetch_work_metadata`, `research.get_connector_health` |
+| consumes | **không operation nào** — `contracts/modules.yaml` khai `outbound_operations: []` cho module này |
+| scenario | `SC11`, `SC23`, `SC29`, `SC30`, `SC07`, `SC49` |
+| invariant | `I03`, `I11`, `I13` |
+| trần | `IMPLEMENTATION_VERIFIED` (E1 với response ghi sẵn) — **module vẫn chưa `CONTRACT_READY`** |
+
+**Điều khó nhất của card này không phải viết code mà là không viết một con số.**
+`contracts/retry-policy.yaml` `research_connector_rate_limit` có bốn giá trị `PLACEHOLDER_KC = null`
+(`arxiv_requests_per_window`, `arxiv_window_seconds`, `openalex_requests_per_window`,
+`openalex_window_seconds`) và một sàn tự đặt `min_interval_ms = 3000`. `REQ-A6` gọi đây là **dữ kiện bên
+ngoài**: Owner phê chuẩn quyết định sản phẩm, nhưng không ai "chấp nhận" thay được hạn mức thật của arXiv.
+Vì vậy §10 của card mang `SG-A6`: connector **đọc bốn giá trị từ settings và từ chối khởi động khi còn
+`null`** — không chạy với sàn rồi coi như xong, vì như thế con số giả sẽ lặng lẽ trở thành hành vi. `SG-IDENT`
+làm điều tương tự cho định danh liên hệ OpenAlex (`REQ-D34`, cũng KC): chưa có thì **không gọi** OpenAlex.
+`SG-LIVE` cấm mọi lời gọi mạng thật trong card; `SG-DOC` cấm bịa URL tài liệu (`CR-PC05-03` ghi rằng hai
+nguồn đã pin **không chứa** URL nào).
+
+Bốn ranh giới còn lại lấy thẳng từ `contracts/ops/collector-probe.md` §9.1 (CN-1…CN-6) và
+`contracts/ops/internet-boundary.md`: chỉ host trong allowlist, chỉ scheme `https`, chỉ ID **đã chuẩn hóa**,
+không nhận chỉ dẫn fetch URL từ model (`I11`, `NC-07`), không điều khiển Chrome (`NC-08`, `FE-20`), và
+metadata thiếu **không** chặn đợt chạy (CN-5: target sống ở `evidence_level = post_only`).
+
+**Ranh giới sở hữu dữ liệu.** Card ghi **đúng một** entity: `source_fetch_log` (`data_owner_of` của module).
+`work`, `work_version`, `identity_alias` **không** thuộc nó — `DC-RC-03` nói connector là read-only với dữ
+liệu authoritative. Bàn giao identity đi qua caller và `server.app.identity.service`; đường truy vết là khóa
+`response_hash` trong `evidence_ref` của `identity_alias` trỏ về cột cùng tên của `source_fetch_log`
+(`contracts/data/identity.md` §7). Tôi **không** thêm cạnh nào vào `contracts/modules.yaml` — card mới không
+được phép sinh quyền mới, và nó không cần.
+
+## T.2 Re-pin `P2` và `dispatch_status` 2A
+
+19 card ở `PC10-PIN-P2-20260907`; tập pin **528 dòng hash / 144 file** (tăng 27 dòng = read set của card
+mới). Phép kiểm hai vùng: **18 card cũ giống hệt ngoài §0** — không chữ nào của §1–§13 đổi.
+
+`TC-x-feasibility-probe` và `TC-collector-checkpoint-resume` nhận
+`dispatch_status: DISPATCHED (OD-20260907-03, 2026-09-07)` ở §0. Dòng đó nói rõ điều nó **không** làm: nó
+**không mở cổng live**. Khẳng định live của probe vẫn bị chặn bởi cổng Owner ở `collector-probe.md` §6 mục
+2–4 (mục 1, D09, đã trả lời ở `OD-20260907-01`) và phải chạy trên máy của Owner.
+
+`agent-tasks/README.md`: bảng thứ tự có hàng 18; đồ thị phụ thuộc có cạnh
+`TC-canonical-identity-merge` → `TC-research-connector-metadata` ← `TC-ingest-idempotent-ack-lost`; §5.3 có
+đoạn về `server/app/research/` (không cây mới; `router.py` **không** mở route công khai vì hai operation là
+`transport: internal`); §5.4 có khối Giai đoạn 2.
+
+**Phủ P0 không được sửa số.** `EV-PC10-06` chạy trên **18** card và tôi **không** chạy lại nó ở gói này.
+§5.4 nay nói thẳng điều đó thay vì để con số cũ trông như thể đã tính card mới. Card thứ 19 chỉ có thể làm
+phủ tăng, không thể làm giảm — nhưng "chỉ có thể tăng" không phải một phép đo, nên không con số nào đổi.
+
+## T.3 Một FAIL thật do generator verifier bắt được — và cách tôi **không** sửa nó
+
+Lần chạy đầu sau khi ghi, bản port trong repo báo **13/13 PASS** còn generator verifier báo **FAIL: 1**:
+`unknown operation_id \`source_fetch_log.response_hash\``. Nguyên nhân là văn xuôi của tôi: một token dạng
+`a.b` trong backtick trông giống một operation ID. Generator quét **toàn card**; bản port chỉ quét **§4**.
+
+Tôi **không** thêm token vào `FIELD_TOKENS` của verifier để nó im, và **không** nới check. Tôi sửa **văn
+xuôi của mình** thành "khóa `response_hash` trong trường `evidence_ref` của `identity_alias`" — nghĩa không
+đổi, và không còn chuỗi nào giả dạng một operation ID. Sau đó cả hai verifier sạch.
+
+Nhưng sự kiện này để lộ một khoảng trống thật: **bản port hẹp hơn ở check (c)** — nó chỉ đọc §4, nên một
+operation ID bịa nằm ở §5/§8 sẽ lọt. Đó là `CR-PC10-13`.
+
+## T.4 Changes
+
+**24 file** (1 CREATE + 23 MODIFY), cộng addendum này.
+
+| Path | Op | After sha256 / bytes |
+| --- | --- | --- |
+| `agent-tasks/TC-research-connector-metadata.md` | **CREATE** (before `ABSENT`) | `1dad8bd2cf20f0af8f233f44d8ee2262e3c3368bdfa5e99f2587f6cd5e9d0853` / 26381 |
+| 18 card cũ | MODIFY | chỉ §0 (epoch + hash + `dispatch_status` trên hai card 2A) |
+| `agent-tasks/README.md` | MODIFY | `a9f8f8cf0a243605e8ab2ee1c2d5eeef9e748cb2eccd479bc1be780b384ffff6` / 29879 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `cc79a0c6af7a96956063b4c693eeb54e2964f28cd9b02274f53532ed43af0d54` / 12781 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `25542a13723c5a00bde9d319b609b013301fd7f15b559df7208f1ae45a3bd333` / 17724 |
+| `precode/README.md` | MODIFY | `6fb909a0881cff633d4c50e45da6431541f54e8f4252235fb6a9b5ace991c72a` / 22589 |
+
+Đúng grant (`agent-tasks/*`, `precode/README.md`, addendum). Không lệnh git, không mạng,
+`PYTHONDONTWRITEBYTECODE=1`, generator chạy từ `…/scratchpad/wp/`. **Không chạm** `contracts/`,
+`acceptance/`, `server/`, `tests/`, `evidence/runs/`, handoff của Worker khác.
+
+## T.5 Evidence (chạy lại lần 19)
+
+**EV-PC10-12:** `verify_cards.py` — **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 387 assertion, 0 violation** trên
+**19 card**. `pins` 528, `epoch` 23 (19 card + 4 file khẳng định), `paths` 745, `operations` 135,
+`scenarios` 285, `errors` 106, `modules` 100, `invariants` 130, `obligations` 95, `claim_labels` 48,
+`pc09_unpinned` 133, `stack` 19, `layout` 1 040. exit 0.
+
+**EV-PC10-01/02 (generator):** **PASS: no failures**; 528 dòng hash / 144 file; epoch từ card
+`PC10-PIN-P2-20260907` (19/19 đồng thuận); 19/19 card đủ `## §0.`…`## §13.`. exit 0.
+
+**EV-PC10-10 (self-test âm):** **14/14 đột biến bị bắt**, exit 0.
+
+*Giới hạn:* `SELF_VALIDATION`. Không phép kiểm nào đọc nghĩa của card mới; nó **chưa được review độc lập**
+và **chưa được thi công**. Không có bằng chứng E1 nào cho `MOD-research-connector` ở gói này.
+
+## T.6 CR
+
+**Mới: `CR-PC10-13` — `evidence/tools/verify_cards.py` check `operations` chỉ quét §4.** Generator quét toàn
+card và đã bắt một token giả dạng operation ID ở §6 mà bản port bỏ qua (§T.3). Đề nghị port mở rộng phạm vi
+quét, kèm một danh sách `FIELD_TOKENS` (token `entity.field` được xác minh với hợp đồng sở hữu nó) đúng như
+generator có, chứ **không** phải một danh sách bỏ qua. Chủ sở hữu: gói sở hữu `evidence/tools/`.
+
+**Ghi nhận, không phải CR:** `EV-PC10-06` (phủ P0) chưa chạy lại cho 19 card. Nó cần
+`acceptance/traceability.csv` và một packet riêng; §5.4 đã ghi rõ con số hiện tại là của 18 card.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC05-03` (không có URL tài
+liệu — chính là thứ chặn `REQ-A6`); `CR-PC06-04`; `REQ-OQ03`; **A3-R2** chưa chạy cho bốn card M1; probe gate
+`collector-probe.md` §6 mục 2–4 chưa mở; SP1 và E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX20 · worker-WP · `lease_released_at` 2026-09-07T13:45Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX21 (sửa văn `TC-x-feasibility-probe` §0 + re-pin `P2b`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX21` · authority `AUTH-COORD-PC10-FIX21` (parent `AUTH-OWNER-20260907-05`) · lease `LEASE-PC10-e22` (fencing 22) |
+| worker | `worker-WP` · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| trigger | `OD-20260907-04`: `REQ-A6` được giải; cổng probe `collector-probe.md` §6 đủ bốn xác nhận; `precode/` chuyển nhiều file |
+| status | `DONE_WITH_CONCERNS` (một CR **BLOCKING** cho card 2B — xem §U.4) |
+| started / finished (UTC) | 2026-09-07T14:05Z / 2026-09-07T14:30Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T14:30Z |
+| **pin epoch mới** | **`PC10-PIN-P2b-20260907`** (thay `PC10-PIN-P2-20260907`) · 19 card |
+
+## U.1 Sửa văn — `TC-x-feasibility-probe` §0
+
+| | sha256 / bytes |
+| --- | --- |
+| trước | `d10d26cf78f35e949d10c65992169ccc5aed8bdc166d004bfcef44193a55b93f` / 20 157 |
+| sau | `5ec0b29861aad754d983e1e3b1c38834f36bb7e108b17adf980788a207ba5a96` / 21 041 |
+
+Câu cũ nói mục 2–4 của `collector-probe.md` §6 **chưa được trả lời**. Sai kể từ `OD-20260907-04`. Tôi đọc
+`collector-probe.md` §6 hiện hành trước khi viết lại, và lấy đúng cách phân biệt của nó thay vì tự diễn đạt:
+
+- Bốn xác nhận **đã đủ** — mục 1 (D09) ở `OD-20260907-01`, mục 2, 3, 4 ở `OD-20260907-04` mục 1.
+- Cổng **mở về mặt HÀNH CHÍNH, không phải về mặt vận hành**: nó gỡ `OWNER_DECISION_REQUIRED` và **không**
+  cho phép Worker/agent/tiến trình tự động nào chạy probe (`OD-20260907-04` mục 1: *"Không Worker nào được
+  chạy nó."*).
+- Probe chỉ chạy **trên máy của chính Owner**, trên **tài khoản X thật của Owner**, sau các bước ở
+  `evidence/handoffs/TC-x-feasibility-probe-handoff.md` §11.
+- **Cổng mở không sinh ra bằng chứng:** mọi số liệu probe vẫn `NOT_RUN`.
+
+Câu này nằm trong khối `dispatch_status` ở **§0**, nên nó nằm trong vùng được cấp và **§1–§13 không đổi một
+byte** (kiểm bằng máy: 19/19 card giống hệt ngoài §0). Cùng dòng đó có trên `TC-collector-checkpoint-resume`
+— cùng khối `dispatch_status` 2A — nên cả hai card nay nói cùng một điều đúng.
+
+**Điều tôi cố ý KHÔNG sửa:** `TC-x-feasibility-probe` §10 `SG-02` vẫn viết *"Chưa đủ bốn xác nhận ⇒
+`OWNER_DECISION_REQUIRED` và probe không được chạy"*. Đó là một câu **điều kiện** và nó vẫn đúng như một
+quy tắc — điều kiện nay đã thỏa. Sửa nó là sửa §10, ngoài vùng được cấp, và nó không nói sai điều gì.
+
+## U.2 Re-pin `P2b`
+
+Tôi tự đọc byte trên đĩa, không dùng hash nào được nhắc trong packet. Xác nhận được: `retry-policy.yaml`
+`version: 0.8.0`, `research_connector_rate_limit.status: DOCS_derived`, bốn giá trị đã điền
+(`arxiv_requests_per_window: 1`, `arxiv_window_seconds: 3`, `openalex_requests_per_window: 100`,
+`openalex_window_seconds: 1`), **không còn** `PLACEHOLDER_KC`; `collector-probe.md` `version: 0.5.0` với §9.2
+đổi tiêu đề thành **RESOLVED (2026-09-07)** và trỏ về `retry-policy.yaml` làm nguồn sự thật.
+
+Re-pin **toàn bộ 19 card trong một lượt** như packet yêu cầu — không chỉ ba card chạm `collector-probe.md`.
+`verify_cards.py` báo 60 vi phạm trước khi bắt đầu; sau khi pin lại: **0**. Tập pin **528 dòng hash / 144
+file**. Bốn file khẳng định pin đã cập nhật.
+
+## U.3 Changes
+
+**23 file MODIFY** (19 card + `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md`, `precode/README.md`),
+cộng addendum này. 0 CREATE, 0 DELETE.
+
+| Path | After sha256 / bytes |
+| --- | --- |
+| `agent-tasks/TC-x-feasibility-probe.md` | `5ec0b29861aad754d983e1e3b1c38834f36bb7e108b17adf980788a207ba5a96` / 21041 |
+| `agent-tasks/TC-research-connector-metadata.md` | `edd02750f084b7cc1ff5ca2961fc23bb044cc6ecae303c0e0815a077a9d99d44` / 26721 |
+| `agent-tasks/README.md` | `624683b00183d39bd5559e8b6436061006befdec701fbfd473b89cacc8d54d7a` / 29907 |
+| `agent-tasks/TEMPLATE.md` | `dd4fab9ebb54b96d5abcb4b3d7614444bed2071487de9dc28cf5e00a2548a1c5` / 12781 |
+| `agent-tasks/WALKTHROUGH.md` | `9c4bc5fe50249d09897383c51561319e522c294730885eb36602d9bb3660a784` / 17774 |
+| `precode/README.md` | `c2a79346698c5fdf2e1e3ad4adf87965decae45d55591865a9b46b0a1025ffe5` / 22617 |
+| 17 card còn lại | chỉ §0 (epoch + hash) |
+
+Không lệnh git, không mạng, `PYTHONDONTWRITEBYTECODE=1`. Không chạm `contracts/`, `acceptance/`, `server/`,
+`collector/`, `tests/`, `evidence/runs/`, handoff của Worker khác.
+
+## U.4 CR
+
+**`CR-PC10-14` — `TC-research-connector-metadata` §10 nay nói sai sự thật · BLOCKING cho card đó.**
+`SG-A6` viết rằng bốn giá trị *"còn `null`"* và connector phải **từ chối khởi động** khi còn null; `SG-IDENT`
+viết rằng định danh liên hệ OpenAlex *"cũng là KC"*. Cả hai **đã hết đúng** sau `OD-20260907-04`:
+`retry-policy.yaml` 0.8.0 điền đủ bốn giá trị (`DOCS_derived`), và tài liệu OpenAlex — theo ghi chép trong
+chính file đó — **không đặt ra** yêu cầu định danh. Trần của card cũng viện lý do *"còn `PLACEHOLDER_KC`"*,
+lý do đó nay sai (kết luận "module chưa `CONTRACT_READY`" thì vẫn đúng, nhưng vì lý do khác —
+`retry-policy.yaml` ghi rõ hết `PLACEHOLDER_KC` **không** tự động nâng module).
+
+Vì sao tôi không sửa: §10 và front-matter **nằm ngoài** write set của packet này (chỉ có §0, epoch refs, và
+một câu ở `TC-x-feasibility-probe`). Vì sao nó gấp: `evidence/handoffs/TC-research-connector-metadata-handoff.md`
+đã tồn tại — card **đã được thi công**, và packet này mô tả connector *"nay kích hoạt trên giá trị mặc định
+đã giải"*. Nghĩa là code đã đi trước card: một reviewer đọc card sẽ thấy một điểm dừng đòi connector **từ
+chối khởi động**, trong khi code đang khởi động. Cần một packet mở §9/§10/front-matter của card đó để viết
+lại `SG-A6`/`SG-IDENT` thành trạng thái đã giải, và ghi lại lý do đúng cho trần claim.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2** chưa chạy; probe **NOT_RUN** (cổng hành chính đã mở, vận hành vẫn của Owner);
+E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`. `CR-PC05-03` (thiếu URL tài liệu) nay **đóng được** —
+`retry-policy.yaml` 0.8.0 có URL + ngày đọc + trích dẫn cho từng dữ kiện; đóng nó là việc của gói sở hữu.
+
+---
+
+*PKT-PC10-FIX21 · worker-WP · `lease_released_at` 2026-09-07T14:30Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX22 (đóng `CR-PC10-14`; epoch `P2c` vì drift giữa chừng)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX22` · lease `LEASE-PC10-e23` (fencing 23) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-07T17:05Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P2c-20260907`** (thay `PC10-PIN-P2b-20260907`) — xem §V.3, đây là điểm đáng đọc nhất của gói |
+
+## V.1 `TC-research-connector-metadata` — ba chỗ nói sai đã sửa
+
+| | sha256 / bytes |
+| --- | --- |
+| trước | `edd02750f084b7cc1ff5ca2961fc23bb044cc6ecae303c0e0815a077a9d99d44` / 26 721 |
+| sau | `6e7edee24edd306b82bc81dcb55e8bcaa661a36ec506f3569f9383470ac6b041` / 29 201 |
+
+Trước khi viết, tôi đọc lại byte thật: `contracts/retry-policy.yaml` `0.8.0`,
+`research_connector_rate_limit.status: DOCS_derived`, bốn giá trị đã điền, không còn `PLACEHOLDER_KC`; và
+`TC-research-connector-metadata-handoff.md` addendum `PKT-TC-RESEARCH-2`.
+
+**`SG-A6`** — điều kiện cũ *"bốn giá trị còn `null`"* đã **hết hiệu lực** và câu đó nay nói vậy. Nhưng tôi
+**không xóa** điểm dừng, vì hai nửa của nó vẫn còn răng: (a) nếu một giá trị bị cấu hình **tường minh**
+thành `null` hoặc không hợp lệ, connector vẫn **từ chối khởi động** thay vì tự chọn số — cơ chế được giữ và
+có test hồi quy; (b) **không ai được đoán một hạn mức**: đổi số đi qua hợp đồng rồi mới tới code, không bao
+giờ ngược lại. Một điểm dừng mất tiền đề không phải một điểm dừng nên biến mất — nó nên nói đúng cái nó
+còn chặn.
+
+**`SG-IDENT`** — không còn gọi dữ kiện định danh là `KC`. Nó nay ghi: **đã giải, và câu trả lời là "không
+có"** — không nguồn nào trong hai nguồn đòi định danh, nên `requires_contact_identity` mặc định `False`,
+**giá trị suy ra từ hợp đồng**, không phải lựa chọn của code. Cơ chế vẫn nằm trong code theo đúng hợp đồng
+và **hiện không kích hoạt**; nguồn đổi chính sách ⇒ sửa hợp đồng trước, code sau.
+
+**Trần claim (front-matter + §9)** — bỏ lý do `PLACEHOLDER_KC`. Module **vẫn** chưa `CONTRACT_READY`, và
+card nay nêu lý do **thật**: chưa hợp đồng nào nêu **host/endpoint API** của arXiv hay OpenAlex (cấu hình
+triển khai; `SG-DOC` vẫn là điều kiện từ chối), cộng với **E3 chưa chạy và bị `SG-LIVE` cấm**. Kèm một ghi
+chú §9 chỉ của card này, vì đoạn boilerplate ngay trên nó liệt kê `REQ-A6` như một KC còn hiệu lực: ghi chú
+nói thẳng rằng với **card này** điều đó không còn đúng, và nhắc rằng nhãn `CONTRACT_READY` **không** thuộc
+quyền của card hay Worker — `retry-policy.yaml` `scope_note_vi` nói rõ hết `PLACEHOLDER_KC` không tự trao
+nó; đó là việc của PC05 và Coordinator trên toàn bề mặt port.
+
+## V.2 Điều tôi **không** làm
+
+Không chạm §1–§8, §11–§13 của card, không chạm card khác về mặt nội dung, không chạm `contracts/`,
+`server/`, `tests/`. Không tự nâng trần module. Không sửa `collector-probe.md` (§9.2 nay đã tự đúng ở
+`0.5.0`).
+
+## V.3 Vì sao vẫn phải đổi epoch, dù packet nói có lẽ không cần
+
+Packet viết: *"no new epoch needed unless your tooling says otherwise"*. **Tooling nói otherwise.**
+
+Khi sinh lại card, generator tính lại hash trực tiếp trên đĩa và **cả 19 card đổi byte**, không chỉ card tôi
+sửa. Nguyên nhân: `precode/decision-register.md` đổi lần nữa **trong lúc gói này chạy**
+(`b2ed138fa636ce3e…` / 138 431 → `058621d0649b798c…` / 144 860, mtime 23:56) — một gói khác đang ghi nó.
+
+Giữ tên `P2b` cho tập byte mới sẽ tạo ra **hai tập pin khác nhau mang cùng một tên epoch**. Đó đúng là lỗi
+mà cơ chế epoch tồn tại để bắt (`F-A2R1-03`): người đọc đi kiểm theo tên sẽ kiểm nhầm vào byte đã cũ mà
+không có gì báo. Nên tôi phát `PC10-PIN-P2c-20260907` và cập nhật bốn file khẳng định pin. §0 của card ghi
+lý do bằng một câu, để lần sau không ai phải đoán vì sao có `P2c` chỉ vài giờ sau `P2b`.
+
+**Lưu ý cho Coordinator:** `precode/decision-register.md` đã đổi **ba lần** trong ba gói PC10 liên tiếp. Chừng
+nào các gói ghi `precode/` còn chạy song song với gói pin card, mỗi lần pin sẽ stale gần như ngay lập tức.
+Đây không phải lỗi công cụ; đó là hai lịch ghi chồng nhau. Nếu muốn một baseline đứng yên, cần một cửa sổ
+đóng băng `precode/` quanh lần pin.
+
+## V.4 Changes
+
+**24 file MODIFY** (19 card + `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md`, `precode/README.md`),
+cộng addendum này. 18 card ngoài card connector chỉ đổi **§0** (epoch + hàng hash `decision-register.md`).
+Không lệnh git, không mạng, `PYTHONDONTWRITEBYTECODE=1`.
+
+## V.5 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 571 assertion, 0 violation** (19 card, epoch
+`PC10-PIN-P2c-20260907`). **Generator verifier:** `PASS: no failures`. **`--self-test`:** **14/14 đột biến
+bị bắt**, exit 0. Tất cả là `SELF_VALIDATION`.
+
+## V.6 CR
+
+**Đóng: `CR-PC10-14`** (do chính tôi mở ở FIX21).
+
+**Mới: `CR-PC10-15` — `precode/` và lần pin card đang tranh nhau.** Ba lần pin liên tiếp
+(`P2`, `P2b`, `P2c`) đều bị `precode/decision-register.md` làm stale trong hoặc ngay sau khi ghi. Đề nghị:
+Coordinator giữ một cửa sổ đóng băng ngắn cho `precode/` khi phát packet pin, hoặc gộp mọi thay đổi
+`precode/` của một vòng vào **một** gói rồi mới pin. Không phải lỗi của công cụ nào.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; A3-R2 chưa chạy; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX22 · worker-WP · `lease_released_at` 2026-09-07T17:05Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX23 (re-pin `P2d` — lần cuối trước freeze)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX23` · lease `LEASE-PC10-e24` (fencing 24) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-08T00:10Z · next actor `Coordinator` (freeze) |
+| **pin epoch mới** | **`PC10-PIN-P2d-20260907`** (thay `PC10-PIN-P2c-20260907`) |
+| trigger | `precode/baseline.json` đổi byte sau `P2c` (`CR-PC00-29`, worker-W1n) ⇒ 19/19 vi phạm `pins` |
+
+## W.1 Re-pin
+
+Trước khi bắt đầu: `verify_cards.py` báo **19 vi phạm**, tất cả cùng một file
+(`precode/baseline.json`), 12 check còn lại PASS — khớp đúng điều Coordinator đã tự kiểm. Sau khi pin lại:
+**0**. Tập pin **528 dòng hash / 144 file**; `baseline.json` nay `ffd1efb3588f8750…` / 112 871.
+
+Phép kiểm hai vùng như mọi vòng: **19/19 card giống hệt ngoài §0** — front-matter và §1–§13 không đổi một
+byte. §0 nay ghi bằng một câu vì sao có ba tên epoch trong cùng một ngày (`P2b` → `P2c` → `P2d`): mỗi lần
+một file đã pin đổi byte ngay sau lần pin trước, và hai tập byte khác nhau **không** được mang chung một tên
+epoch. Câu đó cũng ghi rằng Coordinator nay đã **đóng băng `precode/`** (`CR-PC10-15` được chấp nhận), nên
+đây là lần pin cuối trước freeze.
+
+## W.2 Phạm vi — đúng write set, không hơn
+
+Gói này ghi **đúng 24 file**, tất cả nằm trong write set re-pin đã thỏa thuận:
+
+- 19 card `agent-tasks/TC-*.md` (chỉ §0);
+- `agent-tasks/README.md`, `agent-tasks/TEMPLATE.md`, `agent-tasks/WALKTHROUGH.md`, `precode/README.md`
+  (chỉ dòng epoch);
+- addendum này.
+
+**Không** file nào khác. Cụ thể, gói này **không** chạm `contracts/`, `acceptance/`, `server/`,
+`collector/`, `worker/`, `probe/`, `web/`, `tests/`, `shared/`, `tools/`, `evidence/runs/`,
+`evidence/tools/`, `.github/`, `agent_profile/`, `docs/`, hay bất kỳ handoff nào khác
+`evidence/handoffs/PC10-handoff.md`. Cơ chế ghi chỉ có hai: generator (chỉ ghi `agent-tasks/TC-*.md`) và
+bốn phép thay chuỗi tường minh trên bốn file khẳng định pin.
+
+Ghi chú để Coordinator không nhầm khi soi mtime: trong cùng cửa sổ thời gian, các gói **khác** đã ghi
+`acceptance/traceability.csv`, `contracts/ops/collector-probe.md`, `evidence/handoffs/PC00-handoff.md`,
+`precode/baseline.json`, `precode/decision-register.md`, `precode/owner-decisions-04.md`,
+`precode/requirements.csv` và `.pytest_cache/`. Không cái nào trong số đó là của gói này. Tôi chạy lại
+`verify_cards.py` **sau** những lần ghi đó: vẫn **0 vi phạm**, nghĩa là các file đã pin trên đĩa vẫn khớp
+đúng byte mà card đang khai tại thời điểm bàn giao.
+
+## W.3 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 571 assertion, 0 violation**; epoch
+`PC10-PIN-P2d-20260907` (19/19 card đồng thuận + 4 file khẳng định pin khớp). exit 0.
+
+**Generator verifier (13 phép kiểm a…m):** `PASS: no failures`; 528 dòng hash / 144 file. exit 0.
+
+**`--self-test`:** **14/14 đột biến bị bắt**, exit 0, baseline sạch.
+
+Tất cả là `SELF_VALIDATION`. Không phép kiểm nào đọc **nghĩa** của card; `audit_route` vẫn là
+`INDEPENDENT_REQUIRED`.
+
+## W.4 CR
+
+Không CR mới. `CR-PC10-15` được Coordinator **chấp nhận** và đóng bằng lệnh đóng băng `precode/` — đó là
+cách đóng đúng: không phải sửa công cụ, mà là gỡ hai lịch ghi chồng nhau.
+
+**Còn mở khi freeze:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`;
+`CR-PC06-04`; `REQ-OQ03`; **A3-R2 chưa chạy** cho các card Giai đoạn 1/2; probe `NOT_RUN` (cổng hành chính
+mở, vận hành thuộc Owner); E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX23 · worker-WP · `lease_released_at` 2026-09-08T00:10Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

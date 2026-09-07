@@ -1713,3 +1713,278 @@ vẫn **được cho qua** — một quy tắc chỉ biết từ chối cũng v�
 - **Claim:** `DRAFT_FOR_REVIEW`. Nhãn `IMPLEMENTATION_VERIFIED` vẫn không thuộc về gói này: nó
   thuộc `A3-R2` §5.1, được `A3-R3` §4 nhắc lại nguyên văn, có phạm vi từng card, và tôi chỉ chép
   nó kèm hash của bản gốc.
+
+---
+
+# ADDENDUM — `PKT-PC09-P2` (đăng ký Giai đoạn 2; cổng probe; `F-A3R4-01`)
+
+## S1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P2` · authority `AUTH-COORD-PC09-P2` (cha `AUTH-OWNER-20260907-05`) · lease `LEASE-PC09-e2` |
+| worker principal | `worker-W6n` · mode `DOCUMENTARY_DRAFT` |
+| candidate | `FC-P2`, **466 entry**, `manifest_sha256 dafc1c83ca2108d50ccc5cc700115849b9537be31ff0155f5dd37c7bc5e469f0` |
+| status | **DONE_WITH_CONCERNS** — mọi mục của packet đã làm; bốn CR mới, tất cả là giới hạn của chính gói này |
+| completion_claim | `DRAFT_FOR_REVIEW`. Nhãn `IMPLEMENTATION_VERIFIED` thuộc `A3-P2-R1` §4/§7, có phạm vi từng card; tôi chỉ chép |
+| next actor | `Coordinator` · `lease_released_at` **2026-09-08T00:05Z** |
+
+Nguồn pinned khớp ở cả hai lần kiểm. Không lệnh git mutation, không mạng,
+`PYTHONDONTWRITEBYTECODE=1`, mọi script chạy từ `…/scratchpad/w6p2/`.
+
+## S2. Changes — và một file cố ý KHÔNG được ghi
+
+| Path | Op | Ghi chú |
+| --- | --- | --- |
+| `evidence/index.json` | MODIFY | 72 → **79** bản ghi |
+| `precode/gates.yaml` | MODIFY | `SP1`, `G5`, `G6` — **không cổng nào đổi status** |
+| `precode/review.md` | MODIFY | §15 mới; §4.1 và §8.2 sinh lại |
+| `evidence/tools/e0_check.py` | MODIFY | `F-A3R4-01` |
+| `evidence/runs/E0-…173239Z.json`, `numbers-…`, `cr_summary-…` | CREATE | lần chạy đóng gói |
+| `evidence/handoffs/PC09-handoff.md` | MODIFY | addendum này |
+| **`acceptance/traceability.csv`** | **KHÔNG GHI** | xem S6 |
+
+`W3n` sửa ba dòng của `traceability.csv` trong Giai đoạn 2. Tôi đọc **trạng thái đĩa hiện tại**
+và chạy lại bộ dẫn xuất cột `executed_evidence` trên đó: **0/246 dòng đổi**. Vì không có gì để
+đổi, tôi **không ghi file** — ba dòng của `W3n` giữ nguyên từng byte. Ghi lại một file để nó
+giống hệt chính nó là cách nhanh nhất để vô tình đè lên việc của người khác.
+
+## S3. Đăng ký bằng chứng
+
+**Bảy bản ghi mới** (72 → 79), `71/71 → 79/79` validate với `evidence/manifest.schema.json`:
+
+* **Ba manifest card Giai đoạn 2**, nhúng nguyên văn, đúng những file packet nêu tên —
+  `TC-collector-checkpoint-resume-E1-20260907T135609Z.json`,
+  `TC-research-connector-metadata-E1-20260907T164354Z.json`,
+  `TC-x-feasibility-probe-E1-20260907T140211Z.json` (`result: NOT_RUN`, đúng).
+* **`EV-A3-09`, `EV-A3-10`** — verdict `A3-P2-R1` §4 cho hai card mang nhãn.
+* **`EV-A3-08-round4`** — `A3-R4` (lượt kiểm chính bản sửa `FIX1` của tôi) chưa từng được đăng
+  ký; nó nằm trong `evidence/audits/` từ trước gói này.
+* **`EV-A3-11-p2-overall`** — verdict tổng `A3-P2-R1` §7.
+
+**Card probe cố ý KHÔNG có bản ghi `INDEPENDENT_AUDIT`.** Auditor chấp nhận *bộ công cụ* và viết
+rằng không tồn tại khẳng định feasibility nào "và không được suy ra một cái nào". Một bản ghi
+audit cho card đó sẽ tạo ra đúng suy luận vừa bị cấm.
+
+**Hai manifest cũ chuyển sang `superseded_card_runs`** (`…T132623Z` collector, `…T135805Z`
+connector) — **không xóa**, kèm `superseded_by` và bảng pin nào lệch. Tôi băm lại từng cặp
+`{path, sha256}` của cả 13 manifest trên đĩa: **cả bảy bản được đăng ký đều 0 pin
+bytes-đã-sản-xuất lệch**; file duy nhất mang `STALE_CERTIFICATE` là bản storage bị thay từ Giai
+đoạn 1, và nó không được đăng ký.
+
+## S4. `F-A3R4-01` — đã sửa, và cách sửa quan trọng hơn bản sửa
+
+`A3-R4` §5: note của `E0-12` viết *"their STRUCTURED fields are still checked"*; đúng với
+`.yaml`/`.json`, **sai** với front matter của Markdown, mà **không** phép quét claim nào chạm
+tới — auditor chứng minh bằng cách đặt `claim_ceiling: PRODUCT_ACCEPTED` vào front matter của cả
+một file được miễn **và** một file **không** được miễn, và cả hai **pass**.
+
+Có hai lối: thu hẹp câu chữ, hoặc mở rộng phép đo. Tôi chọn mở rộng, vì front matter **là** một
+tập trường có cấu trúc (`check_headers` đã đọc nó từ đầu, dưới khóa `rel + "#frontmatter"`) —
+thu hẹp câu chữ sẽ hợp lệ nhưng để lại một lỗ thật trong `evidence/handoffs/*.md`, nơi **có**
+tuyên bố claim. Hàm mới `claim_fields()` đọc front matter khi file không phải `.yaml`/`.json`.
+`E0-12` `checked` đi **976 → 1 157**, vi phạm vẫn **0**.
+
+Mutation-test (`selftest_p2.py`) — chính hai phép thử của auditor, đảo ngược, cộng bốn:
+
+| # | Tiêm gì | Kỳ vọng | Quan sát |
+| --- | --- | --- | --- |
+| — | repo không đột biến | PASS | PASS, 0 vi phạm, 1 157 checked |
+| 1 | `PRODUCT_ACCEPTED` trong front matter một `.md` **được miễn** (`evidence/coordination/`) | FAIL | **FAIL** |
+| 2 | `PRODUCT_ACCEPTED` trong front matter một `.md` **không** được miễn (`evidence/handoffs/`) | FAIL | **FAIL** |
+| 3 | `IMPLEMENTATION_VERIFIED` trong front matter một handoff **không** trích A3 | FAIL | **FAIL** |
+| 4 | `IMPLEMENTATION_VERIFIED` trong front matter một handoff **có** trích A3 (đối chứng dương) | PASS | **PASS** |
+| 5 | `PRODUCT_ACCEPTED` trong một `.yaml` coordination (vốn đã đúng, phải giữ đúng) | FAIL | **FAIL** |
+
+**6/6 hành xử đúng đặc tả.** Hai bộ đột biến của các lượt trước cũng được chạy lại trên công cụ
+mới: `selftest_fix1.py` **12/12**, `selftest_p1.py` **11/11** — không quy tắc cũ nào bị bản sửa
+này làm hỏng.
+
+`F-A3R4-01` ở **`FIX_PROPOSED`**, không `VERIFIED`: bản sửa đến sau báo cáo và tôi không được tự
+xác minh nó (protocol §8).
+
+**Về `F-A3-P2-01` và cửa E0:** packet hỏi có cần nới từ vựng cho trạng thái `PARKED` không. **Không.**
+`PROSE_CODE_RE` chỉ khớp token SCREAMING_SNAKE **có gạch dưới**; `PARKED` không có, nên nó chưa
+bao giờ bị `E0-04d` soi. Đã kiểm bằng lần chạy thật chứ không bằng suy luận: 25/25, 0 vi phạm.
+
+## S5. Cổng — không cổng nào chuyển, và đó là kết quả đúng
+
+`SP1` giữ **`NOT_MET`**, và đây là chỗ dễ đọc sai nhất của cả giai đoạn, nên nó được viết ra hai
+lần (ở đây và trong `gates.yaml` khóa mới `SP1.administrative_vs_operational_note_vi`):
+
+* **Điều kiện VÀO nay đã thỏa.** `OD-20260907-04` mục 1 chấp nhận cả ba mục còn lại của
+  `collector-probe.md` §6; D09 đã có từ `OD-20260907-01`. Cổng mở **về mặt hành chính**.
+* **Điều kiện RA thì không.** `SP1-X2` đo **đợt chạy**, và số đợt là **0/5–10**. Rào chắn còn
+  lại là **vật lý và thuộc về Owner**: cài Playwright, đăng nhập tay vào Chrome profile riêng,
+  điền `probe-config.json`, ký bốn `owner_confirmations`. Biên bản nói thẳng: **không Worker nào
+  được chạy nó.** `evidence/runs/SP1-x-feasibility/` chứa đúng một README và một template;
+  **không có `runs.jsonl`**, và sự vắng mặt đó là ĐÚNG.
+
+Một cổng không được đọc là đã đạt chỉ vì các xác nhận hành chính đã tồn tại. `REQ-AC16`,
+`REQ-A1`, `REQ-A7` **không đổi trạng thái**.
+
+`SP1-X3` là điều kiện DUY NHẤT mà Giai đoạn 2 làm **mạnh thêm**: trước đây nó đạt "ở mức hợp
+đồng — chưa có code nên chưa có gì để vi phạm"; nay có code để vi phạm, và `A3-P2-R1` §2 đã đi
+tìm với **mọi socket và DNS bị chặn** và không thấy.
+
+`G5` và `G6` giữ nguyên status; `G6` cập nhật số module có code **4 → 7** và ghi rằng
+`MOD-research-connector` có code nhưng **không** `CONTRACT_READY` (`SG-DOC` + `SG-LIVE`).
+
+## S6. Bốn CR mới — tất cả là giới hạn của chính gói này
+
+| CR | Nội dung |
+| --- | --- |
+| `CR-PC09-18` | `evidence/audits/A3-P2-R1-report.md` **chưa nằm trong repo**; `evidence/audits/` ngoài write set. `EV-A3-11-p2-overall` vì vậy **không ghim được sha256** của báo cáo nó chép — việc đối chiếu hiện phụ thuộc vào lời tôi, đúng thứ mười bản ghi A3 kia tránh được |
+| `CR-PC09-19` | Mẫu id `unresolved_issue_refs` của `manifest.schema.json` chỉ nhận `F-A<n>R<n>-<nn>`, **không chứa được** `F-A3-P2-01`/`-02`. Schema ngoài write set; hai id được nêu trong `not_checked_vi` thay vì bị bỏ |
+| `CR-PC09-20` | `acceptance/scenarios.yaml` ngoài write set → độ phủ scenario của Giai đoạn 2 **chưa được đánh giá**. `G6-X1` vẫn in **4/51**, con số của Giai đoạn 1. Ba card khai chạm 13 scenario; một vài có thể đủ điều kiện chuyển nhãn |
+| `CR-PC09-21` | `evidence/tools/README.md` ngoài write set → §5k của nó vẫn mô tả tầm với **cũ** của `E0-12`. Lệch theo hướng an toàn (tài liệu hứa ÍT hơn công cụ làm) nhưng vẫn là tài liệu không khớp công cụ — đúng lớp lỗi `F-A3R3-01`/`F-A3R4-01` đã bắt hai lần |
+
+## S7. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P2-01` | `e0_check.py --json-out evidence/runs/E0-20260907T173239Z.json` | **25 check · 25 PASS · 0 FAIL · 0 BLOCKED · 0 vi phạm**, exit 0 |
+| `EV-PC09-P2-02` | `selftest_p2.py` (6 đột biến, gồm 1 đối chứng dương) | **6/6 đúng đặc tả** |
+| `EV-PC09-P2-03` | `selftest_fix1.py` + `selftest_p1.py` chạy lại | **12/12** và **11/11** |
+| `EV-PC09-P2-04` | `validate_index.py` | **79 record, 0 invalid** |
+| `EV-PC09-P2-05` | `check_manifests.py` (băm lại từng pin của 13 manifest) | 7 đăng ký: **0 pin sản-xuất lệch** |
+| `EV-PC09-P2-06` | `gate.py` | **CONSISTENT** |
+| `EV-PC09-P2-07` | dẫn xuất `executed_evidence` trên `traceability.csv` đang có trên đĩa | **0/246 dòng đổi** → không ghi file |
+
+Tất cả là `SELF_VALIDATION`, chạy bằng công cụ tôi vừa sửa.
+
+## S8. Mối lo còn lại
+
+1. **`CR-PC09-20` là mối lo lớn nhất.** Sau lượt này, `G6-X1` vẫn đọc **4/51** — và một người
+   đọc dễ hiểu nhầm rằng Giai đoạn 2 đã được đo và không đóng góp gì. Sự thật là **nó chưa được
+   đo**. `§15.5` và `gates.yaml` nói điều đó, nhưng con số vẫn ở đó.
+2. **`F-A3R4-01` chưa được ai độc lập kiểm**; 6/6 là tự kiểm bằng công cụ tôi vừa sửa.
+3. **`F-A3-P2-01`/`-02` PARKED theo ruling, không phải đã sửa.** Hai tham chiếu chéo sai vẫn
+   nằm trên đĩa và một test double vẫn ship trong module sản xuất.
+4. **`AMD-ENT-owner-01`** nay đã được `OD-20260907-03` phê chuẩn — nhưng nhãn của
+   `TC-owner-auth-session` từng nằm trên nó khi nó còn `PROVISIONAL`, và lịch sử đó không mất.
+5. **Dữ kiện `REQ-A6` có hạn** và không tự gia hạn; hai dữ kiện `IDENT` là dữ kiện **âm**.
+6. **Epoch `P2`, `P2b`, `P2c` không kiểm được từng chặng** — bytes không còn ở đâu đọc được.
+7. **E3 và E4 vẫn bằng 0 ở mọi nhóm scenario**; SP1 chưa chạy. `NOT_READY_FOR_PRODUCT_CODE`
+   giữ nguyên cho hệ thống.
+
+## S9. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-08T00:05Z. `LEASE-PC09-e2` nhả tại đây; `worker-W6n`
+  không ghi thêm file nào.
+- **Claim:** `DRAFT_FOR_REVIEW`. Ba card Giai đoạn 2: hai mang `IMPLEMENTATION_VERIFIED` **có
+  phạm vi** theo `A3-P2-R1` §4/§7, một (`TC-x-feasibility-probe`) mang `DRAFT_FOR_REVIEW` và
+  **không** khẳng định feasibility nào.
+
+---
+
+# ADDENDUM — `PKT-PC09-P2-FIX1` (đóng `CR-PC09-20`; xử lý `-19` và `-21`)
+
+## T1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P2-FIX1` · lease `LEASE-PC09-e3` (mở rộng: thêm **đúng 13 dòng SC** của `acceptance/scenarios.yaml`) |
+| worker principal | `worker-W6n` · mode `DOCUMENTARY_DRAFT` |
+| status | **DONE** — `CR-PC09-20` đóng bằng phép đo; `-19` và `-21` được **quyết** chứ không để lửng |
+| next actor | `Coordinator` · `lease_released_at` **2026-09-08T00:45Z** |
+
+## T2. Mười ba dòng, xét từng dòng, **0 chuyển nhãn**
+
+| SC | Cấp đòi | Sau khi xét | Lý do |
+| --- | --- | --- | --- |
+| `SC01` | E2 | `NOT_RUN` | `no_work` + "đăng ký không cấp lease" chạy phía collector; `run`/`assignment_lease` **chưa tồn tại** |
+| `SC03` | E2 | `NOT_RUN` | báo cáo dừng-vì-giới-hạn + resume-từ-checkpoint-server đã chạy; bộ ba `(status, outcome, stop_reason)` là trạng thái server |
+| `SC04` | E2 | `NOT_RUN` | "không tự retry sau challenge" + `STALE_LEASE` đã chạy; `COUNT(outbox_intent …) = 1` không đo được |
+| `SC07` | E1 | `NOT_RUN` | sáu cách viết ⇒ **một** lời gọi metadata (mới); `COUNT(report_item) = 1` vẫn không đo được |
+| `SC11` | **E4** | `NOT_RUN` | cấp đòi E4 — điều kiện thứ nhất của §14.5 chặn nó bất kể code |
+| `SC20` | E2 | `NOT_RUN` | `STALE_LEASE` + heartbeat epoch cũ chạy phía client; bất biến `assignment_lease held = 1` không đo được |
+| `SC21` | E2 | **`PASS (E2)` giữ nguyên** | đã PASS từ Giai đoạn 1; nay **củng cố**: collector tra receipt **trước** khi gửi lại |
+| `SC23` | E1 | `NOT_RUN` | không đổi; selection + đếm AMD-B15 thuộc card báo cáo |
+| `SC29` | E1 | **`PASS (E1)` giữ nguyên** | đã PASS từ Giai đoạn 1; nay **củng cố**: không định danh ⇒ **0 lời gọi mạng** |
+| `SC30` | E1 | `NOT_RUN` | v1/v2 ⇒ một work nay đúng cả ở tầng metadata; generation phân tích vẫn thiếu |
+| `SC39` | E2 | `NOT_RUN` | **dòng gần nhất** — xem T3 |
+| `SC49` | E2 | `NOT_RUN` | phân hoạch 12/10/14 + hai cạnh module nghiên cứu; oracle vẫn đòi **cả ba** cơ chế |
+| `SC50` | E2 | `NOT_RUN` | thêm chặng thu thập và làm giàu, nhưng chưa nối vào một đường chạy |
+
+**Lý do lặp lại mười một lần và nó là CẤU TRÚC, không phải chất lượng.** Oracle của các dòng này
+đếm trạng thái bền trong bảng mà **chưa card nào tạo** — `run`, `assignment_lease`,
+`outbox_intent`, `report`/`report_item`. Code Giai đoạn 2 là code **phía client**: nó chứng minh
+collector và connector cư xử đúng; nó không chứng minh trạng thái server sau đó. Một scenario đo
+hệ thống, không đo một nửa của nó.
+
+**Phạm vi được chứng minh bằng máy, không bằng lời:** tôi parse cả file trước và sau, so từng
+scenario, và **đúng 13 dòng** đổi — chính 13 dòng được cấp. Không dòng nào ngoài chúng bị chạm,
+và **không giá trị `status` nào đổi**.
+
+## T3. `SC39` — dòng dừng lại ở đúng một vế
+
+Mọi thứ **đo được** đã chạy thật: chặn được áp lại **ở từng hop** (redirect theo tay,
+`follow_redirects=False`), DNS rebinding bị chặn theo **địa chỉ** chứ không theo tên, một câu trả
+lời DNS pha trộn bị từ chối **cả cụm** thay vì lọc, bảy dải mà `internet-boundary.md` nêu tên đều
+bị chặn, credential trong URL bị từ chối, vượt trần redirect bị từ chối; và trên fixture
+`recovery/g-ssrf-redirect-private`, kết nối tới loopback và tới dải riêng đều bằng **0** với hop
+bị chặn đúng ở bước **3**.
+
+Vế duy nhất **không đo được**: `COUNT(work_label)` và abstract đã có không đổi sau khi bị chặn.
+Đường chạy bị chặn không ghi gì, và fixture nói đúng điều đó — nhưng bằng **văn xuôi**
+(`work_state_vi`), và **không assertion nào đếm hàng**; trong chính test đó `ctx.repository` là
+`None`. Tôi giữ `NOT_RUN`: **"không đo được" khác "đã sạch"**, và đó là cùng tiêu chuẩn đã giữ
+`SC36` và `SC49` ở `NOT_RUN` từ Giai đoạn 1. Nếu card connector muốn dòng này, nó cần đúng một
+assertion đếm hàng trên đường chạy bị chặn.
+
+## T4. Một con số sai được sửa cùng lúc: **51 → 48**
+
+`G6-X1` từng đọc **4/51**. Mẫu số đúng là **48**: 56 scenario − 5 dòng cấp E3 − 3 dòng cấp E4.
+Sai số do **`PKT-PC09-P1` (tôi)** viết ra và không ai bắt được trong bốn lượt audit. Nó làm cổng
+trông **xa đích hơn** thực tế ba dòng — lệch theo hướng bi quan, nhưng một con số sai theo hướng
+nào cũng là con số sai, và nó đã đứng trong `gates.yaml` suốt hai giai đoạn.
+
+Sau lượt này: **4/48 PASS · 44 `NOT_RUN`**, trong đó **17** dòng mang `partial_evidence_vi`
+(tăng từ 12 — mười một ghi chú mới viết ở lượt này, mỗi ghi chú nói đích danh vế nào đã chạy và
+vế nào không đo được).
+
+## T5. `CR-PC09-19` và `CR-PC09-21` — quyết, không để lửng
+
+* **`CR-PC09-19` → QUYẾT: giữ workaround đã khai, CR ở lại `OPEN` cho gói sở hữu schema.**
+  `evidence/manifest.schema.json` **không** nằm trong write set của lease này (lease chỉ thêm
+  `acceptance/scenarios.yaml`), nên tôi không sửa mẫu id. Hậu quả thực tế nhỏ và đã được đo:
+  `F-A3-P2-01`/`-02` **có mặt và đọc được** nguyên văn trong
+  `limitations.not_checked_vi` của `EV-A3-11-p2-overall`; chúng chỉ không nằm ở trường **có cấu
+  trúc**. Một công cụ quét `unresolved_issue_refs` sẽ không thấy chúng — đó là chi phí, và nó
+  được ghi ra chứ không được giấu.
+* **`CR-PC09-21` → VẪN `OPEN`.** `evidence/tools/README.md` cũng không nằm trong write set này.
+  §5k của nó vẫn mô tả tầm với **cũ** của `E0-12` (trước bản sửa `F-A3R4-01`). Lệch theo hướng
+  **an toàn** — tài liệu hứa ÍT hơn công cụ làm — nhưng vẫn là tài liệu không khớp công cụ, đúng
+  lớp lỗi mà `F-A3R3-01` và `F-A3R4-01` đã bắt hai lần. Bảng đột biến 6/6 nằm ở addendum
+  `PKT-PC09-P2` của chính file này, nên bằng chứng không mất khi tài liệu còn cũ.
+* **`CR-PC09-18`** — không hành động, đúng như packet nói: nó tự giải khi gói đóng gói của `W1n`
+  chép `A3-P2-R1-report.md` vào `evidence/audits/`. Cho tới lúc đó `EV-A3-11-p2-overall` vẫn
+  **không ghim được** sha256 của báo cáo nó chép.
+
+## T6. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P2F1-01` | `e0_check.py --json-out evidence/runs/E0-20260907T174152Z.json` | **25/25 PASS, 0 vi phạm**, exit 0 |
+| `EV-PC09-P2F1-02` | parse `scenarios.yaml` trước/sau, so từng scenario | **đúng 13 dòng đổi**, 0 status đổi, 0 dòng ngoài phạm vi |
+| `EV-PC09-P2F1-03` | `validate_index.py` | **79 record, 0 invalid** |
+| `EV-PC09-P2F1-04` | `gate.py` | **CONSISTENT** |
+| `EV-PC09-P2F1-05` | dẫn xuất `executed_evidence` trên `traceability.csv` | **0/246 dòng đổi** → không ghi file |
+
+## T7. Mối lo còn lại
+
+1. **Bốn mươi bốn dòng vẫn `NOT_RUN`, và phần lớn sẽ không chuyển được cho tới khi card
+   scheduler/report chạy.** Đó không phải điều lượt này sửa được.
+2. **`CR-PC09-21` mở**: tài liệu `E0-12` vẫn cũ.
+3. **`CR-PC09-19` mở**: hai finding id không nằm được ở trường có cấu trúc.
+4. **`F-A3R4-01` vẫn `FIX_PROPOSED`** — bản sửa của tôi chưa được ai độc lập kiểm.
+5. **Sai số `51`** tồn tại suốt hai giai đoạn và bốn lượt audit mà không ai bắt. Nó nhắc rằng
+   một con số dẫn xuất **được in ra** vẫn có thể sai nếu chính bộ sinh không tính nó — `48` nay
+   khớp `numbers.json.scenarios_le_e2`, còn `51` trước đây là số **viết tay**.
+
+## T8. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-08T00:45Z. `LEASE-PC09-e3` nhả tại đây.
+- **Claim:** `DRAFT_FOR_REVIEW`. Lượt này **không** nâng nhãn của bất kỳ scenario hay card nào —
+  nó chỉ thay một khoảng trống bằng một phép đo.

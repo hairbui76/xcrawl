@@ -433,3 +433,46 @@ trung gian. Kiểm lại ngay trước khi giải phóng lease:
   `upgrade head` trên DB rỗng OK
 
 `lease_released_at`: 2026-09-07T11:15Z. Sau dòng này tôi không ghi thêm file nào.
+
+---
+
+# ADDENDUM — PKT-TC-IDENTITY-FIX2 (`CR-TC-research-01`: khẳng định head phải là cấu trúc, không phải tên)
+
+| Trường | Giá trị |
+| --- | --- |
+| `packet_id` | `PKT-TC-IDENTITY-FIX2` · authority `AUTH-COORD-TC-IDENTITY-FIX2` (parent `AUTH-OWNER-20260907-04`) · lease `LEASE-TC-IDENTITY-e2` **chỉ trên** `tests/integration/test_identity_merge_audit.py` |
+| worker principal | `worker-WM` · **status `DONE`** · completion_claim **không đổi**: `IMPLEMENTATION_VERIFIED` |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T15:19Z |
+
+## B1. Lỗi và cách sửa
+
+`test_migration_chain_resolves_to_a_single_head` khẳng định
+`heads == ["0004_merge_phase1_heads"]` — tên **một** revision cụ thể. Đúng ở thời điểm viết, sai
+ngay khi card kế tiếp thêm migration: `server/migrations/versions/0005_tc_research_connector_metadata.py`
+(Phase 2B, **ngoài** lease của tôi) đẩy head sang `0005_…` và test của tôi sẽ làm đỏ toàn bộ suite
+cho **mọi** card, không riêng card này. Đó là một tripwire, không phải một oracle.
+
+Sửa: khẳng định **số lượng** head, không phải danh tính của nó —
+`assert len(heads) == 1, heads` — lấy heads đúng bằng cách cũ (`ScriptDirectory.from_config`).
+Bất biến thật sự là "`alembic upgrade head` không mơ hồ"; *head là revision nào* thay đổi theo mỗi
+card và **đó là đúng**. Docstring ghi lại lý do để không ai "sửa lại" thành so tên.
+Không dòng nào khác trong file bị chạm.
+
+## B2. Hash và kết quả
+
+| Trường | Giá trị |
+| --- | --- |
+| `tests/integration/test_identity_merge_audit.py` **trước** | `0c1e6f4a49965644a193151a7c94ca03f9d0571741e59e35ed15fd73a089edc4` (67 446 B) |
+| `tests/integration/test_identity_merge_audit.py` **sau** | `4c8c957d7cfd8a42b30d43beb28102487b148216e02d851adef28bf6e3b68130` (67 718 B) |
+| File test này | **42 passed, 2 xfailed, 0 failed** (11:17:29Z→11:17:41Z UTC theo đồng hồ phiên) |
+| Toàn bộ suite | **572 passed, 4 xfailed, 0 failed**, exit 0 |
+| `ruff check` + `ruff format --check` trên file | exit 0 |
+
+Không file nào của card khác đang đỏ ở lần chạy này: **0 failed** trên toàn bộ suite. Hai `xfail`
+của card này vẫn là `CR-TC-IDENTITY-02` và `-03` (không đổi); hai `xfail` còn lại thuộc card khác.
+
+Manifest **không** phát hành lại: thay đổi là một khẳng định trong test, không đụng tới code sản
+phẩm, migration hay oracle của fixture; `EV-E1-02-tc-canonical-identity-merge` vẫn mô tả đúng
+hành vi đã đo. Số đếm mới ghi ở bảng trên.
+
+`lease_released_at`: 2026-09-07T15:19Z. Sau dòng này tôi không ghi thêm file nào.

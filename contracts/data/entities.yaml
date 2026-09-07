@@ -167,7 +167,9 @@ amendments:
 
   - amendment_id: AMD-ENT-owner-01
     date: "2026-09-07"
-    status: PROVISIONAL
+    status: ACCEPTED
+    ratified_by: OD-20260907-03
+    ratified_at: "2026-09-07"
     subject_vi: "`ENT-owner` nhận bốn cột credential và lockout đăng nhập."
     decision_refs: [CR-TC-AUTH-02, CR-TC-AUTH-03]
     finding_refs: [F-A3R1-02, F-A3R1-06]
@@ -224,11 +226,21 @@ amendments:
       basis_vi: >-
         Amendment kỹ thuật làm hợp đồng khớp với `contracts/ops/secrets.md` mà Owner ĐÃ chấp
         nhận; nó không thêm một quyết định sản phẩm mới. Vì vậy Coordinator ký được.
-      owner_disclosure_vi: >-
-        Phải trình Owner ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối; nếu phản đối thì
-        bốn cột bị gỡ và credential phải chuyển sang một entity khác do Owner chỉ định.
-        Trạng thái ở đây là `PROVISIONAL`, KHÔNG phải `ACCEPTED (OD-20260907-01)`: biên bản
-        đó không hề nhắc bốn cột này.
+      owner_decision_vi: >-
+        ĐÃ trình và ĐÃ được phê chuẩn. Biên bản `OD-20260907-03` (vòng ba, 2026-09-07,
+        authority `AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) mục 1:
+        Owner phê chuẩn AMD-ENT-owner-01. Bốn cột nay đứng trên quyết định của Owner, không
+        còn trên chữ ký kỹ thuật của Coordinator. `entities.yaml` giữ `CONTRACT_READY`, và nhãn
+        `IMPLEMENTATION_VERIFIED` của card `TC-owner-auth-session` không còn tựa vào một hợp
+        đồng PROVISIONAL.
+      history_vi: >-
+        Giữ lại để đọc được đường đi, không xóa: từ `PKT-PC02-FIX12` (2026-09-07T11:12Z) tới
+        `OD-20260907-03`, mục này mang `status: PROVISIONAL` dưới amendment kỹ thuật của
+        Coordinator, với điều kiện tường minh rằng Owner CÓ THỂ phản đối và khi đó bốn cột bị
+        gỡ. Điều kiện ấy nay đã hết hiệu lực vì Owner đã trả lời — nó KHÔNG bị bỏ đi vì bất
+        tiện. `OD-20260907-01` vẫn KHÔNG nhắc bốn cột này; thẩm quyền phê chuẩn chúng là
+        `OD-20260907-03`, và đó là lý do `ratified_by` ở trên ghi biên bản vòng ba chứ không
+        phải vòng một.
     claim_ceiling_effect_vi: >-
       `claim_ceiling` của file GIỮ NGUYÊN `CONTRACT_READY` (phạm vi "Data and identity" mà
       OD-20260907-01 §4 phê chuẩn không bị thu hẹp). Nhưng nội dung đã đổi sau lần xác minh

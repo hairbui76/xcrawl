@@ -2186,3 +2186,583 @@ README đã nói thẳng điều đó thay vì để người đọc tự phát 
   không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 21.
 - **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
   `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX20 (`OD-20260907-03`: phê chuẩn hai mục, lối vào Giai đoạn 2)
+
+## T1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX20` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX20` (parent `AUTH-OWNER-20260907-04`) · lease `LEASE-PC00-e21` (**fencing 21**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T13:10Z / 2026-09-07T13:29Z · lease expires 2026-09-08T20:00Z (`date -u` trước lần ghi cuối: 2026-09-07T13:27Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T13:29Z |
+| input | `…/scratchpad/packets/OWNER-DECISIONS-20260907-03.md` |
+
+## T2. Đã làm gì
+
+**Tạo `precode/owner-decisions-03.md`** — chuyển ngữ theo đúng khuôn hai biên bản trước: định danh, quy tắc
+chuyển ngữ, **ba** mục nguyên văn, §3 "không được quyết ở vòng này" nguyên văn, §4 năm điều biên bản **không**
+làm, §5 ghi chú ba mục có sắc thái, §6 truy vết. Dòng trỏ ở đầu `precode/owner-decisions.md` nay nói **ba**
+biên bản cộng dồn.
+
+**Điều tôi xử lý cẩn thận nhất: chữ "both".** Chỉ thị của Owner là *"accept both, start phase 2"* — một **đại
+từ**. Biên bản khai rõ nó trỏ vào báo cáo Giai đoạn 0/1 đã nêu **đích danh đúng hai mục**. Tôi chép đúng hai
+mục đó và ghi thành một điều tường minh ở §4 mục 4 rằng mọi `PROV-PC03-*`, `PROV-PC04-*` chưa được nêu,
+`PROV-PC00-05`, `PROV-PC00-06`, `PROV-PC10-*`, `PROV-P0-01` **vẫn `PROVISIONAL`**. Anchor baseline mang một
+trường riêng `pronoun_note_vi` cho việc này, và `ratifies` chỉ có **đúng hai** phần tử. Một đại từ là chỗ dễ
+nới scope nhất trong cả ba biên bản; nếu sổ chỉ ghi "Owner đã chấp nhận" thì vòng sau sẽ không ai biết "cả
+hai" từng là bao nhiêu.
+
+**Hai chỗ tôi từ chối đọc rộng, dù đọc rộng sẽ tiện hơn cho các gói đang chạy:**
+
+1. **"Start phase 2" ≠ được chạy probe.** Biên bản để chữ "Start" và hai cổng chặn trong **cùng một câu**.
+   2A được cấp phép **viết** card và mã; các lần chạy live vẫn bị `collector-probe.md` §6 mục **2–4** chặn và
+   vẫn phải chạy trên **máy của Owner**. `REQ-AC16` và mọi mục `KC` không đổi.
+2. **"Start phase 2" ≠ được viết connector.** Biên bản tự nói *"a card must be written first — none exists"*.
+   Và `REQ-A6` vẫn chặn cứng `CONTRACT_READY` cho tới khi bốn dữ kiện rate/identity đến từ **tài liệu chính
+   thức** — *"không con số nào được đoán"*. Quyền tải tài liệu đó qua mạng nằm trong danh sách **không quyết**
+   của chính biên bản, nên quyền mạng duy nhất vẫn là cài gói PyPI/npm đã khai (`OD-20260907-02` mục 4).
+
+**`PROV-PC00-08` → `ACCEPTED (OD-20260907-03)`** với một câu tôi cố ý viết nặng: rủi ro còn lại được Owner
+**thừa nhận, không phải được xoá**. Ba chế độ hỏng ghi ở đó (ghi ngoài tập ghi không bị chặn; hai Worker song
+song không có fencing thật; không có audit log bền vững do service ghi) vẫn nguyên, và `enforcement` trong
+registry vẫn `NOT_IMPLEMENTED` — có một assertion buộc điều đó. Đây là mục mà `FIX15` đã cảnh báo là đứng trên
+một *suy luận*; nay nó đứng trên một câu trả lời tường minh. Trạng thái cũ giữ lại dưới nhãn "(Lịch sử)".
+
+**`AMD-ENT-owner-01` → `ACCEPTED (OD-20260907-03)`** ở §8.11, kèm đoạn phân biệt điều được gỡ và điều không:
+được gỡ là **tính tạm thời của hợp đồng** (nhãn `IMPLEMENTATION_VERIFIED` của card auth không còn đứng trên
+một amendment do Coordinator ký); **không** được gỡ là verdict của auditor — `A3-R4` §6 ghi per-card claim
+"unchanged", và **một biên bản của Owner không phải một lượt xác minh độc lập**. `entities.yaml` **giữ**
+`CONTRACT_READY`, không được nâng; `F-A3R1-02` và `F-A3R1-06` **không** bị đóng.
+**Tôi không chạm `contracts/data/entities.yaml`** — `worker-W3n` đang cập nhật khối amendment ở packet song
+song; hash rehash để chứng minh: `c61be0a4…`.
+
+**`§8.12` mới** ghi cả ba quyết định thành hàng, cộng hai cổng còn chặn và ba điều hàng go-ahead **không** làm.
+Khác vòng hai: cả **ba** hàng đều mang `ACCEPTED (OD-20260907-03)` vì cả ba đều là câu trả lời tường minh của
+Owner — vòng hai có hai trong năm mục chỉ là suy luận của Coordinator, và sổ giữ đúng sự khác biệt đó.
+
+**`agent_profile/registry.json`** — `AUTH-OWNER-20260907-04` (sáu trường; `scope` mang cả vế phủ định: không
+mở mạng, không quyết `REQ-OQ03`, không phê chuẩn mục `PROVISIONAL` nào khác, không đóng finding, `entities.yaml`
+**keeps** `CONTRACT_READY`, rủi ro **NOT removed**); `coding_phase.status` → `PHASE_2_IN_PROGRESS`;
+`phases_completed` ghi Giai đoạn 0/1 kèm `independent_audit_ref` = `evidence/audits/A3-R4-report.md` và chuỗi
+audit R1→R4; `phase_2_gates_still_shut` ba dòng. **`enforcement` vẫn `NOT_IMPLEMENTED`.**
+
+**Chữ "complete" được định nghĩa hẹp ngay tại chỗ.** `phases_completed[0].note_vi` viết: hoàn tất nghĩa là bốn
+card và skeleton đã có bản sửa được A3 xác minh ở epoch 4 — nó **không** đóng finding nào, **không** nâng
+`product_status`, không nói gì về các card chưa chạy, và E3/E4 vẫn `NOT_RUN`. Một trường tên
+`phases_completed` trong một file máy đọc là chỗ rất dễ bị trích ra khỏi ngữ cảnh; định nghĩa phải đi kèm nó.
+
+**`precode/baseline.json`** — anchor `OD-20260907-03` với `ratifies` (2), `grants` (2), `gates_still_shut` (2),
+`not_decided` (6), `pronoun_note_vi`, `amendment_effect_vi`, `phase_0_1_status` neo vào `A3-R4`.
+
+**`precode/owner-decision-request.md`** — ba dòng vòng ba được điền, và khối "VẪN CHỜ" nay có **ba** mục
+(`REQ-OQ03`, cổng probe §6 mục 2–4, bốn dữ kiện `REQ-A6`/quyền mạng). Banner được sửa: câu "một mục duy nhất
+chưa được trả lời" của vòng hai nay được đánh dấu **chỉ đúng cho thời điểm nó được viết** — vòng ba **mở thêm
+hai câu hỏi** thay vì đóng bớt.
+
+## T3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/owner-decisions-03.md` | **CREATE** | ABSENT | `954642fe5c747833acc8b29c5445e79d17edb96db5ee3083ddefcf21c0e74dd0` (10024) |
+| `precode/owner-decisions.md` | MODIFY | `f608d2e9527061558e9c0247136c7d6d51f24d073981afd40c1f424ef7773bda` (12711) | `58b6b910dbaf92620c62902b7f181ff13faff0005f3f80c52a4012a312781a8a` (12909) |
+| `precode/decision-register.md` ⚠ | MODIFY | `4d1a5d6e5d2a4f0aa3cf165913cc76f07442211715fd0bde9a12da51e82a7244` (114327) | `31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f` (122432) |
+| `precode/baseline.json` ⚠ | MODIFY | `d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd` (104398) | `e9a725c6129a7a7b59f826579516f4c4f9b93b9f13387973b796241ded3e0b55` (107196) |
+| `precode/owner-decision-request.md` | MODIFY | `1a277fbca5c9b398dc95f4eb618cd8b0cd92e0167826fcc8eb9e217e10a2298f` (57906) | `b6fc48e9138814d4ac2d21aec98ab4e2aed85abe699bf190f7bdbf5157247af7` (60285) |
+| `agent_profile/registry.json` | MODIFY | `7f04465121241160363d3ab4ba3a0d2e9177e77f5cb27bf509759474c7effe88` (5909) | `8d7a14f327a83b389287fe5542b7d51860d0ff372669422e2cac197df192c33e` (8363) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `58107568491d6be4214ecaab801bf54168dd51123164bf15fed6af60528b2da0` | *(file này)* |
+
+**⚠ Hai file card-pinned đổi:** `precode/decision-register.md` (`31fa401c…`, 122432) và
+`precode/baseline.json` (`e9a725c6…`, 107196) → lượt re-pin của `CR-PC00-15`. `precode/adr/ADR-0011…`
+(`da5181b2…`) và `precode/adr/README.md` (`097cd5f9…`) **không** đổi ở gói này.
+
+**1 CREATE + 5 MODIFY + 1 APPEND.** Rehash để chứng minh không đổi: `contracts/data/entities.yaml`
+(`c61be0a4…` — **W3n đang giữ**, tôi không chạm), `precode/gates.yaml` (`ab391c6d…`), `precode/review.md`
+(`9c2b7973…`), `precode/requirements.csv` (`fbe59d0e…`), `precode/owner-decisions-02.md` (`ba404207…`),
+`precode/adr/*`. Nguồn `research-radar-spec.md` (`d35e1f2d…`) và `research-radar-pre-code-plan.md`
+(`f65bb046…`) khớp pin. Không chạm `acceptance/`, `agent-tasks/`, `evidence/audits/`,
+`evidence/coordination/`, cây mã. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc` do tôi sinh
+(các bản dưới `.venv/` đã `.gitignore`); không network; không secret.
+
+## T4. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T13:27Z / 2026-09-07T13:27Z · **exit code 0** ·
+  **566 assertion, 566 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1n`.
+- **`EV-PC00-11` mới — ~100 assertion:** 19 trường front-matter; **đúng 3** hàng theo thứ tự; chín chuỗi
+  nguyên văn gồm cả *"không con số nào được đoán"*, hai tên card 2A, hai operation 2B, `collector-probe.md`
+  §6 và "máy của Owner"; năm phát biểu phạm-vi-không-quyết; `PROV-PC00-08` mang `ACCEPTED (OD-20260907-03)`
+  **và** giữ đoạn lịch sử **và** nói rõ rủi ro được *thừa nhận chứ không bị xoá*; §8.11 mang nhãn mới, nói
+  `entities.yaml` giữ `CONTRACT_READY`, nói hai finding **không** bị đóng, nói verdict A3-R4 "unchanged", và
+  nói khối amendment thuộc W3n; §8.12 đúng **3** hàng, **cả ba** mang nhãn vòng ba; bốn authority đúng thứ
+  tự; `AUTH-04` đủ sáu trường và `scope` chứa bảy chuỗi ranh giới; `coding_phase` là `PHASE_2_IN_PROGRESS`
+  với `enforcement` vẫn `NOT_IMPLEMENTED`; anchor baseline `ratifies` **đúng hai** phần tử.
+- **Năm assertion "chống đọc rộng":** `claim_ceiling` của bộ hợp đồng **không** đổi; `REQ-OQ03` **không**
+  được giải; **`REQ-A6` vẫn `KC`**; `product_status`/`enforcement`/`status` của registry **không** đổi; và
+  `OD-20260907-02` **không** được nhắc `AUTH-OWNER-20260907-04` (grant đó ra đời sau nó).
+- **Một assertion đối chiếu thực tế:** file mà registry trỏ tới —
+  `evidence/audits/A3-R4-report.md` — phải **tồn tại thật** trên đĩa, không chỉ là một chuỗi.
+- **Bảy assertion cũ FAIL ở lượt đầu và đã được sửa cho đúng trạng thái mới, không nới lỏng:** ba cái đếm
+  (hai anchor → ba; ba authority → bốn; `coding_phase` so sánh `==` → kiểm bốn khóa bắt buộc cộng hai bất
+  biến, để trường mới không làm vỡ mà vẫn khóa `enforcement`), hai cái theo câu chữ đã đổi, một cái sai chữ
+  hoa, và **một cái là lỗi thật của tôi ở `FIX15`**: `s810 = DR.split("### 8.10")[1]` không có cận trên nên
+  nuốt luôn §8.11 và §8.12, khiến phép đếm "5 hàng" đọc thành 8. Nay cắt tại `### 8.11`. Lỗi đó **không**
+  làm sai văn bản nào — nó chỉ khiến một phép kiểm yếu đi âm thầm cho tới khi có mục mới.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4 ở phạm vi PC00. Một biên bản phê chuẩn **không** tạo
+  bằng chứng kỹ thuật nào; tôi **không** xác minh lại verdict nào của `A3-R4` và **không** kiểm khối
+  amendment trong `entities.yaml`.
+
+## T5. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-20` | **Vẫn mở, nay rộng hơn** — `precode/gates.yaml` và `precode/review.md` chưa phản ánh **cả** `OD-20260907-02` **lẫn** `OD-20260907-03`. G5 và các gate của Giai đoạn 2 đều thuộc PC09. |
+| `CR-PC00-24` **(mới)** | 2B **chưa có task card** — biên bản tự nói vậy. Viết card là việc đầu tiên của 2B, thuộc PC10; card đó **không** được ghi số rate/identity nào cho tới khi `REQ-A6` có dữ kiện thật. |
+| `CR-PC00-25` **(mới)** | `contracts/collector/collector-probe.md` §6 mục **2–4** và bốn dữ kiện `REQ-A6` đã được hỏi riêng nhưng **chưa** có câu trả lời. Cho tới lúc đó: 2A không chạy live, 2B không `CONTRACT_READY`. Cần đưa lên Owner sớm — chúng chặn đúng phần *chạy được* của Giai đoạn 2. |
+| `CR-PC00-22` | `A3-R4` chưa có bản ghi trong `evidence/index.json` |
+| `CR-PC09-18` | `F-A3R4-01` (`PARKED`) — nhãn claim trong front-matter `.md` không được quét |
+| `CR-PC00-15` | Re-pin — nay gồm `decision-register.md` `31fa401c…` và `baseline.json` `e9a725c6…` |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng chưa tồn tại |
+| `CR-PC00-19`, `CR-PC09-15` | Đã giải ở `FIX18` (tự khai) |
+| `CR-PC00-17`, `CR-PC00-16`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+
+**Vì sao `DONE_WITH_CONCERNS`.** Mọi mục của packet đã xong, validate exit 0. Concern là hình dạng của chính
+vòng này: Giai đoạn 2 được **cấp phép bắt đầu** trong khi **cả hai** nhánh của nó đều có một cổng đóng chặn
+đúng phần làm ra bằng chứng — 2A không được chạy probe, 2B không được có một con số thật. Điều đó hợp lệ và
+biên bản nói rõ, nhưng nó nghĩa là Giai đoạn 2 có thể sản xuất **card và mã** mà không sản xuất được **kết
+quả**; nếu hai câu hỏi ở `CR-PC00-25` không được trả lời sớm thì công việc sẽ dừng ở đúng chỗ đó. Tôi ghi lại
+đây thay vì để nó lộ ra ở một handoff sau. Ngoài ra `PROV-PC00-08` nay `ACCEPTED` — cảnh báo của `FIX15` đã
+được Owner trả lời, và tôi rút nó khỏi danh sách khuyến nghị.
+
+## T6. Trạng thái bàn giao (FIX20)
+
+- **next actor:** `Coordinator` — rehash bảy file ở §T3; `CR-PC00-24`, `CR-PC00-25`, `CR-PC00-20` cần được
+  giao; W7 re-pin hai file card-pinned.
+- **lease_released_at (UTC):** 2026-09-07T13:29Z. `LEASE-PC00-e21` (fencing 21) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §T3) và lease fencing ≥ 22.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX21 (`OD-20260907-04`: cổng probe mở, quyền mạng hẹp cho `REQ-A6`)
+
+## U1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX21` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX21` (parent `AUTH-OWNER-20260907-05`) · lease `LEASE-PC00-e22` (**fencing 22**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T15:10Z / 2026-09-07T15:27Z · lease expires 2026-09-08T20:00Z (`date -u` trước lần ghi cuối: 2026-09-07T15:26Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T15:27Z |
+| input | `…/scratchpad/packets/OWNER-DECISIONS-20260907-04.md` |
+
+## U2. Đã làm gì
+
+**Tạo `precode/owner-decisions-04.md`** — chuyển ngữ **hai** mục nguyên văn, §3 "không quyết ở vòng này:
+không có" nguyên văn, §4 sáu điều biên bản **không** làm, §5 ghi chú hai mục có sắc thái, §6 truy vết, và
+**§7 mới** (xem §U3). Dòng trỏ ở `precode/owner-decisions.md` nay nói **bốn** biên bản cộng dồn.
+`decision-register` nhận **§8.13**; `owner-decision-request.md` nhận phiếu vòng bốn và khối "VẪN CHỜ" rút
+còn **một** mục; `baseline.json` nhận anchor `OD-20260907-04`; `registry.json` nhận
+`AUTH-OWNER-20260907-05` cùng `phase_2_gates_opened`.
+
+**Hai phân biệt tôi giữ chặt, vì cả hai đều dễ bị đọc rộng:**
+
+1. **Cổng probe mở về HÀNH CHÍNH, không mở về VẬT LÝ.** §6 mục 1–4 nay đều thỏa. Nhưng probe vẫn chạy trên
+   tài khoản X thật và máy thật của Owner, sau khi **Owner tự** cài Playwright, đăng nhập tay, điền
+   `probe-config.json` và ký bốn `owner_confirmations`. Biên bản viết thẳng: **không Worker nào được chạy
+   nó.** Câu đó được chép vào cả bốn nơi (record, register, registry `scope`, baseline anchor) vì một
+   handoff sau viết "cổng probe đã mở" mà dừng ở đó sẽ bị đọc thành "probe đã chạy được". Thêm nữa: ba mục
+   vừa chấp nhận đều là **ngưỡng `PROVISIONAL` do PC05 đề xuất** (§3 ngân sách; §7 `GO-1`..`GO-7`) —
+   "chấp nhận" là đồng ý dùng làm tiêu chí, **không** phải đã hiệu chỉnh bằng dữ liệu.
+2. **Quyền mạng được ghi bằng CẢ HAI chiều.** Biên bản nêu **đích danh** hai host bị cấm
+   (`export.arxiv.org`, `api.openalex.org`) chứ không dừng ở "chỉ trang tài liệu" — và điều đó có ý nghĩa,
+   vì `arxiv.org` và `export.arxiv.org` thuộc **cùng một tổ chức**. Tôi giữ cả danh sách cho phép lẫn danh
+   sách cấm ở mọi nơi ghi lại, kèm mệnh đề bao trùm "bất kỳ endpoint live nào — không lưu lượng API thật".
+
+**`REQ-A6` KHÔNG được đánh dấu đã giải**, đúng như packet dặn: register §8.13 mở đầu bằng "**`REQ-A6` VẪN
+`KC`**", và `requirements.csv` **không** bị chạm (`fbe59d0e…`).
+
+## U3. Điều tôi phát hiện khi kiểm, không có trong packet
+
+**(a) Đường dẫn probe tôi ghi sai ở `FIX20`.** `FIX20` viết `contracts/collector/collector-probe.md`;
+file thật là **`contracts/ops/collector-probe.md`**. Đường dẫn đó là do tôi tự thêm — biên bản vòng ba chỉ
+nói "collector-probe.md". Đã sửa ở **hai** chỗ trong write set của gói này: `decision-register.md` §8.12 và
+`baseline.json` (anchor `OD-20260907-04` trước đó của vòng ba). Còn **một** chỗ sai ở
+`precode/owner-decisions-03.md` (front-matter `source_refs` và bảng mục 3) — file đó **ngoài** write set của
+packet này nên tôi **không** sửa → `CR-PC00-28`. `validate.py` nay có một assertion cấm chuỗi sai xuất hiện
+trong register và baseline, cộng một assertion đòi file `contracts/ops/collector-probe.md` **tồn tại thật**.
+
+**(b) Packet tìm dữ kiện đã land MỘT NỬA trong lúc tôi viết.** `contracts/retry-policy.yaml` (đọc lúc
+15:23Z, `d81192d8…`) cho thấy `worker-WF` (`PKT-PC03-FIX-REQA6`) đã điền phần **arXiv** có trích dẫn:
+`arxiv_requests_per_window = 1`, `arxiv_window_seconds = 3`, cộng một dữ kiện **mới** mà sàn cũ không phủ —
+`arxiv_max_concurrent_connections = 1`; yêu cầu định danh của arXiv là `RESOLVED_NEGATIVE`. Nếu tôi để
+nguyên câu "bốn giá trị `null`" ở **thì hiện tại** thì tài liệu của tôi sai ngay khi ai đó mở file. Xử lý:
+câu trong §4 mục 2 được đặt lại thành **trạng thái tại thời điểm biên bản ban hành**, và **§7 mới** ghi
+trạng thái quan sát được lúc 15:23Z, khai rõ đó là **quan sát của PC00, không phải nội dung biên bản**.
+Register §8.13 và anchor baseline mang cùng ghi chú.
+
+**(c) Nửa OpenAlex bị chặn bởi ranh giới quyền, không phải bởi thiếu nỗ lực — và cần một quyết định mới.**
+`worker-WF` ghi lại: mọi đường dẫn dưới `docs.openalex.org` trả `301` sang **`help.openalex.org`**, một host
+**không** nằm trong bốn host mà `OD-20260907-04` cấp; `openalex.org` trả `403`. Họ **dừng** thay vì đi theo
+redirect — đúng (`protocol.md` §3 cấm tự mở scope). Hệ quả: `research_connector_rate_limit` **vẫn**
+`PLACEHOLDER_KC`, hai giá trị OpenAlex cộng `openalex_identification_required` **vẫn** `null`, `REQ-A6`
+**vẫn** `KC`. Giải nốt cần **mở rộng grant** thêm `help.openalex.org` — một amendment thuộc thẩm quyền
+Owner, **không** phải một con số nhớ được. → **`CR-PC00-27`**, và tôi đề nghị đưa lên cùng vòng với
+`REQ-OQ03` vì nó chặn đúng phần *chạy được* của 2B.
+
+**(d) E0 FAIL do chính tôi gây ra ở `FIX20`, đã sửa.** `e0_check.py` `E0-12` báo 1 violation:
+`precode/owner-decision-request.md` khẳng định nhãn `IMPLEMENTATION_VERIFIED` trong **prose không có
+backtick** — đúng loại câu mà luật cấm. Tôi thêm backtick cho **cả hai** lần xuất hiện trong khối phiếu trả
+lời vòng ba (file này nằm trong write set của gói). E0 sau đó **25/25 PASS, 0 violation**. Đây là lần thứ
+hai một phép kiểm bắt được lỗi của tôi trong ba gói — và nó bắt đúng.
+
+## U4. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/owner-decisions-04.md` | **CREATE** | ABSENT | `d523945aca4efbfb0c09edd6a955e877921b4851bd5577556c94faf984884a86` (13058) |
+| `precode/owner-decisions.md` | MODIFY | `58b6b910dbaf92620c62902b7f181ff13faff0005f3f80c52a4012a312781a8a` (12909) | `c2cd20a6daa6c0d4b8ab2baccf267484e6116dae720d06b1b625265019f40d44` (13241) |
+| `precode/decision-register.md` ⚠ | MODIFY | `31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f` (122432) | `8285ae90ad6b1187ed1e3bd3616a36093ab4f656a5147586e4382bd6f915c296` (132927) |
+| `precode/baseline.json` ⚠ | MODIFY | `e9a725c6129a7a7b59f826579516f4c4f9b93b9f13387973b796241ded3e0b55` (107196) | `d25a856452ea0012eea4de1ad063054b4c49b92d5a7e71a4a982e3f25e56d1ef` (111009) |
+| `precode/owner-decision-request.md` | MODIFY | `b6fc48e9138814d4ac2d21aec98ab4e2aed85abe699bf190f7bdbf5157247af7` (60285) | `5303e7326c71476a3e41883f235b9b42fe321e6e847f0e71c2312bcb67f15cd4` (61863) |
+| `agent_profile/registry.json` | MODIFY | `8d7a14f327a83b389287fe5542b7d51860d0ff372669422e2cac197df192c33e` (8363) | `0965f48a63d5c6e55cc7fc143360be8a2d560d5ef2911d9d929c71f7b7029ea8` (11113) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `15f41bc45530a01d1a98726835efc1a099dffdbca2d0a072a90fb30ea2572b20` | *(file này)* |
+
+**⚠ Hai file card-pinned đổi:** `decision-register.md` (`8285ae90…`, 132927), `baseline.json`
+(`d25a8564…`, 111009) → `CR-PC00-15`.
+
+**1 CREATE + 5 MODIFY + 1 APPEND.** Rehash chứng minh **không** đổi: `contracts/retry-policy.yaml`
+(`d81192d8…` — **`worker-WF` đang giữ**, tôi chỉ đọc), `contracts/ops/collector-probe.md` (`03e88010…` —
+PC05), `precode/requirements.csv` (`fbe59d0e…` — `REQ-A6` vẫn `KC`), `precode/gates.yaml` (`ab391c6d…`),
+`precode/owner-decisions-02.md`, `-03.md`, `precode/adr/*`. Nguồn `research-radar-spec.md` (`d35e1f2d…`) và
+`research-radar-pre-code-plan.md` (`f65bb046…`) khớp pin. Không chạm `acceptance/`, `agent-tasks/`,
+`evidence/audits/`, `evidence/coordination/`, cây mã. Không lệnh git thay đổi repo; không `__pycache__`/
+`.pyc` do tôi sinh; **không network** (tôi không tải một trang nào — quyền mạng của `OD-20260907-04` thuộc
+packet khác); không secret.
+
+## U5. Evidence
+
+- **`validate.py`:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py` —
+  **exit code 0**, **674 assertion, 674 PASS, 0 FAIL**, chạy 2026-09-07T15:25Z. `SELF_VALIDATION`, producer
+  `worker-W1n`.
+- **`e0_check.py` (chỉ đọc, theo yêu cầu packet):** `PYTHONDONTWRITEBYTECODE=1 python3
+  evidence/tools/e0_check.py --repo .` — **exit code 0**, **25 check: PASS 25 · FAIL 0 · BLOCKED 0 ·
+  violations 0**, chạy 2026-09-07T15:26Z. **Lần chạy trước lúc 15:25Z FAIL 1 violation** (§U3 mục d); tôi
+  ghi cả hai lần chạy chứ không chỉ lần xanh — một kết quả E0 xanh sau khi sửa không xoá việc nó từng đỏ.
+- **`EV-PC00-12` mới — ~70 assertion:** 19 trường front-matter; đúng **2** hàng; mười một chuỗi nguyên văn
+  gồm bốn host được phép và hai host bị cấm; ba yêu cầu bằng chứng (URL + ngày + trích dẫn); bốn phát biểu
+  "không được đọc rộng"; §8.13 đúng **2** hàng đều mang nhãn vòng bốn, có `REQ-A6 VẪN KC`, có phân biệt
+  hành chính/vật lý; `AUTH-05` đủ sáu trường với tám chuỗi ranh giới trong `scope`; `phase_2_gates_opened`
+  hai mục; anchor baseline đủ `network_grant` hai chiều và sáu `not_decided`.
+- **Bảy assertion đối chiếu THỰC TẾ trên đĩa** (không phải văn bản với chính nó): `contracts/ops/collector-probe.md`
+  **tồn tại**; chuỗi đường dẫn sai **không còn** trong register/baseline; `retry-policy.yaml` **vẫn**
+  `PLACEHOLDER_KC`; hai giá trị OpenAlex **vẫn** `null`; `requirements.csv` giữ `REQ-A6` ở `KC`; và **hai
+  assertion hai chiều** buộc câu "nửa arXiv đã giải" trong record và register **khớp** với việc
+  `arxiv_requests_per_window: 1` có thật trên đĩa — nếu Worker kia rollback, validate FAIL thay vì tài liệu
+  của tôi âm thầm nói sai.
+- **Chín assertion cũ được sửa cho đúng trạng thái mới, không nới lỏng** (đếm anchor/authority/cổng, câu chữ
+  đã đổi, và **một lỗi thật của tôi ở `FIX20`**: `s812 = DR.split("### 8.12")[1]` thiếu cận trên nên nuốt
+  luôn §8.13 — nay cắt tại `### 8.13`. Đây là **cùng một lỗi** tôi đã mắc với §8.10 ở `FIX20`; nếu còn thêm
+  mục §8.x nữa thì nên viết một helper cắt đoạn thay vì lặp `split` bằng tay).
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4 ở phạm vi PC00. Tôi **không** xác minh lại trích dẫn
+  arXiv của `worker-WF`, **không** tự truy cập mạng, và **không** kiểm `contracts/ops/collector-probe.md`
+  §3/§7 xem ba mục Owner vừa chấp nhận có hợp lý hay không — tôi chỉ ghi rằng Owner đã chấp nhận chúng.
+
+## U6. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-27` **(mới)** | **Cần một quyết định Owner mới:** mở rộng grant `OD-20260907-04` mục 2 thêm host `help.openalex.org` (nơi `docs.openalex.org` `301` tới). Không có nó, hai giá trị OpenAlex và `openalex_identification_required` **không thể** giải, `REQ-A6` **vẫn** `KC`, và 2B **không thể** `CONTRACT_READY`. Đề nghị đưa lên cùng vòng với `REQ-OQ03`. |
+| `CR-PC00-28` **(mới)** | `precode/owner-decisions-03.md` còn mang đường dẫn sai `contracts/collector/collector-probe.md` (front-matter `source_refs` + bảng mục 3). Ngoài write set của gói này; cần một packet nhỏ. |
+| `CR-PC00-26` **(mới)** | `contracts/ops/collector-probe.md` §6 **chưa** ghi rằng bốn mục đã thỏa và trỏ `OD-20260907-04`. Thuộc PC05. |
+| `CR-PC00-20` | `precode/gates.yaml` / `precode/review.md` chưa phản ánh `OD-20260907-02/03/04`. Thuộc PC09. |
+| `CR-PC00-24` | 2B **chưa có card** — nay đã có `agent-tasks/TC-research-connector-metadata.md` trên đĩa (Worker khác); cần Coordinator xác nhận CR này đã được đáp ứng ngược dòng. |
+| `CR-PC00-25` | **Một nửa đã giải:** cổng probe §6 mục 2–4 xong ở vòng bốn; phần `REQ-A6` chuyển thành `CR-PC00-27`. |
+| `CR-PC00-22` | `A3-R4` chưa có bản ghi trong `evidence/index.json` |
+| `CR-PC09-18` | `F-A3R4-01` (`PARKED`) — nhãn claim trong front-matter `.md` không được quét |
+| `CR-PC00-15` | Re-pin — nay gồm `decision-register.md` `8285ae90…` và `baseline.json` `d25a8564…` |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng chưa tồn tại |
+| `CR-PC00-19`, `CR-PC09-15` | Đã giải ở `FIX18` (tự khai) |
+| `CR-PC00-17`, `CR-PC00-16`, `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 — **mục duy nhất** còn treo từ bản yêu cầu gốc |
+
+**Vì sao `DONE_WITH_CONCERNS`.** Mọi mục của packet đã xong; validate 674/674, E0 25/25. Concern: biên bản
+này tự khai "đóng mọi mục mà `OD-20260907-03` để mở", nhưng **thực tế trên đĩa đã mở lại một mục ngay trong
+cùng ngày** — grant bốn host không đủ để đọc tài liệu OpenAlex, vì tài liệu ấy đã chuyển sang một host thứ
+năm. Không ai làm sai: Owner cấp đúng những host mà lúc hỏi ai cũng tưởng là đủ, và Worker dừng đúng chỗ
+thay vì lách. Nhưng kết quả là `REQ-A6` **vẫn** `KC` sau một vòng quyết định được ghi là đã đóng nó —
+và nếu chỉ đọc biên bản thì không thấy điều đó. Đó là lý do §7 và `CR-PC00-27` tồn tại.
+
+## U7. Trạng thái bàn giao (FIX21)
+
+- **next actor:** `Coordinator` — rehash bảy file ở §U4; `CR-PC00-27` (quyết định Owner mới) nên đi cùng
+  vòng với `REQ-OQ03`; `CR-PC00-28` và `CR-PC00-26` cần packet nhỏ; W7 re-pin hai file card-pinned.
+- **lease_released_at (UTC):** 2026-09-07T15:27Z. `LEASE-PC00-e22` (fencing 22) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §U4) và lease fencing ≥ 23.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn
+  `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở phạm vi PC00.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX22 (`AMD-SPEC-D34-01`: đính chính tiền đề của `research-radar-spec.md:101`)
+
+## V1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX22` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX22` · lease `LEASE-PC00-e23` (**fencing 23**), phạm vi **chỉ `precode/decision-register.md` §3** |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T16:50Z / 2026-09-07T16:58Z · `date -u` trước lần ghi cuối: 2026-09-07T16:57Z |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T16:58Z |
+
+## V2. Baseline drift đã quan sát trước khi ghi
+
+`precode/decision-register.md` đã đổi kể từ `FIX21`: `8285ae90…` (tôi để lại) → **`b2ed138f…`** (trên đĩa
+lúc tôi nhận packet). `worker-W3n` và packet `REQ-A6` đã thêm §8.13.1/§8.13.2 và các ghi chú trong khoảng
+thời gian đó. Packet này **nêu đích danh §8.13.2** như một nguồn bằng chứng, nên drift ấy là **đã biết và
+đã được tính đến**, không phải `STALE_BASELINE`. Tôi lấy `b2ed138f…` làm baseline và ghi rõ ở đây thay vì
+lặng lẽ dùng nó.
+
+## V3. Đã làm gì
+
+**Một mục mới trong §3: `AMD-SPEC-D34-01`.** Theo ruling của Coordinator, sau khi `worker-W3n` **từ chối
+đúng** việc tự quyết mục này — tạo một `AMD-…` là việc của PC00 dưới ruling, không phải của gói đang sửa ghi
+chú. Lần từ chối đó được ghi lại trong mục, không bị bỏ qua.
+
+**Điều tôi phải giải quyết trước khi viết: §3 không có chỗ cho loại bản ghi này.** Sáu trường của §3
+(`Trước` / `Sau` / `Vì sao` / `Bảo đảm thay thế` / `Test/oracle` / `REQ ảnh hưởng`) giả định mọi mục đều
+**đề xuất một văn bản thay thế**. Mục này thì không — và đó là điểm chính của nó. Nhét nó vào khuôn cũ sẽ
+buộc tôi bịa một ô "Sau", tức đúng thứ ruling nói **không** nên có.
+
+Nên tôi thêm vào đầu §3 một **bảng hai loại** và một tiền tố ID riêng:
+
+| Loại | Tiền tố | Có "Sau" không |
+| --- | --- | --- |
+| Amendment | `AMD-B<nn>` | **Có** — đặc tả v0.3 sẽ viết lại câu đó |
+| Đính chính tiền đề | `AMD-SPEC-<REQ>-<nn>` | **Không** — câu đó có thể giữ nguyên, đọc theo nghĩa lịch sử |
+
+Đây là chỗ tôi mở rộng quy ước của file thay vì chỉ điền vào nó. Tôi làm vậy vì cả hai lựa chọn còn lại đều
+tệ hơn: đặt mục ở §8 sẽ tách nó khỏi nơi mà `requirements.csv` và `traceability.csv` đã trỏ về (§3, "cần một
+AMD"), còn ép nó vào khuôn `AMD-B` sẽ nói sai rằng đặc tả cần viết lại. Ô "Sau" của mục nay ghi thẳng:
+**không có văn bản thay thế, và không cần một văn bản thay thế**.
+
+**Nội dung mục.** `Trước` là trích **nguyên văn** `research-radar-spec.md:101` (hàng `D34`). `Vì sao` là dữ
+kiện đọc 2026-09-07 dưới quyền mạng của `OD-20260907-04` mục 2 (mở rộng thêm `help.openalex.org`): OpenAlex
+**không** đòi email liên hệ, **không** còn `mailto` / `polite pool` / `User-Agent`; `api_key` **tùy chọn**.
+Bằng chứng: §8.13.2, `evidence/handoffs/PC03-REQA6-handoff.md`, `OD-20260907-04`.
+
+**Ba phân biệt tôi viết ra vì chúng dễ bị đọc gộp:**
+
+1. **`SG-IDENT` không bị nới.** Luật "nguồn đòi định danh mà cấu hình chưa có ⇒ không gọi" **giữ nguyên**;
+   điều đổi là với OpenAlex nó **không kích hoạt**, vì tiền đề "nguồn này đòi định danh" sai. Một luật không
+   kích hoạt khác hẳn một luật bị gỡ.
+2. **`REQ-D34` thành `XN` vì NGHĨA VỤ ĐỌC đã xong, không phải vì tiền đề đúng.** Ghi chú của `W3n` trong
+   `requirements.csv` đã nói đúng như vậy; mục này chốt cách nói đó là chuẩn.
+3. **Ngân sách ngày của OpenAlex cố ý KHÔNG thành số** (`RESOLVED_NON_NUMERIC`): tài liệu nêu nó bằng
+   **tiền**, nên suy ra "1/10" là một phép suy, không phải một câu trích. Oracle âm: không file nào được ghi
+   một con số ngân sách ngày suy ra như thế.
+
+**Và một điều mục tự đặt giới hạn cho chính nó:** đính chính này đúng với **tài liệu đọc ngày 2026-09-07**.
+Nhà cung cấp đổi chính sách thì nhãn `DOCS_derived` hết hiệu lực và mục phải được đọc lại. Một dữ kiện bên
+ngoài không bao giờ "đóng" vĩnh viễn theo cách một quyết định sản phẩm đóng.
+
+**Đặc tả không bị chạm.** `research-radar-spec.md` rehash **`d35e1f2d…`** — khớp pin, không một byte đổi.
+
+## V4. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/decision-register.md` ⚠ | MODIFY (§3) | `b2ed138fa636ce3e26f78f7e22994d4ebf9bc1b4e0ae692482df78247afe2017` (138431) | `058621d0649b798cb8882f718c450d548df1f4672bdee512e330bee77d46e8b0` (144860) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `a9471fc930fa389b4f41374ae3be9c4ce4c670ace23fafde4459607cc56645dc` | *(file này)* |
+
+**1 MODIFY + 1 APPEND**, đúng phạm vi lease. `research-radar-spec.md` (`d35e1f2d…`) và
+`research-radar-pre-code-plan.md` (`f65bb046…`) khớp pin. **Không** chạm `precode/source/*`,
+`precode/requirements.csv`, `acceptance/traceability.csv`, `contracts/retry-policy.yaml`,
+`precode/owner-decisions-0*.md`, `precode/baseline.json`, `agent_profile/registry.json`, hay bất kỳ mục nào
+khác của `decision-register.md` ngoài §3. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc` do tôi
+sinh; **không network**; không secret.
+
+## V5. Evidence
+
+- **`e0_check.py` (chỉ đọc, theo yêu cầu packet):** `PYTHONDONTWRITEBYTECODE=1 python3
+  evidence/tools/e0_check.py --repo .` — **exit code 0**, **25 check: PASS 25 · FAIL 0 · BLOCKED 0 ·
+  violations 0**, chạy 2026-09-07T16:58Z.
+- **`validate.py`:** **exit code 0**, **693 assertion, 693 PASS, 0 FAIL**, chạy 2026-09-07T16:57Z.
+- **17 assertion mới** cho `AMD-SPEC-D34-01`: mục tồn tại trong §3; ô "Sau" nói rõ **không có văn bản thay
+  thế**; trỏ đúng `research-radar-spec.md:101` và `D34`; khẳng định đặc tả **đứng nguyên** và được đọc theo
+  **nghĩa lịch sử**; ba bằng chứng (§8.13.2, `PC03-REQA6-handoff.md`, `OD-20260907-04`); là **bản ghi chuẩn**
+  với luật giải quyết "mục này thắng"; `SG-IDENT` **vẫn giữ nguyên như một luật**; ba mệnh đề "không làm";
+  hiệu lực có điều kiện theo ngày đọc; và §3 khai rõ nó chứa **hai loại** bản ghi.
+- **Một assertion đối chiếu thực tế quan trọng nhất của gói này:** dòng **101** của `research-radar-spec.md`
+  đọc trực tiếp từ đĩa **phải vẫn chứa** cụm *"yêu cầu email liên hệ của OpenAlex"*. Nếu ai đó "sửa cho
+  đúng" bản nguồn bất biến, validate **FAIL**. Đó là cách duy nhất một phép kiểm có thể bảo vệ một file mà
+  luật của dự án nói là không được chạm.
+- **Bốn assertion cũ FAIL ở lượt đầu và đã được sửa cho đúng sự thật mới, không nới lỏng.** Chúng khẳng định
+  `REQ-A6` còn `KC` và `retry-policy` còn `PLACEHOLDER_KC` — **đã lỗi thời**: phần 2 của
+  `PKT-PC03-FIX-REQA6` land sau khi Owner mở rộng allowlist, và cả bốn dữ kiện nay có nguồn. Bản mới
+  **mạnh hơn** bản cũ: nó đòi `status: DOCS_derived`, đòi hai giá trị OpenAlex đúng bằng `100`/`1`, đòi
+  URL nguồn có mặt trong file, đòi `RESOLVED_NON_NUMERIC` tồn tại, và — quan trọng nhất — đòi **căn cứ**
+  chuyển trạng thái của `REQ-A6` là `OD-20260907-04` chứ **không** phải `OD-20260907-03`. Một trong số đó
+  cũng lộ ra lỗi của chính tôi: `"PLACEHOLDER_KC" not in RP` quá thô, vì chuỗi ấy còn xuất hiện trong **văn
+  xuôi phủ định**; nay kiểm bằng regex trên trường `status:`.
+- **`NOT_RUN` / giới hạn:** tôi **không** tự đọc tài liệu arXiv/OpenAlex (không có quyền mạng ở gói này) và
+  **không** xác minh lại một trích dẫn nào của `worker-WF`. Mục này ghi lại **điều họ đã ghi**, kèm con
+  đường bằng chứng, không phải một lượt kiểm chứng độc lập. Audit độc lập trên epoch mới: `NOT_RUN`.
+
+## V6. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-29` **(mới)** | `precode/owner-decisions-04.md` §7 và `precode/baseline.json` (anchor `OD-20260907-04`, khóa `post_decision_state_20260907T1523Z_vi`) — cả hai do tôi viết ở `FIX21` — nay **lỗi thời**: chúng nói nửa OpenAlex chưa giải, trong khi phần 2 của `PKT-PC03-FIX-REQA6` đã giải. **Ngoài lease của gói này** (chỉ §3). Cần một packet nhỏ để thêm một dòng "đã được §8.13.2 thay thế" vào cả hai. Cho tới lúc đó: **§8.13.2 thắng**. |
+| `CR-PC00-27` | **Đã giải** — Owner đã mở rộng allowlist thêm `help.openalex.org` (§8.13.2); `REQ-A6` nay `RESOLVED`. |
+| `CR-PC00-28` | `precode/owner-decisions-03.md` còn đường dẫn probe sai `contracts/collector/…` |
+| `CR-PC00-26` | `contracts/ops/collector-probe.md` §6 chưa ghi bốn mục đã thỏa (PC05) |
+| `CR-PC00-20` | `gates.yaml` / `review.md` chưa phản ánh `OD-20260907-02/03/04` (PC09) |
+| `CR-PC00-22` | `A3-R4` chưa có bản ghi trong `evidence/index.json` |
+| `CR-PC09-18` | `F-A3R4-01` (`PARKED`) |
+| `CR-PC00-15` | Re-pin — nay gồm `decision-register.md` `058621d0…` |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng chưa tồn tại |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+
+**Vì sao `DONE_WITH_CONCERNS`.** Mục đã được ghi, e0 25/25, validate 693/693. Concern là `CR-PC00-29`: hai
+văn bản **của chính tôi** viết cách đây chưa đầy hai giờ nay mô tả sai trạng thái, vì một packet song song
+đã tiến. Tôi không sửa được chúng trong lease này và **không** tự mở rộng phạm vi để sửa. Đây là cái giá cụ
+thể của `PROV-PC00-08` mà Owner đã chấp nhận: nhiều Worker viết song song vào một kho tài liệu chung, không
+có khoá thật, nên "đúng lúc viết" và "đúng lúc đọc" tách nhau ra — và cách duy nhất giữ hồ sơ trung thực là
+ghi ngày giờ vào từng phát biểu, đúng như tôi đã làm ở `FIX21` §7. Nhờ có mốc thời gian đó, hai đoạn lỗi
+thời **đọc được như lịch sử** thay vì đọc như một lời nói dối.
+
+## V7. Trạng thái bàn giao (FIX22)
+
+- **next actor:** `Coordinator` — rehash `decision-register.md`; giao `CR-PC00-29` (một packet nhỏ, hai
+  dòng); `CR-PC00-28`, `CR-PC00-26`, `CR-PC00-20` còn mở; W7 re-pin.
+- **lease_released_at (UTC):** 2026-09-07T16:58Z. `LEASE-PC00-e23` (fencing 23) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (`058621d0…`) và lease fencing ≥ 24.
+- **Claim:** `DRAFT_FOR_REVIEW`. `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở
+  phạm vi PC00.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX23 (`CR-PC00-29`: hai đoạn lỗi thời của chính tôi về `REQ-A6`)
+
+## W1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX23` · worker `worker-W1n` · authority `AUTH-COORD-PC00-FIX23` · lease `LEASE-PC00-e24` (**fencing 24**), phạm vi **chỉ** `precode/owner-decisions-04.md` §7 và mục anchor `OD-20260907-04` của `precode/baseline.json` |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T16:59Z / 2026-09-07T17:03Z · `date -u` trước lần ghi cuối: 2026-09-07T17:02Z |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T17:03Z |
+| nguồn | `CR-PC00-29` — do chính tôi mở ở `PKT-PC00-FIX22` §V6 |
+
+## W2. Đã làm gì
+
+Hai chỗ đều do tôi viết ở `FIX21` lúc 15:23Z, khi packet `REQ-A6` mới land **nửa arXiv**. Phần 2 của
+`PKT-PC03-FIX-REQA6` chạy sau đó và giải nốt nửa OpenAlex, nên hai đoạn ấy mô tả sai trạng thái.
+
+**Tôi không xoá chúng — tôi tách thì.** Cả hai chỗ nay có **hai tầng**:
+
+- **Trạng thái hiện hành** (`§7.1` trong record; ba khóa `post_decision_*` trong anchor): **`REQ-A6` =
+  `RESOLVED`**, cả bốn dữ kiện có nguồn, kèm bảng giá trị (arXiv `1`/`3 s` + `1` kết nối, định danh
+  `RESOLVED_NEGATIVE`; OpenAlex `100`/`1 s`, định danh `RESOLVED_NEGATIVE` với `api_key` **tùy chọn**).
+  `contracts/retry-policy.yaml` nay `DOCS_derived`, **không còn** `PLACEHOLDER_KC`; `requirements.csv` ghi
+  `REQ-A6` và `REQ-D34` là `XN`. Bản ghi chuẩn được trích: **`precode/decision-register.md` §8.13.2** và
+  `evidence/handoffs/PC03-REQA6-handoff.md`.
+- **Lịch sử** (`§7.2`; khóa `superseded_observation_20260907T1523Z_vi`): đoạn cũ **giữ nguyên nội dung**,
+  nhưng mang nhãn *"nay đã bị §7.1 và §8.13.2 thay thế — không được đọc như trạng thái hiện hành"*.
+
+**Vì sao giữ đoạn cũ thay vì viết đè.** Nó ghi đúng một điều đáng giữ: một Worker gặp `301` ra ngoài
+allowlist và **dừng** thay vì đi theo. Đó là hành vi `protocol.md` §3 đòi, và nó là lý do câu hỏi tới được
+Owner thay vì bị một con số phỏng đoán lấp đi. Xoá đoạn ấy sẽ xoá luôn bằng chứng rằng ranh giới đã được tôn
+trọng — và làm hồ sơ trông như thể nửa OpenAlex "tự nhiên" giải được.
+
+**Quy kết đã đúng sẵn, nay được viết tường minh.** Cả hai chỗ vốn đã ghi `OD-20260907-04`; tôi thêm mệnh đề
+**"không phải `OD-20260907-03`"** vào cả record lẫn anchor, vì đó là chỗ dễ trượt: vòng ba *nói về*
+`REQ-A6` nhưng vòng bốn mới *cấp quyền*.
+
+**Bốn giới hạn được chép sang chỗ mới**, để "RESOLVED" không bị đọc rộng: (1) `XN` nghĩa là **nghĩa vụ đọc**
+xong, không phải tiền đề đặc tả đúng — trỏ về `AMD-SPEC-D34-01`; (2) ngân sách ngày OpenAlex **cố ý không**
+thành số (`RESOLVED_NON_NUMERIC`), nguồn sự thật lúc chạy là header `X-RateLimit-*`; (3) **không** nâng trần
+claim của `MOD-research-connector`; (4) hiệu lực có điều kiện theo **tài liệu đọc ngày 2026-09-07**.
+
+**Ghi nhận `CR-PC00-27` đã giải** ngay trong §7.1: nửa OpenAlex được gỡ chốt bằng một **quyết định** của
+Owner (thêm `help.openalex.org`, allowlist thành **năm** host; mọi hạn chế khác giữ nguyên —
+`api.openalex.org` và `export.arxiv.org` vẫn cấm), không phải bằng một lần tìm kỹ hơn.
+
+## W3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/owner-decisions-04.md` | MODIFY (§7) | `d523945aca4efbfb0c09edd6a955e877921b4851bd5577556c94faf984884a86` (13058) | `4ef7d11bd0a6f7161fb7916a36f1ac44b7648aff0d04bf901be3ac57036e5c3a` (15986) |
+| `precode/baseline.json` ⚠ | MODIFY (anchor `OD-20260907-04`) | `d25a856452ea0012eea4de1ad063054b4c49b92d5a7e71a4a982e3f25e56d1ef` (111009) | `ffd1efb3588f87504f61c037b4a242b29a6afb0ddd0f1fd1780c677b22a8bf64` (112871) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `0bb7f31343b106b94540c11a8c41ed52d8678f2c915e946f9f6327936e5f8c01` | *(file này)* |
+
+**2 MODIFY + 1 APPEND**, đúng phạm vi lease — trong `baseline.json` chỉ mục anchor `OD-20260907-04` bị sửa;
+JSON parse lại được. Rehash chứng minh **không** đổi: `precode/decision-register.md` (`058621d0…`),
+`precode/requirements.csv` (`d3e150e3…` — Worker khác đang giữ, tôi chỉ đọc),
+`contracts/retry-policy.yaml` (`f9505525…` — như trên), `research-radar-spec.md` (`d35e1f2d…`, **khớp pin**),
+`research-radar-pre-code-plan.md` (`f65bb046…`). Không chạm `agent_profile/registry.json`,
+`precode/owner-decisions*.md` khác, `acceptance/`, `agent-tasks/`, `contracts/` hay cây mã. Không lệnh git
+thay đổi repo; không `__pycache__`/`.pyc` do tôi sinh; **không network**; không secret.
+
+## W4. Evidence
+
+- **`e0_check.py` (chỉ đọc, theo yêu cầu packet):** `PYTHONDONTWRITEBYTECODE=1 python3
+  evidence/tools/e0_check.py --repo .` — **exit code 0**, **25 check: PASS 25 · FAIL 0 · BLOCKED 0 ·
+  violations 0**, chạy 2026-09-07T17:02Z.
+- **`validate.py`:** **exit code 0**, **703 assertion, 703 PASS, 0 FAIL**, chạy 2026-09-07T17:01Z.
+- **18 assertion được thay cho khối cũ** (khối cũ khẳng định nửa OpenAlex **chưa** giải — nay sai). Bản mới
+  **mạnh hơn**, và điều quan trọng là chúng **neo vào đĩa chứ không vào văn bản của tôi**:
+  `openalex_requests_per_window: 100` và `openalex_window_seconds: 1` phải **có thật** trong
+  `contracts/retry-policy.yaml`, và câu "`REQ-A6` = `RESOLVED`" trong §7.1 phải **khớp hai chiều** với sự
+  kiện đó — nếu Worker kia rollback, validate **FAIL** thay vì bản ghi của tôi âm thầm nói quá.
+- Cộng các assertion buộc: §7.1 trích `§8.13.2` **và** `PC03-REQA6-handoff.md`; quy kết ghi rõ
+  *"không phải `OD-20260907-03`"*; `§7.2` tồn tại **và** mang nhãn đã-bị-thay-thế (giữ lịch sử, không xoá);
+  bốn giới hạn có mặt (`AMD-SPEC-D34-01`, `RESOLVED_NON_NUMERIC`, trần claim, hiệu lực theo ngày); anchor có
+  ba khóa `post_decision_*` mới **và** khóa lịch sử; và **khóa cũ
+  `post_decision_state_20260907T1523Z_vi` KHÔNG còn tồn tại** — đảm bảo tôi đã *thay* nó chứ không *thêm
+  cạnh* nó.
+- **`NOT_RUN` / giới hạn:** tôi **không** truy cập mạng, **không** xác minh lại một trích dẫn nào của
+  `worker-WF`, và **không** đọc `contracts/retry-policy.yaml` để thẩm định nội dung — chỉ để đối chiếu bốn
+  giá trị. Audit độc lập trên epoch mới: `NOT_RUN`.
+
+## W5. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-29` | **Đã giải ở gói này** (tự khai; xác minh thuộc người khác). |
+| `CR-PC00-27` | **Đã giải** — Owner mở rộng allowlist thêm `help.openalex.org`; `REQ-A6` `RESOLVED`. |
+| `CR-PC00-28` | `precode/owner-decisions-03.md` còn đường dẫn probe sai `contracts/collector/…` |
+| `CR-PC00-26` | `contracts/ops/collector-probe.md` §6 chưa ghi bốn mục đã thỏa (PC05) |
+| `CR-PC00-20` | `gates.yaml` / `review.md` chưa phản ánh `OD-20260907-02/03/04` (PC09) |
+| `CR-PC00-22` | `A3-R4` chưa có bản ghi trong `evidence/index.json` |
+| `CR-PC09-18` | `F-A3R4-01` (`PARKED`) — nhãn claim trong front-matter `.md` không được quét |
+| `CR-PC00-15` | Re-pin — nay gồm `baseline.json` `ffd1efb3…` và `decision-register.md` `058621d0…` |
+| `CR-P0-03` mục 1 | `tools/` đã khai nhưng chưa tồn tại |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 — **mục duy nhất** còn treo từ bản yêu cầu gốc |
+
+**Một quan sát về kiểu lỗi này, không phải một CR.** Đây là lần thứ ba trong sáu gói mà một văn bản của tôi
+lỗi thời vì một packet song song tiến lên. Ba lần đều **không** phải lỗi phán đoán — chúng đúng lúc viết —
+mà là hệ quả cấu trúc của `PROV-PC00-08`: nhiều Worker ghi song song vào một kho tài liệu chung, không có
+khoá thật. Thứ duy nhất giữ hồ sơ trung thực qua ba lần đó là **mốc thời gian trong từng phát biểu**: nhờ nó,
+đoạn cũ đọc được như *lịch sử* thay vì như *lời nói sai*. Nếu Coordinator muốn giảm tần suất, cách rẻ nhất
+không phải là viết cẩn thận hơn mà là **đừng để hai packet cùng mô tả một sự kiện đang diễn ra** — hoặc
+chấp nhận rằng bản ghi phải mang thì, như nó đang mang.
+
+## W6. Trạng thái bàn giao (FIX23)
+
+- **next actor:** `Coordinator` — rehash ba file ở §W3; `CR-PC00-28`, `CR-PC00-26`, `CR-PC00-20`,
+  `CR-PC00-22` còn mở; W7 re-pin `baseline.json` `ffd1efb3…`.
+- **lease_released_at (UTC):** 2026-09-07T17:03Z. `LEASE-PC00-e24` (fencing 24) nhả tại đây; `worker-W1n`
+  không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §W3) và lease fencing ≥ 25.
+- **Claim:** `DRAFT_FOR_REVIEW`. `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN` ở
+  phạm vi PC00.

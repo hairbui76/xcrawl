@@ -1,6 +1,6 @@
 ---
 contract_id: CT-ops-collector-probe
-version: 0.3.0
+version: 0.5.0
 status: draft
 owner_role: connector contract owner
 source_refs:
@@ -30,7 +30,7 @@ requirement_refs:
   - REQ-AC01
   - REQ-AC03
   - REQ-AC04
-decision_refs: [B05, B12, AMD-B05, AMD-B12, ADR-0001, CR-PC05-01, CR-PC10-02, "R-01 (A1-R1)", "FIX3 rulings (2026-09-06T19:05Z)"]
+decision_refs: [B05, B12, AMD-B05, AMD-B12, ADR-0001, CR-PC05-01, CR-PC05-03, CR-PC10-02, "R-01 (A1-R1)", "FIX3 rulings (2026-09-06T19:05Z)", OD-20260907-01, OD-20260907-04, CR-TC-research-06]
 invariant_refs: [I02, I10, I11]
 producers: [MOD-x-collector]
 consumers: [MOD-ingest-service, MOD-job-service, MOD-research-connector]
@@ -208,15 +208,33 @@ lỗi không sửa được. Vì cần người chú ý ngay, `SOURCE_LAYOUT_CHA
 
 ## 6. Cổng chấp nhận của Owner (trước khi chạy)
 
-SP1 yêu cầu protocol/stop/go-no-go **được chấp nhận** trước. Owner cần xác nhận bốn điều, bằng văn bản:
+SP1 yêu cầu protocol/stop/go-no-go **được chấp nhận** trước. Owner cần xác nhận bốn điều, bằng văn bản.
+**Cả bốn nay đã đủ.** Đọc tiếp đoạn ngay dưới bảng trước khi kết luận điều đó nghĩa là gì.
 
-1. **D09** — dùng Chrome profile riêng của dự án (SRC-SPEC §13.1 câu hỏi 1, **chặn M0**).
-2. Ngân sách §3 và điều kiện dừng §4 là chấp nhận được với tài khoản X của Owner.
-3. Tiêu chí go/no-go §7 là tiêu chí Owner đồng ý dùng để kết luận.
-4. Hiểu rằng probe chạy trên **tài khoản X thật của Owner** và mang rủi ro bị hạn chế tài khoản (REQ-A7),
-   và rủi ro đó **không kiểm chứng được trước**.
+| # | Điều Owner xác nhận | Trạng thái | Bằng văn bản ở |
+| --- | --- | --- | --- |
+| 1 | **D09** — dùng Chrome profile riêng của dự án (SRC-SPEC §13.1 câu hỏi 1, **chặn M0**). | **Đã xác nhận** | `OD-20260907-01` mục 1 |
+| 2 | Ngân sách §3 và điều kiện dừng §4 là chấp nhận được với tài khoản X của Owner. | **Đã xác nhận** | `OD-20260907-04` mục 1 |
+| 3 | Tiêu chí go/no-go §7 là tiêu chí Owner đồng ý dùng để kết luận. | **Đã xác nhận** | `OD-20260907-04` mục 1 |
+| 4 | Hiểu rằng probe chạy trên **tài khoản X thật của Owner** và mang rủi ro bị hạn chế tài khoản (REQ-A7), và rủi ro đó **không kiểm chứng được trước**. | **Đã xác nhận** | `OD-20260907-04` mục 1 |
 
-Chưa có đủ bốn xác nhận ⇒ trạng thái là `OWNER_DECISION_REQUIRED` và probe **không được chạy**.
+> **Cổng này mở về mặt HÀNH CHÍNH, không phải về mặt vận hành.** Bốn xác nhận ở trên gỡ trạng thái
+> `OWNER_DECISION_REQUIRED` — chúng **không** cho phép bất kỳ Worker, agent hay tiến trình tự động nào chạy
+> probe. `OD-20260907-04` mục 1 nói thẳng: **"Không Worker nào được chạy nó."** Probe chỉ chạy **trên máy của
+> chính Owner**, trên **tài khoản X thật của Owner**, sau khi Owner tự làm các bước ở
+> `evidence/handoffs/TC-x-feasibility-probe-handoff.md` §11 ("Owner cần làm gì để probe chạy được"): tự cài
+> Playwright, tự đăng nhập **bằng tay** vào một profile Chrome riêng của dự án, tự điền file cấu hình probe,
+> và tự ký bốn `owner_confirmations` kèm `evidence_ref` trỏ tới hai quyết định trên.
+
+Chưa có đủ bốn xác nhận ⇒ trạng thái là `OWNER_DECISION_REQUIRED` và probe **không được chạy**. Cửa kiểm này
+nằm trong **code**, không chỉ trong văn xuôi: `probe/x_feasibility/config.py` chỉ coi một mục là đã xác nhận
+khi nó vừa `confirmed: true` vừa mang `evidence_ref` **không rỗng** (một giá trị `true` do người chạy tự gõ
+không phải một xác nhận bằng văn bản), và `run_probe.py` từ chối mở trình duyệt với mã thoát `2` khi thiếu bất
+kỳ mục nào.
+
+**§0 vẫn đúng nguyên văn: probe CHƯA CHẠY.** Cổng mở không sinh ra bằng chứng, và ghi lại việc cổng đã mở
+không phải là ghi lại một kết quả. Trạng thái bằng chứng của mọi con số trong tài liệu này vẫn là **`NOT_RUN`**
+cho tới khi Owner chạy 5–10 đợt thật trên máy mình và số liệu land ở `evidence/runs/SP1-x-feasibility/`.
 
 ---
 
@@ -278,34 +296,63 @@ Những giới hạn này được gửi kèm mỗi assignment trong `search_con
 | CN-5 | Metadata thiếu **không** chặn đợt chạy: target tồn tại ở mức `evidence_level = post_only` | REQ-D33; `contracts/state/run.yaml` T-RUN-03 |
 | CN-6 | **Không** đoán DOI/arXiv id từ văn bản chưa chuẩn hóa | REQ-D33, I03 |
 
-### 9.2 Nhịp gọi và định danh — **KC, chưa đọc tài liệu**
+### 9.2 Nhịp gọi và định danh — **RESOLVED (2026-09-07)**
 
-REQ-A6 (KC) và REQ-D34 (KC) đều nói cùng một điều: *"Nhịp gọi arXiv và yêu cầu email liên hệ của OpenAlex:
-đọc tài liệu chính thức khi triển khai."* SRC-SPEC §13.2 nhắc lại như một điểm không được bỏ qua.
+REQ-A6 và REQ-D34 nói cùng một điều: *"Nhịp gọi arXiv và yêu cầu email liên hệ của OpenAlex: đọc tài liệu
+chính thức khi triển khai."* SRC-SPEC §13.2 nhắc lại như một điểm không được bỏ qua. **Tài liệu nay đã được
+đọc.** Owner cấp một quyền mạng hẹp, chỉ-đọc-trang-tài-liệu ở `OD-20260907-04` mục 2; `worker-WF`
+(`PKT-PC03-FIX-REQA6`) đã đọc và trích nguyên văn cả năm dữ kiện trong ngày 2026-09-07.
 
-**Tôi chưa đọc hai tài liệu đó** (gói này chạy không có mạng). Vì vậy các giá trị dưới đây **cố ý để trống**,
-và trạng thái là `KC`. Điền số bịa vào đây sẽ là bằng chứng giả.
+**Nguồn sự thật là `contracts/retry-policy.yaml` §`research_connector_rate_limit` (v0.8.0), không phải file
+này.** Ở đó mỗi dữ kiện có URL, ngày đọc, trích dẫn nguyên văn và ghi chú giới hạn; bản kể đầy đủ ở
+`precode/decision-register.md` §8.13.2 và `evidence/handoffs/PC03-REQA6-handoff.md`. Token trạng thái chính xác
+của từng dữ kiện (`status:` của mỗi mục trong `sources`) cũng sống ở đó; cột "Trạng thái" dưới đây mô tả chúng
+**bằng lời**, không nhân bản từ vựng của file kia. Bảng dưới đây **cố ý
+không chép lại các con số**: hai bản sao của cùng một hạn mức là hai thứ sẽ lệch nhau, và cái lệch sẽ được
+phát hiện muộn. Bảng chỉ nói **dữ kiện nào đã giải, giải tới mức nào, và đọc từ đâu**.
 
-| Tham số | Giá trị | Trạng thái | Tài liệu phải đọc | Ai đọc, khi nào |
-| --- | --- | --- | --- | --- |
-| `arxiv_requests_per_window` | *(chưa xác định)* | **KC** | Trang điều khoản/hướng dẫn API công khai của arXiv | Người triển khai, tại thời điểm triển khai (REQ-S13.2-01) |
-| `arxiv_window_seconds` | *(chưa xác định)* | **KC** | như trên | như trên |
-| `openalex_requests_per_window` | *(chưa xác định)* | **KC** | Tài liệu API công khai của OpenAlex | như trên |
-| `openalex_window_seconds` | *(chưa xác định)* | **KC** | như trên | như trên |
-| `openalex_contact_identity` | *(chưa xác định)* | **KC** | OpenAlex yêu cầu một định danh liên hệ (REQ-D34 gọi là "yêu cầu email liên hệ") — hình thức chính xác phải đọc từ tài liệu | như trên |
-| `min_interval_ms` | 3000 | **PROVISIONAL** | — | Sàn an toàn duy nhất đang có hiệu lực; xem `contracts/retry-policy.yaml §research_connector_rate_limit` |
+| Tham số | Trạng thái | Giá trị nằm ở | Nguồn tài liệu (đọc 2026-09-07) |
+| --- | --- | --- | --- |
+| `arxiv_requests_per_window`, `arxiv_window_seconds` | **`RESOLVED`** | `retry-policy.yaml` §`research_connector_rate_limit.values` | `info.arxiv.org/help/api/tou.html` — mục "Rate limits" |
+| `arxiv_max_concurrent_connections` | **`RESOLVED`** (dữ kiện **mới**, xem ghi chú dưới) | như trên | như trên |
+| `arxiv_identification_required` | **đã giải, theo hướng phủ định** — tài liệu **không** yêu cầu định danh | `retry-policy.yaml` §`….identification` | bốn trang `info.arxiv.org/help/api/*` |
+| `openalex_requests_per_window`, `openalex_window_seconds` | **`RESOLVED`** | `retry-policy.yaml` §`research_connector_rate_limit.values` | `help.openalex.org/api/authentication/` |
+| `openalex_identification_required` | **đã giải, theo hướng phủ định** — `api_key` là **tùy chọn**, không phải điều kiện để gọi | `retry-policy.yaml` §`….identification` | `help.openalex.org/api/`, `…/authentication/`, `…/access/pricing/` |
+| Ngân sách ngày của OpenAlex | **đã giải, nhưng KHÔNG bằng một con số** — xem ghi chú dưới | *(không có khóa số nào — cố ý)* | `help.openalex.org/access/pricing/`, `…/api/errors/` |
+| `min_interval_ms` | `PROVISIONAL` — **giữ nguyên 3000** | `retry-policy.yaml` §`research_connector_rate_limit.values` | — (sàn tự đặt, chặt hơn cả hai nguồn; giữ có chủ đích) |
 
-**Ghi chú về URL tài liệu.** PKT-PC05 yêu cầu ghi "the exact doc URL from the sources". Tôi đã tra cả hai
-nguồn: `research-radar-spec.md` (D34, §13.2) và `research-radar-pre-code-plan.md` **không chứa URL nào** cho
-arXiv hay OpenAlex — chúng chỉ nói "đọc tài liệu chính thức". Vì vậy tôi ghi **định danh tài liệu** thay cho
-URL, và **không** bịa URL. Đây là một khoảng trống có chủ đích, ghi lại ở `CR-PC05-03`.
+**Ba điều đổi HÀNH VI của connector, không tra ra được bằng một con số:**
 
-**Cho tới khi bốn giá trị KC được điền:**
+1. **arXiv giới hạn số kết nối đồng thời**, không chỉ nhịp gọi. Đây là một **loại** ràng buộc mà sàn
+   `min_interval_ms` cũ không phủ: một client tôn trọng nhịp 3 giây vẫn vi phạm nếu nó mở nhiều kết nối song
+   song. Connector phải tuần tự hóa lời gọi arXiv, không chỉ giãn chúng ra.
+2. **Ngân sách ngày của OpenAlex nêu bằng TIỀN, không bằng số lời gọi**, và tài liệu không nêu con số cho lượt
+   gọi không-khoá. Vì vậy nó **không** được viết thành hằng số cấu hình ở bất kỳ đâu. Hạn mức ngày chỉ
+   **quan sát được lúc chạy**: connector đọc `X-RateLimit-Limit`, `X-RateLimit-Remaining`,
+   `X-RateLimit-Credits-Used` và `X-RateLimit-Reset` từ chính response và coi chúng là sự thật, thay vì đoán
+   một con số ngày.
+3. **Quy ước "polite pool + `mailto`" mà REQ-D34 giả định không còn trong tài liệu hiện hành của OpenAlex** —
+   nó bị thay bằng `api_key` tùy chọn. Quy tắc `SG-IDENT` (*nguồn YÊU CẦU định danh mà cấu hình chưa có chuỗi
+   định danh ⇒ connector KHÔNG gọi nguồn đó*) **vẫn phải nằm trong code**: hôm nay nó không kích hoạt vì không
+   nguồn nào yêu cầu, và đó chính là lý do không được xoá nó — nếu một nguồn đổi chính sách, nó là thứ chặn ta.
 
-- Connector chạy dưới sàn `min_interval_ms = 3000` (≤ 1 request mỗi 3 giây cho mỗi nguồn).
-- `Retry-After` do nguồn trả về **luôn thắng** mọi giá trị cấu hình.
-- Module research connector **không được** coi là `CONTRACT_READY` (SRC-PLAN §10: *"module có policy chưa chốt
-  không được CONTRACT_READY"*).
+**Ghi chú về URL tài liệu — `CR-PC05-03` đã đóng.** Bản trước của mục này ghi rằng hai nguồn đã pin
+(`research-radar-spec.md`, `research-radar-pre-code-plan.md`) **không chứa URL nào** cho arXiv hay OpenAlex,
+nên PC05 ghi định danh tài liệu thay cho URL và **không bịa URL**. Điều đó vẫn đúng về hai nguồn ấy; điều đổi
+là các URL nay tồn tại — chúng đến từ việc **đi đọc tài liệu dưới một quyền được Owner cấp**, không từ việc
+suy ra từ đặc tả. Đó đúng là con đường mà `CR-PC05-03` đã yêu cầu.
+
+**Hiệu lực hiện hành:**
+
+- Connector vẫn chạy dưới sàn `min_interval_ms = 3000`. Sàn này nay **chặt hơn** hạn mức tài liệu của cả hai
+  nguồn, và được giữ có chủ đích: nó là biên an toàn, không phải một ước lượng đã hết việc.
+- `Retry-After` do nguồn trả về **luôn thắng** mọi giá trị cấu hình. Không đổi.
+- **Việc REQ-A6 hết `KC` KHÔNG tự nâng trần claim của `MOD-research-connector`.** `CONTRACT_READY` của module
+  là kết luận của PC05/Coordinator trên **toàn bộ** cổng của nó, không phải hệ quả của việc một khối hợp đồng
+  được điền xong (`precode/decision-register.md` §8.13.2).
+- Mọi dữ kiện ở đây mang ngày đọc **2026-09-07** và hết hiệu lực khi nguồn đổi chính sách — không khi ai đó
+  đổi ý. Hai dữ kiện phủ định chỉ đúng với những trang đã đọc, và `retry-policy.yaml` ghi rõ phạm vi ấy ở
+  `limitation_vi` của từng dữ kiện.
 
 ### 9.3 Điều khoản nhà cung cấp AI — cùng loại vấn đề
 

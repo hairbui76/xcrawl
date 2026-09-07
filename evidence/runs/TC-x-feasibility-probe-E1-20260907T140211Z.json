@@ -1,0 +1,217 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-x-feasibility-probe",
+  "created_at": "2026-09-07T14:10:00Z",
+  "producer_principal": "worker-WX",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "e9a725c6129a7a7b59f826579516f4c4f9b93b9f13387973b796241ded3e0b55",
+      "precode/decision-register.md": "31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+      "contracts/ops/collector-probe.md": "03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "acceptance/scenarios.yaml": "ca372775e943c49776ae853615bad275054773f8808eab12aa085651ca07ea17",
+      "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8"
+    },
+    "contract_versions": {
+      "CT-ops-collector-probe": "0.3.0"
+    },
+    "implementation_revision": "PKT-TC-PROBE working tree, pin epoch PC10-PIN-P2-20260907; probe package sha256: config=4b60124eda876151daae0d744aed1faaa8a61fb776712d338fa4d641093d1da1, signals=53265c58220434f38b73bae8fadf9caa29a8554723b311e9cba65d80460de13f, dom=5be94dcb1df80414864de9c14d23ea8b2cbd15517bc7a906e9679e2e99293feb, record=6e3a3fbbea9b02271e9bc4641770c63241975b9ae7c5789975373203925fe50b, run_probe=5476c862ab348e7fd89ff207c177d9c93652ebb8b443eda02ca44753b0e11107, go_no_go=438954ba3637aff649122c089764f4991d05ee991deacbe86037a937e08fe4a9"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "uv": "0.12.9",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "PyYAML": "6.0.3",
+      "playwright-python-library": "1.62.0",
+      "playwright-browser-binaries": "KHÔNG CÀI — `playwright install` chưa từng chạy ở môi trường này"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "probe_config": "không tồn tại — file cấu hình probe nằm trên máy Owner, ngoài repo",
+      "chrome_user_data_dir": "không có — chưa profile Chrome nào được mở"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC01",
+      "SC03",
+      "SC04",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-A1",
+      "REQ-A7",
+      "REQ-D09",
+      "REQ-D24",
+      "REQ-D31",
+      "REQ-D33",
+      "REQ-OQ05",
+      "REQ-AC01",
+      "REQ-AC03",
+      "REQ-AC04"
+    ],
+    "invariant_ids": [
+      "I10"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/collection/a-feed-layout-changed.json",
+        "sha256": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+        "bytes": 13611
+      },
+      {
+        "path": "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+        "sha256": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+        "bytes": 12528
+      },
+      {
+        "path": "acceptance/fixtures/collection/e-limit-reached-stop.json",
+        "sha256": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+        "bytes": 7892
+      },
+      {
+        "path": "acceptance/fixtures/collection/g-schedule-due-claim.json",
+        "sha256": "32a9defa30bbbbe334b6e28378b8bcf09f2bc1d002a2fc2275886b6df5ca60ba",
+        "bytes": 11845
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/access-blocked.html",
+        "sha256": "65264159114c84907025df2d56138afac87217a408512c69d90bcff7d5b24e2d",
+        "bytes": 338
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/challenge-arkose-iframe.html",
+        "sha256": "8c7dce610d6181a3022f80d213700cb038f4e4d6081fb55d22513e91119a27a5",
+        "bytes": 435
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/challenge-verify.html",
+        "sha256": "3a998cd904cd032fe4284a0e0a2b9e9a9c7b5e2fec2d04a07aa645ff24eb9d6c",
+        "bytes": 457
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/healthy-feed.html",
+        "sha256": "8447e44f3aba0513d85a814af1bb8ef140a31f5b97eba3bd2090ce497ebdbc9e",
+        "bytes": 1752
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/layout-changed-missing-fields.html",
+        "sha256": "854a64fe5a3184d4bb3e03ba78ea241442e519b78a1edeab96e817fd1cc9242a",
+        "bytes": 889
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/layout-changed-no-containers.html",
+        "sha256": "f11e5e8918ea9383e481cb03375232979824053cf8d466a340d65d83a2e475b4",
+        "bytes": 551
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/rate-limited.html",
+        "sha256": "7e820504499c4df417a86a81b73f913ff67f4a0bd3c30fad7f0e75e7d7d544e0",
+        "bytes": 369
+      },
+      {
+        "path": "tests/contract/x_probe_synthetic_pages/session-expired-login.html",
+        "sha256": "092eda2f5652b3776e156901e9ccf82f5e8e5c0734490f9a199c679db6570c11",
+        "bytes": 363
+      }
+    ],
+    "seed": null,
+    "clock": null,
+    "protocol_version": "CT-ops-collector-probe@0.3.0"
+  },
+  "execution": {
+    "kind": "not_executed",
+    "command": null,
+    "working_directory": null,
+    "manual_procedure": null,
+    "started_at": "2026-09-07T13:00:00Z",
+    "ended_at": "2026-09-07T14:10:00Z",
+    "exit_code": null,
+    "attempts": 0,
+    "error_classification": null
+  },
+  "result": "NOT_RUN",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "none",
+    "sample_size": 0,
+    "not_checked_vi": [
+      "Không một đợt probe nào đã chạy: N = 0 trên yêu cầu 5–10 đợt (collector-probe.md §3.1). Mọi con số về khả thi nguồn X vẫn NOT_RUN.",
+      "Chặn 1 — cổng Owner: collector-probe.md §6 mục 2, 3 và 4 vẫn OWNER_DECISION_REQUIRED (OD-20260907-03 ghi rõ chúng không được quyết trong vòng này). Mục 1 (D09) đã trả lời ở OD-20260907-01. Card SG-02 gọi đây là stop tuyệt đối.",
+      "Chặn 2 — máy: probe chạy trên Chrome thật, profile riêng của dự án và tài khoản X thật của Owner (REQ-D09, ADR-0001). Không môi trường nào khác được chạy nó, và packet này không được phép thử.",
+      "Trình duyệt CHƯA BAO GIỜ được mở trong gói này: `playwright install` không chạy, không binary trình duyệt nào tồn tại, và không một request nào tới x.com được phát ra.",
+      "Selector data-testid ở probe/x_feasibility/dom.py và chuỗi marker ở probe/x_feasibility/signals.py là PROVISIONAL: gói này chạy KHÔNG có mạng, nên không một selector hay marker nào được đối chiếu với trang X thật. Nếu chúng sai, đợt đầu tiên sẽ dừng bằng SOURCE_LAYOUT_CHANGED (hành vi fail-closed đã thiết kế), không phải trả về đợt rỗng.",
+      "Bốn scenario SC01/SC03/SC04/SC49 KHÔNG được chứng minh bởi gói này. Chúng là scenario cấp server/wire; probe M0 chạy dry-run và không gọi ingest.submit_batch hay worker.report_stop (collector-probe.md §1 P6, §10 mục 6). Test ngoại tuyến ở đây chỉ đối chiếu BẢNG ÁNH XẠ trạng thái với fixture của các scenario đó.",
+      "Không kiểm đường ingest, không kiểm dedup, không kiểm coverage, không kiểm chất lượng nội dung (collector-probe.md §10 mục 2–5).",
+      "156 test ngoại tuyến của công cụ ĐÃ chạy và pass, nhưng chúng chống đỡ cho CÔNG CỤ, không cho khả thi nguồn X. Chúng được ghi thành bản ghi EV riêng ở evidence/handoffs/TC-x-feasibility-probe-handoff.md mục 5, vì một manifest mô tả MỘT lần kiểm và lần kiểm của manifest này là probe live — chưa chạy.",
+      "Tự kiểm (SELF_VALIDATION). Không có audit độc lập nào được chạy trên gói này."
+    ],
+    "uncertainty_vi": "REQ-A7 là KC và vẫn KC sau gói này: X có thể hạn chế tài khoản dù người dùng tự giải CAPTCHA, và điều đó không kiểm chứng được trước. Ngay cả một probe GO trong tương lai cũng không chứng minh nguồn X ổn định lâu dài.",
+    "unresolved_issue_refs": [
+      "REQ-A7",
+      "REQ-OQ05",
+      "PROV-WX-01",
+      "CR-TC-PROBE-01",
+      "CR-TC-PROBE-02",
+      "CR-TC-PROBE-03",
+      "CR-TC-PROBE-04",
+      "CR-TC-PROBE-05",
+      "CR-TC-PROBE-06"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "contracts/ops/collector-probe.md",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml",
+      "agent-tasks/TC-x-feasibility-probe.md",
+      "acceptance/fixtures/collection/a-feed-layout-changed.json",
+      "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+      "acceptance/fixtures/collection/e-limit-reached-stop.json",
+      "acceptance/fixtures/collection/g-schedule-due-claim.json",
+      "probe/x_feasibility/signals.py",
+      "probe/x_feasibility/record.py",
+      "probe/x_feasibility/go_no_go.py",
+      "probe/x_feasibility/dom.py"
+    ]
+  },
+  "claim": {
+    "supports_label": "DRAFT_FOR_REVIEW",
+    "scope_vi": "Chống đỡ DUY NHẤT cho: bộ công cụ probe và runbook tồn tại, lint/type sạch, và 156 test ngoại tuyến của chính công cụ pass. KHÔNG chống đỡ bất kỳ khẳng định nào về nguồn X. Trần của card là LIVE_FEASIBILITY_VERIFIED và gói này ở rất xa trần đó: cổng SP1 chưa mở, và một bản ghi SELF_VALIDATION không chống đỡ được nhãn nào cao hơn CONTRACT_READY (evidence/manifest.schema.json §x-maximum-claim-by-review-type).",
+    "not_established_vi": [
+      "Nguồn X khả thi ở bất kỳ mức ngân sách nào — chưa đo.",
+      "Nguồn X ổn định lâu dài — REQ-A7 vẫn KC.",
+      "Collector đã hoạt động — chưa có hành vi collector nào chạy.",
+      "AC-01 / AC-03 / AC-04 pass — SC01/SC03/SC04 vẫn NOT_RUN.",
+      "Selector và marker khớp trang X thật — chưa đối chiếu lần nào.",
+      "Cổng SP1 đạt — điều kiện của nó (Owner chấp nhận §6) chưa đủ."
+    ]
+  }
+}

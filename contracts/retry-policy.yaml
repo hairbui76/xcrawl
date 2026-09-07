@@ -3,7 +3,7 @@
 # Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
 
 contract_id: CT-policy-retry
-version: 0.6.0
+version: 0.8.0
 status: accepted
 owner_role: workflow contract owner
 source_refs:
@@ -61,11 +61,14 @@ scope: >-
   ingest, phân tích, provider, Telegram, connector nghiên cứu, lịch và catch-up, run-now, và probe phục hồi
   storage. Mỗi mục nêu ai retry (server hay worker) và khi nào TUYỆT ĐỐI không retry. Số PROVISIONAL là số cấu
   hình được, đổi không cần amendment, nhưng phải có lý do — không có "TBD" (baseline §3).
-  MỤC KC CÒN LẠI (nêu tường minh theo yêu cầu ratification): `research_connector_rate_limit` — nhịp gọi và
-  yêu cầu định danh thật của arXiv/OpenAlex (REQ-A6). Bốn giá trị cố ý để trống; chỉ có một sàn an toàn tự đặt
-  `min_interval_ms = 3000`. Mục này thuộc phạm vi PC05 và KHÔNG hạ trần của file này.
-  File này KHÔNG định nghĩa mã trạng thái HTTP (PC05), rate limit thật của arXiv/OpenAlex (KC, REQ-A6) hay
-  chi phí AI (PC06).
+  KHÔNG CÒN MỤC `KC` NÀO. Mục cuối cùng — `research_connector_rate_limit`, nhịp gọi và yêu cầu định danh
+  thật của arXiv/OpenAlex (REQ-A6) — đã được điền từ TÀI LIỆU CHÍNH THỨC dưới `OD-20260907-04` mục 2, mỗi
+  dữ kiện kèm URL, ngày đọc (2026-09-07) và trích dẫn nguyên văn: arXiv 1 request / 3 giây và một kết nối
+  đồng thời, không yêu cầu định danh; OpenAlex 100 request / giây kèm một ngân sách ngày nêu bằng tiền,
+  không yêu cầu định danh (`api_key` là tùy chọn). Sàn an toàn tự đặt `min_interval_ms = 3000` GIỮ NGUYÊN và
+  vẫn chặt hơn cả hai nguồn — có chủ đích. Việc điền xong bốn dữ kiện KHÔNG tự nâng trần claim của module
+  research connector; đó vẫn là việc của PC05.
+  File này KHÔNG định nghĩa mã trạng thái HTTP (PC05) hay chi phí AI (PC06).
 verification: >-
   EV-PC03-05 (SELF_VALIDATION): script lint khẳng định mọi mục trong `budgets` có `value` (hoặc `values`),
   `unit`, `rationale_vi`, `status`, `retried_by`; và mọi `retry_budget_ref` xuất hiện trong contracts/errors.yaml
@@ -92,11 +95,14 @@ ratification:
     đã được Owner chấp nhận và có đường đo rõ ràng thì hợp đồng vẫn kiểm được. Từng mục mang cờ
     `measurement_pending` tại chỗ.
   still_kc_vi: >-
-    KHÔNG mục nào ở đây khiến file mất tư cách CONTRACT_READY, nhưng phải nói ra: nhịp gọi và yêu cầu định danh
-    thật của arXiv/OpenAlex vẫn là `KC` (REQ-A6) — bốn giá trị trong `research_connector_rate_limit` cố ý để
-    trống, chỉ có một sàn an toàn tự đặt. Module research connector do đó KHÔNG được coi là CONTRACT_READY;
-    đó là phạm vi của PC05, không phải của file này. Ngoài ra REQ-A1/A5/A7 vẫn KC và mọi bằng chứng runtime
-    (E1–E4) vẫn `NOT_RUN`.
+    NGUYÊN VĂN TẠI THỜI ĐIỂM RATIFICATION (`OD-20260907-01`), giữ lại làm lịch sử: "nhịp gọi và yêu cầu định
+    danh thật của arXiv/OpenAlex vẫn là `KC` (REQ-A6) — bốn giá trị trong `research_connector_rate_limit` cố ý
+    để trống, chỉ có một sàn an toàn tự đặt." ĐIỀU NÀY KHÔNG CÒN ĐÚNG: `OD-20260907-04` mục 2 cấp quyền đọc
+    tài liệu, và cả bốn dữ kiện đã được điền kèm trích dẫn (xem `sources` của mục đó). Giữ câu cũ vì nó ghi
+    đúng trạng thái mà Owner đã phê chuẩn KHI phê chuẩn — xoá nó đi sẽ làm biên bản ratification đọc như thể
+    nó đã biết những gì hôm nay ta biết. Điều KHÔNG đổi: việc hết `KC` không tự làm module research connector
+    thành CONTRACT_READY — đó là phạm vi của PC05. Và REQ-A1/A5/A7 vẫn KC, mọi bằng chứng runtime (E1–E4) vẫn
+    `NOT_RUN`.
   tuning_values_vi: >-
     Các con số kỹ thuật thuần túy (lease TTL, heartbeat, backoff, timeout inference, probe storage) vẫn mang
     `status: PROVISIONAL`. Chúng nằm trong phạm vi ủy quyền kỹ thuật, đổi được bằng cấu hình mà không cần
@@ -134,7 +140,10 @@ principles:
       (1) `ACCEPTED (OD-20260907-01)` — Owner đã chốt giá trị;
       (2) `ACCEPTED (OD-20260907-01)` + `measurement_pending` — Owner chấp nhận làm giá trị làm việc, còn phải đo;
       (3) `PROVISIONAL` — tham số kỹ thuật trong phạm vi ủy quyền, không cần Owner.
-      Chỉ một mục còn `PLACEHOLDER_KC`: `research_connector_rate_limit`.
+      KHÔNG mục nào còn `PLACEHOLDER_KC`. Mục cuối cùng (`research_connector_rate_limit`) nay mang mức thứ
+      TƯ, chỉ dùng cho dữ kiện bên ngoài: (4) `DOCS_derived` — đọc từ tài liệu chính thức của bên thứ
+      ba, có URL + ngày đọc + trích dẫn nguyên văn. Mức này KHÔNG do Owner chấp nhận và KHÔNG do ta chọn;
+      nó hết hiệu lực khi nguồn đổi chính sách, không khi ai đó đổi ý.
 
 # ---------------------------------------------------------------------------
 # 2. Khi nào TUYỆT ĐỐI không retry (danh sách đóng)
@@ -456,27 +465,173 @@ budgets:
     rationale_vi: "Jitter ±20%. Tổng ~35 s cho một target, nhân với số target vẫn nằm trong một phase enriching hợp lý."
   research_connector_rate_limit:
     value: null
-    values: {arxiv_requests_per_window: null, arxiv_window_seconds: null, openalex_requests_per_window: null, openalex_window_seconds: null, min_interval_ms: 3000}
+    values: {arxiv_requests_per_window: 1, arxiv_window_seconds: 3, arxiv_max_concurrent_connections: 1, openalex_requests_per_window: 100, openalex_window_seconds: 1, min_interval_ms: 3000}
     unit: requests_per_window
-    status: PLACEHOLDER_KC
-    decision_ref: "REQ-A6 (KC — 'đọc tài liệu chính thức khi triển khai'); OWNER_DECISION_REQUIRED không áp dụng: đây là dữ kiện bên ngoài, không phải quyết định sản phẩm."
+    status: DOCS_derived   # BỐN dữ kiện REQ-A6 đã điền từ tài liệu chính thức, mỗi cái có URL + ngày đọc + trích dẫn nguyên văn (xem `sources`). KHÔNG còn PLACEHOLDER_KC.
+    status_note_vi: >-
+      `DOCS_derived` là một token MỚI trong file này, cố ý không tái dùng ba token cũ. Nó KHÔNG phải
+      `ACCEPTED (OD-...)`: Owner không "chấp nhận" một hạn mức của bên thứ ba, Owner chỉ cấp quyền đi đọc.
+      Nó KHÔNG phải `PROVISIONAL`: đây không phải tham số kỹ thuật ta tự chọn. Nó KHÔNG phải `XN_derived`:
+      nguồn là tài liệu bên ngoài, không phải đặc tả. Nghĩa đúng của nó: "đọc được từ tài liệu chính thức
+      vào một ngày cụ thể, có trích dẫn nguyên văn — và sẽ hết đúng vào ngày nguồn đổi chính sách".
+      Hình dạng tên lấy theo `XN_derived` đã có sẵn trong file này (`X_derived` = "suy ra từ X"), có hai lý
+      do và cả hai đáng ghi: nó đọc thành cùng một họ với token cũ, VÀ nó không phải SCREAMING_SNAKE nên
+      `E0-04d` không hiểu nhầm nó là một mã lỗi chưa đăng ký. Điều thứ hai là ràng buộc của công cụ, không
+      phải của thiết kế: danh sách từ vựng trạng thái sống trong `evidence/tools/e0_check.py`, ngoài lease
+      của packet này, nên đặt tên hợp lint là cách đúng — sửa danh sách của công cụ thì không.
+    decision_ref: >-
+      OD-20260907-04 mục 2 (authority AUTH-OWNER-20260907-05, thi hành qua AUTH-COORD-REQA6 /
+      PKT-PC03-FIX-REQA6 và phần tiếp AUTH-COORD-REQA6 / LEASE-PC03-REQA6-p2): Owner cấp một quyền mạng
+      HẸP, CHỈ ĐỌC trang tài liệu, để Worker đọc và trích NGUYÊN VĂN chính sách nhịp gọi/định danh của
+      arXiv và OpenAlex; ở vòng tiếp Owner mở rộng danh sách host thêm `help.openalex.org` sau khi Worker
+      báo `docs.openalex.org` redirect ra ngoài allowlist. CẢ BỐN dữ kiện REQ-A6 nay ĐÃ GIẢI (xem `sources`).
+      Vẫn đúng như trước: OWNER_DECISION_REQUIRED không áp dụng — đây là dữ kiện bên ngoài, không phải
+      quyết định sản phẩm; điều Owner quyết là PHẠM VI QUYỀN ĐỌC, không phải con số.
     applies_to: [research.fetch_work_metadata, research.get_connector_health]
     retried_by: server
     error_codes: [RATE_LIMITED]
+    sources:
+      - fact_id: A6-ARXIV-RATE
+        status: RESOLVED
+        resolves: [arxiv_requests_per_window, arxiv_window_seconds, arxiv_max_concurrent_connections]
+        url: "https://info.arxiv.org/help/api/tou.html"
+        page_vi: "Terms of Use for arXiv APIs — mục \"Rate limits\""
+        retrieved_at: "2026-09-07"
+        retrieved_by: "worker-WF (PKT-PC03-FIX-REQA6), WebFetch GET read-only"
+        quote_en: >-
+          "When using the legacy APIs (including OAI-PMH, RSS, and the arXiv API), make no more than one
+          request every three seconds, and limit requests to a single connection at a time."
+        reading_vi: >-
+          Đọc thành ba số: 1 request mỗi 3 giây (`arxiv_requests_per_window = 1`, `arxiv_window_seconds = 3`)
+          và TỐI ĐA MỘT kết nối đồng thời (`arxiv_max_concurrent_connections = 1`). Trùng số với sàn tự đặt
+          `min_interval_ms = 3000`, nhưng nay KHÁC HẲN về tư cách: với arXiv đó là hạn mức TÀI LIỆU NÊU, không
+          còn là con số bảo thủ do PC03 tự chọn. Giới hạn một kết nối là một dữ kiện MỚI mà sàn cũ không phủ.
+      - fact_id: A6-ARXIV-IDENT
+        status: RESOLVED_NEGATIVE
+        resolves: [arxiv_identification_required]
+        url: "https://info.arxiv.org/help/api/tou.html"
+        also_checked:
+          - "https://info.arxiv.org/help/api/user-manual.html"
+          - "https://info.arxiv.org/help/api/basics.html"
+          - "https://info.arxiv.org/help/api/index.html"
+        retrieved_at: "2026-09-07"
+        retrieved_by: "worker-WF (PKT-PC03-FIX-REQA6), WebFetch GET read-only"
+        observed_vi: >-
+          KHÔNG trang nào trong bốn trang trên đặt ra một yêu cầu định danh (User-Agent, email liên hệ, hay
+          đăng ký) như điều kiện để gọi API. Câu duy nhất chạm tới thông tin cá nhân là một tuyên bố về việc
+          THU THẬP dữ liệu, không phải một nghĩa vụ của caller, nguyên văn:
+          "In order to provide support and improvements for developers who use arXiv APIs, you understand
+          that we will collect certain private information about you, such as your name and email address."
+        limitation_vi: >-
+          Đây là một dữ kiện PHỦ ĐỊNH ("tài liệu không yêu cầu"), yếu hơn một dữ kiện khẳng định: nó đúng với
+          bốn trang đã đọc ngày 2026-09-07, không phải với toàn bộ arXiv. Nó KHÔNG được đọc thành "gọi ẩn danh
+          là hành vi tốt"; nó chỉ có nghĩa là hợp đồng không được viện arXiv làm căn cứ bắt buộc một chuỗi
+          định danh. `arxiv_identification_required = false` vì thế là một MÔ TẢ TÀI LIỆU, không phải một lời
+          khuyên vận hành.
+      - fact_id: A6-OPENALEX-RATE
+        status: RESOLVED
+        resolves: [openalex_requests_per_window, openalex_window_seconds]
+        url: "https://help.openalex.org/api/authentication/"
+        page_vi: "OpenAlex Help Center — API › Authentication, mục giới hạn"
+        retrieved_at: "2026-09-07"
+        retrieved_by: "worker-WF (PKT-PC03-FIX-REQA6 phần 2), WebFetch GET read-only"
+        quote_en: >-
+          "Two things return `429 Too Many Requests`: exceeding your daily budget, or making more than
+          100 requests per second."
+        reading_vi: >-
+          `openalex_requests_per_window = 100`, `openalex_window_seconds = 1`. Đây là NGƯỠNG CỨNG mà nguồn
+          nói thẳng là trả `429`, không phải một lời khuyên. Lưu ý hình dạng KHÁC arXiv: OpenAlex có HAI
+          giới hạn chồng lên nhau — nhịp tức thời (100 req/s) VÀ một ngân sách ngày; xem `A6-OPENALEX-BUDGET`.
+      - fact_id: A6-OPENALEX-BUDGET
+        status: RESOLVED_NON_NUMERIC
+        resolves: []            # cố ý KHÔNG map vào một khóa số nào — xem limitation_vi
+        url: "https://help.openalex.org/access/pricing/"
+        also_checked: ["https://help.openalex.org/api/authentication/", "https://help.openalex.org/api/errors/"]
+        retrieved_at: "2026-09-07"
+        retrieved_by: "worker-WF (PKT-PC03-FIX-REQA6 phần 2), WebFetch GET read-only"
+        quote_en: >-
+          "every account gets $1 of API usage per day for free" (trang pricing) · "a free key gives you 10×
+          the keyless budget; you can raise it further with a paid plan" (trang authentication) ·
+          "429 Too Many Requests — Rate limit or daily credit budget exceeded; slow down or wait for the
+          reset" (trang errors).
+        limitation_vi: >-
+          Ngân sách ngày của OpenAlex được nêu bằng TIỀN ($/ngày), KHÔNG bằng số lời gọi, và tài liệu KHÔNG
+          nêu con số ngân sách của lượt gọi không-khoá. Từ "10× the keyless budget" ta CÓ THỂ suy ra ngân
+          sách không-khoá bằng 1/10 ngân sách khoá-miễn-phí — nhưng đó là một PHÉP SUY, không phải một câu
+          trích, nên KHÔNG được viết thành một con số trong `values`. Hệ quả vận hành: hạn mức ngày là thứ
+          chỉ QUAN SÁT ĐƯỢC LÚC CHẠY, không phải hằng số cấu hình. Header `X-RateLimit-Limit`,
+          `X-RateLimit-Remaining`, `X-RateLimit-Credits-Used`, `X-RateLimit-Reset` (giây tới nửa đêm UTC) là
+          nguồn sự thật; connector đọc chúng thay vì đoán một con số ngày.
+      - fact_id: A6-OPENALEX-IDENT
+        status: RESOLVED_NEGATIVE
+        resolves: [openalex_identification_required]
+        url: "https://help.openalex.org/api/"
+        also_checked: ["https://help.openalex.org/api/authentication/", "https://help.openalex.org/access/pricing/"]
+        retrieved_at: "2026-09-07"
+        retrieved_by: "worker-WF (PKT-PC03-FIX-REQA6 phần 2), WebFetch GET read-only"
+        quote_en: >-
+          "Send your key as an `api_key` query parameter (or leave it off to try the API for free — the
+          website itself runs on these same public endpoints)." · "A free API key raises your daily budget
+          10×, and heavier use is pay-as-you-go."
+        observed_vi: >-
+          KHÔNG có nghĩa vụ định danh: gọi không khoá là một đường được tài liệu nêu tường minh. Các chuỗi
+          `mailto`, `polite pool`, `polite` và `User-Agent` KHÔNG xuất hiện trên trang tổng quan API, và
+          cũng không trên trang Authentication. Tức là quy ước "polite pool + `mailto`" mà REQ-D34/SG-IDENT
+          giả định KHÔNG còn trong tài liệu hiện hành — nó bị thay bằng cơ chế `api_key` TÙY CHỌN.
+        reading_vi: >-
+          `openalex_identification_required = false`. Nhưng đọc kèm `identification.recommendation_vi`:
+          không-bắt-buộc KHÔNG có nghĩa là không-nên. Một `api_key` miễn phí nâng ngân sách ngày 10 lần.
+        limitation_vi: >-
+          Phủ định có phạm vi: đúng với ba trang đã đọc ngày 2026-09-07. Tài liệu OpenAlex vừa đổi cấu trúc
+          (host cũ `docs.openalex.org` nay redirect sang `help.openalex.org`), nên chính khả năng "quy ước
+          cũ còn sống ở một trang chưa đọc" là lý do phải ghi ngày đọc bên cạnh mọi con số ở đây.
+    identification:
+      arxiv_identification_required: false        # A6-ARXIV-IDENT — tài liệu không yêu cầu; xem limitation_vi
+      openalex_identification_required: false     # A6-OPENALEX-IDENT — gọi không khoá là đường được tài liệu nêu
+      openalex_api_key_optional: true             # tùy chọn, nâng ngân sách ngày 10× — KHÔNG phải điều kiện để gọi
+      rule_vi: >-
+        Quy tắc KHÔNG đổi: khi một nguồn YÊU CẦU định danh mà cấu hình chưa có chuỗi định danh, connector
+        KHÔNG gọi nguồn đó (`SG-IDENT`, REQ-D34). Điều đổi là DỮ KIỆN mà quy tắc ấy áp lên: tính tới
+        2026-09-07, KHÔNG nguồn nào trong hai nguồn yêu cầu định danh, nên quy tắc không chặn lời gọi nào.
+        Quy tắc vẫn phải nằm trong code: nếu một nguồn đổi chính sách, nó là thứ chặn ta, và
+        `SG-IDENT` KHÔNG được xoá chỉ vì hôm nay nó không kích hoạt.
+      recommendation_vi: >-
+        `api_key` của OpenAlex là TÙY CHỌN theo tài liệu, nhưng việc CÓ cấu hình nó hay không là một quyết
+        định vận hành của Owner (ngân sách ngày ×10), KHÔNG phải một dữ kiện REQ-A6 và KHÔNG phải việc của
+        file này. Nếu Owner muốn dùng khoá, nó là một secret và đi theo `contracts/ops/secrets.md`, không
+        phải một giá trị viết thẳng ở đây.
+    resolved_vi: >-
+      BỐN dữ kiện REQ-A6 nay đều có nguồn: nhịp gọi arXiv, định danh arXiv, nhịp gọi OpenAlex, định danh
+      OpenAlex. Đường đi tới nửa OpenAlex được ghi lại vì nó là bằng chứng về ranh giới quyền, không phải
+      một chi tiết thủ tục: ở vòng đầu, MỌI đường dẫn dưới `docs.openalex.org` trả `301` sang
+      `https://help.openalex.org/` — khi đó là một host NGOÀI allowlist — và `openalex.org` trả `403`; Worker
+      DỪNG thay vì đi theo redirect (`agent_profile/protocol.md` §3: đi theo redirect ra ngoài allowlist là
+      tự mở scope). Owner sau đó thêm `help.openalex.org` vào allowlist, và vòng hai đọc được từ chính host
+      ấy. Ghi ra để lần sau không ai coi việc dừng đó là thừa: nó là lý do bốn con số này đến từ tài liệu
+      chứ không từ trí nhớ.
     rationale_vi: >-
-      Hạn mức thật của arXiv và OpenAlex là GIẢ ĐỊNH CHƯA KIỂM CHỨNG (REQ-A6, trạng thái KC). Không được bịa số.
-      Cho tới khi PC05 đọc tài liệu chính thức và điền, connector chạy dưới một sàn an toàn duy nhất:
-      `min_interval_ms = 3000` (≤ 1 request mỗi 3 giây cho mỗi nguồn) — con số này PROVISIONAL và cố tình bảo thủ,
-      lấy từ thông lệ "1 request/3s" mà arXiv nêu trong hướng dẫn sử dụng API công khai; nó chỉ là sàn để hệ thống
-      không chạy không giới hạn, KHÔNG phải tuyên bố về hạn mức thật.
-      `Retry-After` do nguồn trả về luôn THẮNG mọi giá trị ở đây.
-    blocked_scope_vi: >-
-      PC05 phải điền bốn giá trị null trước khi module research connector được coi là CONTRACT_READY
-      (SRC-PLAN §10). ĐÂY LÀ MỤC `KC` DUY NHẤT CÒN LẠI TRONG FILE NÀY sau ratification, và nó KHÔNG được
-      ratification làm cho biến mất: Owner phê chuẩn các quyết định sản phẩm, còn hạn mức thật của arXiv và
-      OpenAlex là DỮ KIỆN BÊN NGOÀI phải đọc từ tài liệu chính thức, không ai "chấp nhận" được thay cho nó.
-      Trần của file này là CONTRACT_READY chỉ vì phạm vi của nó là workflow/state; mục KC này thuộc phạm vi
-      collector (PC05), nơi trần vẫn là DRAFT_FOR_REVIEW.
+      Hạn mức thật của arXiv và OpenAlex là dữ kiện bên ngoài (REQ-A6), và KHÔNG con số nào ở đây bị bịa:
+      cả bốn dữ kiện có URL, ngày đọc và trích dẫn nguyên văn trong `sources`.
+      Sàn an toàn `min_interval_ms = 3000` (≤ 1 request mỗi 3 giây cho mỗi nguồn) GIỮ NGUYÊN và vẫn là
+      PROVISIONAL — nó nay là ràng buộc CHẶT NHẤT trong khối và điều đó là CÓ CHỦ ĐÍCH: với arXiv nó trùng
+      đúng hạn mức tài liệu nêu (1 req/3 s); với OpenAlex nó chậm hơn hạn mức tài liệu (100 req/s) khoảng
+      300 lần. Ta KHÔNG nới nó lên 100 req/s: đây là một hệ một người dùng đọc vài chục target mỗi đợt, nên
+      không có nhu cầu, còn rủi ro chạm `429` và ngân sách ngày thì có thật. Sàn là quyết định kỹ thuật của
+      ta; hạn mức trong `values` là dữ kiện của nguồn. Hai thứ khác loại, đừng gộp.
+      `Retry-After` do nguồn trả về luôn THẮNG mọi giá trị ở đây; với OpenAlex, các header
+      `X-RateLimit-*` (xem `A6-OPENALEX-BUDGET`) cũng thắng, vì ngân sách ngày không phải hằng số cấu hình.
+    scope_note_vi: >-
+      Hết `PLACEHOLDER_KC` KHÔNG tự động làm module research connector thành `CONTRACT_READY`: điều kiện đó
+      thuộc PC05/Coordinator xét trên toàn bộ cổng của module, không phải hệ quả của một khối trong file này,
+      và Worker của packet này KHÔNG tuyên bố nó. Cái khối này khẳng định đúng một điều: điều kiện của
+      `SG-A6` — "bốn giá trị còn `null`" — KHÔNG CÒN ĐÚNG, vì cả bốn đã được điền từ tài liệu chính thức.
+      Việc pin lại card và xét lại trần claim là bước riêng của Coordinator.
+      Trần của file này vẫn là CONTRACT_READY vì phạm vi của nó là workflow/state — không đổi vì vòng này.
+    expiry_vi: >-
+      Dữ kiện có hạn dùng. Bốn con số này đúng với tài liệu đọc ngày 2026-09-07 và KHÔNG tự gia hạn. Bất kỳ
+      ai thấy `429` lặp lại dưới các hạn mức này phải đọc lại nguồn và mở CR, KHÔNG chỉnh số tại chỗ. Riêng
+      OpenAlex vừa đổi cấu trúc tài liệu (`docs.openalex.org` → `help.openalex.org`) ngay trong năm nay, nên
+      giả định "tài liệu đứng yên" là giả định sai.
 
   # ---------------------------------------------------------------- report
   report_build_rebuild_attempts:

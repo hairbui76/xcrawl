@@ -1,0 +1,236 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-06-tc-research-connector-metadata",
+ "created_at": "2026-09-07T16:43:54Z",
+ "producer_principal": "worker-WN",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/baseline.json": "d25a856452ea0012eea4de1ad063054b4c49b92d5a7e71a4a982e3f25e56d1ef",
+   "precode/decision-register.md": "b2ed138fa636ce3e26f78f7e22994d4ebf9bc1b4e0ae692482df78247afe2017",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+   "contracts/ops/collector-probe.md": "1c4a9add8684fced455dd9cc4b030a3c6f2ed205e63a1acf5a2c200096f427cd",
+   "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+   "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+   "contracts/data/identity.md": "71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd",
+   "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+   "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+   "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+   "precode/adr/ADR-0009-identity-alias-target-union.md": "67844f12e4fe77a6a25b443a8fe84d053fbcfc9c30649296f55efc41befa4ee1",
+   "acceptance/fixtures/identity/README.md": "ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14",
+   "acceptance/fixtures/identity/b-post-only-missing-ids.json": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+   "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+   "acceptance/fixtures/identity/h-five-posts-thread-one-target.json": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+   "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+   "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+   "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+   "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+   "acceptance/scenarios.yaml": "ca372775e943c49776ae853615bad275054773f8808eab12aa085651ca07ea17",
+   "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+   "acceptance/fixtures/recovery/README.md": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+   "acceptance/fixtures/recovery/g-ssrf-redirect-private.json": "d5973052f973b738a66c926d98d662e2bb821e7de7e938acbf040f5328dec2ec",
+   "agent-tasks/TC-research-connector-metadata.md": "1dad8bd2cf20f0af8f233f44d8ee2262e3c3368bdfa5e99f2587f6cd5e9d0853",
+   "evidence/handoffs/PC03-REQA6-handoff.md": "58a11fe5864d4f13655faf491a6c2c2cb613dcccc09cf801c5a39ec4d29c76b4"
+  },
+  "implementation_revision": "PKT-TC-RESEARCH-2 (LEASE-TC-RESEARCH-e2) working tree; service.py=6803804a503e8550922636f287cebe80f77a81c5a9d51cd3ff055a60aa9f849a; client_arxiv.py=761f67819be24ab2e6b7bb381ac4081b5a537e3306db4b2e4e9951c808def742; client_openalex.py=50173772f7d39d33e453e293a7de2968bdd441960806725fc5160fb661184960; repository.py=78a0d9b3085728fe5b4d071f6466e9d1facd60a0ff7e695c996412a26469f77b; router.py=a56d7216fcd6e584d159256ea2a91fd809c4e3689077fdd682740b25d2b1fe11; 0005_tc_research_connector_metadata.py=7ce06bc521a1ff322e2e886bb5b9c0136c4bcf99a28c0570f469455765502f50"
+ },
+ "environment": {
+  "os": "Linux 7.0.0-30-generic",
+  "runtimes": {
+   "python": "3.12.3",
+   "httpx": "0.28.1",
+   "fastapi": "0.115.14",
+   "sqlalchemy": "2.0.52",
+   "alembic": "1.19.2",
+   "pydantic": "2.13.5",
+   "pytest": "8.4.2",
+   "PyYAML": "6.0.3",
+   "ruff": "0.6.9",
+   "mypy": "1.20.2",
+   "uv": "0.12.9",
+   "sqlite": "3.45.1"
+  },
+  "config_redacted": {
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path",
+   "connector_transport": "httpx.MockTransport replaying hand-written synthetic bodies",
+   "connector_resolver": "a dict literal in the test module; no DNS lookup is performed",
+   "research_connector_rate_limit": "RESOLVED in contracts/retry-policy.yaml 0.8.0 (status DOCS_derived, retrieved 2026-09-07): arXiv 1 req / 3 s and 1 concurrent connection; OpenAlex 100 req / 1 s. The shipped ConnectorSettings carries these; tests assert the constants equal the contract rather than restating them. min_interval_ms = 3000 is unchanged and remains the binding constraint for both sources -- it was NOT loosened to OpenAlex's 100 req/s.",
+   "openalex_contact_identity": "not sent: neither source's documentation requires identification (retry-policy 0.8.0 `identification`). The SG-IDENT mechanism is retained and covered by a test.",
+   "connector_endpoints": "still unset by default: no contract states either API host, so endpoint_template and host_allowlist remain deployment configuration and remain a refusal condition (SG-DOC)."
+  },
+  "provider": null,
+  "model": null,
+  "embedding_generation_id": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC07",
+   "SC11",
+   "SC23",
+   "SC29",
+   "SC30",
+   "SC39",
+   "SC49"
+  ],
+  "requirement_ids": [
+   "REQ-A6",
+   "REQ-AC11",
+   "REQ-D21",
+   "REQ-D26",
+   "REQ-D32",
+   "REQ-D33",
+   "REQ-D34",
+   "REQ-P0-04",
+   "REQ-S11.4-03",
+   "REQ-S13.2-01"
+  ],
+  "invariant_ids": [
+   "I03",
+   "I11",
+   "I13"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json",
+    "sha256": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+    "bytes": 7475
+   },
+   {
+    "path": "acceptance/fixtures/identity/b-post-only-missing-ids.json",
+    "sha256": "626f399ff54144d28f60418b14cfa58b54c41d8ba46c10b243428a0c1ba5e89e",
+    "bytes": 6258
+   },
+   {
+    "path": "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json",
+    "sha256": "8e18ff69e9230b8d6d2ac7adac4e68b9e53c8998f5c784939d4c2b67158981c6",
+    "bytes": 11420
+   },
+   {
+    "path": "acceptance/fixtures/identity/h-five-posts-thread-one-target.json",
+    "sha256": "3ffe41c50d3829b88f54542cb283894f1c23ff2e7107ff90686e06b82ced944c",
+    "bytes": 11326
+   },
+   {
+    "path": "acceptance/fixtures/recovery/g-ssrf-redirect-private.json",
+    "sha256": "d5973052f973b738a66c926d98d662e2bb821e7de7e938acbf040f5328dec2ec",
+    "bytes": 3265
+   },
+   {
+    "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+    "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "bytes": 31529
+   }
+  ],
+  "seed": null,
+  "clock": null,
+  "protocol_version": null
+ },
+ "execution": {
+  "kind": "command",
+  "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/contract/test_research_metadata_fixtures.py tests/integration/test_research_connector_health.py -p no:warnings",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "started_at": "2026-09-07T16:41:10Z",
+  "ended_at": "2026-09-07T16:41:15Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Bổ sung cho EV-E1-05 sau khi REQ-A6 được giải (contracts/retry-policy.yaml 0.8.0). Fixture vẫn là oracle cho bốn kịch bản cũ; HỢP ĐỒNG là oracle cho phần mới: (a) test đọc `values` và `identification` THẲNG từ retry-policy.yaml và khẳng định các hằng số trong service.py bằng đúng từng con số — sửa số ở code thì fail, sửa hợp đồng cũng fail cho tới khi code theo; (b) không `values` nào còn null và `status` là `DOCS_derived`; (c) với cấu hình mặc định KHÔNG override, `missing_req_a6_facts()` rỗng cho cả hai nguồn — điều kiện của SG-A6 không còn đúng; (d) hai lời gọi arXiv liên tiếp cách nhau ĐÚNG 3.0 s trên đồng hồ giả, và `peak_in_flight['arxiv_api'] == 1`; nắm hai kết nối cùng lúc raise ConcurrencyLimitExceeded; (e) `effective_interval_ms` của OpenAlex là 3000 chứ KHÔNG phải 10 — sàn tự đặt vẫn thắng hạn mức 100 req/s; (f) header `X-RateLimit-*` được đọc và báo trong health, remaining=0 ⇒ `unavailable`, vắng header ⇒ `budget: null` chứ không phải cạn; (g) REGRESSION: một cấu hình bị đặt null/thiếu tường minh vẫn từ chối với 0 request và reason_code `rate_facts_unresolved`.",
+  "expected": {
+   "card_tests": 66,
+   "card_failures": 0,
+   "req_a6_values_still_null": 0,
+   "arxiv_interval_ms": 3000,
+   "openalex_effective_interval_ms": 3000,
+   "arxiv_peak_concurrent_connections": 1,
+   "requests_when_rate_explicitly_nulled": 0,
+   "full_suite_failures": 0
+  },
+  "observed": {
+   "card_tests": 66,
+   "card_failures": 0,
+   "req_a6_values_still_null": 0,
+   "arxiv_interval_ms": 3000,
+   "openalex_effective_interval_ms": 3000,
+   "arxiv_peak_concurrent_connections": 1,
+   "requests_when_rate_explicitly_nulled": 0,
+   "full_suite": {
+    "tests": 586,
+    "failures": 0,
+    "errors": 0,
+    "xfail": 4
+   },
+   "e0_check": "25 checks, 25 PASS, 0 FAIL, 0 violations",
+   "verify_cards": "13 checks over 19 cards, 12 PASS / 1 FAIL, 60 violations -- ALL are stale §0 pins on all 19 cards caused by the REQ-A6 packet changing contracts/retry-policy.yaml, precode/decision-register.md and precode/baseline.json. Repo-wide re-pin owed by PC10; see CR-TC-research-05.",
+   "sample_size_note": "66 = 20 contract tests + 46 integration tests"
+  }
+ },
+ "result": "PASS",
+ "artifacts": [],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 66,
+  "not_checked_vi": [
+   "E3 vẫn KHÔNG chạy và vẫn bị cấm ở card này (SG-LIVE): mọi test dùng httpx.MockTransport. Việc REQ-A6 đã giải KHÔNG làm cho một lời gọi thật nào được thực hiện hay được phép.",
+   "Bốn con số nay là DỮ KIỆN CÓ HẠN DÙNG: đúng với tài liệu đọc ngày 2026-09-07, và `expiry_vi` của hợp đồng nói rõ chúng không tự gia hạn. Test khẳng định code KHỚP hợp đồng; KHÔNG khẳng định hợp đồng còn khớp với tài liệu hôm nay.",
+   "Nhịp gọi được kiểm bằng ĐỒNG HỒ GIẢ và một sleeper giả. Nó chứng minh cửa nhịp tính đúng khoảng chờ, KHÔNG chứng minh tiến trình thật ngủ đúng ngần ấy dưới tải.",
+   "Giới hạn một kết nối của arXiv được kiểm bằng một BỘ ĐẾM trong tiến trình. Nó bắt được caller giữ hai kết nối qua cùng một RateGate; nó KHÔNG bắt được hai tiến trình hay hai RateGate cùng gọi arXiv — không có khoá liên tiến trình nào ở đây.",
+   "Ngân sách ngày của OpenAlex chỉ được ĐỌC LẠI từ header; connector không mô hình hoá nó và không dự đoán được khi nào sẽ cạn. Header là synthetic trong test.",
+   "TỰ THAM CHIẾU (không đổi từ EV-E1-05): response đã ghi sẵn do chính worker này viết, cùng người viết parser. Chỉ E3 đóng được khoảng này.",
+   "Endpoint và host của cả hai API vẫn KHÔNG có trong bất kỳ hợp đồng nào; connector vẫn từ chối nguồn chưa được cấu hình endpoint. 'Chạy được ngay khi cài' đúng với NHỊP GỌI, không đúng với ĐỊA CHỈ.",
+   "Chỉ 2 trong 36 cạnh của boundary/a chạm module này (FE-20, FE-21).",
+   "E2 (fault injection SQLite) vẫn chưa chạy cho đường ghi source_fetch_log.",
+   "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy."
+  ],
+  "uncertainty_vi": "contracts/ops/collector-probe.md §9.2 (hash KHÔNG đổi: 03e88010…) vẫn ghi cả năm dòng REQ-A6 là `KC` và vẫn nói module không được CONTRACT_READY vì bốn giá trị để trống. Điều đó nay MÂU THUẪN với retry-policy.yaml 0.8.0. Code theo retry-policy (nguồn có trích dẫn và ngày đọc); xem CR-TC-research-06. Ngoài ra ports.yaml `state_effects_vi: 'Không ghi'` vs source_fetch_log vẫn như CR-TC-research-03.",
+  "unresolved_issue_refs": [
+   "CR-TC-research-01",
+   "CR-TC-research-02",
+   "CR-TC-research-03",
+   "CR-TC-research-04",
+   "CR-TC-research-05",
+   "CR-TC-research-06",
+   "REQ-A6"
+  ]
+ },
+ "invalidation": {
+  "invalidated_by_paths": [
+   "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+   "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json",
+   "acceptance/fixtures/identity/b-post-only-missing-ids.json",
+   "acceptance/fixtures/identity/g-arxiv-version-v1-v2.json",
+   "acceptance/fixtures/identity/h-five-posts-thread-one-target.json",
+   "acceptance/fixtures/recovery/g-ssrf-redirect-private.json",
+   "acceptance/scenarios.yaml",
+   "agent-tasks/TC-research-connector-metadata.md",
+   "contracts/capabilities.yaml",
+   "contracts/data/entities.yaml",
+   "contracts/data/identity.md",
+   "contracts/errors.yaml",
+   "contracts/modules.yaml",
+   "contracts/ops/collector-probe.md",
+   "contracts/ops/deployment.md",
+   "contracts/ops/internet-boundary.md",
+   "contracts/ports.yaml",
+   "contracts/retry-policy.yaml",
+   "contracts/state/run.yaml",
+   "precode/decision-register.md"
+  ],
+  "invalidated_by_rule_ids": [
+   "INV-06"
+  ]
+ }
+}

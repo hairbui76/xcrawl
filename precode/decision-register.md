@@ -1,13 +1,13 @@
 ---
 contract_id: CT-precode-decision-register
-version: 0.1.1
+version: 0.1.3
 status: draft
 owner_role: requirements owner (PC00)
 source_refs:
   - SRC-SPEC §1.4, §2, §3, §4, §5, §6, §7, §8, §9, §10, §11, §12, §13
   - SRC-PLAN §3, §3.1, §6, §7, §8, §9, §10, §11, §12
 requirement_refs: [precode/requirements.csv — toàn bộ 246 dòng]
-decision_refs: [OD-20260907-01, OD-20260907-02, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0011]
+decision_refs: [OD-20260907-01, OD-20260907-02, OD-20260907-03, OD-20260907-04, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0011]
 invariant_refs: [I01..I15]
 producers: [PC00]
 consumers: [PC01, PC02, PC03, PC04, PC05, PC06, PC07, PC08, PC09, PC10]
@@ -23,7 +23,11 @@ scope: >
   (precode/owner-decisions.md) — B01-B17 nay RATIFIED và các amendment tương ứng ACCEPTED.
   REQ-OQ03 vẫn OWNER_DECISION_REQUIRED. Cập nhật vòng hai 2026-09-07: OD-20260907-02
   (precode/owner-decisions-02.md) phê chuẩn ADR-0011 và mở lối vào Giai đoạn 0 và 1 của
-  docs/master-plan.md. File này KHÔNG đóng bất kỳ finding audit nào.
+  docs/master-plan.md. Cập nhật vòng ba 2026-09-07: OD-20260907-03 (precode/owner-decisions-03.md)
+  phe chuẩn AMD-ENT-owner-01 và PROV-PC00-08, và mở lối vào Giai đoạn 2. File này KHÔNG đóng bất kỳ
+  finding audit nào. Cập nhật vòng bốn 2026-09-07: OD-20260907-04 (precode/owner-decisions-04.md)
+  đóng cổng chấp nhận probe §6 mục 2-4 và cấp một quyền mạng hẹp một lần để đọc tài liệu chính thức
+  phục vụ REQ-A6 — REQ-A6 VẪN KC, biên bản không cung cấp dữ kiện, chỉ cho phép đi lấy.
 verification: E0 — self-validation bằng script kiểm đếm (EV-PC00-04); không có E1–E4.
 claim_ceiling: DRAFT_FOR_REVIEW
 ---
@@ -41,6 +45,8 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `RATIFIED (OD-20260907-01)` | Owner đã phê chuẩn ngày 2026-09-07 — xem `precode/owner-decisions.md` |
 | `ACCEPTED (OD-20260907-01)` | Amendment hoặc quyết định đã được Owner chấp nhận trong cùng biên bản |
 | `ACCEPTED (OD-20260907-02)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng hai** — xem `precode/owner-decisions-02.md` |
+| `ACCEPTED (OD-20260907-03)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng ba** — xem `precode/owner-decisions-03.md` |
+| `ACCEPTED (OD-20260907-04)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng bốn** — xem `precode/owner-decisions-04.md` |
 | `OWNER_DECISION_REQUIRED` | Không có phương án mặc định an toàn; phạm vi liên quan bị chặn tường minh |
 
 **Cập nhật 2026-09-07.** Owner đã trả lời bản yêu cầu quyết định. Biên bản `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`) phê chuẩn B01–B17 và các amendment tương ứng. `agent_profile/registry.json` nay có `open_product_blockers: []` và một danh sách `ratified_product_blockers` trích `evidence_ref`.
@@ -49,7 +55,9 @@ Ba điều **không** đổi theo biên bản: `REQ-OQ03` vẫn `OWNER_DECISION_
 
 Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv` giữ nguyên như đặc tả, **trừ bốn dòng** mà biên bản chuyển tường minh: D08, D09, D42, D50 (`ĐX` → `XN`). Amendment ở §3 nay là văn bản **đã được chấp nhận**; việc phát hành một đặc tả v0.3 áp dụng chúng là công việc riêng, chưa được giao.
 
-**Cập nhật vòng hai 2026-09-07.** Biên bản thứ hai `OD-20260907-02` (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **hai** việc: phê chuẩn `ADR-0011` (nên `PROV-PC00-07` ở §8 nay `ACCEPTED (OD-20260907-02)`) và mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md` (§8.10). Nó **không** đổi trạng thái của một dòng nào trong `precode/requirements.csv`, **không** giải `REQ-OQ03`, **không** đổi một mục `KC` nào và **không** đóng finding nào. Chế độ vận hành cho việc ghi mã — hệ quả *hàm ý* của lối vào đó, do Coordinator ruling chứ không do Owner phát biểu — nằm ở `PROV-PC00-08` và vẫn là `PROVISIONAL`.
+**Cập nhật vòng hai 2026-09-07.** Biên bản thứ hai `OD-20260907-02` (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **hai** việc: phê chuẩn `ADR-0011` (nên `PROV-PC00-07` ở §8 nay `ACCEPTED (OD-20260907-02)`) và mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md` (§8.10). Nó **không** đổi trạng thái của một dòng nào trong `precode/requirements.csv`, **không** giải `REQ-OQ03`, **không** đổi một mục `KC` nào và **không** đóng finding nào. Chế độ vận hành cho việc ghi mã — hệ quả *hàm ý* của lối vào đó, do Coordinator ruling chứ không do Owner phát biểu — nằm ở `PROV-PC00-08` — **nay `ACCEPTED (OD-20260907-03)`**.
+
+**Cập nhật vòng ba 2026-09-07.** Biên bản thứ ba `OD-20260907-03` (`precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **ba** việc: phê chuẩn `AMD-ENT-owner-01` (§8.11), phê chuẩn `PROV-PC00-08` (§8), và mở lối vào Giai đoạn 2 (§8.12). Nó **không** mở quyền mạng, **không** gỡ cổng probe (`collector-probe.md` §6 mục 2–4), **không** cho phép đoán bốn dữ kiện `REQ-A6`, **không** phê chuẩn mục `PROVISIONAL` nào khác, và **không** giải `REQ-OQ03`.
 
 ## 1. Bảng tổng hợp B01–B17
 
@@ -266,6 +274,17 @@ Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv`
 
 Mỗi amendment ghi: **Trước** (trích nguyên văn nguồn), **Sau** (văn bản đề xuất), **Vì sao**, **Bảo đảm thay thế**, **Test/oracle chứng minh**, **REQ bị ảnh hưởng**. Tất cả nay ở trạng thái **`ACCEPTED (OD-20260907-01)`** — Owner đã phê chuẩn ngày 2026-09-07 (`precode/owner-decisions.md`). Chúng vẫn **chưa** được áp vào `precode/source/spec-v0.2.md`: bản nguồn là bất biến, và việc phát hành đặc tả v0.3 là công việc riêng chưa được giao.
 
+**Mục này chứa HAI loại bản ghi, và chúng không được lẫn nhau.**
+
+| Loại | Tiền tố | Nó nói gì | Có văn bản "Sau" không |
+| --- | --- | --- | --- |
+| **Amendment** | `AMD-B<nn>` | Câu chữ đặc tả **cần được thay** vì nó mâu thuẫn, thiếu hoặc sai phạm vi. Đề xuất một văn bản thay thế. | **Có** |
+| **Đính chính tiền đề** | `AMD-SPEC-<REQ>-<nn>` | Câu chữ đặc tả **đúng như một bản ghi lịch sử** nhưng **tiền đề thực tế** của nó nay đã được biết là sai, do một dữ kiện bên ngoài. Không đề xuất thay thế câu nào. | **Không** — xem ô "Sau" của từng mục |
+
+Cả hai loại đều **không** sửa `precode/source/spec-v0.2.md` hay `research-radar-spec.md`. Khác biệt là ở chỗ:
+với `AMD-B<nn>`, một đặc tả v0.3 tương lai **sẽ** viết lại câu đó; với `AMD-SPEC-…`, câu đó có thể được giữ
+nguyên và **đọc theo nghĩa lịch sử** — nó ghi đúng điều người viết tin tại thời điểm viết.
+
 ### AMD-B01 — Mốc freeze tag
 
 - **Trước** (SRC-SPEC §3.4, hàng `C03/D-tag`): "Mốc hiệu lực tag theo **thời điểm gửi**: bộ tag lúc tạo báo cáo quyết định nội dung".
@@ -413,6 +432,60 @@ Mỗi amendment ghi: **Trước** (trích nguyên văn nguồn), **Sau** (văn b
 ### Blocker không cần amendment văn bản
 
 B06, B13 và B14 **không** sửa câu chữ nào của đặc tả: chúng bổ sung định nghĩa còn thiếu (identity/alias/target; chính sách secret và cô lập; phép đo mật độ vector). Owner đã phê chuẩn cả ba ở `OD-20260907-01` mục 10, 15 và 16 — nay `ACCEPTED (OD-20260907-01)`. Hai hệ quả Owner đã biết khi chấp nhận: một adapter **có thể bị tắt** cho tới khi kiểm được cô lập (B13, và `REQ-AC16` vì thế vẫn `BLOCKED`), và khối "hướng đang nổi" **sẽ trả `insufficient_evidence`** khi thiếu dữ liệu (B14, D53 vẫn ĐX ở phần hiệu chỉnh tham số).
+
+### `AMD-SPEC-D34-01` — Tiền đề "OpenAlex yêu cầu email liên hệ" đã bị dữ kiện thay thế
+
+**Đây là một đính chính tiền đề, KHÔNG phải một amendment câu chữ.** Nó được ghi ở đây theo ruling của
+Coordinator sau khi `worker-W3n` **đúng đắn từ chối** tự quyết mục này trong phạm vi thẩm quyền của họ.
+
+- **Trước** (trích nguyên văn `research-radar-spec.md:101`, hàng `D34` của bảng nhật ký quyết định):
+  "Nhịp gọi arXiv và yêu cầu email liên hệ của OpenAlex: đọc tài liệu chính thức khi triển khai".
+- **Sau:** **không có văn bản thay thế, và không cần một văn bản thay thế.** Câu trên **đứng nguyên, không
+  sửa một byte**. Nó được đọc theo **nghĩa lịch sử**: nó ghi đúng giả định đang có hiệu lực lúc viết, và
+  giả định đó nay đã biết là sai. Nghĩa vụ mà câu này đặt ra — *"đọc tài liệu chính thức khi triển khai"* —
+  **đã được thực hiện đầy đủ**, và chính việc thực hiện nó là thứ chứng minh tiền đề sai.
+- **Vì sao:** ngày **2026-09-07**, dưới quyền mạng hẹp của `OD-20260907-04` mục 2 (mở rộng thêm
+  `help.openalex.org`), `worker-WF` đọc tài liệu OpenAlex hiện hành và ghi lại nguyên văn: **không** có yêu
+  cầu email liên hệ, **không** còn quy ước `mailto` / `polite pool` / `User-Agent`; `api_key` là **tùy
+  chọn** (nó chỉ nâng ngân sách ngày). Chi tiết, trích dẫn và URL ở **§8.13.2**.
+- **Bảo đảm thay thế:** ràng buộc thật của OpenAlex **không** biến mất, nó chỉ **khác** với điều D34 giả
+  định — `100` request/giây cộng một **ngân sách ngày nêu bằng tiền, không bằng số lời gọi**. Vì vậy
+  `SG-IDENT` (không gọi nguồn khi nguồn đòi định danh mà cấu hình chưa có) **vẫn giữ nguyên như một luật**;
+  điều đổi là với OpenAlex nó **không kích hoạt**, vì tiền đề "nguồn này đòi định danh" không đúng. Luật
+  không bị nới; chỉ có một trong các đầu vào của nó được đo đúng.
+- **Test/oracle:** `contracts/retry-policy.yaml` `research_connector_rate_limit` nay `DOCS_derived`
+  (v0.8.0) với `openalex_requests_per_window = 100`, `openalex_window_seconds = 1`, và
+  `openalex_identification_required` mang giá trị **phủ định có nguồn** thay vì `null`. Ngân sách ngày
+  **cố ý không** được biến thành một con số (`RESOLVED_NON_NUMERIC`): tài liệu nêu nó bằng tiền, nên nguồn
+  sự thật lúc chạy là các header `X-RateLimit-*`. Oracle âm: không file nào được ghi một con số ngân sách
+  ngày suy ra từ "1/10".
+- **REQ ảnh hưởng:** `REQ-D34` (`research-radar-spec.md:101`), `REQ-A6`, `REQ-S13.2-01`, `REQ-P0-04`.
+
+**Bằng chứng.** `precode/decision-register.md` §8.13.2; `evidence/handoffs/PC03-REQA6-handoff.md`;
+`OD-20260907-04` mục 2 (`precode/owner-decisions-04.md`, authority `AUTH-OWNER-20260907-05`), cộng phần mở
+rộng allowlist thêm `help.openalex.org` được ghi tại §8.13.2.
+
+**Quan hệ với các file đã mang ghi chú.** `precode/requirements.csv` hàng `REQ-D34` và
+`acceptance/traceability.csv` hàng `REQ-D34` **đã** mang cảnh báo tiền đề sai — do `worker-W3n` viết. Mục
+này là **bản ghi chuẩn** mà hai ghi chú đó trỏ về; nếu ba nơi lệch nhau thì **mục này thắng**. `worker-W3n`
+không tự tạo nó vì tạo một `AMD-…` là việc của PC00 dưới ruling của Coordinator, không phải của gói đang
+sửa ghi chú — đó là một lần từ chối đúng, và nó được ghi lại ở đây thay vì bị bỏ qua.
+
+**Ba điều mục này KHÔNG làm.**
+
+1. **Không sửa đặc tả.** `research-radar-spec.md` và `precode/source/spec-v0.2.md` là **nguồn bất biến**;
+   không byte nào của chúng bị chạm bởi mục này hay bởi bất kỳ gói nào. Một đặc tả v0.3 tương lai **có thể**
+   giữ nguyên câu D34 và chỉ thêm một chú thích lịch sử — khác hẳn các `AMD-B<nn>`, vốn *đòi* viết lại.
+2. **Không đổi trạng thái yêu cầu vì lý do này.** `REQ-D34` chuyển `KC → XN` là vì **nghĩa vụ đọc tài liệu
+   đã hoàn thành** (§8.13.2), **không** phải vì tiền đề của nó đúng. Ghi chú trong `requirements.csv` nói
+   thẳng điều đó và phải giữ nguyên cách nói ấy.
+3. **Không nâng trần claim của module nào.** `MOD-research-connector` đạt `CONTRACT_READY` hay không là kết
+   luận của PC05/Coordinator trên toàn bộ cổng của nó, không phải hệ quả của một khối hợp đồng đã hết `KC`.
+
+**Hiệu lực của chính đính chính này có điều kiện.** Nó đúng với tài liệu OpenAlex **đọc ngày 2026-09-07**.
+Nhà cung cấp đổi chính sách thì nhãn `DOCS_derived` hết hiệu lực và mục này phải được đọc lại — cùng luật
+đã ghi ở `contracts/retry-policy.yaml`. Một dữ kiện bên ngoài không bao giờ "đóng" vĩnh viễn theo cách một
+quyết định sản phẩm đóng.
 
 ## 4. Các mục P0 hiện còn ĐX — **không được tự promote**
 
@@ -589,7 +662,8 @@ baseline §3 đã được Coordinator sửa tương ứng), và `requirement_re
 - **Bối cảnh.** `OD-20260907-02` mục 2 cho phép bắt đầu Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`. Owner **không** phát biểu gì về chế độ vận hành; biên bản tự khai mục này là *"hàm ý bởi mục 2"* và là một **ruling của Coordinator**, đã khai báo tường minh.
 - **Vấn đề.** `agent_profile/protocol.md` §2 giới hạn `DOCUMENTARY_DRAFT` cho *"draft documentation/contract/schema/examples, không code product"*, và đòi chế độ `ENFORCED` phải có capability broker, tool sandbox, authority/lease registry, danh tính đã xác thực, đồng hồ, lock/CAS + fencing tại commit và audit log bền vững. **Không guard nào trong số đó tồn tại** trong phiên này. Đọc nguyên văn hồ sơ thì việc ghi mã sản phẩm phải `BLOCKED`.
 - **Ruling.** Chỉ thị tường minh của Owner **đứng trên** hồ sơ đã pin — đó là `instruction_precedence` mà `agent_profile/registry.json` khai và là câu mở đầu của `protocol.md` ("Instruction Owner và ràng buộc nền tảng luôn đứng trên hồ sơ"). Vì vậy việc ghi mã tiến hành dưới **đúng** cơ chế đã dùng cho tài liệu: lease độc quyền theo dõi bằng thông điệp, tập ghi chính xác (exact write set) trong từng TASK_PACKET, và review độc lập theo route của `protocol.md` §7.
-- **Trạng thái.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới chỉ thị của Owner (`AUTH-OWNER-20260907-03`). **Owner có thể phản đối.** Đây **không** phải `ACCEPTED (OD-20260907-02)`: bốn mục kia trong biên bản là câu trả lời của Owner, mục này là suy luận của Coordinator từ một câu trả lời khác. Sự khác biệt đó phải giữ nguyên trong sổ.
+- **Trạng thái.** **`ACCEPTED (OD-20260907-03)`** — Owner phê chuẩn ngày 2026-09-07 bằng câu *"accept both, start phase 2"*, trong đó "both" trỏ đích danh mục này và `AMD-ENT-owner-01` (`precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`). **Rủi ro còn lại được Owner thừa nhận, không phải được xoá:** ba chế độ hỏng ở gạch đầu dòng dưới vẫn nguyên, `enforcement` trong `agent_profile/registry.json` vẫn `NOT_IMPLEMENTED`, và phải giữ như vậy cho tới khi có runtime guard thật. `ACCEPTED` ở đây nghĩa là Owner chấp nhận **vận hành với** rủi ro đó.
+- **(Lịch sử) Trạng thái trước vòng ba.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới chỉ thị của Owner (`AUTH-OWNER-20260907-03`); **Owner có thể phản đối**. Khi đó đây **không** phải `ACCEPTED (OD-20260907-02)`: bốn mục kia trong biên bản vòng hai là câu trả lời của Owner, mục này là suy luận của Coordinator từ một câu trả lời khác. Sự khác biệt đó đã được giữ đúng cho tới khi Owner trả lời tường minh — đoạn này giữ lại để truy vết.
 - **Rủi ro còn lại — phải đọc đúng.** "Lease độc quyền" ở giai đoạn mã vẫn là **kỷ luật bằng thông điệp**, không phải một khoá thật. Cụ thể: (a) một agent ghi ra ngoài tập ghi của mình sẽ **không** bị nền tảng chặn — chỉ bị phát hiện ở handoff hoặc audit, tức **sau** khi byte đã lên đĩa; (b) hai Worker chạy song song trên cùng một file không có fencing thực, nên "ghi đè im lặng" là một chế độ hỏng có thật, được giảm bằng cách Coordinator **không** cấp hai packet chồng path chứ không phải bằng cưỡng chế; (c) không có audit log bền vững do một service ghi — bằng chứng nằm ở handoff do chính Worker viết, nên nó chứng minh được *cái gì đã đổi* (hash trước/sau) nhưng **không** chứng minh được *không có gì khác đã đổi* ngoài phạm vi rehash. Ba điều này áp cho mã đúng như đã áp cho tài liệu; điều mới là **hậu quả** của một lần ghi sai giờ có thể là mã chạy được chứ không chỉ một câu văn sai.
 - **Ranh giới không được nới bởi ruling này.** Không secret; không gọi thật X/Telegram/AI (E3 vẫn `NOT_RUN`); mạng **chỉ** để cài gói đã khai báo từ PyPI/npm (mục 4 của biên bản), không cho mục đích nào khác. Trần claim của đầu ra Giai đoạn 0/1 là `IMPLEMENTATION_VERIFIED`, không bao giờ INTEGRATION/LIVE; `product_status` giữ `NOT_READY_FOR_PRODUCT_CODE` cho tới khi G5 đạt đầy đủ và bằng chứng Giai đoạn 1 được đăng ký.
 - **Nếu Owner phản đối.** Phương án thay thế duy nhất nhất quán với hồ sơ là dừng ghi mã cho tới khi có runtime guard thật (capability broker + lease service + fencing), tức hoãn Giai đoạn 0 và 1 vô thời hạn. Không có phương án trung gian nào: `protocol.md` §2 nói rõ *"Nếu không verify được runtime guards → BLOCKED, không fallback sang soft prompt"*, và ruling này **chính là** một fallback sang soft prompt — được biện minh bằng chỉ thị Owner, không bằng hồ sơ.
@@ -623,6 +697,10 @@ PC00 là nơi tập trung quyết định; các gói dưới đây tự đưa qu
 | `PROV-PC08-05` | PC08 | Giới hạn fetch ngoài: redirect ≤ 3, timeout 10 s / 30 s, body ≤ 10 MiB | ACCEPTED (OD-20260907-01) | — (kỹ thuật) |
 
 **Phạm vi cố ý để trống, có gate** (không phải quyết định, và không được lấp bằng số bịa): `research_connector_rate_limit` của PC03 giữ bốn giá trị `null` với `status: PLACEHOLDER_KC` và chỉ một sàn an toàn `min_interval_ms = 3000`, căn cứ `REQ-A6` vẫn ở trạng thái **KC**. PC05 phải điền từ tài liệu chính thức trước khi research connector được coi là `CONTRACT_READY`.
+
+> **Cập nhật 2026-09-07 (`OD-20260907-04` mục 2, thi hành bởi `AUTH-COORD-REQA6` / `PKT-PC03-FIX-REQA6`).** Đoạn trên giữ nguyên làm lịch sử; trạng thái hiện hành của `REQ-A6` là **`PARTIALLY_RESOLVED`**, chi tiết ở **§8.13**. Tóm tắt: nửa **arXiv** đã giải từ tài liệu chính thức (1 request / 3 giây, một kết nối đồng thời — `https://info.arxiv.org/help/api/tou.html`, đọc ngày 2026-09-07; cùng trang, cùng ngày: tài liệu **không** đặt yêu cầu định danh cho caller); nửa **OpenAlex** **chưa** giải và `research_connector_rate_limit` vẫn `status: PLACEHOLDER_KC` với hai giá trị `null`. `SG-A6` của `agent-tasks/TC-research-connector-metadata.md` **không** được nới, và research connector **vẫn không** `CONTRACT_READY`.
+>
+> **Cập nhật thứ hai, cùng ngày 2026-09-07 (phần 2 của cùng packet, sau khi Owner mở rộng allowlist thêm `help.openalex.org`).** Trạng thái hiện hành của `REQ-A6` là **`RESOLVED`** — **cả bốn** dữ kiện đã đọc từ tài liệu chính thức, chi tiết ở **§8.13.2**. `contracts/retry-policy.yaml` `research_connector_rate_limit` **không còn** `PLACEHOLDER_KC` (nay `DOCS_derived`, v0.8.0), và điều kiện của `SG-A6` — "bốn giá trị còn `null`" — **không còn đúng**. Điều **vẫn đúng**: việc này **không** tự nâng trần claim của `MOD-research-connector`; `CONTRACT_READY` của module là kết luận của PC05/Coordinator trên toàn bộ cổng của nó, không phải hệ quả của một khối hợp đồng.
 
 ### 8.6 Câu hỏi Owner phát sinh trong đợt FIX3
 
@@ -747,7 +825,7 @@ thuật; chủ sở hữu vẫn là gói gốc (PC02).
 
 | ID | Gói | Quyết định | Trạng thái | Đưa lên Owner ở mục |
 | --- | --- | --- | --- | --- |
-| `AMD-ENT-owner-01` | PC02 | `ENT-owner` (`contracts/data/entities.yaml`, 0.1.0 → 0.2.0) nhận đúng bốn trường: `password_hash` (chuỗi Argon2id encoded, nullable tới khi bootstrap, không read model nào trả về), `password_updated_at` (nullable), `failed_login_count` (NOT NULL DEFAULT 0), `locked_until` (nullable). Căn cứ `contracts/ops/secrets.md` §2.1–§2.3 (Argon2id; lockout 5 lần / 15 phút) và `REQ-D05`; thi hành qua `CR-TC-AUTH-02` + `CR-TC-AUTH-03` (`precode/change-control.md` §10); vá khoảng trống hợp đồng mà `F-A3R1-02` và `F-A3R1-06` chỉ ra | **PROVISIONAL** — amendment kỹ thuật dưới `AUTH-COORD-PC02-FIX12` (cha `AUTH-OWNER-20260907-03`); Owner phê chuẩn ở vòng kế tiếp và **có thể phản đối** | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: `owner` nay giữ credential và trạng thái lockout) |
+| `AMD-ENT-owner-01` | PC02 | `ENT-owner` (`contracts/data/entities.yaml`, 0.1.0 → 0.2.0) nhận đúng bốn trường: `password_hash` (chuỗi Argon2id encoded, nullable tới khi bootstrap, không read model nào trả về), `password_updated_at` (nullable), `failed_login_count` (NOT NULL DEFAULT 0), `locked_until` (nullable). Căn cứ `contracts/ops/secrets.md` §2.1–§2.3 (Argon2id; lockout 5 lần / 15 phút) và `REQ-D05`; thi hành qua `CR-TC-AUTH-02` + `CR-TC-AUTH-03` (`precode/change-control.md` §10); vá khoảng trống hợp đồng mà `F-A3R1-02` và `F-A3R1-06` chỉ ra | **`ACCEPTED (OD-20260907-03)`** — Owner phê chuẩn 2026-09-07 ("accept both"); trước đó là `PROVISIONAL` dưới `AUTH-COORD-PC02-FIX12` (cha `AUTH-OWNER-20260907-03`) | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: `owner` nay giữ credential và trạng thái lockout) |
 
 **Vì sao Coordinator ký được, và ký được tới đâu.** Amendment này làm hợp đồng dữ liệu khớp với một
 file Owner **đã** chấp nhận (`PROV-PC08-01`: Argon2id, login 5 lần/15 phút, lockout 15 phút); nó không
@@ -761,3 +839,169 @@ sau lượt xác minh A2-R4, nên **A3-R2 phải xác minh lại `ENT-owner` tr�
 **Hệ quả đã biết.** `shared/rr_contracts` phải sinh lại; `owner` phải hội tụ về đúng một
 `CREATE TABLE` (`F-A3R1-01`); và mọi task card pin hash `contracts/data/entities.yaml` **và file này**
 chuyển `STALE` theo `precode/change-control.md` §4 (INV-06/INV-09) — chạy lại, không phải FAIL.
+
+**Cập nhật vòng ba (`OD-20260907-03` mục 1).** Owner đã phê chuẩn amendment này. Điều được gỡ là **tính tạm
+thời của hợp đồng**: nhãn `IMPLEMENTATION_VERIFIED` của card auth không còn đứng trên một amendment do
+Coordinator ký. `contracts/data/entities.yaml` **giữ nguyên** `CONTRACT_READY` — biên bản không nâng nó.
+Hai điều **không** đổi theo phê chuẩn này: (a) verdict của auditor giữ nguyên — `A3-R4` §6 ghi per-card claim
+"unchanged", và một biên bản của Owner **không** phải một lượt xác minh độc lập; (b) `F-A3R1-02` và
+`F-A3R1-06` **không** bị đóng — finding theo vòng đời riêng của `protocol.md` §8. Khối amendment trong chính
+`contracts/data/entities.yaml` do `worker-W3n` cập nhật ở một packet song song, **không** phải ở đây.
+
+### 8.12 Quyết định của `OD-20260907-03` (vòng ba, 2026-09-07)
+
+Biên bản vòng ba — `precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`, evidence
+`session_0156UBBHDSeC9soECzSVUb3U` — có **ba** mục. Cả ba đều là câu trả lời tường minh của Owner (khác vòng
+hai, nơi hai trong năm mục là suy luận của Coordinator), nên cả ba mang `ACCEPTED (OD-20260907-03)`.
+
+| # | Quyết định | Trạng thái | Ghi ở đâu |
+| --- | --- | --- | --- |
+| 1 | `AMD-ENT-owner-01` — bốn trường credential/lockout trên `owner` | `ACCEPTED (OD-20260907-03)` | §8.11 |
+| 2 | `PROV-PC00-08` — ghi mã dưới lease theo dõi bằng thông điệp, không cưỡng chế OS | `ACCEPTED (OD-20260907-03)` | §8 `PROV-PC00-08` |
+| 3 | **Lối vào Giai đoạn 2** — **2A** M0 probe khả thi X (card `TC-x-feasibility-probe`, `TC-collector-checkpoint-resume`); **2B** M2 paper connector (`research.fetch_work_metadata`, `research.get_connector_health` — **chưa có card, phải viết trước**) | `ACCEPTED (OD-20260907-03)` | Hàng này; `docs/master-plan.md`; `precode/gates.yaml` **chưa** cập nhật (`CR-PC00-20`) |
+
+**Hai cổng vẫn chặn — biên bản nêu chúng trong cùng một câu với chữ "Start".**
+
+1. **Probe 2A không được chạy live.** `contracts/ops/collector-probe.md` §6 mục **2–4** vẫn chặn, và
+   probe phải chạy trên **máy của Owner**. (Mục 1 — D09, profile Chrome riêng — đã được `OD-20260907-01`
+   trả lời.) "Start" cấp phép **viết** card và mã của 2A; nó **không** cấp phép một lần chạy thật.
+   `REQ-AC16` và mọi mục `KC` không đổi.
+2. **Connector 2B không được `CONTRACT_READY`.** `REQ-A6` chặn cứng cho tới khi **bốn** dữ kiện rate/identity
+   được ghi từ **tài liệu chính thức**. Biên bản nói thẳng: **không con số nào được đoán**. Cho tới lúc đó
+   `research_connector_rate_limit` giữ bốn `null` với `status: PLACEHOLDER_KC` và sàn `min_interval_ms = 3000`
+   (§8.5). Quyền tải tài liệu đó qua mạng **chưa được cấp** — biên bản liệt kê nó ở phần "không quyết".
+
+**Ba điều hàng số 3 KHÔNG làm.** (a) Nó **không** mở quyền mạng: quyền duy nhất vẫn là cài gói đã khai báo từ
+PyPI/npm (`OD-20260907-02` mục 4). (b) Nó **không** tự chuyển một gate nào sang `MET` — `precode/gates.yaml`
+thuộc PC09 và cấp phép bắt đầu không phải là kết quả đã xác minh. (c) Nó **không** giải `REQ-OQ03`; Giai đoạn
+3 vẫn bị chặn đúng như trước.
+
+> **Cập nhật sau vòng bốn.** Hai cổng nêu ở mục này đã được `OD-20260907-04` xử lý — xem §8.13. Cổng probe nay
+> mở về **hành chính**; `REQ-A6` **vẫn `KC`**, chỉ có quyền đi lấy dữ kiện. Điểm (a) ở trên vì vậy được nới
+> đúng một chỗ và chỉ một chỗ: một quyền mạng **một lần, hẹp theo tên miền, chỉ đọc tài liệu**.
+
+### 8.13 Quyết định của `OD-20260907-04` (vòng bốn, 2026-09-07)
+
+Biên bản vòng bốn — `precode/owner-decisions-04.md`, authority `AUTH-OWNER-20260907-05` — có **hai** mục, và
+cả hai là câu trả lời tường minh của Owner qua phỏng vấn `AskUserQuestion` trên đúng hai mục mà
+`OD-20260907-03` để mở. Biên bản tự khai: *"không quyết ở vòng này: không có"*.
+
+| # | Quyết định | Trạng thái | Ghi ở đâu |
+| --- | --- | --- | --- |
+| 1 | Cổng chấp nhận probe `contracts/ops/collector-probe.md` §6 mục **2–4** (ngân sách §3 / điều kiện dừng §4; tiêu chí go/no-go §7; rủi ro tài khoản thật `REQ-A7`) | `ACCEPTED (OD-20260907-04)` — §6 mục **1–4 nay đều thỏa** | Hàng này; `contracts/ops/collector-probe.md` §6 **chưa** được PC05 cập nhật (`CR-PC00-26`) |
+| 2 | Quyền mạng **một lần, hẹp** để đọc tài liệu chính thức arXiv/OpenAlex phục vụ `REQ-A6` | `ACCEPTED (OD-20260907-04)` — **quyền** được cấp | Hàng này; packet tìm dữ kiện chạy song song dưới `AUTH-OWNER-20260907-05` |
+
+**`REQ-A6` VẪN `KC` — đây không phải một mục đã giải.** Owner cho phép **đi lấy** dữ kiện, **không** cung cấp
+dữ kiện. `precode/requirements.csv` giữ `REQ-A6` ở `KC`; module research connector **không** được coi là
+`CONTRACT_READY`; §8.5 ("phạm vi cố ý để trống, có gate") **không đổi** vì vòng này.
+
+**Trạng thái thực tế lúc 2026-09-07T15:23Z (quan sát của PC00, không phải nội dung biên bản).** Packet tìm dữ
+kiện chạy song song và đã land **một nửa**: `worker-WF` (`PKT-PC03-FIX-REQA6`) điền
+`arxiv_requests_per_window = 1`, `arxiv_window_seconds = 3` và một dữ kiện mới
+`arxiv_max_concurrent_connections = 1` từ `https://info.arxiv.org/help/api/tou.html`, mỗi cái kèm URL, ngày
+lấy và trích dẫn nguyên văn; yêu cầu định danh của arXiv là `RESOLVED_NEGATIVE`. Nửa **OpenAlex chưa giải**,
+và lý do là **ranh giới quyền**: `docs.openalex.org` `301` sang `help.openalex.org` — **ngoài** bốn host được
+cấp — và `openalex.org` trả `403`; Worker **dừng** thay vì đi theo redirect, đúng như `protocol.md` §3 đòi.
+Vì vậy `research_connector_rate_limit` **vẫn** `PLACEHOLDER_KC`, hai giá trị OpenAlex cộng
+`openalex_identification_required` **vẫn** `null`, và sàn `min_interval_ms = 3000` giữ nguyên. Giải nốt phần
+này cần **mở rộng quyền** thêm `help.openalex.org` — một amendment của grant, thuộc thẩm quyền Owner
+(`CR-PC00-27`) — **không** cần và **không** được thay bằng một con số nhớ được. *(Đoạn này viết tại thời điểm biên bản, trước khi packet tìm dữ kiện chạy. Kết quả của
+packet ấy ở **§8.13.1** ngay dưới; nó land **hai** trong bốn con số, nên câu "giữ bốn giá trị `null`" nay
+đọc là **hai**. Mọi kết luận còn lại của đoạn — `REQ-A6` chưa giải hết, `PLACEHOLDER_KC`, connector không
+`CONTRACT_READY` — vẫn đúng.)*
+
+**Ranh giới của quyền mạng — viết bằng cả hai chiều.** Được: **chỉ trang tài liệu** dưới `arxiv.org`,
+`info.arxiv.org`, `openalex.org`, `docs.openalex.org`. **Không** được: `export.arxiv.org`,
+`api.openalex.org`, hay bất kỳ endpoint live nào — **không lưu lượng API thật**. Biên bản nêu **đích danh**
+hai host bị cấm chứ không dừng ở mô tả, vì hai trong số đó thuộc cùng tổ chức với host được phép. Quyền mạng
+nền không đổi: cài gói đã khai báo từ PyPI/npm (`OD-20260907-02` mục 4).
+
+**Cổng probe mở về hành chính, KHÔNG mở về vật lý.** Probe vẫn chạy trên tài khoản X thật và máy thật của
+Owner, sau khi **Owner tự** cài Playwright, đăng nhập tay vào Chrome profile riêng, điền `probe-config.json`
+và ký bốn `owner_confirmations` kèm `evidence_ref` trỏ tới `OD-20260907-04`
+(`evidence/handoffs/TC-x-feasibility-probe-handoff.md` §"Owner must do"). **Không Worker nào được chạy nó.**
+Vì vậy `REQ-AC16` và các mục `KC` liên quan **không** đổi, và `SP1`/M0 vẫn chưa có bằng chứng. Thêm nữa: ba
+mục vừa được chấp nhận đều là **ngưỡng `PROVISIONAL` do PC05 đề xuất** (§3 ngân sách; §7 bảy tiêu chí
+`GO-1`..`GO-7`) — "chấp nhận" nghĩa là Owner đồng ý dùng chúng làm tiêu chí kết luận, **không** nghĩa là
+chúng đã được hiệu chỉnh bằng dữ liệu.
+
+**Ba điều vòng bốn KHÔNG làm.** (a) **Không** nâng trần claim của file nào —
+`contracts/ops/collector-probe.md`, `contracts/retry-policy.yaml` và card connector giữ nhãn hiện có.
+(b) **Không** giải `REQ-OQ03`; M3 vẫn bị chặn. (c) **Không** đóng finding nào.
+
+#### 8.13.1 Kết quả packet tìm dữ kiện `REQ-A6` (`PKT-PC03-FIX-REQA6`, 2026-09-07)
+
+Packet chạy dưới `AUTH-COORD-REQA6` (cha `AUTH-OWNER-20260907-05`), worker `worker-WF`, lease
+`LEASE-PC03-REQA6`. Trạng thái kết quả: **`REQ-A6 = PARTIALLY_RESOLVED`** — **không** phải `RESOLVED`.
+Bằng chứng là `SELF_VALIDATION`; công cụ đọc là `WebFetch` (GET, chỉ đọc), không có lưu lượng API nào tới
+`export.arxiv.org` hay `api.openalex.org`.
+
+| Dữ kiện | Trạng thái | Giá trị | Nguồn (đọc ngày **2026-09-07**) |
+| --- | --- | --- | --- |
+| arXiv — nhịp gọi tối đa | **RESOLVED** | `arxiv_requests_per_window = 1`, `arxiv_window_seconds = 3`, `arxiv_max_concurrent_connections = 1` | `https://info.arxiv.org/help/api/tou.html` §"Rate limits" — nguyên văn: *"When using the legacy APIs (including OAI-PMH, RSS, and the arXiv API), make no more than one request every three seconds, and limit requests to a single connection at a time."* |
+| arXiv — yêu cầu định danh | **RESOLVED_NEGATIVE** | `arxiv_identification_required = false` | Cùng trang, cùng ngày; đối chiếu thêm `/help/api/user-manual.html`, `/help/api/basics.html`, `/help/api/index.html`. Không trang nào đặt nghĩa vụ User-Agent/email/đăng ký cho caller. Câu duy nhất chạm thông tin cá nhân là tuyên bố **thu thập**, không phải nghĩa vụ: *"In order to provide support and improvements for developers who use arXiv APIs, you understand that we will collect certain private information about you, such as your name and email address."* |
+| OpenAlex — nhịp gọi / hạn mức | **BLOCKED_SCOPE** | `openalex_requests_per_window = null`, `openalex_window_seconds = null` | Không đọc được **trong quyền được cấp** — xem đoạn dưới |
+| OpenAlex — yêu cầu định danh (`mailto`, polite pool) | **BLOCKED_SCOPE** | `openalex_identification_required = null` | Như trên |
+
+**Vì sao nửa OpenAlex dừng, và vì sao đó KHÔNG phải "chưa tìm kỹ".** Quyền được cấp liệt kê đúng bốn host
+(§8.13 ở trên). Ngày 2026-09-07, **mọi** đường dẫn thử dưới `docs.openalex.org` —
+`/how-to-use-the-api/rate-limits-and-authentication`, `/how-to-use-the-api/api-overview`, và trang gốc `/` —
+trả `301 Moved Permanently` sang `https://help.openalex.org/`, một host **không** nằm trong danh sách được
+cấp; `https://openalex.org/` và `https://openalex.org/about` trả `403 Forbidden`. Worker **dừng tại
+redirect** thay vì đi theo: đi theo một redirect ra ngoài allowlist là tự mở scope (`protocol.md` §3,
+`BLOCKED_SCOPE`), và một biên bản nêu **đích danh** hai host bị cấm là biên bản coi trọng danh sách host.
+Cách giải là một **amendment quyền** thêm `help.openalex.org` vào allowlist đọc-tài-liệu — không phải một
+con số nhớ được, và không phải một lần suy ra từ "thông lệ".
+
+**Bốn điều packet này KHÔNG làm.** (a) **Không** đóng `REQ-A6`: `precode/requirements.csv` giữ `REQ-A6` ở
+`KC` (file đó ngoài lease của packet). (b) **Không** nới `SG-A6` của
+`agent-tasks/TC-research-connector-metadata.md`: cổng ấy đòi **bốn** giá trị, hai vẫn `null`, nên connector
+vẫn **từ chối khởi động**. (c) **Không** nâng trần claim của module research connector — vẫn **không**
+`CONTRACT_READY`. (d) **Không** chạm một card đã pin nào; `contracts/retry-policy.yaml` đổi byte
+(`0.6.0 → 0.7.0`) nên mọi card pin hash file đó chuyển **`STALE`** và phải được Coordinator pin lại
+(`precode/change-control.md` §4 INV-06/INV-09, §10 `CR-PC03-08`).
+
+#### 8.13.2 Phần 2 của `PKT-PC03-FIX-REQA6` — `REQ-A6` **RESOLVED** (2026-09-07)
+
+Sau §8.13.1, Owner được trình đúng một câu hỏi — *"`docs.openalex.org` redirect sang `help.openalex.org`,
+ngoài quyền được cấp"* — và trả lời: **thêm `help.openalex.org` vào allowlist**. Quyền mạng mở rộng thành
+**năm** host, mọi hạn chế khác giữ nguyên (chỉ trang tài liệu, chỉ GET; `api.openalex.org` và
+`export.arxiv.org` vẫn **cấm**). Packet chạy tiếp dưới `LEASE-PC03-REQA6-p2`, worker `worker-WF`.
+Trạng thái kết quả: **`REQ-A6 = RESOLVED`** — cả bốn dữ kiện có nguồn.
+
+| Dữ kiện | Trạng thái | Giá trị | Nguồn (đọc ngày **2026-09-07**) |
+| --- | --- | --- | --- |
+| arXiv — nhịp gọi | **RESOLVED** | `1` request / `3` giây; `1` kết nối đồng thời | `https://info.arxiv.org/help/api/tou.html` (§8.13.1) |
+| arXiv — định danh | **RESOLVED_NEGATIVE** | không yêu cầu | như trên (§8.13.1) |
+| OpenAlex — nhịp gọi | **RESOLVED** | `openalex_requests_per_window = 100`, `openalex_window_seconds = 1` | `https://help.openalex.org/api/authentication/` — nguyên văn: *"Two things return `429 Too Many Requests`: exceeding your daily budget, or making more than 100 requests per second."* |
+| OpenAlex — định danh | **RESOLVED_NEGATIVE** | không yêu cầu; `api_key` **tùy chọn** | `https://help.openalex.org/api/` — nguyên văn: *"Send your key as an `api_key` query parameter (or leave it off to try the API for free — the website itself runs on these same public endpoints)."* và *"A free API key raises your daily budget 10×, and heavier use is pay-as-you-go."* |
+
+**Một dữ kiện thứ năm, cố ý KHÔNG biến thành số.** OpenAlex có **hai** giới hạn chồng lên nhau: nhịp tức
+thời (100 req/s) **và** một **ngân sách ngày**. Ngân sách ngày được nêu bằng **tiền**, không bằng số lời
+gọi — *"every account gets \$1 of API usage per day for free"* (`/access/pricing/`) và *"a free key gives
+you 10× the keyless budget"* (`/api/authentication/`) — và tài liệu **không** nêu con số của lượt gọi
+không-khoá. Suy ra "1/10" là một **phép suy**, không phải một câu trích, nên hợp đồng ghi nó là
+`RESOLVED_NON_NUMERIC` và **không** đặt một con số vào `values`. Nguồn sự thật lúc chạy là các header
+`X-RateLimit-Limit` / `-Remaining` / `-Credits-Used` / `-Reset` (`/api/errors/`). Đây chính là chỗ mà "đọc
+tài liệu" khác "điền cho đủ ô".
+
+**Quy ước `polite pool` / `mailto` KHÔNG còn trong tài liệu hiện hành.** `REQ-D34` và `SG-IDENT` được viết
+khi giả định OpenAlex đòi một `mailto`. Ngày 2026-09-07, các chuỗi `mailto`, `polite pool`, `polite`,
+`User-Agent` **không** xuất hiện trên trang tổng quan API cũng như trang Authentication; cơ chế hiện hành
+là `api_key` **tùy chọn**. Hệ quả: **luật** `SG-IDENT` giữ nguyên trong code (nếu một nguồn đòi định danh
+mà ta chưa có, **không gọi**), nhưng **dữ kiện** mà luật ấy áp lên nay là "không nguồn nào đòi". Không
+được xoá luật chỉ vì hôm nay nó không kích hoạt.
+
+**Nhãn mới `DOCS_derived`.** `contracts/retry-policy.yaml` v0.8.0 dùng một token trạng thái **mới**
+cho khối này, cố ý không tái dùng ba token cũ: nó không phải `ACCEPTED (OD-...)` (Owner không chấp nhận
+hạn mức của bên thứ ba, Owner chỉ cấp quyền đi đọc), không phải `PROVISIONAL` (không phải tham số ta tự
+chọn), không phải `XN_derived` (nguồn là tài liệu ngoài, không phải đặc tả). Nó mang một hạn dùng: nó
+đúng với tài liệu **đọc ngày 2026-09-07** và hết hiệu lực khi nguồn đổi chính sách — mà OpenAlex vừa đổi
+cấu trúc tài liệu (`docs.openalex.org` → `help.openalex.org`) ngay trong năm nay.
+
+**Bốn điều phần 2 KHÔNG làm.** (a) **Không** nâng trần claim của `MOD-research-connector`:
+`CONTRACT_READY` là kết luận của PC05/Coordinator trên toàn bộ cổng của module. (b) **Không** chạm
+`precode/requirements.csv` (ngoài lease) — `REQ-A6` ở đó vẫn ghi `KC` cho tới khi chủ file cập nhật; đọc
+kèm mục này. (c) **Không** chạm một card đã pin nào; `contracts/retry-policy.yaml` `0.7.0 → 0.8.0` nên
+mọi card pin hash file đó **`STALE`** và chờ Coordinator pin lại. (d) **Không** đi theo một redirect nào
+ra ngoài allowlist, và **không** gọi `api.openalex.org` hay `export.arxiv.org`.

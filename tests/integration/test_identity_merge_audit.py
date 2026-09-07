@@ -1488,18 +1488,23 @@ def test_boundary_sweep_names_no_edge_of_this_module() -> None:
 def test_migration_chain_resolves_to_a_single_head() -> None:
     """``alembic upgrade head`` must be unambiguous.
 
-    Four Phase 1 cards added revisions in parallel; ``0004_merge_phase1_heads`` joins them.
-    The chain is ``0001 -> 0002_base_entities -> 0002b_shared_move_set_tables ->
-    0003_tc_canonical_identity_merge`` on this card's side.
-    A second head would make ``upgrade head`` fail on a fresh deployment, which is the kind of
-    breakage that only shows up on the machine that has no database yet.
+    Four Phase 1 cards added revisions in parallel; ``0004_merge_phase1_heads`` joins them, and
+    the chain is ``0001 -> 0002_base_entities -> 0002b_shared_move_set_tables ->
+    0003_tc_canonical_identity_merge`` on this card's side. A second head would make
+    ``upgrade head`` fail on a fresh deployment -- the kind of breakage that only shows up on
+    the machine that has no database yet.
+
+    The assertion is on the COUNT, not on which revision is the head: every later card adds a
+    revision and moves the head, and that is correct. Naming the current head here would turn
+    this test into a tripwire that fails every card but the one that wrote it
+    (``CR-TC-research-01``).
     """
     from alembic.script import ScriptDirectory
 
     config = Config(str(REPO_ROOT / "server" / "alembic.ini"))
     config.set_main_option("script_location", str(REPO_ROOT / "server" / "migrations"))
     heads = ScriptDirectory.from_config(config).get_heads()
-    assert heads == ["0004_merge_phase1_heads"], heads
+    assert len(heads) == 1, heads
 
 
 def test_upgrade_head_creates_every_table_this_card_owns(tmp_path: Path) -> None:

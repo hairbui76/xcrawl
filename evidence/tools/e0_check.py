@@ -734,6 +734,30 @@ def structured_strings(repo: Repo, rel: str):
             yield p, v
 
 
+def claim_fields(repo: Repo, rel: str):
+    """Yield (path, string) for the structured fields the CLAIM rule reads.
+
+    F-A3R4-01: `E0-12`'s own note said "their STRUCTURED fields are still checked", and that was
+    true of `.yaml`/`.json` and false of Markdown FRONT MATTER — which no claim scan reached at
+    all. A Markdown file's front matter IS a structured field set (`check_headers` has read it
+    since the beginning, as `rel + "#frontmatter"`), so the honest fix is to read it here too
+    rather than to narrow the sentence. This closes the gap the finding names in
+    `evidence/coordination/*.md` AND the wider pre-existing one in `evidence/handoffs/*.md`,
+    which does make claims and had only the prose sweep guarding it.
+    """
+    seen = False
+    for p, v in structured_strings(repo, rel):
+        seen = True
+        yield p, v
+    if seen:
+        return
+    fm = repo.parsed.get(rel + "#frontmatter")
+    if isinstance(fm, dict):
+        for p, v in walk_values(fm):
+            if isinstance(v, str):
+                yield "frontmatter" + p[1:] if p.startswith("$") else p, v
+
+
 def is_structured(rel: str) -> bool:
     return os.path.splitext(rel)[1].lower() in (".yaml", ".yml", ".json")
 
@@ -1766,8 +1790,9 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
         "`evidence/runs/**` is walked separately for this rule (it is excluded from `files_scanned` "
         "by F-A2R1-11, which is why F-A3R3-01 found the oracle describing a tree the loop never "
         "read) and is examined in STRUCTURED claim/status fields only, `supports_label` included. "
-        "The citation is checked per FILE, not per record — see the notes below. `agent-tasks/` is "
-        "NOT scanned by this tool; the cards there use "
+        "The citation is checked per FILE, not per record — see the notes below. Structured claim "
+        "fields are read in `.yaml`/`.json` AND in Markdown front matter (F-A3R4-01). "
+        "`agent-tasks/` is NOT scanned by this tool; the cards there use "
         "`claim_ceiling` with a different meaning (the ceiling the ordered work may reach) and "
         "are counted in a note below rather than silently omitted. "
         "`TBD` remains forbidden as a value, and `CLOSED` as a status."
@@ -1802,8 +1827,10 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
                         and RATIFICATION_ID in str(val):
                     ratified_nodes.add(path.rsplit(".", 1)[0])
 
-        if is_structured(rel):
-            for path, val in structured_strings(repo, rel):
+        # F-A3R4-01: `.md` front matter is read here too, so the note's word "structured" is
+        # true of every file type this loop touches instead of only two of them.
+        if True:
+            for path, val in claim_fields(repo, rel):
                 leaf = path.rsplit(".", 1)[-1].split("[")[0]
                 # `supports_label` is a manifest record's claim field. It is examined only where
                 # records live, because that is the only place it means anything — and because
@@ -1977,10 +2004,13 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
             if n:
                 quoted[label] = quoted.get(label, 0) + n
     c.note("dispatch records (%s) are exempt from the free-text claim sweep because a packet or "
-           "ruling QUOTES the label it is dispatching about; their STRUCTURED fields are still "
-           "checked. Occurrences skipped, counted rather than hidden: %s. If one of these files "
-           "ever states a claim about ITSELF, this exemption will not catch it — that is the "
-           "cost, and it is why the count is printed."
+           "ruling QUOTES the label it is dispatching about; their structured fields are still "
+           "checked, and since F-A3R4-01 that includes MARKDOWN FRONT MATTER, not only "
+           "`.yaml`/`.json` — the sentence used to promise a reach the loop did not have, which "
+           "is the defect class of F-A3R3-01 repeated one level down. Occurrences skipped, "
+           "counted rather than hidden: %s. What the exemption still cannot catch: a claim "
+           "stated about ITSELF in the PROSE of one of these files. That residue is why the "
+           "count is printed."
            % (", ".join(DISPATCH_RECORD_PREFIXES),
               ", ".join("%s×%d" % (k, v) for k, v in sorted(quoted.items())) or "none"))
     c.note("scan scope is %s; agent-tasks/ is NOT scanned. %d task card(s) there declare a "

@@ -1630,6 +1630,79 @@
           "decision_record": "precode/decision-register.md §8.10; PROV-PC00-07; PROV-PC00-08",
           "registered_by_ruling": "PKT-PC00-FIX15",
           "note_vi": "Bien ban vong hai KHONG thay the OD-20260907-01; hai bien ban cong don."
+        },
+        {
+          "anchor_id": "OD-20260907-03",
+          "label": "OD-20260907-03",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-07, vong ba (3 muc)",
+          "source_file": "precode/owner-decisions-03.md",
+          "authority_created": "AUTH-OWNER-20260907-04",
+          "evidence_ref": "Claude Code session session_0156UBBHDSeC9soECzSVUb3U, 2026-09-07",
+          "verbatim_instruction": "accept both, start phase 2",
+          "pronoun_note_vi": "'both' tro dich danh HAI muc ma bao cao Giai doan 0/1 da neu ten: AMD-ENT-owner-01 va PROV-PC00-08. No KHONG mo rong sang bat ky muc PROVISIONAL nao khac dang mo.",
+          "ratifies": [
+            "AMD-ENT-owner-01",
+            "PROV-PC00-08"
+          ],
+          "grants": [
+            "Loi vao Giai doan 2A - M0 probe kha thi X (card TC-x-feasibility-probe, TC-collector-checkpoint-resume)",
+            "Loi vao Giai doan 2B - M2 paper connector (research.fetch_work_metadata, research.get_connector_health); CHUA CO CARD, phai viet card truoc"
+          ],
+          "gates_still_shut": [
+            "2A: contracts/ops/collector-probe.md §6 muc 2-4 van chan moi lan chay live; probe phai chay tren MAY CUA OWNER (muc 1 - D09 - da duoc OD-20260907-01 tra loi)",
+            "2B: REQ-A6 chan cung CONTRACT_READY cho toi khi bon du kien rate/identity duoc ghi tu TAI LIEU CHINH THUC; KHONG con so nao duoc doan"
+          ],
+          "not_decided": [
+            "Cac muc cong probe 2-4 - hoi rieng, chua tra loi",
+            "Bon du kien REQ-A6, hoac quyen cho Worker tai tai lieu chinh thuc arXiv/OpenAlex qua mang - KHONG duoc cap",
+            "REQ-OQ03 (provider/model) - van OWNER_DECISION_REQUIRED, chan M3",
+            "Khong phe chuan muc PROVISIONAL nao ngoai hai muc duoc neu ten",
+            "Khong dong finding nao; F-A3R1-02 va F-A3R1-06 van theo vong doi protocol.md §8",
+            "Khong nang claim_ceiling cua file hop dong nao - entities.yaml GIU CONTRACT_READY, khong duoc nang"
+          ],
+          "amendment_effect_vi": "AMD-ENT-owner-01 doi CHO DUA cua nhan IMPLEMENTATION_VERIFIED tren card auth (tu amendment do Coordinator ky sang quyet dinh cua Owner). Verdict cua auditor KHONG tu doi: A3-R4 §6 ghi per-card claim 'unchanged'; mot bien ban cua Owner khong phai mot luot xac minh doc lap.",
+          "phase_0_1_status": "Hoan tat va da duoc A3 xac minh o FC-P1 epoch 4 (evidence/audits/A3-R4-report.md, overall PASS); tran claim dat duoc la IMPLEMENTATION_VERIFIED theo pham vi tung card.",
+          "decision_record": "precode/decision-register.md §8.12; §8.11 (AMD-ENT-owner-01); §8 PROV-PC00-08",
+          "registered_by_ruling": "PKT-PC00-FIX20",
+          "note_vi": "Bien ban vong ba KHONG thay the hai bien ban truoc; BA bien ban cong don."
+        },
+        {
+          "anchor_id": "OD-20260907-04",
+          "label": "OD-20260907-04",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-07, vong bon (2 muc)",
+          "source_file": "precode/owner-decisions-04.md",
+          "authority_created": "AUTH-OWNER-20260907-05",
+          "evidence_ref": "Claude Code session (Coordinator), 2026-09-07 - phong van AskUserQuestion",
+          "closes": "Moi muc ma OD-20260907-03 de mo; bien ban tu khai 'khong quyet o vong nay: khong co'",
+          "ratifies": [
+            "contracts/ops/collector-probe.md §6 muc 2-4 (ngan sach §3/§4, tieu chi go/no-go §7, rui ro REQ-A7)",
+            "Quyen mang mot lan, hep theo ten mien, chi doc tai lieu - phuc vu REQ-A6"
+          ],
+          "probe_gate_vi": "§6 muc 1-4 NAY DEU THOA (muc 1 - D09 - da duoc OD-20260907-01 phe chuan). Cong mo ve HANH CHINH; dieu kien VAT LY khong doi: probe chay tren tai khoan X that va may that cua Owner, sau khi Owner tu cai Playwright, dang nhap tay vao Chrome profile rieng, dien probe-config.json va ky bon owner_confirmations kem evidence_ref tro toi OD-20260907-04. KHONG WORKER NAO DUOC CHAY NO. REQ-AC16 va cac muc KC lien quan KHONG doi; SP1/M0 van chua co bang chung.",
+          "network_grant": {
+            "kind": "one-off, domain-narrow, documentation pages only",
+            "allowed_hosts": ["arxiv.org", "info.arxiv.org", "openalex.org", "docs.openalex.org"],
+            "forbidden_by_name": ["export.arxiv.org", "api.openalex.org"],
+            "forbidden_kind": "any other live endpoint; no live API traffic",
+            "evidence_required_per_fact": "source URL + retrieval date + short verbatim quote",
+            "note_vi": "Bien ban neu DICH DANH hai host bi cam chu khong dung o mo ta, vi chung thuoc cung to chuc voi host duoc phep - mot grant chi noi 'doc tai lieu arXiv' se de ngo cho lach."
+          },
+          "not_decided": [
+            "REQ-A6 VAN KC - Owner cho phep DI LAY du kien, KHONG cung cap du kien; tai thoi diem bien ban duoc ban hanh, research_connector_rate_limit mang bon gia tri null voi status PLACEHOLDER_KC va san min_interval_ms = 3000",
+            "Probe VAN KHONG DUOC CHAY - cong vat ly thuoc ve Owner, khong phai mot cau tra loi",
+            "Khong mo mang noi chung - quyen nen van la cai goi PyPI/npm da khai (OD-20260907-02 muc 4)",
+            "Khong nang tran claim cua file nao",
+            "REQ-OQ03 van OWNER_DECISION_REQUIRED, van chan M3",
+            "Khong dong finding nao"
+          ],
+          "provisional_thresholds_note_vi": "Ba muc duoc chap nhan deu la nguong PROVISIONAL do PC05 de xuat (§3 ngan sach 200 post hoac 30 phut; §7 GO-1..GO-7). Chap nhan = dong y dung lam tieu chi ket luan, KHONG phai da hieu chinh bang du lieu.",
+          "post_decision_state_20260907T1700Z_vi": "QUAN SAT cua PC00, KHONG phai noi dung bien ban. TRANG THAI HIEN HANH: REQ-A6 = RESOLVED - ca BON du kien da co nguon, doc tu tai lieu chinh thuc duoi AUTH-OWNER-20260907-05 do OD-20260907-04 muc 2 sinh ra (KHONG phai OD-20260907-03). Ban ghi chuan: precode/decision-register.md §8.13.2 + evidence/handoffs/PC03-REQA6-handoff.md. Gia tri: arXiv 1 request/3 giay va 1 ket noi dong thoi, dinh danh RESOLVED_NEGATIVE; OpenAlex openalex_requests_per_window=100, openalex_window_seconds=1, dinh danh RESOLVED_NEGATIVE voi api_key TUY CHON. contracts/retry-policy.yaml research_connector_rate_limit nay status DOCS_derived, KHONG con PLACEHOLDER_KC; precode/requirements.csv ghi REQ-A6 va REQ-D34 la XN.",
+          "post_decision_unblocking_vi": "Nua OpenAlex duoc go chot bang MOT QUYET DINH, khong phai mot lan tim ky hon: Owner duoc trinh dung mot cau hoi (docs.openalex.org redirect sang help.openalex.org, ngoai quyen duoc cap) va tra loi THEM help.openalex.org vao allowlist. Quyen mang thanh NAM host; moi han che khac giu nguyen (chi trang tai lieu, chi GET; api.openalex.org va export.arxiv.org van CAM). Do la CR-PC00-27, nay da giai.",
+          "post_decision_limits_vi": "Bon dieu RESOLVED nay KHONG keo theo: (1) XN nghia la NGHIA VU DOC da xong, KHONG phai tien de dac ta dung - cau D34 tai research-radar-spec.md:101 gia dinh OpenAlex doi email lien he, tai lieu hien hanh noi nguoc lai; dac ta KHONG bi sua (nguon bat bien) va duoc doc theo nghia lich su, ban ghi chuan la AMD-SPEC-D34-01 o decision-register §3. (2) Ngan sach ngay cua OpenAlex CO Y khong thanh mot con so (RESOLVED_NON_NUMERIC): tai lieu neu bang TIEN, nguon su that luc chay la header X-RateLimit-*. (3) KHONG nang tran claim cua module nao - MOD-research-connector CONTRACT_READY hay khong la ket luan cua PC05/Coordinator tren toan bo cong cua no. (4) Hieu luc co dieu kien: dung voi tai lieu doc ngay 2026-09-07; nha cung cap doi chinh sach thi nhan DOCS_derived het hieu luc.",
+          "superseded_observation_20260907T1523Z_vi": "GIU LAI DE TRUY VET, da bi thay the boi cac khoa tren va boi §8.13.2 - khong duoc doc nhu trang thai hien hanh: luc 15:23Z chi nua arXiv da giai; nua OpenAlex CHUA giai vi RANH GIOI QUYEN (docs.openalex.org 301 sang help.openalex.org, ngoai bon host duoc cap; openalex.org tra 403), Worker DUNG thay vi di theo redirect; khi do research_connector_rate_limit van PLACEHOLDER_KC, hai gia tri OpenAlex van null, REQ-A6 van KC. Doan nay duoc giu vi no ghi dung mot dieu: mot Worker gap redirect ra ngoai allowlist va DUNG thay vi lach - do la ly do cau hoi toi duoc Owner thay vi bi mot con so phong doan lap di.",
+          "decision_record": "precode/decision-register.md §8.13",
+          "registered_by_ruling": "PKT-PC00-FIX21",
+          "note_vi": "Bien ban vong bon KHONG thay the ba bien ban truoc; BON bien ban cong don."
         }
       ],
       "invariants": [

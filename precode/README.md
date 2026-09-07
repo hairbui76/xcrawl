@@ -196,7 +196,7 @@ X) là nhánh riêng, nên chạy sớm sau G2/PC05 vì đó là rủi ro nguồ
 Mẫu card: `agent-tasks/TEMPLATE.md` (14 mục bắt buộc). Kiểm chứng card có đủ thông tin không:
 `agent-tasks/WALKTHROUGH.md`.
 
-**Pin hiện tại: `PC10-PIN-P1d-20260907`.** Trong 18 card, **8 card** nằm trọn trong phạm vi đã phê chuẩn
+**Pin hiện tại: `PC10-PIN-P2d-20260907`.** Trong 18 card, **8 card** nằm trọn trong phạm vi đã phê chuẩn
 (read set không chạm `contracts/ai/`, `contracts/telegram/`, hay `contracts/ops/` ngoài `deployment.md`);
 **10 card** giữ nguyên điểm dừng KC. §9 của mỗi card nói rõ nó thuộc nhóm nào **và** liệt kê đích danh những
 file hợp đồng trong read set của nó còn ở `DRAFT_FOR_REVIEW`.
@@ -212,7 +212,7 @@ file hợp đồng trong read set của nó còn ở `DRAFT_FOR_REVIEW`.
 > Kết quả phải là **đúng một** dòng, và phải khớp tên ở trên. Lệch ⇒ file này stale, tin card.
 > `evidence/tools/e0_check.py` và EV-PC10-01 đều kiểm ràng buộc này; xem `agent-tasks/README.md` §4.
 
-Epoch cũ, theo thứ tự bị thay: `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ← `PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
+Epoch cũ, theo thứ tự bị thay: `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ← `PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
 `PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 Sáu file của PC09 cộng `evidence/tools/e0_check.py` **cố ý không được pin hash** vì PC09-FIX1 chạy song song;

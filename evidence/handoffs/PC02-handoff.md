@@ -1848,3 +1848,105 @@ nay đứng về phía bản sửa này chứ không phải bản FIX12.
 
 Lease `LEASE-PC02-e14` (fencing 14) nhả lúc **2026-09-07T11:44Z**. Không lệnh git mutation, không
 network, không file ngoài grant, không `__pycache__` ngoài `.venv/`. Sau dòng này tôi không ghi thêm.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX14 (`OD-20260907-03`: AMD-ENT-owner-01 PROVISIONAL → ACCEPTED)
+
+## N1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX14` · authority `AUTH-COORD-PC02-FIX14` (cha **`AUTH-OWNER-20260907-04`**) · lease `LEASE-PC02-e15` (fencing 15) |
+| worker principal | `worker-W3n` · expires_at 2026-09-08T20:00Z · mode DOCUMENTARY_DRAFT |
+| status | **DONE** · completion_claim `CONTRACT_READY` (data and identity) |
+| trigger | Biên bản Owner `OD-20260907-03` mục 1 — phê chuẩn `AMD-ENT-owner-01` |
+| MODIFY grant | `contracts/data/entities.yaml` (chỉ khối amendment), `precode/change-control.md` |
+| next actor | Coordinator · `lease_released_at` 2026-09-07T13:27Z |
+
+`date -u` = 2026-09-07T13:24:00Z, trong hạn. Nguồn khớp baseline §2 (`f65bb046…`, `d35e1f2d…`).
+
+## N2. Tôi đã kiểm biên bản trước khi viết `ACCEPTED`
+
+Không nhận nhãn phê chuẩn từ lời của packet. Đọc thẳng
+`…/scratchpad/packets/OWNER-DECISIONS-20260907-03.md`: `decision_id: OD-20260907-03`, issuer là Owner
+(chỉ thị nguyên văn "accept both, start phase 2" sau một báo cáo nêu **đích danh hai mục**
+`AMD-ENT-owner-01` và `PROV-PC00-08`), evidence `session_0156UBBHDSeC9soECzSVUb3U`, authority mới
+`AUTH-OWNER-20260907-04`. Hàng 1 của biên bản nói đúng điều packet giao: PROVISIONAL → ACCEPTED, và
+`entities.yaml` **giữ** `CONTRACT_READY`. Nếu biên bản không nêu đích danh amendment này, tôi đã dừng —
+viết `ACCEPTED` cho một mục Owner chưa từng thấy là khai man, và luật đó không đổi khi packet nói ngược.
+
+## N3. Delta (1) — `contracts/data/entities.yaml`, chỉ khối `amendments[0]`
+
+| Trước | Sau |
+| --- | --- |
+| `status: PROVISIONAL` | `status: ACCEPTED` + `ratified_by: OD-20260907-03` + `ratified_at: "2026-09-07"` |
+| `ratification.owner_disclosure_vi` — "Phải trình Owner ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối; nếu phản đối thì bốn cột bị gỡ…" | `ratification.owner_decision_vi` — ĐÃ trình, ĐÃ phê chuẩn: biên bản, authority, evidence, và hệ quả (bốn cột đứng trên quyết định của Owner; nhãn của card `TC-owner-auth-session` không còn tựa vào hợp đồng PROVISIONAL) |
+| — | `ratification.history_vi` (mới) — giữ nguyên văn điều kiện cũ và mốc thời gian nó có hiệu lực |
+
+**Không** trường nào của `ENT-owner` bị thêm/bớt/sửa; `version` giữ **0.2.0**; `claim_ceiling` giữ
+`CONTRACT_READY`; **`ratification_ref` top-level giữ `OD-20260907-01`** — nó là căn cứ của trần claim
+cho phạm vi "Data and identity", không phải của amendment này, và đổi nó sẽ làm `E0-12b` mất neo.
+Kiểm sau khi sửa bằng `yaml.safe_load`: `version 0.2.0`, 60 entity, `owner` vẫn đúng chín trường theo
+thứ tự cũ, `amendments[0].status = ACCEPTED`, `ratified_by = OD-20260907-03`.
+
+**Vì sao giữ lịch sử thay vì xóa mệnh đề "có thể phản đối".** Packet nói "drop the clause (keep
+history)" và tôi hiểu đúng nghĩa đó: mệnh đề ấy **có thật** từ 11:12Z tới biên bản vòng ba; nó hết
+hiệu lực vì Owner **đã trả lời**, không vì nó bất tiện. Một sổ hợp đồng mà điều kiện biến mất khi được
+thỏa mãn thì không đọc được ngược. `history_vi` cũng ghi rõ `OD-20260907-01` **vẫn** không nhắc bốn cột
+— thẩm quyền là `OD-20260907-03` — để không ai sau này gán nhầm cho biên bản vòng một.
+
+## N4. Delta (2) — `precode/change-control.md` §10
+
+`status: PROVISIONAL` → `status: ACCEPTED` kèm `ratified_by: OD-20260907-03` trong khối CR
+`CR-TC-AUTH-02`; đoạn "Thẩm quyền và giới hạn" nhận một đoạn cập nhật ghi biên bản, authority, evidence
+và **giữ nguyên văn câu cũ** làm lịch sử. Thêm một đoạn "hai điều biên bản vòng ba KHÔNG làm": nó
+**không** đóng `F-A3R1-02`/`F-A3R1-06`, và nó **không** trả lời `CR-PC10-13` — khoảng trống §2 vẫn còn
+nên khối `deviation` vẫn là căn cứ bậc version. Version file 0.1.2 → **0.1.3** (hàng patch §2 nguyên
+văn "Sửa lỗi chính tả, làm rõ prose, không đổi hành vi"; ghi ra để không lặng lẽ đổi nội dung).
+
+## N5. Hash sau
+
+| Path | sha256 | Bytes | Trước (FIX13) |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc` | `240224` | `df5e0231…d142f` / 239261 |
+| `precode/change-control.md` | `21688b458b1ce8f2c6687e3d99b750efbae0bf5ead4414b991b02f8633b17ef0` | `28321` | `0427d562…8270` / 26992 |
+
+⚠️ Card-pin: hash `entities.yaml` đổi lần thứ ba; 18 card pin file này ⇒ `STALE`. Packet đã lường
+trước (WP re-pin sau khi card Giai đoạn 2 được viết).
+
+## N6. Evidence — `EV-PC02-11` (SELF_VALIDATION)
+
+Chạy 2026-09-07T13:22Z–13:24Z từ `…/scratchpad/w3n/`, `PYTHONDONTWRITEBYTECODE=1`, exit 0:
+
+| Gate | Kết quả |
+| --- | --- |
+| `verify_pc02.py` (EV-PC02-01…08, gồm fixture-field / actor-edge / ref PC01) | **PASS (0 fail)** |
+| `prose_token_gate.py` | **PASS** — 0 token chưa giải |
+| **`evidence/tools/e0_check.py`** (read-only) | **25/25 PASS · FAIL 0 · BLOCKED 0 · violations 0** |
+
+Hai check đáng nêu đích danh vì chúng là thứ canh đúng lớp sai sót của gói này:
+`E0-12-forbidden-strings` **1047 kiểm / 0 vi phạm** — từ vựng đã phê chuẩn chỉ được dùng ở nơi có
+quyền dùng, và `status: ACCEPTED` mới của tôi nằm trong một file mang `ratification_ref` hợp lệ;
+`E0-12b-ratification-refs` **50 / 0** — trần `CONTRACT_READY` vẫn neo vào `OD-20260907-01`, không bị
+tôi vô tình chuyển sang biên bản vòng ba.
+
+## N7. Kiểm chéo với PC00 — đã khớp, không còn mâu thuẫn
+
+Trước khi nhả lease tôi kiểm `precode/decision-register.md` (ngoài grant, chỉ ĐỌC) vì §8.11 của nó là
+nơi thứ hai ghi trạng thái của amendment này. Hash file đã đổi trong lúc tôi làm
+(`56cd624f…2c06d` → `31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f`): PC00 đã cập
+nhật song song. Đọc nội dung: §8.11 nay ghi **`ACCEPTED (OD-20260907-03)`** kèm dòng lịch sử "trước đó
+là `PROVISIONAL` dưới `AUTH-COORD-PC02-FIX12`", và §8 ghi `PROV-PC00-08` cũng `ACCEPTED (OD-20260907-03)`
+— đúng cả hai mục của biên bản. Biên bản cũng đã có bản trong repo: `precode/owner-decisions-03.md`.
+Vậy ba nơi (`entities.yaml`, `change-control.md` §10, `decision-register.md` §8.11) nay nói cùng một
+trạng thái, và không cần CR nào. Tôi ghi lại việc kiểm này chứ không giả định: không gate nào so ba nơi
+đó với nhau, nên "khớp" ở đây là kết quả của một lần đọc, không của một lần chạy máy.
+
+Còn mở, không đổi bởi gói này: `CR-PC10-13` (khoảng trống §2) vẫn `OPEN`; `F-A3R1-02`, `F-A3R1-06`,
+`F-A3R2-01…04` không mục nào bị đóng ở đây. Mọi kết quả §N6 là `SELF_VALIDATION`, không phải audit độc lập.
+
+## N8. Kết thúc
+
+Lease `LEASE-PC02-e15` (fencing 15) nhả lúc **2026-09-07T13:27Z**. Không lệnh git mutation, không
+network, không file ngoài grant, không `__pycache__` ngoài `.venv/`. Sau dòng này tôi không ghi thêm.

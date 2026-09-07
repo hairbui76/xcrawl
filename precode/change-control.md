@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-change-control
-version: 0.1.2
+version: 0.1.5
 status: draft
 owner_role: implementation planning owner
 source_refs: [SRC-PLAN §16, SRC-PLAN §5, SRC-PLAN §12, SRC-PLAN §14, SRC-PLAN §17, SRC-SPEC §13.2]
@@ -229,7 +229,8 @@ Hai CR được xét như **một impact set** theo §6: chúng chạm đúng m�
 cr_id: CR-TC-AUTH-02          # gộp CR-TC-AUTH-03 (cùng impact set)
 raised_by: TC-owner-auth-session (Worker của card), xác nhận bởi audit A3-R1 (F-A3R1-02, F-A3R1-06)
 addressed_to: PC02 (chủ hợp đồng contracts/data/entities.yaml)
-status: PROVISIONAL           # đã thi hành dưới amendment kỹ thuật; Owner chưa phát biểu
+status: ACCEPTED              # OD-20260907-03 mục 1 (vòng ba, 2026-09-07); trước đó PROVISIONAL từ PKT-PC02-FIX12
+ratified_by: OD-20260907-03   # authority AUTH-OWNER-20260907-04; evidence session_0156UBBHDSeC9soECzSVUb3U
 source_of_change: >
   Mâu thuẫn nội bộ giữa hai file đã đóng băng: contracts/ops/secrets.md §2.1-§2.3 bắt buộc một
   tài khoản owner có mật khẩu băm Argon2id và lockout 5 lần / 15 phút, còn
@@ -303,7 +304,18 @@ ruling của Coordinator đóng được. Ba điều nó **không** làm: nó kh
 `ACCEPTED (OD-20260907-01)` (biên bản đó không nhắc bốn cột này); nó không đóng `F-A3R1-02` hay
 `F-A3R1-06`; và nó không tự chứng minh schema đang chạy đã khớp — điều đó do revision Alembic base
 `0002_base_entities` và test hợp đồng `tests/contract/test_schema_matches_entities.py` chứng minh.
-Owner phải được trình mục này ở vòng quyết định kế tiếp và **có thể phản đối**.
+**Cập nhật `OD-20260907-03` (vòng ba, 2026-09-07): Owner đã phê chuẩn.** Mục 1 của biên bản
+(`AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) phê chuẩn `AMD-ENT-owner-01`;
+CR này chuyển `PROVISIONAL` → `ACCEPTED (OD-20260907-03)`. Hệ quả: bốn cột nay đứng trên quyết định của
+Owner chứ không trên chữ ký kỹ thuật của Coordinator, và nhãn của card `TC-owner-auth-session` không
+còn tựa vào một hợp đồng PROVISIONAL. Câu cũ — "Owner phải được trình mục này ở vòng quyết định kế
+tiếp và **có thể phản đối**" — được giữ lại ở đây làm lịch sử: điều kiện ấy có thật từ
+`PKT-PC02-FIX12` tới biên bản vòng ba, và nó hết hiệu lực vì Owner **đã trả lời**, không vì ai đó xóa
+nó đi. `OD-20260907-01` vẫn không nhắc bốn cột này; thẩm quyền phê chuẩn chúng là `OD-20260907-03`.
+
+**Hai điều biên bản vòng ba KHÔNG làm.** Nó không đóng `F-A3R1-02` hay `F-A3R1-06` (finding theo vòng
+đời riêng của `protocol.md` §8), và nó không trả lời `CR-PC10-13` — khoảng trống của §2 vẫn còn, nên
+khối `deviation` ở trên vẫn là căn cứ bậc version cho tới khi PC10 sửa §2.
 
 **Sửa theo `F-A3R2-04`: không có bước "sinh lại" nào ở đây.** Bản đầu của mục này xếp
 `shared/rr_contracts` vào `affected.generated` với ghi chú "PHẢI sinh lại". Sai:
@@ -350,3 +362,164 @@ migration: >
   Không cần. Khi §2 có hàng mới, khối `deviation` của CR-TC-AUTH-02 ở trên được thay bằng một trích
   dẫn hàng đó; entities.yaml GIỮ NGUYÊN 0.2.0 — bậc version đã chọn không đổi, chỉ căn cứ đổi.
 ```
+
+### CR-PC03-08 — `research_connector_rate_limit` nhận nửa arXiv của `REQ-A6` từ tài liệu chính thức
+
+```yaml
+cr_id: CR-PC03-08
+raised_by: worker-WF (PKT-PC03-FIX-REQA6), dưới AUTH-COORD-REQA6 (cha AUTH-OWNER-20260907-05)
+addressed_to: PC03 (chủ hợp đồng contracts/retry-policy.yaml)
+status: ACCEPTED              # OD-20260907-04 mục 2 cấp quyền ĐI LẤY dữ kiện; nội dung là dữ kiện ngoài, không phải quyết định sản phẩm
+ratified_by: OD-20260907-04   # authority AUTH-OWNER-20260907-05; ghi ở precode/decision-register.md §8.13.1
+source_of_change: >
+  Nguồn ngoài. OD-20260907-04 mục 2 cấp một quyền mạng MỘT LẦN, HẸP, CHỈ ĐỌC trang tài liệu dưới
+  arxiv.org / info.arxiv.org / openalex.org / docs.openalex.org, để đọc và trích nguyên văn chính
+  sách nhịp gọi và định danh của hai nguồn. Không một lời gọi API thật nào được phép, và không một
+  lời gọi nào đã xảy ra: công cụ duy nhất dùng là WebFetch (GET) trên trang tài liệu.
+before: >
+  contracts/retry-policy.yaml v0.6.0, budgets.research_connector_rate_limit, nguyên văn dòng values:
+  `values: {arxiv_requests_per_window: null, arxiv_window_seconds: null, openalex_requests_per_window:
+  null, openalex_window_seconds: null, min_interval_ms: 3000}` với `status: PLACEHOLDER_KC`. Bốn giá
+  trị null; không có khối trích dẫn nguồn nào; yêu cầu định danh của cả hai nguồn không được ghi ở đâu
+  trong file.
+after: >
+  Cùng khối, v0.7.0. HAI giá trị arXiv được điền từ tài liệu chính thức: `arxiv_requests_per_window: 1`,
+  `arxiv_window_seconds: 3`, cộng một khóa MỚI `arxiv_max_concurrent_connections: 1` — dữ kiện thứ ba
+  nằm trong cùng câu trích dẫn và sàn cũ không phủ. Hai giá trị OpenAlex GIỮ `null`. Thêm ba khóa mô tả:
+  `sources` (hai bản ghi có url + retrieved_at 2026-09-07 + trích dẫn nguyên văn tiếng Anh),
+  `identification` (`arxiv_identification_required: false`, `openalex_identification_required: null`,
+  cùng luật "nguồn yêu cầu định danh mà chưa có chuỗi định danh ⇒ KHÔNG gọi"), và `unresolved_vi`
+  (nêu chính xác hai giá trị còn thiếu và lý do). `status` GIỮ `PLACEHOLDER_KC`; `min_interval_ms = 3000`
+  GIỮ NGUYÊN. Văn xuôi `scope` và `ratification.still_kc_vi` sửa "bốn giá trị" thành "hai", nêu rõ câu
+  cũ viết ở thì của OD-20260907-01.
+version_rule: >
+  §2, hàng minor, nguyên văn: "Thêm trường **optional**, thêm mã lỗi mới, thêm operation mới | minor
+  (`0.1.0 → 0.2.0`)". Ba khóa `sources` / `identification` / `unresolved_vi` là trường optional mới; việc
+  điền hai giá trị đang `null` KHÔNG đổi enum, semantics, auth_scope, idempotency key hay commit point —
+  không hàng major nào phủ nó — và nặng hơn "sửa lỗi chính tả, làm rõ prose, không đổi hành vi" của hàng
+  patch, vì hành vi khởi động của connector với nguồn arXiv có đổi. Vậy: 0.6.0 -> 0.7.0. KHÔNG cần khai
+  deviation ở đây (khác CR-TC-AUTH-02): khoảng trống CR-PC10-13 nói về cột NOT NULL có DEFAULT, không
+  chạm trường hợp này.
+reason: >
+  `before` không sai, nó THIẾU — và nó thiếu đúng thứ chặn card connector rời DRAFT. Bốn giá trị null là
+  trạng thái đúng khi chưa ai được phép đọc tài liệu; sau OD-20260907-04 mục 2 thì hai trong bốn đọc được,
+  và giữ chúng null sẽ là bỏ phí một dữ kiện đã có trích dẫn. Ba lý do phải ghi kèm nguồn thay vì chỉ ghi
+  số: (a) SRC-PLAN §14.1 đòi provenance; (b) một con số rate limit không có URL và ngày đọc thì lần sau
+  không ai kiểm được nó còn đúng không; (c) chính điều SG-A6 cấm — đoán số — chỉ phân biệt được với đọc số
+  bằng trích dẫn.
+affected:
+  requirements: [REQ-A6, REQ-D34]     # REQ-A6 chuyển KC -> PARTIALLY_RESOLVED; REQ-D34 (định danh) nửa arXiv đã có câu trả lời
+  contracts:
+    - contracts/retry-policy.yaml     # 0.6.0 -> 0.7.0
+  modules: [MOD-research-connector]
+  fixtures: []                        # không fixture nào nêu số nhịp gọi
+  task_cards:
+    rule: "§4 INV-06/INV-09 — mọi card pin hash contracts/retry-policy.yaml chuyển STALE. Hash là hash."
+    action: >
+      Coordinator re-pin trong đợt pin kế tiếp. Worker của packet này CỐ Ý KHÔNG chạm card nào
+      (agent-tasks/* nằm ngoài lease LEASE-PC03-REQA6). Card STALE nghĩa là pin lại, không phải FAIL.
+    still_blocking: >
+      SG-A6 của agent-tasks/TC-research-connector-metadata.md KHÔNG được nới bởi CR này: nó đòi BỐN giá
+      trị, và openalex_requests_per_window / openalex_window_seconds vẫn null. Connector vẫn từ chối
+      khởi động, và MOD-research-connector vẫn KHÔNG CONTRACT_READY.
+  evidence: [EV-PC03-05]              # STALE: lint của PC03 chạy trên bytes cũ; chạy lại trên epoch mới
+still_open: >
+  Nửa OpenAlex DỪNG ở BLOCKED_SCOPE, không phải ở "chưa tìm thấy". Ngày 2026-09-07 mọi đường dẫn thử dưới
+  docs.openalex.org (rate-limits-and-authentication, api-overview, và trang gốc) trả 301 sang
+  https://help.openalex.org/ — host KHÔNG có trong bốn host được cấp — và openalex.org trả 403. Đi theo
+  redirect ra ngoài allowlist là tự mở scope (protocol.md §3). Cần một amendment quyền thêm
+  help.openalex.org; cho tới lúc đó hai giá trị GIỮ null. Không con số nào được suy ra từ thông lệ.
+migration: >
+  Không cần chuyển đổi dữ liệu. Cấu hình runtime: `min_interval_ms = 3000` giữ nguyên nên hành vi mặc
+  định của connector không đổi; ba khóa arXiv mới chỉ SIẾT thêm (thêm giới hạn một kết nối đồng thời).
+  Đường lùi: nếu arXiv đổi chính sách, sửa đúng khối `sources` kèm ngày đọc mới — không xoá bản ghi cũ,
+  vì nó là bằng chứng rằng một hạn mức từng đúng vào một ngày cụ thể (§8).
+```
+
+**Thẩm quyền và giới hạn.** CR này KHÔNG phải một quyết định sản phẩm: Owner cấp **quyền đi lấy** dữ kiện,
+không cấp nội dung. Cái được chấp nhận ở `status: ACCEPTED` là *quy trình* (đọc tài liệu chính thức, ghi
+kèm URL/ngày/trích dẫn), còn *nội dung* đứng trên chính trang tài liệu, không trên chữ ký của ai. Hệ quả
+thực tế: nếu ai đó đọc lại `https://info.arxiv.org/help/api/tou.html` và thấy khác, đây là một CR mới, không
+phải một lần "Owner đổi ý". Ba điều CR này **không** làm: không đóng `REQ-A6` (`precode/requirements.csv`
+ngoài lease và vẫn ghi `KC`), không nới `SG-A6`, và không nâng trần claim của module research connector.
+Dữ kiện `arxiv_identification_required = false` là một **phủ định có phạm vi** — "bốn trang đã đọc ngày
+2026-09-07 không yêu cầu định danh" — chứ không phải "gọi ẩn danh là đúng"; luật `SG-IDENT` không đổi.
+
+#### Bổ sung `CR-PC03-08.a` — nửa OpenAlex, sau khi Owner mở rộng allowlist (2026-09-07, cùng ngày)
+
+Bổ sung **cộng thêm**, không viết lại khối trên: khối ấy ghi đúng trạng thái sau vòng một, và một sổ CR
+mà mục cũ bị sửa cho khớp kết quả mới thì không còn là sổ. Đọc hai mục theo thứ tự.
+
+```yaml
+cr_id: CR-PC03-08.a           # bổ sung của CR-PC03-08; KHÔNG thay thế nó
+raised_by: worker-WF (PKT-PC03-FIX-REQA6 phần 2), dưới AUTH-COORD-REQA6 / LEASE-PC03-REQA6-p2
+addressed_to: PC03 (chủ hợp đồng contracts/retry-policy.yaml)
+status: ACCEPTED
+ratified_by: OD-20260907-04   # cùng biên bản; Owner MỞ RỘNG allowlist đọc tài liệu thêm help.openalex.org
+source_of_change: >
+  Nguồn ngoài, lần hai. CR-PC03-08 dừng nửa OpenAlex ở BLOCKED_SCOPE vì mọi trang tài liệu OpenAlex
+  redirect sang help.openalex.org, một host ngoài bốn host được cấp. Coordinator trình Owner đúng sự
+  kiện đó; Owner trả lời "thêm help.openalex.org vào allowlist". Quyền thành NĂM host, mọi hạn chế
+  khác giữ nguyên: chỉ trang tài liệu, chỉ GET, và api.openalex.org / export.arxiv.org vẫn cấm.
+before: >
+  contracts/retry-policy.yaml v0.7.0, budgets.research_connector_rate_limit, nguyên văn:
+  `status: PLACEHOLDER_KC`, `values: {... openalex_requests_per_window: null, openalex_window_seconds:
+  null, min_interval_ms: 3000}`, `identification.openalex_identification_required: null`, cộng một khóa
+  `unresolved_vi` nêu lý do hai giá trị còn trống.
+after: >
+  Cùng khối, v0.8.0. `openalex_requests_per_window: 100`, `openalex_window_seconds: 1`,
+  `identification.openalex_identification_required: false` cộng `openalex_api_key_optional: true`.
+  `status` chuyển PLACEHOLDER_KC -> `DOCS_derived` (token MỚI, giải thích tại `status_note_vi`).
+  `sources` nhận ba bản ghi nữa: A6-OPENALEX-RATE, A6-OPENALEX-BUDGET (RESOLVED_NON_NUMERIC — ngân sách
+  ngày nêu bằng TIỀN, cố ý không thành số), A6-OPENALEX-IDENT. `unresolved_vi` -> `resolved_vi`;
+  `blocked_scope_vi` -> `scope_note_vi`; thêm `expiry_vi`. `min_interval_ms = 3000` GIỮ NGUYÊN.
+  Ngoài khối: `scope`, `principles.RP-05` và `ratification.still_kc_vi` sửa cho khớp — RP-05 nay khai
+  mức thứ TƯ (`DOCS_derived`) bên cạnh ba mức cũ.
+version_rule: >
+  §2, hàng minor, như CR-PC03-08: thêm trường optional (`status_note_vi`, `expiry_vi`, `scope_note_vi`,
+  ba bản ghi `sources`) và điền giá trị đang null. KHÔNG đổi enum/semantics/auth_scope/idempotency/commit
+  point ⇒ không phải major. 0.7.0 -> 0.8.0.
+  LƯU Ý MỘT CÁI GIÁ ĐÃ CHỌN: hai lần sửa trong cùng một ngày ⇒ hai lần bump ⇒ hai vòng STALE cho mọi card
+  pin file này. Gộp lại thành một bump sẽ rẻ hơn cho Coordinator nhưng sẽ xoá mất một sự thật kiểm toán
+  được: nửa arXiv và nửa OpenAlex đứng trên HAI phạm vi quyền khác nhau, cách nhau bởi một câu trả lời
+  của Owner. Sổ này chọn giữ sự thật đó.
+reason: >
+  `before` không sai, nó bị CHẶN — và cái chặn nó là ranh giới quyền, không phải thiếu nguồn. Khi Owner
+  gỡ đúng cái ranh giới ấy, giữ hai giá trị null sẽ là để một cổng (SG-A6) chặn vì một lý do đã hết tồn
+  tại. Ba điều đáng ghi từ lần đọc này: (a) hình dạng hạn mức của OpenAlex KHÁC arXiv — hai tầng, nhịp
+  giây cộng ngân sách ngày; (b) ngân sách ngày nêu bằng tiền nên KHÔNG có con số lời gọi để điền, và ép
+  nó thành số sẽ là bịa; (c) quy ước polite pool / mailto mà REQ-D34 giả định KHÔNG còn trong tài liệu
+  hiện hành.
+affected:
+  requirements: [REQ-A6, REQ-D34]     # REQ-A6: PARTIALLY_RESOLVED -> RESOLVED. REQ-D34: giả định mailto của nó không còn khớp tài liệu
+  contracts:
+    - contracts/retry-policy.yaml     # 0.7.0 -> 0.8.0
+  modules: [MOD-research-connector]
+  fixtures: []
+  task_cards:
+    rule: "§4 INV-06/INV-09 — vòng STALE thứ hai cho mọi card pin contracts/retry-policy.yaml."
+    action: "Coordinator pin lại MỘT lần trên bytes cuối (0.8.0), không cần pin trung gian 0.7.0."
+    sg_a6: >
+      Điều kiện của SG-A6 — "bốn giá trị PLACEHOLDER_KC còn null" — KHÔNG CÒN ĐÚNG. Đây là một phát
+      biểu về ĐIỀU KIỆN của cổng, KHÔNG phải một tuyên bố rằng MOD-research-connector đã
+      CONTRACT_READY: trần claim của module do PC05/Coordinator xét trên toàn bộ cổng của nó. Worker
+      của packet này không chạm card nào và không tuyên bố điều đó.
+    sg_ident: >
+      SG-IDENT GIỮ NGUYÊN trong card và trong code. Đổi là DỮ KIỆN nó áp lên (không nguồn nào đòi định
+      danh tính tới 2026-09-07), không phải luật. Xoá luật vì hôm nay nó không kích hoạt là đúng thứ
+      §9 cấm.
+  evidence: [EV-PC03-05]              # STALE lần nữa; chạy lại trên bytes 0.8.0
+migration: >
+  Không cần chuyển đổi dữ liệu. Hành vi mặc định không đổi: min_interval_ms = 3000 vẫn là ràng buộc chặt
+  nhất — chậm hơn hạn mức OpenAlex (100 req/s) khoảng 300 lần, và điều đó là CÓ CHỦ ĐÍCH cho một hệ một
+  người dùng. Đường lùi: nếu một nguồn đổi chính sách, sửa đúng bản ghi trong `sources` kèm ngày đọc mới
+  và mở CR; KHÔNG chỉnh con số tại chỗ, và KHÔNG xoá bản ghi cũ (§8).
+```
+
+**Vì sao đây vẫn không phải một quyết định sản phẩm.** Owner quyết **phạm vi quyền đọc**, không quyết con
+số. Cái `status: ACCEPTED` ở trên nói rằng *quy trình* được chấp nhận, còn nội dung đứng trên trang tài
+liệu của arXiv và OpenAlex. `DOCS_derived` được đặt ra chính để giữ sự khác biệt ấy đọc được: nó
+mang một **ngày hết hạn ngầm**, và ai đọc lại nguồn thấy khác thì mở CR mới — không phải "Owner đổi ý".
+Hai giới hạn phải đọc kèm: dữ kiện định danh của cả hai nguồn là **phủ định có phạm vi** (các trang đã
+đọc trong ngày 2026-09-07, không phải toàn bộ site), và ngân sách ngày của OpenAlex **không** có con số
+trong hợp đồng vì tài liệu không nêu con số — nó chỉ quan sát được lúc chạy qua header `X-RateLimit-*`.

@@ -1,0 +1,327 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-02-tc-collector-checkpoint-resume",
+  "created_at": "2026-09-07T13:56:09Z",
+  "producer_principal": "worker-WC",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "e9a725c6129a7a7b59f826579516f4c4f9b93b9f13387973b796241ded3e0b55",
+      "precode/decision-register.md": "31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+      "contracts/ops/collector-probe.md": "03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
+      "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
+      "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+      "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+      "acceptance/fixtures/collection/a-feed-layout-changed.json": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+      "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+      "acceptance/fixtures/collection/c-challenge-mid-batch.json": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+      "acceptance/fixtures/collection/e-limit-reached-stop.json": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+      "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+      "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00"
+    },
+    "implementation_revision": "pin epoch PC10-PIN-P2-20260907; git HEAD 4ddefb2 plus uncommitted Phase 2 work; collector modules created by this packet"
+  },
+  "environment": {
+    "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "uv": "0.12.9",
+      "pytest": "8.4.2",
+      "httpx": "0.28.1",
+      "fastapi": "0.115.14",
+      "pydantic": "2.13.5",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "jsonschema": "4.26.0",
+      "pyyaml": "6.0.3",
+      "sqlite3": "3.45.1",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "database": "temporary SQLite file per test (pytest tmp_path) built by `alembic upgrade head`, WAL + foreign_keys=ON",
+      "collector_token": "<test-only literal, not a secret; no real credential exists in this repo>",
+      "x_source": "collector.app.reader.RecordedSource over synthetic pages; no browser, no X session, no Playwright import",
+      "worker_operations": "served by an in-test WorkerStub replaying contracts/http/openapi.yaml; TC-scheduler-lease-claim has not run",
+      "network": "none during the run"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC01",
+      "SC03",
+      "SC04",
+      "SC11",
+      "SC20",
+      "SC21",
+      "SC49",
+      "SC50"
+    ],
+    "requirement_ids": [
+      "REQ-AC01",
+      "REQ-AC03",
+      "REQ-AC04",
+      "REQ-D08",
+      "REQ-D09",
+      "REQ-D24",
+      "REQ-D31",
+      "REQ-D32",
+      "REQ-D33",
+      "REQ-OQ01",
+      "REQ-OQ05"
+    ],
+    "invariant_ids": [
+      "I02",
+      "I10",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/collection/README.md",
+        "sha256": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+        "bytes": 12636
+      },
+      {
+        "path": "acceptance/fixtures/collection/a-feed-layout-changed.json",
+        "sha256": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+        "bytes": 13611
+      },
+      {
+        "path": "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json",
+        "sha256": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+        "bytes": 12816
+      },
+      {
+        "path": "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+        "sha256": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+        "bytes": 12528
+      },
+      {
+        "path": "acceptance/fixtures/collection/e-limit-reached-stop.json",
+        "sha256": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+        "bytes": 7892
+      },
+      {
+        "path": "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json",
+        "sha256": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+        "bytes": 7475
+      },
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/e2e/README.md",
+        "sha256": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+        "bytes": 6013
+      },
+      {
+        "path": "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json",
+        "sha256": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+        "bytes": 30745
+      },
+      {
+        "path": "acceptance/fixtures/collection/d-duplicate-ingest-replay.json",
+        "sha256": "1dc4318167004f3d085fff0b402c9c7bf6c220854db3130c51eb5900d85120fe",
+        "bytes": 10417
+      },
+      {
+        "path": "acceptance/fixtures/collection/f-two-workers-claim-same-assignment.json",
+        "sha256": "92939afbb6896caae0510ea2d34e638ba5a8d74ea94be89bd9755de33dbe0518",
+        "bytes": 9384
+      },
+      {
+        "path": "acceptance/fixtures/collection/g-schedule-due-claim.json",
+        "sha256": "32a9defa30bbbbe334b6e28378b8bcf09f2bc1d002a2fc2275886b6df5ca60ba",
+        "bytes": 11845
+      }
+    ],
+    "protocol_version": "agent_profile/protocol.md (as at 2026-09-07)"
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/contract/test_collector_stop_reasons.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_collector_resume_after_challenge.py",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-07T13:55:52Z",
+    "ended_at": "2026-09-07T13:56:09Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Do bang so hang, so lan doc nguon va hash — khong bang log. (a) SC04/I02: sau challenge giua lo, COUNT(post) = 20 va 7 bai da tai KHONG co hang nao; MAX(checkpoint.acked_through_ingest_sequence) = 20 truoc va sau. (b) I10: so lan goi XSource.fetch_page KHONG tang sau khi bao dung; worker.claim_assignment KHONG duoc goi lai boi runner; requires_owner_action = true. (c) REQ-AC04: hai lan bao cung mot stop_report_id; COUNT(alert intent) = 1 (nua phia server do WorkerStub ap dung quy tac idempotency cua hop dong). (d) T-RUN-09: collector gui `challenge_required`, server luu `captcha`. (e) Resume: cursor lay tu assignment.checkpoint cua SERVER; lease_epoch moi > cu. (f) AMD-B05: doan re-read chi them hang cho x_post_id moi (20 -> 30, khong phai 40). (g) I13: feed rong => FEED_EXHAUSTED, khong stop_reason, khong limit_kind, 0 hang. (h) T-RUN-02: cham 20 bai => stop_reason=limit_reached, error_code=None, x_coverage_note_vi khac rong, 0 lan doc them. (i) T-RUN-24: 12/40 bai bóc duoc => 12 hang commit, SOURCE_LAYOUT_CHANGED, ten truong thieu duoc bao cao, 1 alert. (j) SG-RATE/T-RUN-25: rate limit => stop_reason=rate_limited, coverage note nhac moc, 0 alert, khong retry trong dot. (k) SC20: heartbeat epoch cu => STALE_LEASE, LEASE_LOST, khong bao stop, khong ghi them. (l) SC21: timeout => get_receipt TRUOC, receipt committed => KHONG gui lai; not_committed => gui lai cung key. (m) E2 (T-RUN-19): bom loi ghi SQLite => 0 hang post, 0 receipt, checkpoint = 0, khong bao stop; sau ba probe thanh cong cach nhau, lo commit binh thuong (20 hang). (n) SC49/SG-DENY: CollectorClient chi co dung 9 operation cua card §4 cong `close`. (o) payload_hash cua collector == payload_hash cua server (hai ban cai dat doc lap).",
+    "expected": {
+      "tests_total": 55,
+      "passed": 55,
+      "failed": 0,
+      "xfailed": 0,
+      "skipped": 0,
+      "exit_code": 0
+    },
+    "observed": {
+      "tests_total": 55,
+      "passed": 55,
+      "failed": 0,
+      "xfailed": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "per_file": {
+        "tests/contract/test_collector_stop_reasons.py": 41,
+        "tests/integration/test_collector_resume_after_challenge.py": 14
+      },
+      "full_suite": {
+        "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -q -W ignore::DeprecationWarning",
+        "passed": 571,
+        "failed": 1,
+        "xfailed": 4,
+        "failing_test": "tests/integration/test_identity_merge_audit.py::test_migration_chain_resolves_to_a_single_head",
+        "attribution_vi": "KHONG do packet nay gay ra. Test do cua card TC-canonical-identity-merge khang dinh head Alembic la `0004_merge_phase1_heads`; head hien tai la `0005_tc_research_connector_metadata`, mot revision cua card TC-research-connector-metadata dang chay song song. Packet nay KHONG tao migration nao (card §4: collector khong so huu state nao cua server)."
+      },
+      "static_checks": {
+        "ruff_check": "clean on collector/ and tests/ (exit 0)",
+        "ruff_format": "clean (exit 0)",
+        "mypy_strict": "Success: no issues found in 7 source files (collector/app)"
+      }
+    }
+  },
+  "result": "PASS",
+  "artifacts": [
+    {
+      "path": "collector/app/session.py",
+      "sha256": "d14d7e6f0357c567d4aff8e0d00a9f8341869fee3931412b77726f11199521c0",
+      "bytes": 8472,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "collector/app/reader.py",
+      "sha256": "3f1b68a2790ba2e50cb557191e9f1aeb8bad51d3e625ba2aa2851162d80e1aec",
+      "bytes": 28700,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "collector/app/batcher.py",
+      "sha256": "ad9f1833e85b0d382161d5dcfd0cd61d9c94f4efeff252fde63d8957b816cac0",
+      "bytes": 11886,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "collector/app/client.py",
+      "sha256": "85efa3398b3c76fd52007c8e202d284e2268c55fa9c299d73d7521edb071c439",
+      "bytes": 27444,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "collector/app/limits.py",
+      "sha256": "386b19cf6e8db8e52770db7578a5533287096d47039a74cac240755d3d813f14",
+      "bytes": 6734,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "tests/contract/test_collector_stop_reasons.py",
+      "sha256": "2628c6e383d78217060a1543f7a10cce591a03fd829f46c45dbb856e4eec5f32",
+      "bytes": 41477,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    },
+    {
+      "path": "tests/integration/test_collector_resume_after_challenge.py",
+      "sha256": "9348c18cea38400463d974df1b552a5752c0bb9a29c02d9edd7edb0ac5296595",
+      "bytes": 37090,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn và test. Không chứa token, cookie hay transcript; token duy nhất xuất hiện là một chuỗi test tường minh không phải secret."
+    }
+  ],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 55,
+    "not_checked_vi": [
+      "KHONG chay live: khong co X, khong co browser, khong co Playwright, khong co phien X nao duoc mo. SG-01/SG-02 van dung: contracts/ops/collector-probe.md §0 ghi bang chung la NOT_RUN va cong Owner §6 muc 2-4 chua mo. Khong dong nao trong goi nay la bang chung ve hanh vi that cua X.",
+      "worker.claim_assignment / heartbeat / report_stop / release_assignment KHONG co ban cai dat server: chung thuoc TC-scheduler-lease-claim, chua chay. Moi khang dinh o phia worker duoc do qua WorkerStub trong test, nen chung chung minh HANH VI CUA COLLECTOR, khong chung minh server.",
+      "Vi vay 'dung MOT alert intent moi run' chi duoc thiet lap o nua phia collector (mot stop_report_id on dinh, dung lai khi bao lai). Nua phia server la cua card scheduler.",
+      "Nguong phat hien doi bo cuc (LAYOUT_CHANGE_PARSE_FAILURE_TOLERANCE = 0) suy ra tu cac dieu cam cua T-RUN-24, KHONG tu do luong. Mot nguong dung sai can du lieu that tu probe (NOT_RUN).",
+      "Fixture d, f, g duoc dung theo chi dan dispatch nhung KHONG nam trong bang pin §0 hay read set §2 cua card (CR-TC-COLLECTOR-03). Hash quan sat cua chung duoc ghi o inputs.fixtures de doi chieu.",
+      "Chua chay evidence/tools/e0_check.py (card §8: PC10 khong chay no).",
+      "Chua dang ky run vao evidence/index.json: file do thuoc PC09, ngoai write set.",
+      "Chi tu kiem (SELF_VALIDATION). Khong co review doc lap nao."
+    ],
+    "uncertainty_vi": "Ban ghi nay THAY THE EV-E1-01-tc-collector-checkpoint-resume (evidence/runs/TC-collector-checkpoint-resume-E1-20260907T132623Z.json), nay danh dau STALE: ban do ghi lai mot lan dung o SG-HASH tren pin epoch PC10-PIN-P1d-20260907, truoc khi Coordinator pin lai card sang PC10-PIN-P2-20260907. Ket luan cua no (pin khong khop) dung tai thoi diem do va sai bay gio.",
+    "unresolved_issue_refs": [
+      "CR-TC-COLLECTOR-02",
+      "CR-TC-COLLECTOR-03",
+      "CR-TC-COLLECTOR-05",
+      "CR-TC-COLLECTOR-06",
+      "CR-TC-COLLECTOR-07"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "collector/app/session.py",
+      "collector/app/reader.py",
+      "collector/app/batcher.py",
+      "collector/app/client.py",
+      "collector/app/limits.py",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/run.yaml",
+      "contracts/retry-policy.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/http/openapi.yaml",
+      "server/app/ingest/service.py",
+      "acceptance/fixtures/collection/a-feed-layout-changed.json",
+      "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json",
+      "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+      "acceptance/fixtures/collection/e-limit-reached-stop.json"
+    ]
+  },
+  "claim": {
+    "scope_vi": "Chi pham vi card TC-collector-checkpoint-resume, va chi phia collector: claim / heartbeat mang lease epoch / gom lo voi payload_hash va idempotency key / tra receipt truoc moi retry / de xuat checkpoint chi cho du lieu DA ACK / resume tu checkpoint cua SERVER / bao dung dung cho challenge, limit, layout-changed, rate-limited, session-expired / khong tu retry sau challenge. Tuong tac voi X nam sau protocol collector.app.reader.XSource ma test thay bang trang tong hop.",
+    "not_established_vi": [
+      "KHONG thiet lap rang collector chay duoc tren X that. Khong co probe nao chay (SG-01), khong browser nao duoc mo, va card cam tuyen bo dieu nay.",
+      "KHONG thiet lap rang phia server cua worker.* dung: no chua ton tai.",
+      "KHONG thiet lap rang server chi tao mot alert intent moi run — chi thiet lap rang collector gui mot stop_report_id on dinh.",
+      "KHONG thiet lap rang nguong phat hien doi bo cuc la dung cho X that.",
+      "KHONG thiet lap IMPLEMENTATION_VERIFIED bang chinh ban ghi nay: manifest.schema.json gioi han mot ban SELF_VALIDATION o CONTRACT_READY, nen supports_label duoc CO Y bo trong. Nang nhan la viec cua Coordinator/Auditor.",
+      "Khong phai independent audit."
+    ]
+  }
+}

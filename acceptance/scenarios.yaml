@@ -185,6 +185,14 @@ scenarios:
       "Người dùng không phải mở X" ở mức sản phẩm chỉ chứng minh được bằng một đợt chạy thật có
       timestamp (E3, gắn với probe SP1 của `contracts/ops/collector-probe.md`).
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy ở PHÍA COLLECTOR (`tests/contract/test_collector_stop_reasons.py`,
+      `TC-collector-checkpoint-resume`): `worker.claim_assignment` khi không có việc trả
+      `no_work` chứ không phải lỗi, và **đăng ký không tự cấp lease** (I10). KHÔNG đo được: cả
+      ba vế của oracle là trạng thái bền phía SERVER — `COUNT(run …) = 1`,
+      `COUNT(assignment_lease WHERE state='held') = 1`, và độ trễ ≤ 45 s tính từ mốc lịch. Bảng
+      `run` và `assignment_lease` **chưa tồn tại** (thuộc `TC-scheduler-lease-claim`); vế 'người
+      dùng không phải mở X' còn là E3 gắn với probe SP1.
 
   - id: SC02
     title_vi: "Nhiều kỳ lịch bị bỏ lỡ vì máy tắt → đúng MỘT run chạy bù, tin nhắn ghi khoảng bao trùm"
@@ -271,10 +279,13 @@ scenarios:
       chứng minh cơ chế, không chứng minh con số đúng.
     status: NOT_RUN
     partial_evidence_vi: >
-      Nửa 'đọc lại sau khi con trỏ mất hiệu lực' đã chạy trong
-      tests/integration/test_ingest_ack_lost.py, nhưng oracle của SC03 là bộ ba (status,
-      outcome, stop_reason) theo AMD-B02 và số request tới nguồn sau report_stop — cả hai thuộc
-      collector/scheduler, chưa tồn tại ở M1.
+      Đã chạy ở PHÍA COLLECTOR: báo cáo dừng vì giới hạn mang đúng các trường fixture pin
+      (`test_limit_stop_report_carries_the_fields_the_fixture_pins`), 409 layout-changed là một
+      acknowledgement chứ không phải lỗi client, và resume đọc con trỏ **từ checkpoint của
+      server** chứ không từ trạng thái cục bộ. KHÔNG đo được: bộ ba `(status, outcome,
+      stop_reason)` khớp một dòng AMD-B02 và hash hàng `checkpoint` trước/sau `report_stop` — cả
+      hai là trạng thái bền phía server và bảng `run` chưa tồn tại. Vế 'số request tới nguồn sau
+      report_stop = 0' được ép ở tầng client, không được quan sát ở tầng nguồn.
 
   - id: SC04
     title_vi: "CAPTCHA giữa lô → needs_user, ĐÚNG MỘT cảnh báo, không tự thử lại, resume phải cấp lease mới"
@@ -324,6 +335,13 @@ scenarios:
       Tần suất challenge thật (REQ-A1, REQ-A7) chỉ đo được bằng probe SP1 5–10 đợt; nhánh "người
       dùng xử lý tay trong cửa sổ Chrome" là bước con người, không tự động hóa được.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy ở PHÍA COLLECTOR (`tests/integration/test_collector_resume_after_challenge.py`):
+      sau challenge collector **không tự thử lại**, và một lời gọi bằng lease epoch cũ bị từ
+      chối bằng `STALE_LEASE`. KHÔNG đo được: `COUNT(outbox_intent WHERE kind='run_alert') = 1`
+      — bảng `outbox_intent` **chưa tồn tại** — và `COUNT(post)` trước/sau, vốn là trạng thái
+      bền phía server. Nhánh 'người dùng xử lý tay trong cửa sổ Chrome' là bước con người và tần
+      suất challenge thật chỉ đo được bằng probe SP1.
 
   - id: SC05
     title_vi: "Bỏ tag trước transaction publish → mục khớp tag đó không vào báo cáo, dữ liệu vẫn ở kho"
@@ -452,10 +470,12 @@ scenarios:
       Tỷ lệ trùng THẬT trên dữ liệu X thật (REQ-S1.4-03) chỉ đo được ở E3/E4 sau khi có kho thật.
     status: NOT_RUN
     partial_evidence_vi: >
-      Chuẩn hóa năm cách viết arXiv về một work và chín post_work đã chạy
-      (tests/integration/test_identity_merge_audit.py, fixture h). Vế COUNT(report_item WHERE
-      target_key='work:<id>') = 1 KHÔNG đo được: bảng `report` và `report_item` thuộc card báo
-      cáo, chưa tồn tại.
+      Đã chạy: chuẩn hóa năm cách viết arXiv về một work và chín `post_work` ở Giai đoạn 1
+      (`tests/integration/test_identity_merge_audit.py`, fixture h), và ở Giai đoạn 2 connector
+      chứng minh sáu cách viết chỉ sinh **một** lời gọi metadata
+      (`tests/contract/test_research_metadata_fixtures.py`). KHÔNG đo được: `COUNT(report_item
+      WHERE target_key='work:<id>') = 1` — bảng `report`/`report_item` thuộc card báo cáo và
+      chưa tồn tại.
 
   - id: SC08
     title_vi: "Chuỗi kỳ báo cáo có kỳ rỗng và một publisher crash → các cửa sổ coverage nối liền, nửa mở"
@@ -671,6 +691,14 @@ scenarios:
       của người theo rubric `contracts/ai/grounding.md` §6 (ngưỡng G1/G2 = 1.00, mẫu 10 mục/kỳ,
       ≥ 3 kỳ) — E4, `NOT_RUN`.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E4** và không lượt review nội dung nào đã chạy, nên
+      scenario này KHÔNG thể rời `NOT_RUN` ở giai đoạn hiện tại — quy tắc §14.5 chặn nó ở điều
+      kiện thứ nhất. Phần đã chạy: connector xử lý fixture
+      `collection/h-metadata-unavailable-post-only.json` (nguồn không có gì ⇒ giữ 'chỉ có post',
+      không bịa). Vế thật của oracle — `claim_kind`, `comparator='unknown'`, và groundedness
+      review theo `contracts/ai/grounding.md` §6 — thuộc `MOD-analysis-service` và cần người
+      đọc.
 
   - id: SC12
     title_vi: "Save một mục, khởi động lại, bài gốc bị xóa trên X → snapshot còn nguyên và đọc được"
@@ -1115,6 +1143,13 @@ scenarios:
     mockable_vi: "Hai tiến trình giả và một restore giả; toàn bộ offline."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy ở PHÍA COLLECTOR: `STALE_LEASE` được ném kèm đúng mã của registry, heartbeat mang
+      epoch cũ bị từ chối, và worker từ trước backup không ghi thêm gì sau khi epoch đã chuyển
+      (`test_collector_resume_after_challenge.py`, fixture f). KHÔNG đo được: bất biến
+      `COUNT(assignment_lease WHERE state='held') = 1` ở mọi thời điểm — bảng chưa tồn tại — và
+      nhánh `RESTORE_UNVERIFIED` cho tới khi `reconciliation_complete(restore_id)` đúng, vốn
+      thuộc `TC-storage-write-blocked-readiness` và chỉ được chứng minh ở mức cổng.
 
   - id: SC21
     title_vi: "Mất ACK ingest → replay cùng idempotency key trả receipt cũ, số hàng và checkpoint không đổi"
@@ -1168,6 +1203,8 @@ scenarios:
       - "tests/integration/test_ingest_ack_lost.py"
       - "evidence/audits/A3-R1-report.md"
       - "evidence/audits/A3-R2-report.md"
+      - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
+      - "tests/contract/test_collector_stop_reasons.py"
     status_scope_vi: >
       Fault injection thật (ACK mất sau commit, và mất trước commit) trên SQLite: sau replay
       cùng idempotency_key và cùng payload_hash, COUNT(post) và COUNT(ingest_receipt) không đổi,
@@ -1176,6 +1213,11 @@ scenarios:
       cam kết là không ingest trùng theo x_post_id, không phải không đọc lại). KHÔNG thiết lập:
       độ ổn định THẬT của con trỏ feed X (B05, chỉ đo được bằng probe SP1), và hai lần submit
       ĐỒNG THỜI cùng một idempotency_key — A3 ghi rõ điều đó là chưa thiết lập.
+      Giai đoạn 2 CỦNG CỐ dòng này từ phía đối diện mà không đổi nhãn:
+      `test_ack_loss_looks_up_the_receipt_before_resending` chứng minh collector **tra receipt
+      trước** khi gửi lại, nên vế 'replay trả receipt cũ' nay được đo ở cả hai đầu của cùng một
+      giao thức. Nhãn giữ `PASS (E2)` — nó đã đúng từ Giai đoạn 1 và Giai đoạn 2 không mở rộng
+      phạm vi.
 
   - id: SC22
     title_vi: "Analysis về muộn → mục nằm sổ pending, kỳ sau hiện với nhãn phát hiện muộn; backfill không mất"
@@ -1260,9 +1302,10 @@ scenarios:
       Tỷ lệ xung đột thật trên metadata arXiv/OpenAlex thật chỉ đo được sau M2 (E3).
     status: NOT_RUN
     partial_evidence_vi: >
-      Quarantine không-merge đã chạy (fixture c: COUNT(identity_merge_audit WHERE
-      resolution='auto') = 0, hai post giữ nguyên). Vế 'selection bỏ qua target quarantine' và
-      vế đếm/báo cáo riêng theo AMD-B15 thuộc card báo cáo.
+      Đã chạy: quarantine không-merge ở Giai đoạn 1 (fixture c: `COUNT(identity_merge_audit
+      WHERE resolution='auto') = 0`, hai post giữ nguyên). KHÔNG đo được: 'selection bỏ qua
+      target quarantine' và việc đếm/báo cáo riêng theo AMD-B15 — cả hai thuộc card báo cáo.
+      Giai đoạn 2 không thêm gì cho scenario này: connector không chạm đường merge.
 
   - id: SC24
     title_vi: "Đổi embedding generation giữa chừng → selection bị CHẶN, không trộn vector khác model/dimension"
@@ -1545,12 +1588,18 @@ scenarios:
       - "tests/integration/test_identity_merge_audit.py"
       - "evidence/audits/A3-R1-report.md"
       - "evidence/audits/A3-R2-report.md"
+      - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
+      - "tests/contract/test_research_metadata_fixtures.py"
     status_scope_vi: >
       Toàn bộ oracle của SC29 đo được và đã đo: COUNT(work)=0 và COUNT(identity_alias)=0 sau khi
       phân giải một post chỉ có ảnh chụp, target trả về là nhánh `post` của target.schema.json
       với đúng một id được đặt, và một scheme chỉ-alias (OpenAlex) bị từ chối bằng
       VALIDATION_ERROR thay vì tạo work. KHÔNG thiết lập: tỷ lệ post không có định danh trên dữ
       liệu X thật (E3/E4).
+      Giai đoạn 2 CỦNG CỐ dòng này bằng một vế mới và mạnh hơn: trên fixture
+      `identity/b-post-only-missing-ids`, connector thực hiện **không lời gọi mạng nào** —
+      'không đoán ID' nay được đo bằng số request bằng 0, không chỉ bằng số hàng bằng 0. Nhãn
+      giữ `PASS (E1)`.
 
   - id: SC30
     title_vi: "arXiv v1 → v2: một work, hai work_version, generation phân tích mới, không phải phát hiện mới"
@@ -1591,9 +1640,12 @@ scenarios:
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
     partial_evidence_vi: >
-      Một work, hai work_version, đúng một is_current đã chạy (fixture g). Vế COUNT(analysis
-      WHERE analysis_key=K) tăng đúng 1 với generation 1 vẫn `valid` KHÔNG đo được: logic
-      analysis thuộc TC-analysis-once-per-generation.
+      Đã chạy: một work, hai `work_version`, đúng một `is_current` ở Giai đoạn 1 (fixture g), và
+      ở Giai đoạn 2 connector chứng minh v1/v2 phân giải về **một** work ở tầng metadata
+      (`test_research_metadata_fixtures.py`). KHÔNG đo được: `COUNT(analysis WHERE
+      analysis_key=K)` tăng đúng 1 với generation 1 vẫn `valid`, và
+      `COUNT(first_announced_ledger …) = 1` — logic analysis thuộc
+      `TC-analysis-once-per-generation`, chưa chạy.
 
   - id: SC31
     title_vi: "Wire schema ingest batch từ chối payload sai: năm ca âm và một ca dương"
@@ -2001,6 +2053,18 @@ scenarios:
       trị rate-limit đang là `PLACEHOLDER_KC` với một sàn thận trọng `min_interval_ms = 3000`.
       Research connector KHÔNG được coi là `CONTRACT_READY` cho tới khi chúng được điền.
     status: NOT_RUN
+    partial_evidence_vi: >
+      **Đây là dòng gần chuyển nhãn nhất, và lý do nó không chuyển được đo chứ không đoán.** Đã
+      chạy thật ở `tests/integration/test_research_connector_health.py`: chặn được áp lại **ở
+      TỪNG hop** (redirect theo tay, `follow_redirects=False`), DNS rebinding bị chặn theo **địa
+      chỉ** chứ không theo tên, một câu trả lời DNS pha trộn bị từ chối **cả cụm** thay vì lọc,
+      bảy dải mà `internet-boundary.md` nêu tên đều bị chặn, credential trong URL bị từ chối,
+      vượt trần redirect bị từ chối, và trên fixture `recovery/g-ssrf-redirect-private` số kết
+      nối tới loopback và tới dải riêng đều bằng **0** với hop bị chặn đúng ở bước **3**. KHÔNG
+      đo được **đúng một vế**: `COUNT(work_label)` và abstract đã có không đổi sau khi bị chặn.
+      Đường chạy bị chặn không ghi gì, và fixture nói điều đó bằng **văn xuôi**
+      (`work_state_vi`), nhưng không assertion nào đếm hàng — trong test đó `ctx.repository` là
+      `None`. 'Không đo được' khác 'đã sạch', nên dòng này giữ `NOT_RUN`.
 
   - id: SC40
     title_vi: "Request không xác thực và request thiếu CSRF tới owner API → từ chối, 0 mutation"
@@ -2551,13 +2615,14 @@ scenarios:
       không bao giờ mở ra LAN hay reverse proxy (REQ-S11.2-06).
     status: NOT_RUN
     partial_evidence_vi: >
-      Quét default-deny đã chạy trên phần chạm được ở tầng HTTP/service. Phân hoạch 36 cạnh được
-      khẳng định bằng máy và tổng bằng 36 (A3-R2 §2, `F-A3R1-08` VERIFIED): **12 UNAUTHORIZED**
-      chạy qua quyết định scheme, **10 FORBIDDEN_EDGE** chạy qua `require_edge`, và **14
-      CAPABILITY_DENIED** giữ ở `NOT_TESTABLE_AT_THIS_LAYER` kèm lý do cho từng ref, được khẳng
-      định là rời nhau với tập đã chạy và KHÔNG được tính là đã pass. Oracle của SC49 đòi cả ba
-      cơ chế ép buộc (import/dependency, API auth, network/process capability), nên 22/36 chưa
-      đủ và scenario giữ NOT_RUN.
+      Đã chạy trên phần chạm được ở tầng HTTP/service, và Giai đoạn 2 mở rộng nó: phân hoạch 36
+      cạnh **12 UNAUTHORIZED / 10 FORBIDDEN_EDGE / 14 CAPABILITY_DENIED** được khẳng định bằng
+      máy (A3-R2 §2), cộng hai cạnh chạm module nghiên cứu được ghim ở
+      `test_research_connector_health.py` (`test_sc49_rows_20_and_21_pin_capability_denied`,
+      `test_sc49_fe21_no_research_module_can_reach_a_browser`) và cấu trúc default-deny của
+      `CollectorClient` (`test_collector_stop_reasons.py`, NC-01). Oracle vẫn đòi **cả ba** cơ
+      chế ép buộc (import/dependency, API auth, network/process capability); 14 cạnh
+      `CAPABILITY_DENIED` vẫn là `NOT_TESTABLE_AT_THIS_LAYER` và KHÔNG được tính là pass.
     notes_vi: >
       HAI THIẾU SÓT ĐÃ ĐO. (a) 26 trong 36 cạnh KHÔNG có `denied_cases[]` với
       `expected_error_code` được pin, nên scenario này có oracle "không đổi trạng thái" cho cả 36
@@ -2661,9 +2726,13 @@ scenarios:
       giai đoạn triển khai; giá trị của khối "hướng đang nổi" là E4 và cần 3–4 kỳ thật (REQ-A4).
     status: NOT_RUN
     partial_evidence_vi: >
-      Hai trong 18 sự kiện của fixture e2e (`ingest.submit_batch` seq 4 và 5) chạy thật qua
-      service. 16 sự kiện còn lại — scheduling, enrichment, analysis, report, delivery — chưa có
-      code. Sáu đẳng thức của oracle không thể cùng đo.
+      Đã chạy: hai trong 18 sự kiện của fixture e2e (`ingest.submit_batch` seq 4 và 5) chạy thật
+      qua service ở Giai đoạn 1; Giai đoạn 2 thêm chặng thu thập ở phía collector và chặng làm
+      giàu metadata ở phía connector, **nhưng không chặng nào được nối vào một đường chạy duy
+      nhất**. KHÔNG đo được: sáu đẳng thức của oracle phải cùng đúng, và bốn trong sáu (I05
+      `report.content_hash`, I06 `coverage_window`, I07 `first_announced_ledger`, I12
+      `embedding_generation_id`) chạm các bảng chưa tồn tại. Một đợt chạy THẬT đầu-cuối là E3 và
+      thuộc SP1.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`e2e/a-happy-path-schedule-to-delivered.json`, ruling R5-02),
       trong một thư mục mới `e2e/` và ở dạng `rows.<entity>[]` có cấu trúc để cửa kiểm cột không bị

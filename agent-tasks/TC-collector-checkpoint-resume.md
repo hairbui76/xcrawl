@@ -23,7 +23,9 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-P1d-20260907`** (thay `PC10-PIN-P1c-20260907`; các epoch cũ hơn: `PC10-PIN-P1b`, `PC10-PIN-P1`, `PC10-PIN-OD01e`, `PC10-PIN-OD01d`, `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau `PKT-PC02-FIX13`: `contracts/data/entities.yaml` được sửa **chỉ ở phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại: quy tắc `STALE` đọc **byte**, không đọc ý định, và một ngoại lệ "chỉ là văn xuôi" sẽ biến cửa pin thành thứ phải phán đoán mới dùng được. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
+**Pin epoch: `PC10-PIN-P2d-20260907`** (thay `PC10-PIN-P2c-20260907`; các epoch cũ hơn: `PC10-PIN-P2c`, `PC10-PIN-P2b`, `PC10-PIN-P2`, `PC10-PIN-P1d`, `PC10-PIN-P1c`, `PC10-PIN-P1b`, `PC10-PIN-P1`, `PC10-PIN-OD01e`, `PC10-PIN-OD01d`, `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). **19 card.** Bản pin sau vòng quyết định `OD-20260907-04`: `REQ-A6` đã được giải bằng tài liệu chính thức — `contracts/retry-policy.yaml` lên `0.8.0` và `research_connector_rate_limit` **hết** `PLACEHOLDER_KC` (trạng thái nay là `DOCS_derived`); `contracts/ops/collector-probe.md` lên `0.5.0` — §6 ghi cổng probe đã đủ bốn xác nhận, §9.2 trỏ về `retry-policy.yaml` thay vì kể lại dữ kiện cũ. Cùng lượt: `precode/requirements.csv`, `precode/decision-register.md`, `precode/change-control.md`, `precode/owner-decisions.md`, `precode/baseline.json`, `precode/owner-decision-request.md`. **Ba lần pin lại cùng ngày** — `P2b`, `P2c`, `P2d` — vì `precode/decision-register.md` rồi `precode/baseline.json` lần lượt đổi byte ngay sau mỗi lần pin (`CR-PC10-15`; Coordinator nay đã đóng băng `precode/`). Hai tập byte khác nhau không được mang chung một tên epoch, nên mỗi lần là một tên mới. Quy tắc `STALE` đọc **byte**, không đọc ý định: mọi lần một file đã pin đổi byte đều kéo theo một lần pin lại toàn bộ. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
+
+**`dispatch_status: DISPATCHED (OD-20260907-03, 2026-09-07)`** — Owner đã ra lệnh bắt đầu Giai đoạn 2 (`OD-20260907-03` mục 3): 2A là mốc M0 với hai card `TC-x-feasibility-probe` và `TC-collector-checkpoint-resume`. Dòng này chỉ ghi **trạng thái điều phối** và §1–§13 không đổi vì nó. **Cổng Owner ở `contracts/ops/collector-probe.md` §6 nay đủ cả bốn xác nhận:** mục 1 (D09) ở `OD-20260907-01`, mục 2, 3 và 4 ở `OD-20260907-04` mục 1. Nhưng — theo đúng chữ của §6 — cổng đó **mở về mặt HÀNH CHÍNH, không phải về mặt vận hành**: nó gỡ trạng thái `OWNER_DECISION_REQUIRED` và **không** cho phép bất kỳ Worker, agent hay tiến trình tự động nào chạy probe (`OD-20260907-04` mục 1: *"Không Worker nào được chạy nó."*). Probe chỉ chạy **trên máy của chính Owner**, trên **tài khoản X thật của Owner**, sau khi Owner tự làm các bước ở `evidence/handoffs/TC-x-feasibility-probe-handoff.md` §11. Cổng mở **không** sinh ra bằng chứng: mọi số liệu probe vẫn `NOT_RUN`. Điểm dừng ở §10 vẫn nguyên hiệu lực; quyền thi công đến từ TASK_PACKET, không từ dòng này.
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -33,15 +35,15 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
 | `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b` | 22685 |
-| `precode/baseline.json` | `d25e2edd05437dc475797f16e96e874d53ae0cd336cd162dd4b5a4131292c7bd` | 104398 |
-| `precode/decision-register.md` | `56cd624f3d6a429888018abea9fb67e9dbe26aa6d202630c50ff8f989102c06d` | 117150 |
+| `precode/baseline.json` | `ffd1efb3588f87504f61c037b4a242b29a6afb0ddd0f1fd1780c677b22a8bf64` | 112871 |
+| `precode/decision-register.md` | `058621d0649b798cb8882f718c450d548df1f4672bdee512e330bee77d46e8b0` | 144860 |
 | `contracts/modules.yaml` | `cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457` | 108721 |
 | `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
 | `contracts/ports.yaml` | `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684` | 128850 |
 | `contracts/errors.yaml` | `640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f` | 65180 |
-| `contracts/retry-policy.yaml` | `d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5` | 46995 |
-| `contracts/data/entities.yaml` | `df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f` | 239261 |
-| `contracts/ops/collector-probe.md` | `03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1` | 26780 |
+| `contracts/retry-policy.yaml` | `f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a` | 61357 |
+| `contracts/data/entities.yaml` | `c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc` | 240224 |
+| `contracts/ops/collector-probe.md` | `9cf2b0185b100d0dc4fc8c69bc6d964c2b3853fb9814852444b56c8cdcbb0b79` | 32713 |
 | `contracts/ops/internet-boundary.md` | `04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff` | 13926 |
 | `contracts/ops/secrets.md` | `14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9` | 25301 |
 | `contracts/state/run.yaml` | `479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27` | 95222 |

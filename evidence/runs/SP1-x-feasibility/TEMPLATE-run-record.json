@@ -1,0 +1,39 @@
+{
+  "_TEMPLATE_vi": "BIỂU MẪU, KHÔNG PHẢI MỘT ĐỢT. Mỗi đợt thật là MỘT DÒNG trong runs.jsonl do probe/x_feasibility/record.py ghi; file .json này chỉ liệt kê trường §5 và ràng buộc để đọc bằng mắt. go_no_go.py chỉ đọc runs.jsonl nên không bao giờ nhặt phải file này.",
+  "_source_vi": "contracts/ops/collector-probe.md §5 — bảng trường, theo đúng thứ tự hàng.",
+
+  "probe_run_id": "<ULID 26 ký tự Crockford base32 — probe tự sinh>",
+  "started_at": "<UTC RFC 3339 ms, ví dụ 2026-09-08T08:00:00.000Z — đồng hồ MÁY CÁ NHÂN, không phải server (AMD-B08)>",
+  "ended_at": "<UTC RFC 3339 ms>",
+  "duration_s": "<integer >= 0>",
+  "search_terms": ["<từ khóa đã dùng — tag CHỈ để tìm kiếm (REQ-D24)>"],
+  "posts_seen": "<integer — số post NHÌN THẤY trên feed>",
+  "posts_parsed_ok": "<integer <= posts_seen — bóc đủ x_post_id, author.handle, created_at>",
+  "posts_new_vs_previous_runs": "<integer — x_post_id chưa xuất hiện ở đợt trước. ĐÂY là con số trả lời REQ-A1, không phải posts_seen>",
+  "posts_with_paper_link": "<integer>",
+  "posts_image_only": "<integer — chỉ ảnh, không link ⇒ 'chỉ có post', KHÔNG đoán ID (REQ-D33, I03)>",
+  "author_threads_opened": "<integer — probe M0 không mở thread nào, nên luôn 0; xem probe/README.md §8>",
+  "challenge_count": "<integer — ST-1>",
+  "session_expired_count": "<integer — ST-2>",
+  "blocked_count": "<integer — ST-3>",
+  "rate_limited_count": "<integer — ST-4>",
+  "rate_limited_at": "<UTC RFC 3339 ms hoặc null. NOT NULL khi stop_reason = rate_limited; mốc lần ĐẦU TIÊN trong đợt>",
+  "parser_degraded_count": "<integer — ST-7. stop_reason tương ứng là source_layout_changed>",
+  "stop_reason": "<một trong: limit_reached | captcha | session_expired | source_blocked | rate_limited | source_layout_changed | operator_stop>",
+  "limit_kind": "<posts | duration | null. NOT NULL đúng khi stop_reason = limit_reached, và NULL ở mọi trường hợp khác>",
+  "cursor_invalidated": "<boolean — con trỏ feed mất hiệu lực giữa chừng (B05)>",
+  "unobservable_scope_vi": "<BẮT BUỘC KHÔNG RỖNG. Phần feed KHÔNG quan sát được: khoảng thời gian bị bỏ, tài khoản không thấy, phần bị cắt vì ngân sách. Chỗ DUY NHẤT trong probe ghi giới hạn bao phủ (AMD-B05); GO-7 kiểm nó ở MỌI đợt>",
+  "notes_vi": "<quan sát định tính, tùy chọn>",
+
+  "protocol_version": "<CT-ops-collector-probe@0.3.0 — provenance, không phải trường §5>",
+  "probe_tool_version": "<phiên bản probe/x_feasibility — provenance>",
+  "clock_note_vi": "<nhắc rằng mốc thời gian là đồng hồ máy cá nhân — provenance>",
+
+  "_never_write_vi": [
+    "nội dung post nguyên văn",
+    "cookie, token, giá trị Authorization",
+    "ảnh chụp màn hình có thông tin phiên",
+    "đường dẫn tuyệt đối chứa tên người dùng",
+    "định danh tài khoản (@handle) — kể cả của tác giả quan sát được"
+  ]
+}

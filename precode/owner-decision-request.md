@@ -33,7 +33,19 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > **Vòng hai (2026-09-07).** Biên bản `OD-20260907-02` (`precode/owner-decisions-02.md`, authority
 > `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) trả lời nốt dòng `ADR-0011` đang
 > treo trong phiếu ở cuối file — **accept** — và mở lối vào Giai đoạn 0 và Giai đoạn 1 của
-> `docs/master-plan.md`. `REQ-OQ03` vẫn là mục duy nhất chưa được trả lời.
+> `docs/master-plan.md`. Tại thời điểm đó `REQ-OQ03` vẫn là mục duy nhất chưa được trả lời.
+>
+> **Vòng ba (2026-09-07).** Biên bản `OD-20260907-03` (`precode/owner-decisions-03.md`, authority
+> `AUTH-OWNER-20260907-04`, cùng phiên evidence) phê chuẩn `AMD-ENT-owner-01` và `PROV-PC00-08`, và mở lối
+> vào Giai đoạn 2. Vòng này **mở thêm hai câu hỏi** thay vì đóng bớt: sau nó còn **ba** mục chưa được trả
+> lời — `REQ-OQ03`, các mục cổng probe `contracts/ops/collector-probe.md` §6 mục 2–4, và bốn dữ kiện
+> `REQ-A6` (hoặc quyền mạng để lấy chúng).
+>
+> **Vòng bốn (2026-09-07).** Biên bản `OD-20260907-04` (`precode/owner-decisions-04.md`, authority
+> `AUTH-OWNER-20260907-05`) đóng **hai** trong ba mục đó: cổng probe §6 mục 2–4 được chấp nhận cả ba, và một
+> quyền mạng **một lần, hẹp theo tên miền, chỉ đọc tài liệu** được cấp cho việc đi tìm bốn dữ kiện `REQ-A6`.
+> **`REQ-A6` vẫn `KC`** — quyền đi lấy không phải là dữ kiện đã lấy. Sau vòng bốn còn **một** mục chưa được
+> trả lời: `REQ-OQ03`. Câu "một mục duy nhất" ở đoạn trên **chỉ đúng cho thời điểm nó được viết**.
 >
 > File này được **giữ nguyên** làm bản ghi câu hỏi đã đặt ra; phiếu trả lời ở cuối file đã được điền.
 > Nội dung các mục bên dưới **không** được viết lại — chúng phản ánh tình trạng lúc hỏi, không phải
@@ -456,10 +468,48 @@ ADR-0011 frameworks: accept                                 ✅
     phương án nào" — phê chuẩn không đổi điều đó; đảo vẫn chỉ sửa card và mã.)
 Bắt đầu Giai đoạn 0 và Giai đoạn 1 (docs/master-plan.md): CÓ  ✅
    (Giai đoạn 0 đóng G5-X4; Giai đoạn 1 = M1 kho dữ liệu, ingest, auth,
-    storage readiness. Trần claim IMPLEMENTATION_VERIFIED, không bao giờ
+    storage readiness. Trần claim `IMPLEMENTATION_VERIFIED`, không bao giờ
     INTEGRATION/LIVE; product_status giữ NOT_READY_FOR_PRODUCT_CODE.)
 
-── VẪN CHỜ ─────────────────────────────────────────────────
+── VÒNG BA · ĐÃ TRẢ LỜI 2026-09-07 · OD-20260907-03 · AUTH-OWNER-20260907-04 ──
+AMD-ENT-owner-01 (4 cột credential/lockout trên owner): ratify ✅
+   (entities.yaml GIỮ CONTRACT_READY — không được nâng. Nhãn
+    `IMPLEMENTATION_VERIFIED` của card auth nay đứng trên quyết định của
+    Owner thay vì một amendment do Coordinator ký; verdict của auditor
+    KHÔNG đổi vì thế, và F-A3R1-02 / F-A3R1-06 KHÔNG bị đóng.)
+PROV-PC00-08 (ghi mã dưới lease theo thông điệp, không cưỡng chế OS): accept ✅
+   (Rủi ro còn lại được THỪA NHẬN, không phải được xoá:
+    ghi ngoài tập ghi không bị chặn; hai Worker song song không có
+    fencing thật; không có audit log bền vững do service ghi.
+    enforcement vẫn NOT_IMPLEMENTED.)
+Bắt đầu Giai đoạn 2 (docs/master-plan.md): CÓ                ✅
+   2A = M0 probe khả thi X — cấp phép VIẾT card và mã.
+        CHẠY LIVE VẪN BỊ CHẶN: collector-probe.md §6 mục 2–4,
+        và probe phải chạy trên máy của Owner.
+   2B = M2 paper connector — CHƯA CÓ CARD, phải viết card trước.
+        CONTRACT_READY VẪN BỊ CHẶN CỨNG bởi REQ-A6 tới khi bốn dữ kiện
+        rate/identity được ghi từ tài liệu chính thức. KHÔNG ĐOÁN SỐ.
+
+── VÒNG BỐN · ĐÃ TRẢ LỜI 2026-09-07 · OD-20260907-04 · AUTH-OWNER-20260907-05 ──
+Cổng probe contracts/ops/collector-probe.md §6 mục 2–4: chấp nhận cả ba ✅
+   (§6 mục 1–4 NAY ĐỀU THỎA. Cổng mở về HÀNH CHÍNH.
+    Điều kiện VẬT LÝ không đổi: probe chạy trên tài khoản X thật và máy
+    thật của Owner, sau khi Owner tự cài Playwright, đăng nhập tay vào
+    Chrome profile riêng, điền probe-config.json và ký bốn
+    owner_confirmations. KHÔNG WORKER NÀO ĐƯỢC CHẠY NÓ.
+    Ba mục vừa chấp nhận đều là ngưỡng PROVISIONAL do PC05 đề xuất —
+    chấp nhận = đồng ý dùng làm tiêu chí, KHÔNG phải đã hiệu chỉnh.)
+REQ-A6: cho một Worker đọc tài liệu chính thức                ✅
+   ĐƯỢC: chỉ trang tài liệu dưới arxiv.org, info.arxiv.org,
+         openalex.org, docs.openalex.org — mỗi dữ kiện kèm URL nguồn,
+         ngày lấy và một trích dẫn nguyên văn ngắn.
+   KHÔNG ĐƯỢC: export.arxiv.org, api.openalex.org, hay bất kỳ endpoint
+         live nào — KHÔNG lưu lượng API thật.
+   >>> REQ-A6 VẪN KC. Owner cho phép ĐI LẤY dữ kiện, KHÔNG cung cấp
+       dữ kiện. retry-policy.yaml giữ bốn null + PLACEHOLDER_KC +
+       min_interval_ms = 3000 tới khi bốn con số land kèm nguồn.
+
+── VẪN CHỜ (một mục sau vòng bốn) ──────────────────────────
 OQ03 provider + model: ______________________________________
    (vẫn OWNER_DECISION_REQUIRED, vẫn chặn M3)
 ```

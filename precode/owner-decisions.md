@@ -28,7 +28,12 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # OWNER_DECISION `OD-20260907-01` — 2026-09-07
 
-> **Biên bản tiếp theo.** Vòng hai nằm ở `precode/owner-decisions-02.md` — `OD-20260907-02` (2026-09-07, authority `AUTH-OWNER-20260907-03`): phê chuẩn `ADR-0011`, mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`. Biên bản này **không** bị nó thay thế; hai biên bản cộng dồn.
+> **Biên bản tiếp theo.** Vòng hai nằm ở `precode/owner-decisions-02.md` — `OD-20260907-02` (2026-09-07, authority `AUTH-OWNER-20260907-03`): phê chuẩn `ADR-0011`, mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md`. Vòng ba ở `precode/owner-decisions-03.md` — `OD-20260907-03`
+> (authority `AUTH-OWNER-20260907-04`): phê chuẩn `AMD-ENT-owner-01` và `PROV-PC00-08`, mở lối vào Giai đoạn 2.
+> Vòng bốn ở `precode/owner-decisions-04.md` — `OD-20260907-04` (authority `AUTH-OWNER-20260907-05`): đóng nốt
+> hai mục mà vòng ba để mở — cổng probe `§6` mục 2–4, và một quyền mạng hẹp một lần để đọc tài liệu chính thức
+> phục vụ `REQ-A6` (**không** giải `REQ-A6`).
+> Biên bản này **không** bị chúng thay thế; **bốn** biên bản cộng dồn.
 
 ## 1. Định danh
 

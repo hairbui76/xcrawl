@@ -60,13 +60,64 @@
       "scope": "Ratifies OD-20260907-02 (5 items): ADR-0011 accepted; entry granted to Phase 0 (repo layout + CI) and Phase 1 (M1: data store, ingest, auth, storage readiness) of docs/master-plan.md; parent of every Phase 0 / Phase 1 Worker packet. Claim ceiling for that output is IMPLEMENTATION_VERIFIED, never INTEGRATION/LIVE. Does NOT decide REQ-OQ03, does NOT change product_status, does NOT close any finding.",
       "decision_record": "precode/owner-decisions-02.md",
       "evidence_ref": "Claude Code session session_0156UBBHDSeC9soECzSVUb3U, 2026-09-07"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260907-04",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-07",
+      "scope": "Ratifies OD-20260907-03 (3 items): AMD-ENT-owner-01 ratified (entities.yaml keeps CONTRACT_READY, it is NOT raised); PROV-PC00-08 accepted with its residual risk acknowledged, NOT removed; entry granted to Phase 2 of docs/master-plan.md — 2A M0 X feasibility probe, 2B M2 paper connector. Parent of every Phase 2 Worker packet. Two gates stay shut: the probe's live runs remain blocked by contracts/collector/collector-probe.md §6 items 2-4 and must run on the Owner's machine; the connector stays hard-blocked from CONTRACT_READY by REQ-A6 until four rate/identity facts are recorded from official documentation - no number may be guessed. Does NOT grant network access beyond declared PyPI/npm packages, does NOT decide REQ-OQ03, does NOT ratify any other PROVISIONAL item, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-03.md",
+      "evidence_ref": "Claude Code session session_0156UBBHDSeC9soECzSVUb3U, 2026-09-07"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260907-05",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-07",
+      "scope": "Ratifies OD-20260907-04 (2 items), closing everything OD-20260907-03 left open. (1) contracts/ops/collector-probe.md §6 items 2-4 accepted, so §6 items 1-4 are all satisfied - the probe gate is open ADMINISTRATIVELY only; live execution stays physically gated on the Owner's own machine and real X account (Playwright install, hand-login to a project-only Chrome profile, filled probe-config.json, four owner_confirmations citing this decision) and NO WORKER MAY RUN IT. (2) A one-off, domain-narrow network grant for the REQ-A6 fact-finding packet: documentation pages only under arxiv.org / info.arxiv.org / openalex.org / docs.openalex.org, each fact recorded with source URL, retrieval date and a short verbatim quote. FORBIDDEN by name: export.arxiv.org, api.openalex.org, and any other live endpoint - no live API traffic. Parent of the REQ-A6 fact-finding packet and of the probe-gate record. Does NOT resolve REQ-A6 (it stays KC until the numbers land with sources), does NOT permit running the probe, does NOT widen network access generally, does NOT raise any file's claim ceiling, does NOT decide REQ-OQ03, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-04.md",
+      "evidence_ref": "Claude Code session (Coordinator), 2026-09-07"
     }
   ],
   "coding_phase": {
-    "status": "PHASE_0_1_IN_PROGRESS",
-    "authorised_by": "OD-20260907-02",
-    "mode": "message-tracked leases (PROV-PC00-08)",
-    "enforcement": "NOT_IMPLEMENTED"
+    "status": "PHASE_2_IN_PROGRESS",
+    "authorised_by": "OD-20260907-03",
+    "mode": "message-tracked leases (PROV-PC00-08, ACCEPTED OD-20260907-03)",
+    "enforcement": "NOT_IMPLEMENTED",
+    "phases_completed": [
+      {
+        "phase": "Phase 0 (repo skeleton + CI) and Phase 1 (M1: data store, ingest, auth, storage readiness)",
+        "authorised_by": "OD-20260907-02",
+        "independent_audit_ref": "evidence/audits/A3-R4-report.md (AUDIT_REPORT A3-R4, FC-P1 epoch 4, overall PASS)",
+        "audit_chain": [
+          "A3-R1 (FC-P1 e1, FAIL)",
+          "A3-R2 (FC-P1 e2, PASS)",
+          "A3-R3 (FC-P1 e3, PASS)",
+          "A3-R4 (FC-P1 e4, PASS)"
+        ],
+        "claim_ceiling_reached": "IMPLEMENTATION_VERIFIED, per-card and scoped as each A3 report states; never INTEGRATION/LIVE",
+        "note_vi": "'Complete' o day nghia la bon card Giai doan 1 va skeleton da co ban sua duoc A3 xac minh o epoch 4. No KHONG dong finding nao, KHONG nang product_status, va khong noi gi ve cac card chua chay. E3/E4 van NOT_RUN."
+      }
+    ],
+    "phase_2_gates_still_shut": [
+      "2A probe live runs: contracts/ops/collector-probe.md §6 items 1-4 are now ALL satisfied (OD-20260907-04), but live execution remains PHYSICALLY gated - Owner's own machine and real X account, hand-login, filled probe-config.json, four owner_confirmations; NO WORKER MAY RUN IT",
+      "2B paper connector: REQ-A6 is STILL KC - the four rate/identity facts have not landed yet; no number may be guessed; a card must be written first"
+    ],
+    "phase_2_gates_opened": [
+      {
+        "gate": "contracts/ops/collector-probe.md §6 items 2-4 (per-run budget/stop conditions, go/no-go criteria, real-account risk REQ-A7)",
+        "opened_by": "OD-20260907-04",
+        "kind": "administrative only - the physical gate on the Owner's machine is untouched",
+        "note_vi": "Ba muc duoc chap nhan deu la nguong PROVISIONAL do PC05 de xuat (§3 ngan sach; §7 bay tieu chi GO-1..GO-7). 'Chap nhan' nghia la Owner dong y dung chung lam tieu chi ket luan, KHONG nghia la chung da duoc hieu chinh bang du lieu."
+      },
+      {
+        "gate": "One-off narrow network grant for the REQ-A6 fact-finding packet",
+        "opened_by": "OD-20260907-04",
+        "allowed": ["arxiv.org", "info.arxiv.org", "openalex.org", "docs.openalex.org"],
+        "allowed_kind": "documentation pages only; each fact recorded with source URL, retrieval date and a short verbatim quote",
+        "forbidden_by_name": ["export.arxiv.org", "api.openalex.org", "any other live endpoint"],
+        "note_vi": "REQ-A6 VAN KC. Owner cho phep DI LAY du kien, KHONG cung cap du kien. contracts/retry-policy.yaml research_connector_rate_limit giu bon gia tri null, status PLACEHOLDER_KC, san min_interval_ms = 3000 cho toi khi bon con so land kem nguon."
+      }
+    ]
   },
   "instruction_precedence": [
     "platform_constraints",

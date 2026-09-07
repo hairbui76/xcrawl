@@ -1,5 +1,5 @@
 contract_id: CT-precode-gates
-version: 0.2.0
+version: 0.3.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -505,6 +505,17 @@ gates:
       - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
       - "evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json"
       - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
+      - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
+      - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
+      - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json"
+    phase2_note_vi: >
+      **Giai đoạn 2 KHÔNG chuyển cổng này, và điều đáng ghi là vì sao nó vẫn không chuyển.**
+      Ba card nữa đã chạy (`TC-collector-checkpoint-resume`, `TC-research-connector-metadata`,
+      `TC-x-feasibility-probe`), `verify_cards.py` cho **13/13 check trên 19 card, 3 571
+      assertion, 0 violation** ở epoch `PC10-PIN-P2d-20260907`, và một auditor độc lập chạy lại
+      toàn bộ (`A3-P2-R1` §1). `G5-X4` đã `met: true` từ Giai đoạn 0 nên không có gì để nâng.
+      Điều kiện **VÀO** (G4) vẫn `PARTIALLY_MET` và **`REQ-OQ03`** vẫn `OWNER_DECISION_REQUIRED`
+      — hai lý do đó không phải là thứ code giải được, nên thêm ba card không đổi chúng.
     note_vi: >
       **Bốn điều kiện ra G5-X1..X4 nay đều `met: true`** — X4 là điều kiện cuối cùng và Giai
       đoạn 0 đã đạt nó. Cổng vẫn **`PARTIALLY_MET`**, không phải `MET`, vì hai lý do nằm ngoài
@@ -550,12 +561,38 @@ gates:
         statement_vi: "Không cơ chế nào né CAPTCHA, giả fingerprint, luân chuyển account hay proxy được thêm."
         machine_check: "SC04 forbidden_effects; REQ-OOS-02; contracts/ops/collector-probe.md"
         met: true
-        note_vi: "Đạt ở mức hợp đồng: điều cấm đã được viết. Chưa có code nên chưa có gì để vi phạm."
+        note_vi: >
+          **Nay đạt ở mức CODE, không chỉ ở mức hợp đồng.** Giai đoạn 2 viết bộ công cụ probe
+          (`TC-x-feasibility-probe`) và collector (`TC-collector-checkpoint-resume`), nên nay
+          **có** thứ để vi phạm — và auditor độc lập đã đi tìm: `A3-P2-R1` §2 chạy toàn bộ bộ
+          test với **mọi socket và DNS bị chặn** và xác nhận không import `playwright` nào tồn
+          tại trong `collector/app/`, không cơ chế né tránh nào được thêm, và collector **không
+          tự retry sau challenge**. Điều cấm nay được ép bằng phép đo, không bằng câu chữ.
     current_status: NOT_MET
-    evidence_refs: []
+    evidence_refs:
+      - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json (result NOT_RUN — đúng)"
+      - "evidence/runs/SP1-x-feasibility/README.md + TEMPLATE-run-record.json (khung, chưa có dữ liệu)"
+      - "evidence/audits/A3-P2-R1-report.md §4 (thư mục audit không thuộc write set của PC09 — CR-PC09-18)"
+      - "precode/owner-decisions-04.md (OD-20260907-04)"
+    administrative_vs_operational_note_vi: >
+      **Điều kiện VÀO của cổng nay đã thỏa; điều kiện RA thì không, và hai chuyện đó không được
+      trộn.** `OD-20260907-04` mục 1 chấp nhận cả ba mục còn lại của `contracts/ops/collector-probe.md`
+      §6 (ngân sách/điều kiện dừng §3/§4, tiêu chí go/no-go §7, rủi ro tài khoản `REQ-A7`), và
+      D09 đã được `OD-20260907-01` phê chuẩn. Cổng vì vậy mở **về mặt HÀNH CHÍNH**.
+
+      Nó **không** mở về mặt vận hành, và chính biên bản của Owner nói thẳng điều đó: probe chỉ
+      chạy được trên máy của Owner, sau khi Owner tự cài Playwright, tự đăng nhập tay vào một
+      Chrome profile riêng, tự điền `probe-config.json` và tự ký bốn `owner_confirmations` kèm
+      `evidence_ref`. **Không Worker nào được chạy nó.**
+
+      Vì vậy `SP1` giữ **`NOT_MET`**. Một cổng không được đọc là đã đạt chỉ vì các xác nhận hành
+      chính đã tồn tại: `SP1-X2` đo **đợt chạy**, và số đợt đã chạy là **0**. `evidence/runs/`
+      chứa `SP1-x-feasibility/` với đúng một README và một template — **không** có `runs.jsonl`,
+      và sự vắng mặt đó là ĐÚNG, không phải một thiếu sót cần vá.
     blocked_by_open_items:
-      - "SP1-X2: **chưa đợt probe nào chạy**. Đây là lý do DUY NHẤT còn lại."
-      - "REQ-A1 và REQ-A7 vẫn `KC` — theo định nghĩa chúng chỉ giải được BẰNG probe này."
+      - "SP1-X2: **chưa đợt probe nào chạy** — 0/5–10. Đây là lý do DUY NHẤT còn lại, và nó là một phép đo, không phải một quyết định."
+      - "Rào chắn còn lại là **vật lý và thuộc về Owner**, không phải hành chính: cài Playwright, đăng nhập tay, ký bốn `owner_confirmations`. Không Worker nào được vượt nó."
+      - "REQ-A1 và REQ-A7 vẫn `KC` — theo định nghĩa chúng chỉ giải được BẰNG probe này; `REQ-AC16` không đổi trạng thái (OD-20260907-04 mục 1 nói rõ)."
     ratification_note_vi: >
       **`REQ-OQ01` không còn chặn SP1.** Owner đã xác nhận D09 — dùng profile Chrome riêng của dự
       án (OD-20260907-01 mục 1) — nên câu hỏi mở số 1 của SRC-SPEC §13.1 đã có câu trả lời và D09
@@ -578,11 +615,35 @@ gates:
         machine_check: "acceptance/scenarios.yaml: mọi SC với level ≤ E2 có status `PASS (E1)` hoặc `PASS (E2)`"
         met: false
         gap_vi: >
-          **4 trong 51** scenario ở cấp ≤ E2 đã chạy và PASS: `SC21`, `SC26` (E2, fault
-          injection thật) và `SC29`, `SC31` (E1, contract test bằng fixture). 47 dòng còn lại
-          vẫn `NOT_RUN`, trong đó 12 dòng mang `partial_evidence_vi` — Giai đoạn 1 chạm được
-          một phần oracle nhưng không đủ. Con số đo được là 4/51, không phải "đã có code nên
-          gần xong".
+          **4 trong 48** scenario ở cấp ≤ E2 đã chạy và PASS: `SC21`, `SC26` (E2, fault
+          injection thật) và `SC29`, `SC31` (E1, contract test bằng fixture). 44 dòng còn lại
+          vẫn `NOT_RUN`, trong đó **17** mang `partial_evidence_vi` nói đích danh phần nào đã
+          chạy và phần nào không đo được.
+
+          **Mẫu số được sửa: 51 → 48.** Con số cũ sai số học, không chỉ cũ: 56 scenario trừ 5
+          dòng cấp E3 và 3 dòng cấp E4 còn **48** dòng ở cấp ≤ E2. Sai số do `PKT-PC09-P1` viết
+          ra và `PKT-PC09-P2-FIX1` sửa. Nó làm cổng trông xa đích hơn thực tế ba dòng — lệch
+          theo hướng bi quan, nhưng một con số sai theo hướng nào cũng là con số sai.
+
+          **Giai đoạn 2 nay ĐÃ được đánh giá, và kết quả là 0 dòng chuyển nhãn.** `CR-PC09-20`
+          đóng bằng phép đo chứ không bằng lập luận: cả **13** scenario mà ba card Giai đoạn 2
+          khai chạm (`SC01`, `SC03`, `SC04`, `SC07`, `SC11`, `SC20`, `SC21`, `SC23`, `SC29`,
+          `SC30`, `SC39`, `SC49`, `SC50`) được xét từng dòng theo quy tắc ba điều kiện ở
+          `precode/review.md` §14.5. Kết quả: **11 dòng giữ `NOT_RUN`** với ghi chú một phần
+          viết lại, và **2 dòng** (`SC21`, `SC29`) vốn đã PASS từ Giai đoạn 1 nay được củng cố
+          bằng bằng chứng phía đối diện mà **không** đổi nhãn.
+
+          Lý do 11 dòng không chuyển được là **cấu trúc, không phải chất lượng**: oracle của
+          chúng đếm trạng thái bền trong những bảng mà **chưa card nào tạo** — `run`,
+          `assignment_lease`, `outbox_intent`, `report`/`report_item` — hoặc đòi một cấp bằng
+          chứng chưa mở (`SC11` là E4). Code Giai đoạn 2 là code **phía client**: nó chứng minh
+          collector và connector cư xử đúng, không chứng minh trạng thái server sau đó.
+
+          Dòng gần chuyển nhãn nhất là `SC39` (SSRF): **mọi** vế đo được đều đã chạy thật —
+          chặn ở từng hop, DNS rebinding, câu trả lời DNS pha trộn, trần redirect, 0 kết nối tới
+          loopback và tới dải riêng — và đúng **một** vế không đo được (`COUNT(work_label)`
+          không đổi sau khi bị chặn: đường chạy bị chặn không ghi gì, fixture nói vậy bằng văn
+          xuôi, nhưng không assertion nào đếm hàng). "Không đo được" khác "đã sạch".
         evidence_refs:
           - "acceptance/scenarios.yaml (status + status_evidence_refs của SC21, SC26, SC29, SC31)"
           - "evidence/index.json"
@@ -611,16 +672,21 @@ gates:
       - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
       - "evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json"
       - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
+      - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
+      - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
+      - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json (result NOT_RUN)"
     note_vi: >
       Cổng chuyển từ `NOT_APPLICABLE_YET` sang **`NOT_MET`**: lý do cũ ("chưa có code") không
       còn đúng, nên giữ nhãn "chưa áp dụng được" sẽ là che một phép đo nay làm được. Code Giai
       đoạn 0/1 tồn tại, đã chạy, và một auditor độc lập đã chạy lại nó — vì vậy G6 nay ĐO
-      được, và phép đo là 4/51 · 0/5 · 0/2. Không điều kiện ra nào đạt.
+      được, và phép đo là **4/48 · 0/5 · 0/2** (mẫu số sửa từ 51 ở `PKT-PC09-P2-FIX1`).
+      Không điều kiện ra nào đạt.
     blocked_by_open_items:
-      - "G6-X1: 47/51 scenario cấp ≤ E2 vẫn `NOT_RUN` (12 trong số đó có bằng chứng một phần đã ghi)."
-      - "G6-X2: chưa có lời gọi live nào; cổng SP1 chưa mở (SP1-X2 chưa chạy đợt probe nào)."
+      - "G6-X1: **44/48** scenario cấp ≤ E2 vẫn `NOT_RUN` (17 trong số đó có bằng chứng một phần đã ghi). Giai đoạn 2 **đã được đánh giá** ở `PKT-PC09-P2-FIX1`: 13/13 dòng được xét, **0 dòng chuyển nhãn**, `CR-PC09-20` đóng. Mẫu số sửa 51 → 48 (56 − 5 dòng E3 − 3 dòng E4)."
+      - "G6-X2: chưa có lời gọi live nào. Cổng SP1 nay mở về mặt **hành chính** (OD-20260907-04) nhưng `SP1-X2` vẫn 0/5–10 đợt: **cổng mở không phải là đợt chạy**."
       - "G6-X3: chưa có drill restore thật; `write_blocked → healthy` chưa chạy qua một lần ghi thật."
-      - "Mười một trong mười ba module vẫn chưa có card nào chạy: chỉ MOD-ingest-service, MOD-identity-service, MOD-auth-service và MOD-data-store có code."
+      - "**Bảy** trong mười ba module nay có code (`MOD-ingest-service`, `MOD-identity-service`, `MOD-auth-service`, `MOD-data-store`, `MOD-health-service`, `MOD-x-collector`, `MOD-research-connector`) — Giai đoạn 2 thêm ba. Sáu module còn lại chưa có card nào chạy."
+      - "`MOD-research-connector` có code nhưng **KHÔNG** `CONTRACT_READY`: không hợp đồng nào nêu tên host/endpoint của arXiv/OpenAlex (`SG-DOC`) và E3 chưa chạy (`SG-LIVE`) — `A3-P2-R1` §4/§7."
     allows_next_vi: >
       Gọi integration/live verified TRONG PHẠM VI đã đo. Ở thời điểm này phạm vi đó là **bốn
       scenario**, không phải hệ thống. KHÔNG suy ra product accepted.

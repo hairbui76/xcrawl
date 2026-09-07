@@ -70,6 +70,7 @@ SRC-PLAN §12.
 | 15 | [`TC-scheduler-lease-claim`](TC-scheduler-lease-claim.md) | M7 | G5 | `IMPLEMENTATION_VERIFIED` |
 | 16 | [`TC-ui-runs-three-states`](TC-ui-runs-three-states.md) | M4 → M7 | G5 | `IMPLEMENTATION_VERIFIED` |
 | 17 | [`TC-backup-restore-drill`](TC-backup-restore-drill.md) | M8 | G5 | `IMPLEMENTATION_VERIFIED` |
+| 18 | [`TC-research-connector-metadata`](TC-research-connector-metadata.md) | M2 | G5 | `IMPLEMENTATION_VERIFIED` (E1 với response ghi sẵn; module **chưa** `CONTRACT_READY` — `REQ-A6`) |
 
 **SP1 chạy sớm.** SRC-PLAN §12: *"SP1 cho X nên chạy sớm sau G2 và PC05, vì rủi ro nguồn lớn nhất."*
 `TC-x-feasibility-probe` đứng số 0 không phải vì dễ mà vì nếu nó no-go thì phần lớn phần còn lại đổi nghĩa.
@@ -101,6 +102,9 @@ TC-storage-write-blocked-readiness ◄──► TC-backup-restore-drill ──�
 
 TC-telegram-linking-auth ──► TC-telegram-unknown-delivery
                         └──► TC-saved-snapshot (đường Save từ chat)
+
+TC-canonical-identity-merge ──► TC-research-connector-metadata ◄── TC-ingest-idempotent-ack-lost
+        (connector trả metadata; identity vẫn là nơi duy nhất ghi work/alias)
 ```
 
 Đọc mũi tên là "phải xong trước". Một số phụ thuộc chỉ chặn **claim đầy đủ** chứ không chặn bắt đầu; §11
@@ -117,12 +121,12 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-P1d-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+**Pin hiện tại: `PC10-PIN-P2d-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
 pin. Lần pin này chạy sau `PKT-PC02-FIX13` (release 11:44Z): `contracts/data/entities.yaml` được sửa **chỉ ở
 phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại, và
 đó là điểm mấu chốt: quy tắc `STALE` đọc **byte**, không đọc ý định. Một ngoại lệ "chỉ là văn xuôi" sẽ biến
 cửa pin thành thứ phải phán đoán mới dùng được, và phán đoán là thứ cơ chế này tồn tại để khỏi cần. Epoch cũ,
-theo thứ tự bị thay: `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
+theo thứ tự bị thay: `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
 `PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
 `PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
@@ -257,6 +261,10 @@ Quy tắc bắt buộc:
   Coordinator, và văn bản có pin thắng. Nửa server (đặt cookie `rr_csrf`, kiểm header `X-CSRF-Token`) là
   của `TC-owner-auth-session`; nửa trình duyệt (đọc cookie, gắn header) là của hai card UI.
 - Đổi layout chỉ sửa **§3 và §8** của card. §2, §4, §5, §6, §7 không đổi — hợp đồng độc lập framework.
+- **Card thứ 19, `TC-research-connector-metadata` (M2, Giai đoạn 2B), ghi dưới `server/app/research/`** —
+  `client_arxiv.py`, `client_openalex.py`, `service.py`, `router.py`, `repository.py`, cộng hai file test.
+  Không cây mới nào được thêm cho nó. `router.py` ở đây **không** mở route HTTP công khai: hai operation
+  `research.*` là `transport: internal` trong `contracts/ports.yaml`.
 - **Bốn card M1 nay đã có code thật dưới `server/` và `tests/`** — `TC-ingest-idempotent-ack-lost`,
   `TC-canonical-identity-merge`, `TC-owner-auth-session`, `TC-storage-write-blocked-readiness`; handoff ở
   `evidence/handoffs/TC-*-handoff.md`, cả bốn `DONE_WITH_CONCERNS` và `SELF_VALIDATION`, **đang chờ audit
@@ -280,7 +288,7 @@ delivery.
 
 ## 5.4 Phủ P0 — câu hỏi mở suốt mười một vòng, nay đã đo
 
-`EV-PC10-06` chạy `acceptance/traceability.csv` (246 hàng) đối chiếu với 18 card. Ba đường phủ được tính
+`EV-PC10-06` chạy `acceptance/traceability.csv` (246 hàng) đối chiếu với 18 card. **Phép đo này chưa được chạy lại sau khi card thứ 19 (`TC-research-connector-metadata`) ra đời** — mọi con số dưới đây là của 18 card, và card mới chỉ có thể làm phủ tăng, không thể làm giảm. Ba đường phủ được tính
 riêng, vì chúng **không** mạnh như nhau:
 
 | Đường | Nghĩa | Sức nặng |
@@ -331,6 +339,15 @@ thi công** (`OD-20260907-02`; handoff ở `evidence/handoffs/TC-*-handoff.md`) 
 handoff tự khai `DONE_WITH_CONCERNS` với `review_type: SELF_VALIDATION`; **chưa có audit độc lập nào**,
 nên không con số nào ở §5.4 được nâng lên vì việc này. E1 đã chạy thật trong phạm vi bốn card đó; E2–E4
 vẫn `NOT_RUN`. Mười bốn card còn lại chưa bắt đầu.
+
+**Giai đoạn 2 (`OD-20260907-03`, 2026-09-07).** Owner ra lệnh bắt đầu Giai đoạn 2. **2A** phát hai card đã có
+sẵn — `TC-x-feasibility-probe` và `TC-collector-checkpoint-resume` (§0 của chúng nay mang `dispatch_status`);
+khẳng định **live** của probe vẫn bị chặn bởi cổng Owner ở `contracts/ops/collector-probe.md` §6 mục 2–4.
+**2B** cần một card chưa tồn tại, nên gói này viết nó: `TC-research-connector-metadata` (M2). Thư mục nay có
+**19 card**. Card thứ 19 **chưa được thi công** và trần của nó **không** nâng trần của `MOD-research-connector`:
+module đó vẫn không đủ điều kiện `CONTRACT_READY` cho tới khi bốn giá trị `PLACEHOLDER_KC` của
+`contracts/retry-policy.yaml` `research_connector_rate_limit` được điền bằng **dữ kiện đọc từ tài liệu chính
+thức** (`REQ-A6`). Không con số nào được đoán, và card ghi điều đó thành một điểm dừng (`SG-A6`).
 
 ## 5.5 Bộ khung Giai đoạn 0 đã tồn tại — và tên module để import
 

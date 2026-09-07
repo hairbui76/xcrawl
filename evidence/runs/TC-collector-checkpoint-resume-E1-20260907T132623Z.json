@@ -1,0 +1,208 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-collector-checkpoint-resume",
+  "created_at": "2026-09-07T13:26:23Z",
+  "producer_principal": "worker-WC",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "e9a725c6129a7a7b59f826579516f4c4f9b93b9f13387973b796241ded3e0b55",
+      "precode/decision-register.md": "31fa401c2da52743b3d76d57ee6842ca80ffe04c46eac88ecb149e7f7dcf7d9f",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "d95784bf5f67a332597b7ac4ef60a34b13d807b087d3ced9fdc46fba83c0cba5",
+      "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+      "contracts/ops/collector-probe.md": "03e88010ce8d9a8e7ed7afbb5ab01caf4099ac77cde1298fb155731dddd55ca1",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
+      "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
+      "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+      "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+      "acceptance/fixtures/collection/a-feed-layout-changed.json": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+      "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+      "acceptance/fixtures/collection/c-challenge-mid-batch.json": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+      "acceptance/fixtures/collection/e-limit-reached-stop.json": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+      "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+      "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00"
+    },
+    "implementation_revision": "pin epoch PC10-PIN-P1d-20260907; git HEAD 4ddefb2 + uncommitted OD-20260907-03 ratification edits to contracts/data/entities.yaml and precode/change-control.md"
+  },
+  "environment": {
+    "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "uv": "0.12.9",
+      "pytest": "8.4.2",
+      "pyyaml": "6.0.3",
+      "jsonschema": "4.26.0",
+      "coreutils_sha256sum": "GNU coreutils"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "network": "none during this check",
+      "git": "read-only; no git mutation performed"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC01",
+      "SC03",
+      "SC04",
+      "SC11",
+      "SC20",
+      "SC21",
+      "SC49",
+      "SC50"
+    ],
+    "requirement_ids": [
+      "REQ-AC01",
+      "REQ-AC04",
+      "REQ-D09",
+      "REQ-A5",
+      "REQ-A6",
+      "REQ-OQ01",
+      "REQ-OQ03"
+    ],
+    "invariant_ids": [
+      "I02",
+      "I10",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/collection/README.md",
+        "sha256": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+        "bytes": 12636
+      },
+      {
+        "path": "acceptance/fixtures/collection/a-feed-layout-changed.json",
+        "sha256": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+        "bytes": 13611
+      },
+      {
+        "path": "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json",
+        "sha256": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+        "bytes": 12816
+      },
+      {
+        "path": "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+        "sha256": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+        "bytes": 12528
+      },
+      {
+        "path": "acceptance/fixtures/collection/e-limit-reached-stop.json",
+        "sha256": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+        "bytes": 7892
+      },
+      {
+        "path": "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json",
+        "sha256": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+        "bytes": 7475
+      },
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/e2e/README.md",
+        "sha256": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+        "bytes": 6013
+      },
+      {
+        "path": "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json",
+        "sha256": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+        "bytes": 30745
+      }
+    ],
+    "protocol_version": "agent_profile/protocol.md (as at 2026-09-07)"
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 sha256sum research-radar-spec.md research-radar-pre-code-plan.md <28 file da pin o agent-tasks/TC-collector-checkpoint-resume.md §0>  # cong mot lan doi chieu bang PyYAML giua ban HEAD va ban working tree cua contracts/data/entities.yaml",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-07T13:10:00Z",
+    "ended_at": "2026-09-07T13:26:23Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "SG-HASH cua card: truoc khi ghi dong code dau tien, sha256sum lai MOI file o §0; lech mot hash ⇒ card STALE, DUNG va xin baseline moi. Oracle do bang hash, khong bang y dinh: card §0 tuyen bo ro rang mot ngoai le 'chi la van xuoi' se lam cua pin khong con dung duoc.",
+    "expected": {
+      "files_pinned": 30,
+      "hashes_matching_pin": 30,
+      "contracts/data/entities.yaml": "df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f"
+    },
+    "observed": {
+      "files_pinned": 30,
+      "hashes_matching_pin": 29,
+      "hashes_mismatched": 1,
+      "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+      "mismatch_detail_vi": "contracts/data/entities.yaml: pin df5e023124a910d7c6c022d3b69d190e7534db8f64b8d2f1dfdde2b1db7d142f (239261 bytes) vs quan sat c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc (240224 bytes). Ban HEAD (commit 4ddefb2) VAN khop pin; lech nam o thay doi chua commit.",
+      "drift_scope_proof_vi": "Doi chieu bang PyYAML giua HEAD va working tree: 25/26 khoa cap cao nhat giong het (ke ca `entities`, `transactions`, `limits`, `referential_integrity`); chi `amendments` khac, va trong do chi ban ghi AMD-ENT-owner-01: `status` PROVISIONAL -> ACCEPTED, khoi `ratification` doi van xuoi, them `ratified_by` = OD-20260907-03 va `ratified_at`. KHONG cot nao cua ENT-run hay ENT-worker-registration doi — do la hai entity duy nhat ma oracle cua card cham toi."
+    }
+  },
+  "result": "STALE",
+  "stale_reason": "Baseline pin cua card khong con khop repo. contracts/data/entities.yaml da doi sau khi card duoc ghim o epoch PC10-PIN-P1d-20260907: bien ban Owner OD-20260907-03 (authority AUTH-OWNER-20260907-04 — chinh la authority cha cua packet nay) phe chuan AMD-ENT-owner-01, va ban phe chuan do da duoc ghi vao file. SG-HASH bat DUNG truoc dong code dau tien. Worker KHONG duoc tu quyet rang mot lech hash la 'vo hai': doi ten epoch pin la viec cua Coordinator (F-A2R1-03 — card la nguon chuan cua ten epoch), va card §0 da tu choi truoc lap luan 'chi la van xuoi'. Khong dong code nao duoc viet.",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "none",
+    "sample_size": 30,
+    "not_checked_vi": [
+      "E1 (contract test tren fixture b/c/d/e/f/g) NOT_RUN: packet dung o SG-HASH truoc khi viet dong code dau tien. Ten file giu cho E1 ma card danh san (EVM-TC-collector-checkpoint-resume) de ban ghi E1 that sau nay thay the ban ghi nay.",
+      "E2 (fault injection) NOT_RUN.",
+      "Khong co dong code nao cua collector duoc viet: collector/app/session.py, reader.py, batcher.py, client.py, limits.py va hai file test o §3 van ABSENT.",
+      "Khong chay live X, khong mo browser, khong goi Telegram hay provider AI (SG-01/SG-02 van dung).",
+      "Khong chay evidence/tools/e0_check.py (card §8: PC10 khong chay no).",
+      "Chua dang ky run vao evidence/index.json: file do thuoc PC09, ngoai write set cua card nay.",
+      "Chi tu kiem (SELF_VALIDATION). Khong co review doc lap nao."
+    ],
+    "uncertainty_vi": "Bang chung nay do MOT thu: pin cua card so voi repo. No KHONG do rang phan con lai cua card la dung, cung KHONG do rang lech hash nay vo hai — no chi do PHAM VI cua lech (mot ban ghi amendment) de Coordinator quyet dinh nhanh. Quyet dinh re-pin thuoc Coordinator.",
+    "unresolved_issue_refs": [
+      "CR-TC-COLLECTOR-01",
+      "CR-TC-COLLECTOR-02",
+      "CR-TC-COLLECTOR-03"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "agent-tasks/TC-collector-checkpoint-resume.md",
+      "contracts/data/entities.yaml",
+      "contracts/ports.yaml",
+      "contracts/state/run.yaml",
+      "contracts/http/openapi.yaml"
+    ]
+  },
+  "claim": {
+    "scope_vi": "Chi mot dieu duoc thiet lap: cong pin §0 cua card TC-collector-checkpoint-resume KHONG mo o thoi diem 2026-09-07T13:26Z, va pham vi lech nam tron trong ban ghi amendment AMD-ENT-owner-01 cua contracts/data/entities.yaml.",
+    "not_established_vi": [
+      "KHONG thiet lap rang collector hoat dong — khong co ma nao ton tai.",
+      "KHONG thiet lap bat ky dieu gi ve hanh vi cua X that (SG-01: probe van NOT_RUN).",
+      "KHONG thiet lap rang lech hash la vo hai; chi thiet lap pham vi cua no.",
+      "KHONG phai independent audit."
+    ]
+  }
+}
