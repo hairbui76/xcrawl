@@ -88,6 +88,7 @@ overview cũ để mở lại quyết định mới hơn.
 | Giao việc | `agent-tasks/README.md`, `agent-tasks/TEMPLATE.md`, `agent-tasks/WALKTHROUGH.md`, 18 card `TC-*.md` | có |
 | Bằng chứng | `evidence/handoffs/` (PC00–PC10) · `evidence/tools/e0_check.py` · `evidence/manifest.schema.json` · `evidence/index.json` · `evidence/runs/` | **có đủ**; `evidence/runs/` chứa kết quả E0 thật của PC09 |
 | Cổng kiểm tra | `precode/change-control.md` · `precode/gates.yaml` (G0–G7, SP1, và `INV-01`…`INV-10`) · `precode/review.md` | **có đủ** |
+| Kế hoạch triển khai | [`docs/master-plan.md`](../docs/master-plan.md) — vị trí hiện tại, stack và toolchain (ADR-0011), lộ trình bảy giai đoạn theo mốc M0–M8 và cổng G5→G7, ước lượng công sức tương đối, sổ rủi ro, bảng việc Owner phải chạm tay | **có** (`DRAFT_FOR_REVIEW`; là kế hoạch, **không** phải bằng chứng) |
 | Hồ sơ audit và điều phối | `evidence/audits/` (7 AUDIT_REPORT của `auditor-A1`/`auditor-A2` + 7 FROZEN_CANDIDATE manifest) · `evidence/coordination/` (baseline điều phối, packet PC00–PC10 và packet audit, các ruling, `coordinator-ledger.md`) | **có đủ**; bản sao nguyên văn, ra đời **sau** freeze `FC-W4` epoch 7 nên không nằm trong candidate manifest nào đã được audit (`protocol.md` §6) |
 
 Danh sách hash đầy đủ nằm ở `precode/baseline.json`.
@@ -194,7 +195,7 @@ X) là nhánh riêng, nên chạy sớm sau G2/PC05 vì đó là rủi ro nguồ
 Mẫu card: `agent-tasks/TEMPLATE.md` (14 mục bắt buộc). Kiểm chứng card có đủ thông tin không:
 `agent-tasks/WALKTHROUGH.md`.
 
-**Pin hiện tại: `PC10-PIN-OD01c-20260907`.** Trong 18 card, **8 card** nằm trọn trong phạm vi đã phê chuẩn
+**Pin hiện tại: `PC10-PIN-OD01e-20260907`.** Trong 18 card, **8 card** nằm trọn trong phạm vi đã phê chuẩn
 (read set không chạm `contracts/ai/`, `contracts/telegram/`, hay `contracts/ops/` ngoài `deployment.md`);
 **10 card** giữ nguyên điểm dừng KC. §9 của mỗi card nói rõ nó thuộc nhóm nào **và** liệt kê đích danh những
 file hợp đồng trong read set của nó còn ở `DRAFT_FOR_REVIEW`.
@@ -210,8 +211,8 @@ file hợp đồng trong read set của nó còn ở `DRAFT_FOR_REVIEW`.
 > Kết quả phải là **đúng một** dòng, và phải khớp tên ở trên. Lệch ⇒ file này stale, tin card.
 > `evidence/tools/e0_check.py` và EV-PC10-01 đều kiểm ràng buộc này; xem `agent-tasks/README.md` §4.
 
-Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01b-20260907` ←
-`PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
+Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01d-20260907` ←
+`PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 Sáu file của PC09 cộng `evidence/tools/e0_check.py` **cố ý không được pin hash** vì PC09-FIX1 chạy song song;
 chúng được dẫn bằng đường dẫn + SC id, và agent phải đọc bản mới nhất trước khi bắt đầu. Chi tiết ở

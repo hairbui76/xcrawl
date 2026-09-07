@@ -441,6 +441,14 @@ PC08 vận hành: RPO 24 h · RTO 2 h · phiên đăng nhập 12 h
    retention backup: 14 ngày + 8 tuần + hằng tháng vô thời hạn
 CSRF_REJECTED là mã lỗi riêng: CÓ                   ✅
 run.resume từ blocked (bắt buộc ghi lý do): CÓ      ✅
+
+── CHỜ VÒNG SAU ────────────────────────────────────────────
+ADR-0011 frameworks: accept / object: ______________________
+   (Owner đã ủy quyền cho Coordinator chọn — "You pick, record as ADR".
+    Chi tiết 14 tầng ở precode/adr/ADR-0011-frameworks-and-toolchain.md.
+    Phản đối một hàng chỉ sửa card và mã, KHÔNG sửa contracts/.)
+OQ03 provider + model: ______________________________________
+   (vẫn OWNER_DECISION_REQUIRED, vẫn chặn M3)
 ```
 
 **Ba điều biên bản KHÔNG làm** (chép lại để không ai đọc rộng hơn): `REQ-OQ03` vẫn mở và vẫn chặn M3; mọi mục `KC` vẫn `KC` vì buổi phỏng vấn không tạo bằng chứng runtime nào; và không finding audit nào bị đóng.

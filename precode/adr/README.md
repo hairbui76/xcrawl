@@ -53,7 +53,7 @@ Ngoại lệ khai báo còn lại của PC00: `precode/requirements.csv` mang he
 | `provisional-accepted` | Chi tiết thuần kỹ thuật, nằm trong phạm vi ủy quyền; đã ghi căn cứ; vẫn có thể bị Owner đảo | Coordinator dưới `AUTH-OWNER-20260906-01` |
 | `accepted` | Owner đã phê chuẩn | Owner, qua `OD-20260907-01` |
 
-**Cập nhật 2026-09-07.** Cả **10** ADR nay ở trạng thái `accepted`, phê chuẩn bằng `OD-20260907-01`
+**Cập nhật 2026-09-07.** **Mười** ADR đầu (`ADR-0001`–`ADR-0010`) nay ở trạng thái `accepted`, phê chuẩn bằng `OD-20260907-01`
 (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`, evidence
 `session_017QmDJtMqD9o1z79waqSB9W`). Mỗi file mang `ratified_by`, `ratified_at` và `evidence_ref` trong
 front-matter, cùng một banner ở mục "Trạng thái"; lập luận lúc còn `proposed` được **giữ nguyên bên dưới**
@@ -62,6 +62,11 @@ front-matter, cùng một banner ở mục "Trạng thái"; lập luận lúc c�
 **ADR-0006 là ngoại lệ về nội dung:** Owner chọn phương án **B (Python workers + TypeScript web)**, không phải
 A. File đã được viết lại; **tên file giữ nguyên** `ADR-0006-stack-option-a.md` vì 18 task card và chỉ mục này
 trỏ theo đường dẫn đó — đổi tên cần một packet riêng (`CR-PC00-16`).
+
+**`ADR-0011` là ngoại lệ về thẩm quyền:** nó ở `provisional-accepted` với `decision_owner: Coordinator`, vì
+Owner **ủy quyền** lựa chọn framework ("You pick, record as ADR") thay vì tự chọn. Owner **có thể phản đối bất
+kỳ hàng nào** ở vòng quyết định tiếp theo; phản đối không ảnh hưởng `contracts/` vì mọi lựa chọn trong đó nằm
+**dưới** lớp hợp đồng. Xem `PROV-PC00-07` trong `precode/decision-register.md` §8.
 
 Không ADR nào được ghi `superseded` hay `deprecated` trong phiên này.
 
@@ -79,6 +84,7 @@ Không ADR nào được ghi `superseded` hay `deprecated` trong phiên này.
 | [ADR-0008](ADR-0008-analysis-key-and-generation.md) | Analysis key và generation | B07 | accepted | PC02, PC06 |
 | [ADR-0009](ADR-0009-identity-alias-target-union.md) | Identity, alias và target tagged union | B06, B15 | accepted | PC02, PC04 |
 | [ADR-0010](ADR-0010-secret-scoping-and-cli-isolation.md) | Phạm vi secret và cô lập CLI/ACP | B13 | accepted | PC01, PC06, PC08 |
+| [ADR-0011](ADR-0011-frameworks-and-toolchain.md) | Framework và toolchain cho stack B | — (phụ thuộc ADR-0006) | **provisional-accepted** | PC10 |
 
 ## Mẫu ADR
 

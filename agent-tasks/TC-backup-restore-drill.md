@@ -23,7 +23,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-OD01c-20260907`** (thay `PC10-PIN-OD01b-20260907`; các epoch cũ hơn: `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau wave lan truyền hậu A2-R5 (`FIX-R5-rulings.md`): phạm vi `data.purge_all` đã phê chuẩn được chép nhất quán vào mọi artefact, và hai thư mục fixture `identity/`, `reporting/` lên `CONTRACT_READY`. Hash dưới đây tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG (`precode/change-control.md` §5, `INV-06`/`INV-09`).
+**Pin epoch: `PC10-PIN-OD01e-20260907`** (thay `PC10-PIN-OD01d-20260907`; các epoch cũ hơn: `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). Bản pin sau khi `ADR-0011` được sửa (`PKT-PC00-FIX14`). `ADR-0011` nằm trong read set của mọi card vì nó chốt toolchain mà lệnh ở §8 giả định — sửa nó làm card `STALE` đúng như sửa một hợp đồng. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -32,8 +32,9 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
-| `precode/baseline.json` | `e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b` | 100474 |
-| `precode/decision-register.md` | `1883fec33f56873a426394a99d3fc6c5ec43c456a936c52733cad6c047f06262` | 102430 |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `9cdec0d78592c67068188e7dffcf9e03f361fe202263bb47a95b2298337a8340` | 17052 |
+| `precode/baseline.json` | `c99474a6744a3827f75961884d5d8daf1d9fb0bfe212547c216d1574d32ac81a` | 101458 |
+| `precode/decision-register.md` | `3596a52b6ce8cb39a0ae07501fd177c80a4fdb7b19317fc82a3dd8e3df63a75d` | 104940 |
 | `contracts/modules.yaml` | `cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457` | 108721 |
 | `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
 | `contracts/ports.yaml` | `c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684` | 128850 |
@@ -77,7 +78,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản; trước đó 
 Đọc đủ danh sách ở §0 (đó **là** read set, kèm hash). Thứ tự đề nghị:
 
 1. `precode/README.md` và `precode/change-control.md` → hiểu baseline và điều cấm. (Hai file này do chính gói PC10 tạo trong cùng packet, nên không tự pin hash của mình ở §0; kiểm bằng `sha256sum` theo bảng trong `evidence/handoffs/PC10-handoff.md`.)
-2. ADR liên quan: `precode/adr/ADR-0005-backup-method.md`.
+2. `precode/adr/ADR-0011-frameworks-and-toolchain.md` — framework và toolchain mà §8 giả định (`provisional-accepted`; Owner có thể bác bất kỳ dòng nào mà không ảnh hưởng hợp đồng). Rồi các ADR nghiệp vụ: `precode/adr/ADR-0005-backup-method.md`.
 3. Hợp đồng nghiệp vụ: `contracts/ops/backup-restore.md`, `contracts/state/storage.yaml`, `contracts/http/openapi.yaml`, `contracts/data/entities.yaml`, `contracts/ops/deployment.md`.
 4. Hợp đồng nền: `contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/capabilities.yaml`, `contracts/errors.yaml`, `contracts/retry-policy.yaml`, `contracts/data/entities.yaml`.
 5. Fixture bắt buộc: `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json`, `acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json`, `acceptance/fixtures/recovery/d-wal-unsafe-copy-detected.json`, `acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json`, `acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json`, `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json`.

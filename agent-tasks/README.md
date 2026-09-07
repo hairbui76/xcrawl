@@ -117,9 +117,9 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-OD01c-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
-pin. Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01b-20260907` ←
-`PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
+**Pin hiện tại: `PC10-PIN-OD01e-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+pin. Epoch cũ, theo thứ tự bị thay: `PC10-PIN-OD01d-20260907` ←
+`PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
 **Tên epoch được đọc từ card, không chép tay.** Finding `F-A2R1-03` cho thấy vì sao: hai file `precode/` từng
 khẳng định một epoch đã bị thay, và một trong hai nằm ngay dưới tiêu đề "Pin hiện tại" — người đọc đi kiểm
@@ -203,6 +203,7 @@ server/     Python   backend, domain services, scheduler, report, delivery, auth
 collector/  Python   collector chạy trên máy cá nhân (Playwright Python, Chrome profile riêng — D09)
 worker/     Python   analysis worker + AI adapter trên máy cá nhân
 probe/      Python   kịch bản probe SP1 (M0), đầu ra là bằng chứng
+shared/rr_contracts/  Python  model và hằng số **SINH RA** từ contracts/ (Pydantic + enum)
 tests/      Python   tests/contract/… và tests/integration/… cho toàn bộ cây Python
 web/        TypeScript
   web/src/lib/       api.ts (client sinh từ contracts/http/openapi.yaml), kiểu dùng chung
@@ -224,6 +225,10 @@ Quy tắc bắt buộc:
   `web/`.
 - Hai card UI (`TC-ui-runs-three-states`, `TC-ui-reports-detail`) cùng dùng `web/src/lib/api.ts`. Card nào
   chạy trước tạo file; card sau **mở rộng**, không viết lại.
+- **`shared/rr_contracts/` là code SINH RA, không viết tay.** Model Pydantic, hằng số enum và client
+  TypeScript (`web/src/lib/api.ts`) đều sinh từ `contracts/`. Sửa tay một file sinh ra là làm code
+  và hợp đồng trôi khỏi nhau **âm thầm** — E0 sẽ có thêm phép kiểm "file sinh khớp hash hợp đồng".
+  Muốn đổi hành vi ⇒ sửa hợp đồng ⇒ sinh lại ⇒ card `STALE` theo `INV-06`. Xem `precode/adr/ADR-0011`.
 - Đổi layout chỉ sửa **§3 và §8** của card. §2, §4, §5, §6, §7 không đổi — hợp đồng độc lập framework.
 
 ## 5.2 Scenario và nghĩa vụ default-deny

@@ -38,7 +38,7 @@ cái đã được đóng bằng thay đổi hợp đồng thật, không phải
 | GAP-B1 — giới hạn định dạng Telegram `KC` | **VẪN MỞ** (`CR-PC07-04`) | không đóng được trong phiên không có mạng |
 | GAP-B2 — không actor nào khai `telegram.send_payload` | **ĐÓNG** | `ACT-delivery-dispatcher` mới trong `contracts/capabilities.yaml`, `allowed_operations: [delivery.dispatch_next, delivery.record_receipt, delivery.mark_unknown, telegram.send_payload]`, `network_scope: [telegram_bot_api]` |
 | GAP-C1 — file PC09 chưa landing | **ĐÓNG** | `scenarios.yaml` (SC01–SC53), `traceability.csv`, `gates.yaml`, `review.md`, `manifest.schema.json`, `index.json` đã có |
-| GAP-C2 — baseline drift khỏi FC-W3 | **ĐÓNG** | card đã pin lại; epoch hiện hành `PC10-PIN-OD01c-20260907` (đã thay các epoch cũ `PC10-PIN-OD01b-20260907`, `PC10-PIN-OD01-20260907`, `PC10-PIN-FCW4f-20260907`, `PC10-PIN-FCW4e-20260907`, `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`) |
+| GAP-C2 — baseline drift khỏi FC-W3 | **ĐÓNG** | card đã pin lại; epoch hiện hành `PC10-PIN-OD01e-20260907` (đã thay các epoch cũ `PC10-PIN-OD01d-20260907`, `PC10-PIN-OD01c-20260907`, `PC10-PIN-OD01b-20260907`, `PC10-PIN-OD01-20260907`, `PC10-PIN-FCW4f-20260907`, `PC10-PIN-FCW4e-20260907`, `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`) |
 
 **Kết quả hiện tại: 1 gap còn mở** (GAP-B1), chặn một nhánh của một card. Phần dưới giữ nguyên phân tích gốc
 làm bản ghi audit, với trạng thái được đánh dấu tại chỗ.
@@ -173,7 +173,7 @@ viết thêm hợp đồng.
 > PC09-FIX1 chạy song song — dẫn bằng đường dẫn + SC id.
 
 > **GAP-C2 → `CR-PC10-01` — ĐÃ ĐÓNG.** 18 card đã được pin lại; epoch hiện hành là
-> **`PC10-PIN-OD01c-20260907`** (các epoch cũ hơn `PC10-PIN-OD01b-20260907`, `PC10-PIN-OD01-20260907`, `PC10-PIN-FCW4f-20260907`, `PC10-PIN-FCW4e-20260907`, `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`,
+> **`PC10-PIN-OD01e-20260907`** (các epoch cũ hơn `PC10-PIN-OD01d-20260907`, `PC10-PIN-OD01c-20260907`, `PC10-PIN-OD01b-20260907`, `PC10-PIN-OD01-20260907`, `PC10-PIN-FCW4f-20260907`, `PC10-PIN-FCW4e-20260907`, `PC10-PIN-FCW4d-20260907`, `PC10-PIN-FCW4c-20260907`, `PC10-PIN-FCW4b-20260907`, `PC10-PIN-FCW4-20260907`,
 > `PC10-PIN-20260907` đã bị thay). Mỗi wave FIX chạm file có pin đều kéo theo một lần pin lại toàn bộ.
 > EV-PC10-01 chạy lại sau mỗi lần: 0 sai lệch hash.
 

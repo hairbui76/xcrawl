@@ -1546,6 +1546,22 @@
     },
     "PROJECT": {
       "note_vi": "Anchor cho cac ID phat sinh trong du an, khong co trong hai file nguon. Chung van phai co decision record thi moi duoc dung.",
+      "adrs": [
+        {
+          "anchor_id": "ADR-0011",
+          "label": "ADR-0011",
+          "title_vi": "Framework va toolchain cho stack B",
+          "source_file": "precode/adr/ADR-0011-frameworks-and-toolchain.md",
+          "status": "provisional-accepted",
+          "decision_owner": "Coordinator (Owner uy quyen 2026-09-07; Owner co the phan doi)",
+          "authority": "AUTH-OWNER-20260907-02",
+          "depends_on": "ADR-0006 (stack B)",
+          "decision_record": "precode/decision-register.md §8 PROV-PC00-07",
+          "scope_note_vi": "Moi lua chon nam DUOI lop hop dong: Owner dao mot hang thi chi sua card va ma, khong sua contracts/, acceptance/ hay precode/.",
+          "registered_by_ruling": "PKT-PC00-FIX13",
+          "note_vi": "ADR-0001..ADR-0010 duoc anchor gian tiep qua precode/adr/README.md va khong can anchor rieng vi chung deu duoc OD-20260907-01 phe chuan; ADR-0011 co anchor rieng vi tham quyen cua no khac han."
+        }
+      ],
       "owner_decisions": [
         {
           "anchor_id": "OD-20260907-01",

@@ -1300,3 +1300,157 @@ Gói này không phát sinh CR mới. Còn mở: `CR-PC00-15` (W7 re-pin; `basel
 - **next actor:** `Coordinator` — rehash hai README; nếu có epoch mới, đưa `evidence/audits/` và `evidence/coordination/` vào với role `EVIDENCE`.
 - **lease_released_at (UTC):** 2026-09-07T05:36Z. `LEASE-PC00-e13` (fencing 13) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới và lease fencing ≥ 14.
 - **Claim:** `DRAFT_FOR_REVIEW` cho gói này. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0 theo `E0-20260907T044549Z`; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX13 (`ADR-0011` framework và toolchain)
+
+## M1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX13` · worker `worker-W1` · authority `AUTH-COORD-PC00-FIX13` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC00-e14` (**fencing 14**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE` |
+| started / finished (UTC) | 2026-09-07T07:06Z / 2026-09-07T07:10Z · lease expires 2026-09-08T08:00Z (`date -u` trước lần ghi cuối: 2026-09-07T07:08Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T07:10Z |
+| input | `…/scratchpad/packets/ADR-0011-frameworks-ruling.md` — ruling của Coordinator dưới quyền ủy nhiệm |
+
+## M2. Đã làm gì
+
+**Tạo `precode/adr/ADR-0011-frameworks-and-toolchain.md`** — chuyển ngữ ruling thành đúng hình dạng ADR: sáu mục bắt buộc, front-matter mười trường theo `R-05`, cộng `depends_on: [ADR-0006]` và `ratified_by: null`.
+
+Bảng quyết định chép đủ **14 tầng** (Python 3.12/`uv`; FastAPI + Pydantic v2 với model sinh từ hợp đồng; SQLAlchemy 2 Core + Alembic + Online Backup API; hàng đợi bằng bảng DB với scheduler in-process; Playwright for Python trên profile riêng; `subprocess` cho CLI/ACP; `sentence-transformers`; Bot API trực tiếp; Vite + React + TS với client sinh từ `openapi.yaml`; cookie session + CSRF + Argon2id; `pytest` nạp fixture thẳng từ `acceptance/fixtures/**`; `ruff`/`mypy`/`eslint`/`prettier`; GitHub Actions không có job live; Docker Compose cho server) cùng bố cục repo và bảng phương án bị loại.
+
+**Điều tôi làm nổi bật hơn ruling — có chủ đích.** Ruling nêu lý do theo từng hàng; tôi gom **ba hàng** vào một đoạn riêng ở mục Hệ quả, vì chúng cùng một loại: đó là ba chỗ mà một framework thông dụng sẽ **tự định nghĩa lại một hành vi hợp đồng đã khóa**.
+
+- **Queue** — bảng DB thay vì broker: broker là một chủ sở hữu trạng thái thứ hai bên cạnh `assignment`/`assignment_lease` mà `entities.yaml` đã định nghĩa.
+- **Telegram** — gọi thẳng Bot API thay vì bot framework: cơ chế retry của framework sẽ tự gửi lại, **vi phạm `AMD-B03`** (không tự gửi lại khi `unknown`) — đúng thứ Owner vừa phê chuẩn ba ngày trước.
+- **CLI/ACP** — `subprocess` thay vì lớp orchestration: ruling loại LangChain vì "nó giấu tool call"; tôi ghi thêm **vì sao điều đó là quyết định**, chứ không phải sở thích: `ADR-0010` đòi *chứng minh được* tool bị khóa, và một lớp giấu tool call làm yêu cầu đó không kiểm được.
+
+**Trạng thái được giữ đúng mức.** `provisional-accepted`, `decision_owner: Coordinator`, `ratified_by: null`. ADR này **không** mang nhãn `accepted` và **không** trích `OD-20260907-01` như một sự phê chuẩn nội dung: biên bản của Owner chỉ ủy quyền *việc chọn*, không phê chuẩn *cái được chọn*. `EV-PC00-08` nay khẳng định điều đó bằng một assertion riêng.
+
+**Ba file cập nhật kèm theo:**
+
+- `precode/adr/README.md` — thêm hàng chỉ mục; sửa "cả 10 ADR accepted" thành "**mười ADR đầu** accepted"; thêm một đoạn nêu `ADR-0011` là **ngoại lệ về thẩm quyền** và phản đối của Owner không ảnh hưởng `contracts/`; template thêm `accepted`.
+- `precode/decision-register.md` §8 — **`PROV-PC00-07`**, `PROVISIONAL`, `decision_owner: Coordinator`, kèm đoạn "vì sao ba lựa chọn đáng chú ý lại tối giản" và một dòng nêu rõ phạm vi ảnh hưởng nếu Owner đảo: **chỉ card và mã**.
+- `precode/owner-decision-request.md` — phiếu trả lời thêm khối **"CHỜ VÒNG SAU"** với dòng `ADR-0011 frameworks: accept / object: ___` (kèm giải thích rằng phản đối chỉ sửa card và mã) và dòng `OQ03 provider + model` vẫn treo.
+- `precode/baseline.json` — anchor `ADR-0011` trong `source_anchors.PROJECT.adrs`, ghi status, `decision_owner`, authority, `depends_on`, `decision_record` và `scope_note_vi`. Ghi rõ vì sao chỉ ADR này có anchor riêng: mười ADR kia đều được `OD-20260907-01` phê chuẩn nên thẩm quyền của chúng đã nằm trong anchor của biên bản; `ADR-0011` khác hẳn.
+
+**Không** chạm `contracts/` hay card nào, đúng packet.
+
+## M3. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | **CREATE** | ABSENT | `745f4017f7cca0c20f96c2acc2b8b76ed18ef435ac664eef915b44d3d1ddad5f` (12584) |
+| `precode/adr/README.md` ⚠ | MODIFY | `e57d08b94da683d7c5be11cce46a942330381ae21c44f09210547f4497597f3f` (7503) | `3e931f27583cc92f4ee394ad7d8dca590741644058380fec7dd307b9e3405374` (8192) |
+| `precode/baseline.json` ⚠ | MODIFY | `e0405a1bc36f3dc2050ca7ed3b8acd8a9d0a14a708583cba273360c0c4d6722b` (100474) | `c99474a6744a3827f75961884d5d8daf1d9fb0bfe212547c216d1574d32ac81a` (101458) |
+| `precode/decision-register.md` ⚠ | MODIFY | `1883fec33f56873a426394a99d3fc6c5ec43c456a936c52733cad6c047f06262` (102430) | `3596a52b6ce8cb39a0ae07501fd177c80a4fdb7b19317fc82a3dd8e3df63a75d` (104940) |
+| `precode/owner-decision-request.md` | MODIFY | `9995b5ecc8b7a902ee5b10891ba4ea2fbbebe21521705415f41a7b48c947b6b4` (56332) | `572c2c11ecf18c8f958bb931d2aeafba1a2d64d3a42c674959562be05de3f56e` (56907) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `5294242c05e9ba027c7cc37ce6ff74ea8cc5e03f3aeca9f3c16f1e80bf3ebea8` | *(file này)* |
+
+**⚠ Ba file card-pinned vừa đổi:** `precode/baseline.json` (`c99474a6…`, 101458), `precode/decision-register.md` (`3596a52b…`, 104940), `precode/adr/README.md` (`3e931f27…`, 8192). Thuộc `CR-PC00-15` — W7 re-pin một lượt. `precode/requirements.csv` **không** đổi (`fbe59d0e…`).
+
+**1 CREATE + 4 MODIFY + 1 APPEND.** Mười ADR cũ, `owner-decisions.md`, `agent_profile/registry.json`, `contracts/`, `acceptance/`, `agent-tasks/`, `evidence/audits/`, `evidence/coordination/` **không** đổi. `precode/source/*` không sửa; rehash sau khi xong khớp pin. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+## M4. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T07:08Z / 2026-09-07T07:08Z · **exit code 0** · **273 assertion, 273 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1`.
+- **`EV-PC00-05` mở rộng:** nay 11 file ADR, `adr_id` chạy liên tục `ADR-0001`…`ADR-0011`, tất cả có đủ 6 mục và 10 trường front-matter.
+- **`EV-PC00-08` được sửa cho đúng thẩm quyền:** vòng lặp "mọi ADR phải `accepted` + `ratified_by: OD-20260907-01`" nay **bỏ qua `ADR-0011`**, và thay bằng một khối riêng khẳng định `ADR-0011` là `provisional-accepted`, `ratified_by: null`, **không** giả vờ đã được Owner phê chuẩn, có điều khoản "Owner có thể phản đối", `depends_on: [ADR-0006]`, và nêu đích danh `AMD-B03`, `ADR-0010`, `LangChain` trong phần lý do. Cộng bốn assertion cho register, chỉ mục, anchor baseline và dòng phiếu trả lời.
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4. Việc chọn framework **không** tạo bằng chứng kỹ thuật nào — chưa dòng mã nào tồn tại.
+
+## M5. Unresolved
+
+Gói này không phát sinh CR mới. Ba việc `ADR-0011` **nêu tên nhưng không làm**, đã ghi ngay trong ADR §Nguồn:
+
+1. PC10 viết lại §3 và §8 của 18 card theo bố cục repo (`CR-PC00-17`, đã mở từ FIX10).
+2. Thêm một kiểm tra E0 **"mã sinh ra khớp hash hợp đồng"** vào `evidence/tools/e0_check.py` — hệ quả trực tiếp của việc sinh model từ `contracts/` ở cả hai ngôn ngữ. Chưa có; thuộc W6/PC09.
+3. Chọn model embedding cụ thể sau `REQ-A3` (`REQ-OQ09`).
+
+Còn mở từ trước: `CR-PC00-15` (W7 re-pin — danh sách hash mới ở §M3), `CR-PC00-16` (`ADR-0006` giữ tên file cũ), `CR-PC00-13`, `CR-PC00-06`, và `REQ-OQ03` vẫn `OWNER_DECISION_REQUIRED`.
+
+**Một quan sát về thẩm quyền.** Đây là ADR đầu tiên trong bộ mang `decision_owner: Coordinator` cho một quyết định **có phạm vi rộng** (14 tầng, ảnh hưởng mọi card). Ba ADR kỹ thuật trước đó (`ADR-0008`) hẹp hơn nhiều. Việc ủy quyền là hợp lệ và được ghi lại đầy đủ, nhưng nó nghĩa là một phần đáng kể của hình dạng hệ thống hiện đứng trên một lời ủy quyền miệng ("You pick") chứ không phải một lựa chọn Owner đã cân nhắc từng hàng. Dòng trong phiếu trả lời là cơ chế để sửa điều đó ở vòng sau; tôi khuyên Coordinator **đưa nó lên sớm** thay vì gộp vào một vòng xa.
+
+## M6. Trạng thái bàn giao (FIX13)
+
+- **next actor:** `Coordinator` — rehash năm file ở §M3; giao W7 re-pin; đưa dòng `ADR-0011` vào vòng hỏi Owner tiếp theo.
+- **lease_released_at (UTC):** 2026-09-07T07:10Z. `LEASE-PC00-e14` (fencing 14) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §M3) và lease fencing ≥ 15.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.
+
+---
+
+# ADDENDUM — PKT-PC00-FIX14 (`F-A2R7-04`, `F-A2R7-05` trên `ADR-0011`)
+
+## N1. Danh tính
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC00-FIX14` · worker `worker-W1` · authority `AUTH-COORD-PC00-FIX14` · lease `LEASE-PC00-e15` (**fencing 15**) |
+| mode / ceiling | `DOCUMENTARY_DRAFT`, `NOT_IMPLEMENTED` · `DRAFT_FOR_REVIEW` |
+| status | `DONE_WITH_CONCERNS` |
+| started / finished (UTC) | 2026-09-07T07:18Z / 2026-09-07T07:21Z · lease expires 2026-09-08T08:00Z (`date -u` trước lần ghi cuối: 2026-09-07T07:20Z) |
+| next actor / lease_released_at | `Coordinator` / 2026-09-07T07:21Z |
+| scope | Chỉ `precode/adr/ADR-0011-frameworks-and-toolchain.md`. Hai finding `LOW` của `A2-R7` |
+
+## N2. `F-A2R7-05` — bốn hàng quyết định không có ô phương án
+
+Bảng quyết định có 14 hàng, bảng phương án chỉ có 10. Bốn hàng thiếu: **Test**, **Lint / format**, **CI**, **Đóng gói / triển khai**. Ruling gốc đánh dấu `—` cho bốn ô đó; bản đầu của ADR bỏ luôn dấu, nên người đọc không phân biệt được "đã cân nhắc rồi loại" với "chưa từng xem xét".
+
+Tôi chọn vế **"chưa từng xem xét"** và nói thẳng như vậy, thay vì bịa ra một cuộc cân nhắc đã không xảy ra. Bốn hàng mới, mỗi hàng ghi rõ: *không cân nhắc phương án nào — mặc định thông dụng*, một dòng vì sao, và **đảo được mà không tốn gì ở phía hợp đồng**.
+
+Hai hàng được viết kỹ hơn vì chúng chứa một quyết định thật bị lẫn vào trong một mặc định:
+
+- **Test** — điều thật sự được quyết **không** phải tên thư viện mà là **fixture nạp thẳng từ `acceptance/fixtures/**`**. Vế đó **không có** phương án thay thế: một bộ dữ liệu test thứ hai sẽ tách oracle khỏi hợp đồng. Đổi `pytest` sang thứ khác không tốn gì; đổi nguồn fixture thì tốn.
+- **CI** — điều được quyết là **không có job live** (E3/E4 thủ công theo giao thức), một ràng buộc bằng chứng chứ không phải mặc định; nó giữ nguyên dù đổi nhà cung cấp CI.
+- **Đóng gói / triển khai** — audit chỉ ra đúng: đây là hàng chạm **máy của chính Owner**. Tôi nêu tên bốn phương án **chưa được cân nhắc** (systemd unit thuần, Podman, Kubernetes, chạy thẳng không container) để Owner có cơ sở phản đối, và tách bạch phần **không** phải lựa chọn: "collector và worker chạy như tiến trình trên máy, không trong container" là ràng buộc của `REQ-S6.4-02`.
+
+Kết quả: quyền phản đối của Owner ở mục Trạng thái nay áp **đồng đều cho cả 14 hàng**, không phải chỉ 10. `EV-PC00-08` đếm đúng 14 hàng và kiểm bốn nhãn mới.
+
+## N3. `F-A2R7-04` — quy kết nguồn của bố cục repo
+
+Bản đầu viết bố cục repo "(đã được `agent-tasks/README.md` §5.3 khai)" cho **cả bảy** thư mục. Sai tại thời điểm đóng băng mà `A2-R7` kiểm: §5.3 khi đó khai **sáu**, và `shared/rr_contracts/` — thư mục gánh chính quy tắc "mã sinh ra không sửa tay" — không có ở đó.
+
+Nay bố cục được ghi thành **một bảng bảy hàng**, mỗi hàng có cột **Nguồn khai** riêng, nên không còn một câu quy kết gộp.
+
+**Một điều tôi phát hiện khi kiểm chứ không chép theo packet.** Packet nói §5.3 "is being amended by PC10". Tôi kiểm trực tiếp trên đĩa: PC10 **đã bổ sung xong** — `rr_contracts` nay xuất hiện **hai lần** trong `agent-tasks/README.md` (khối layout §5.3 và quy tắc "là code SINH RA, không viết tay"). Nếu viết theo thì tương lai ("đang sửa") thì ghi chú sẽ sai ngay khi đóng băng. Vì vậy ghi chú tách hai mốc: **sai tại epoch `A2-R7` kiểm**, và **đúng cho cả bảy tại 2026-09-07T07:20Z**, kèm câu tôi đã kiểm bằng cách nào. `EV-PC00-08` thêm một assertion buộc câu đó **khớp thực tế trên đĩa**, nên nếu ai đó gỡ `rr_contracts` khỏi README thì validate sẽ FAIL thay vì ADR âm thầm nói sai.
+
+**Ruling gốc vẫn mang câu sai.** `evidence/coordination/ADR-0011-frameworks-ruling.md` là bản sao nguyên văn và **không** được sửa (đó là điểm của một bản lưu trữ). Audit nói rõ "the ruling should be corrected in the same pass" — việc đó nằm ngoài grant gói này. → `CR-PC00-19`.
+
+## N4. Changes
+
+| Path | Op | Before sha256 (bytes) | After sha256 (bytes) |
+| --- | --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` ⚠ | MODIFY | `745f4017f7cca0c20f96c2acc2b8b76ed18ef435ac664eef915b44d3d1ddad5f` (12584) | `9cdec0d78592c67068188e7dffcf9e03f361fe202263bb47a95b2298337a8340` (17052) |
+| `evidence/handoffs/PC00-handoff.md` | APPEND | `7a3adb94ff7e682290b6e13800bb1edc9dd764ab7d9b17c60e151a69839a41af` | *(file này)* |
+
+**⚠ `ADR-0011` là card-pinned** — hash mới `9cdec0d7…` (17052) cần vào lượt re-pin của W7 (`CR-PC00-15`), cùng với `baseline.json` (`c99474a6…`), `decision-register.md` (`3596a52b…`), `adr/README.md` (`3e931f27…`), `requirements.csv` (`fbe59d0e…`).
+
+**1 MODIFY + 1 APPEND.** Không file nào khác đổi: mười ADR kia, `adr/README.md`, `baseline.json`, `decision-register.md`, `owner-decision-request.md`, `requirements.csv`, `owner-decisions.md`, `agent_profile/registry.json` giữ nguyên giá trị FIX13. **Không** chạm `agent-tasks/README.md` (ngoài grant — và nó đã đúng rồi), `contracts/`, `acceptance/`, `evidence/audits/`, `evidence/coordination/`. `precode/source/*` không sửa; rehash sau khi xong khớp pin. Không lệnh git thay đổi repo; không `__pycache__`/`.pyc`; không network; không secret.
+
+## N5. Evidence
+
+- **Lệnh:** `cd …/scratchpad/w1 && PYTHONDONTWRITEBYTECODE=1 python3 validate.py`
+- **started/ended (UTC):** 2026-09-07T07:20Z / 2026-09-07T07:20Z · **exit code 0** · **290 assertion, 290 PASS, 0 FAIL** · `SELF_VALIDATION`, producer `worker-W1`.
+- **17 assertion mới:** bảng phương án có **đúng 14 hàng**; bốn hàng `Test`/`Lint / format`/`CI`/`Đóng gói / triển khai` đều có ô; đúng **4** lần nhãn "Không cân nhắc phương án nào" và ít nhất 3 lần "không tốn gì ở phía hợp đồng"; hàng đóng gói nêu tên `systemd` và `Kubernetes` như phương án **chưa** được cân nhắc; **cả bảy** thư mục xuất hiện trong ADR; ADR không còn quy kết rằng §5.3 đã khai cả bảy; và **câu về §5.3 phải khớp thực tế trên đĩa** (`rr_contracts` có trong `agent-tasks/README.md` ⇔ ADR nói "PC10 đã bổ sung").
+- **`NOT_RUN`:** audit độc lập trên epoch mới; E1–E4.
+
+## N6. Unresolved
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-PC00-19` **(mới)** | `evidence/coordination/ADR-0011-frameworks-ruling.md` vẫn mang câu quy kết sai ("đã được §5.3 khai" cho cả bảy). Nó là **bản sao nguyên văn** nên tôi không sửa — sửa một bản lưu trữ là làm hỏng chính thứ nó dùng để làm. Audit yêu cầu "ruling should be corrected in the same pass"; đề nghị Coordinator phát một ruling đính chính rồi PC00 chép bổ sung, thay vì sửa tại chỗ bản đã lưu. |
+| `CR-PC00-15` | W7 re-pin — nay gồm cả `ADR-0011` (`9cdec0d7…`, 17052) |
+| `CR-PC00-16` | `ADR-0006` giữ tên file cũ trong khi nội dung là phương án B |
+| `CR-PC00-17` | PC10 viết lại §3/§8 của 18 card (đang tiến hành — §5.3 đã cập nhật) |
+| `CR-PC00-13`, `CR-PC00-06` | Không đổi |
+| `REQ-OQ03` | Vẫn `OWNER_DECISION_REQUIRED`, vẫn chặn M3 |
+| `ADR-0011` | Vẫn `provisional-accepted`; dòng "accept / object" đã có trong phiếu trả lời của Owner |
+
+## N7. Trạng thái bàn giao (FIX14)
+
+- **next actor:** `Coordinator` — rehash `ADR-0011`; xử lý `CR-PC00-19`; giao W7 re-pin.
+- **lease_released_at (UTC):** 2026-09-07T07:21Z. `LEASE-PC00-e15` (fencing 15) nhả tại đây; `worker-W1` không ghi thêm file nào. Sửa tiếp cần packet mới, baseline mới (hash ở §N4) và lease fencing ≥ 16.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn phạm vi vẫn `CONTRACT_READY` ở mức E0; `product_status` vẫn `NOT_READY_FOR_PRODUCT_CODE`; E1–E4 vẫn `NOT_RUN`.

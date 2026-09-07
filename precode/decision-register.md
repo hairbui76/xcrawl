@@ -567,6 +567,15 @@ baseline §3 đã được Coordinator sửa tương ứng), và `requirement_re
 - **Nếu Owner bác bỏ.** Giữ nguyên thì `blocked` chỉ thoát được bằng `run.cancel`; ghi rõ điều đó trong UI để Owner không chờ một nút "tiếp tục" không tồn tại.
 - **Liên kết.** `CR-PC03-02`, `REQ-S5.4-04`, `REQ-S5.4-05`, `REQ-S9.3-02`, `REQ-AC04`, AMD-B02, AMD-B10, I10.
 
+### `PROV-PC00-07` — Framework và toolchain cho stack B (`ADR-0011`)
+
+- **Bối cảnh.** `OD-20260907-01` mục 3 chốt stack **B** ở mức ngôn ngữ, nhưng chưa chốt framework. Khi được hỏi, Owner trả lời **"You pick, record as ADR"** — ủy quyền lựa chọn kỹ thuật cho Coordinator với điều kiện nó được ghi thành một ADR.
+- **Quyết định.** `ADR-0011` chốt 14 tầng: Python 3.12 + `uv`; FastAPI + Pydantic v2 với model **sinh từ** `contracts/`; SQLAlchemy 2 Core + Alembic, WAL, Online Backup API; hàng đợi **bằng bảng DB** theo `entities.yaml` với vòng lặp scheduler in-process (không broker); Playwright for Python trên profile riêng; `subprocess` cho CLI/ACP; `sentence-transformers` ở server; **Bot API trực tiếp** cho Telegram; Vite + React + TS với client sinh từ `openapi.yaml`; cookie session + CSRF; `pytest` nạp fixture thẳng từ `acceptance/fixtures/**`; `ruff`/`mypy`/`eslint`; GitHub Actions không có job live; Docker Compose cho server.
+- **Trạng thái.** **`PROVISIONAL`**, `decision_owner: Coordinator` dưới quyền ủy nhiệm của `AUTH-OWNER-20260907-02`. **Owner có thể phản đối** — đưa vào vòng quyết định tiếp theo qua `precode/owner-decision-request.md`. Đây **không** phải một mục `ACCEPTED (OD-20260907-01)`: biên bản của Owner không phê chuẩn nội dung này, nó chỉ ủy quyền việc chọn.
+- **Vì sao ba lựa chọn đáng chú ý lại tối giản.** Ở đúng ba chỗ mà một framework thông dụng sẽ tự định nghĩa lại hành vi đã khóa trong hợp đồng, ADR chọn cách tối giản: **queue** dùng bảng DB thay vì broker (tránh chủ sở hữu trạng thái thứ hai); **Telegram** gọi thẳng API thay vì bot framework (retry của framework sẽ vi phạm `AMD-B03` — không tự gửi lại khi `unknown`); **CLI/ACP** dùng `subprocess` thay vì một lớp orchestration giấu tool call (LangChain bị loại thẳng vì lý do này — `ADR-0010` đòi chứng minh được tool bị khóa).
+- **Phạm vi ảnh hưởng nếu Owner đảo.** Chỉ card và mã. **Không** `contracts/`, không `acceptance/`, không `precode/`. Mọi lựa chọn nằm dưới lớp hợp đồng.
+- **Liên kết.** `ADR-0011`, `ADR-0006` (phụ thuộc), `ADR-0005`, `ADR-0010`, `AMD-B03`, `AMD-B11`, `REQ-D07`, `REQ-D09`, `REQ-D48`, `REQ-D49`, `REQ-D50`, `REQ-D59`, `REQ-S6.4-01..03`, I11, I15.
+
 ### 8.5 Đăng ký quyết định PROVISIONAL của các gói khác
 
 PC00 là nơi tập trung quyết định; các gói dưới đây tự đưa quyết định trong phạm vi của mình, PC00 **ghi nhận** để chúng không rơi khỏi tầm nhìn của Owner và của PC09. PC00 **không** thẩm định lại nội dung kỹ thuật — chủ sở hữu vẫn là gói gốc.

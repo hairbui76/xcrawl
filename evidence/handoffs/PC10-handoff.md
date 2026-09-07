@@ -1825,3 +1825,333 @@ self-validation.
 ---
 
 *PKT-PC10-FIX11 · worker-W7 · `lease_released_at` 2026-09-07T05:55Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX12 (kế hoạch tổng thể)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX12` · authority `AUTH-COORD-PC10-FIX12` (parent `AUTH-OWNER-20260907-02`) · lease `LEASE-PC10-e13` (fencing 13) |
+| expires_at | 2026-09-08T08:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| trigger | Owner yêu cầu một kế hoạch tổng thể có lộ trình |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T06:05Z / 2026-09-07T06:34Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T06:34Z |
+
+## L.1 Changes
+
+| Path | Op | Before | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `docs/master-plan.md` | **CREATE** | ABSENT | `3b8bbae757a6c34140b2a0fe178506c7f6322c1e92f7a81dec43ae5fa6eec019` / 37512 |
+| `precode/README.md` | MODIFY (một hàng) | `4f1f40ee…` | `aa3adf54d71bcfb24610d00878a1d31558f61dd7700c9f84e56b9c88baf16156` / 21603 |
+
+Thư mục `docs/` là mới. **Không card nào bị chạm** — packet này không cấp quyền re-pin. Không
+`__pycache__`; script chạy từ `…/scratchpad/w7/`; không lệnh git; không mạng.
+
+## L.2 Nội dung
+
+5 320 từ, 7 mục chính, 21 tiểu mục. Front-matter mang `document_type: MASTER_PLAN` và pin sha256 của
+năm nguồn (spec, plan, `owner-decisions.md`, `review.md`, `agent-tasks/README.md`). **ADR-0011 được
+dẫn theo đường dẫn, không pin hash**, đúng chỉ dẫn — W1 ghi nó song song.
+
+| Mục | Nội dung |
+| --- | --- |
+| 1 | Vị trí hiện tại: phê chuẩn `OD-20260907-01`; bốn phạm vi `CONTRACT_READY` và bốn phạm vi `DRAFT` kèm lý do `KC`; G0–G2 `MET`, G5 `NOT_MET` vì `G5-X4`; 15 dòng `KC`; danh sách mục còn mở; phủ P0 đã đo |
+| 2 | Stack B và toolchain từ ADR-0011; bố cục bảy cây; hai quy tắc không thương lượng (sinh từ hợp đồng, fixture là oracle duy nhất); bốn job CI |
+| 3 | Bảy giai đoạn theo M0–M8 và G5→G7. Mỗi giai đoạn có: cổng vào, card theo thứ tự đồ thị phụ thuộc, operation ID, SC, invariant, việc bên ngoài cần máy Owner hoặc dữ kiện mạng, cấp bằng chứng E1–E4 với artefact cụ thể, DoD, trần claim, điều kiện dừng, ước lượng |
+| 4 | Ước lượng ngày công + **năm giả định nêu tường minh**, đường găng, ba nhóm chạy song song |
+| 5 | Sổ rủi ro 10 mục (trigger quan sát được / giảm thiểu / chủ) + hai rủi ro đã hết |
+| 6 | 13 điểm Owner chạm tay, phân loại quyết định / thao tác tay / dữ kiện mạng, kèm cái mỗi việc mở khóa |
+| 7 | Manifest mỗi card, cập nhật cổng, vòng audit mỗi freeze, mẫu claim §14.3, và **§7.5 điều kế hoạch này KHÔNG thiết lập** |
+
+Trần claim theo giai đoạn: G0 không claim → `IMPLEMENTATION_VERIFIED` (GĐ 1, 3) →
+`LIVE_FEASIBILITY_VERIFIED` (GĐ 2A, probe) → `INTEGRATION_VERIFIED` (GĐ 4, 6) → `PRODUCT_ACCEPTED`
+(GĐ 7). Đường CLI/ACP dừng ở `CONTRACT_READY`.
+
+## L.3 Prose-token gate
+
+`EV-PC10-07` (`SELF_VALIDATION`), 2026-09-07T06:28Z, **PASS**. Mọi định danh trong file giải được
+về hợp đồng sở hữu:
+
+| Loại | Số token | Không giải được |
+| --- | --- | --- |
+| operation ID → `contracts/ports.yaml` | 79 | 0 |
+| mã lỗi → `contracts/errors.yaml` | 3 | 0 |
+| `MOD-*` → `contracts/modules.yaml` | 1 | 0 |
+| `TC-*` → `agent-tasks/` | 18 | 0 |
+| `REQ-*` → `acceptance/traceability.csv` | 31 | 0 |
+| `SC*` → `acceptance/scenarios.yaml` | 50 | 0 |
+| `I<nn>` → I01–I17 | 17 | 0 |
+| đường dẫn repo | mọi trích dẫn | 0 (trừ ADR-0011, cố ý) |
+
+Một false positive duy nhất ở lần chạy đầu: `pyproject.toml` khớp mẫu `a.b` của operation. Đã loại
+bằng phần mở rộng, không bằng cách sửa nội dung.
+
+## L.4 Điều tôi đã cẩn thận **không** làm
+
+- **Không** tuyên bố bất kỳ mức bằng chứng nào đã đạt. Banner đầu file ghi thẳng: E1–E4 là **dự
+  kiến**, hiện `NOT_RUN`, chưa dòng code sản phẩm nào tồn tại.
+- **Không** đưa ngày lịch. Ước lượng là ngày công tương đối, kèm **năm giả định** — trong đó giả
+  định thứ ba ("fixture dùng được ngay làm test data") **chưa ai thử**, và tôi nói rõ điều đó.
+- **Không** làm mềm một `KC` nào. Bảng §1.4 giữ nguyên 15 dòng; §7.5 nhắc `REQ-A7` **không kiểm
+  chứng được trước** bằng bất kỳ cách nào.
+- **Không** để file này lấn quyền: §7.5 nói rõ khi nó mâu thuẫn với `precode/README.md`,
+  `agent-tasks/README.md` hay `precode/gates.yaml` thì **chúng thắng**.
+- **Không** trích con số phủ P0 dễ nghe. Ghi **192/234 mạnh**, không phải 223 hay 234.
+
+## L.5 Baseline drift phát hiện lúc kết thúc — **không** tự sửa
+
+Ngay sau khi ghi xong, verifier báo **2/143 file có pin đã đổi**:
+
+| File | Pin trên card | Live |
+| --- | --- | --- |
+| `precode/baseline.json` | `e0405a1bc36f…` / 100474 B | `c99474a6744a…` / 101458 B |
+| `precode/decision-register.md` | `1883fec33f56…` / 102430 B | `3596a52b6ce8…` / 104940 B |
+
+Nguyên nhân rõ và lành: W1 đang ghi `precode/adr/ADR-0011-frameworks-and-toolchain.md` song song
+(file nay đã tồn tại; `decision-register.md` có 3 lần nhắc `ADR-0011`). Hai file trên là hệ quả sổ
+sách của việc đó.
+
+**Hệ quả:** 18 card hiện `STALE` theo `INV-06`/`INV-09`; epoch `PC10-PIN-OD01c-20260907` không còn
+khớp cây. **Tôi không re-pin**: grant của `PKT-PC10-FIX12` là `precode/README.md` (một hàng) và
+`CREATE docs/master-plan.md` — re-pin nằm ngoài, và `agent_profile/worker.md` điều 1 cấm vượt vùng
+đã cấp. Cần một packet nhỏ (`OD01d`) sau khi W1 release; generator và verifier chạy một lần là
+xong.
+
+Nguồn không đổi trước và sau: `d35e1f2d…`, `f65bb046…`. `INV-08` không trigger.
+
+## L.6 CR
+
+**Không CR mới.** Còn mở như `PKT-PC10-FIX11` §K.5: `CR-PC10-05`, `-07`, `-08`; `CR-PC07-04` (vẫn
+chặn nhánh multipart); `CR-PC05-03`; `CR-PC06-04`; `REQ-OQ03` (chặn M3); SP1 và E1–E4 `NOT_RUN`.
+
+`status` là `DONE_WITH_CONCERNS` vì drift ở §L.5 để lại 18 card `STALE` mà packet này không cho
+phép sửa, và vì PC10 chỉ có self-validation trong khi `audit_route` là `INDEPENDENT_REQUIRED`.
+
+---
+
+*PKT-PC10-FIX12 · worker-W7 · `lease_released_at` 2026-09-07T06:34Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX13
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX13` · authority `AUTH-COORD-PC10-FIX13` · lease `LEASE-PC10-e14` (fencing 14) |
+| expires_at | 2026-09-08T08:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| trigger | `PKT-PC00-FIX13` release 07:10Z — `ADR-0011` landing; hai file sổ sách đổi theo |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T07:14Z / 2026-09-07T07:26Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T07:26Z |
+| **pin epoch mới** | **`PC10-PIN-OD01d-20260907`** (thay `PC10-PIN-OD01c-20260907`) |
+
+## M.1 Xác nhận đầu vào
+
+`PKT-PC00-FIX13` có trong `evidence/handoffs/PC00-handoff.md` (dòng 1306), `lease_released_at
+2026-09-07T07:10Z`. Bốn hash Coordinator nêu xác nhận **trước** khi pin:
+
+| File | SHA-256 | Bytes |
+| --- | --- | --- |
+| `precode/baseline.json` | `c99474a6744a3827f75961884d5d8daf1d9fb0bfe212547c216d1574d32ac81a` | 101458 |
+| `precode/decision-register.md` | `3596a52b6ce8cb39a0ae07501fd177c80a4fdb7b19317fc82a3dd8e3df63a75d` | 104940 |
+| `precode/adr/README.md` | `3e931f27583cc92f4ee394ad7d8dca590741644058380fec7dd307b9e3405374` | — |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `745f4017f7cca0c20f96c2acc2b8b76ed18ef435ac664eef915b44d3d1ddad5f` | 12584 |
+
+Nguồn không đổi: `d35e1f2d…`, `f65bb046…`. `INV-08` không trigger.
+
+## M.2 `ADR-0011` vào read set của **mọi** card
+
+Đây là thay đổi có ý nghĩa nhất của vòng này, không phải một dòng hash thêm vào.
+
+Trước: card pin hợp đồng nghiệp vụ, còn toolchain mà §8 giả định (`pytest`, `npm --prefix web`,
+`ruff`, `mypy`) không được pin ở đâu cả. Nghĩa là ai đó có thể đổi toolchain mà **không** card nào
+`STALE` — trong khi lệnh ở §8 sẽ hỏng. Đó là một lỗ hổng trong chính cơ chế pin.
+
+Sau: `precode/adr/ADR-0011-frameworks-and-toolchain.md` nằm trong `BASE_READ`, nên **cả 18 card**
+pin nó. Đổi toolchain nay làm card `STALE` theo `INV-06`/`INV-09` **đúng như đổi một hợp đồng** —
+là hành vi đúng, vì lệnh build/test của card phụ thuộc trực tiếp vào nó.
+
+§2 của mọi card cũng đổi thứ tự đọc: `ADR-0011` được nêu **trước** các ADR nghiệp vụ, kèm ghi chú
+rằng nó `provisional-accepted` và **Owner có thể bác bất kỳ dòng nào mà không ảnh hưởng hợp đồng**.
+
+Tập file có pin: **143 → 144**; dòng hash mỗi vòng kiểm: **483 → 501**.
+
+## M.3 Drift
+
+So `OD01c` với `OD01d`: **3 file** khác trong tập pin — `precode/baseline.json`,
+`precode/decision-register.md` (cả hai đổi nội dung) và `precode/adr/ADR-0011-frameworks-and-toolchain.md`
+(mới thêm vào tập pin). 141/144 giữ nguyên. Không có drift ngoài wave `PC00-FIX13`.
+
+Hai file sổ sách này chính là hai file tôi báo `STALE` ở cuối `PKT-PC10-FIX12` §L.5 và **cố ý không
+sửa** vì khi đó ngoài grant. Packet này đóng nó.
+
+## M.4 Changes
+
+| Path | Op | Before | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `(OD01c)` | `ca05b1aa692bbbaf07bf18e55aaca7455bbc39d422fd0cc96e4976db95a4ac64` / 23810 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `(OD01c)` | `5e3f5d0198c7564c17764230cfea3ad46d9b801aa782a256e1bcd0c53399d785` / 21920 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `(OD01c)` | `a61938f3605d4c31093e1e84b931caa2c618cdfe5a9d7fe428138091fb3cd381` / 21057 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `(OD01c)` | `e2387b29b01072f2b1861a1ed31e3011ba45eb0f3b92ea3ec4228a4e091e58b4` / 21033 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `(OD01c)` | `e716fe0609bd0c535cf3fb95ac55dd1edd0737016a2e40b0866d28a6a1820a8f` / 22062 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `(OD01c)` | `6f3052818fcb3d8d614bfd43dddd41e7936a3a18edc67463d6e74b297807aa23` / 24578 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `(OD01c)` | `435afaa14104d45f4b2c67f6f85bb2fc08bdaf6c13380417a22709580de4ec35` / 20095 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `(OD01c)` | `8bcd119bbfabaa66fc2fb16fef09da27c4401d1e1ec1dc160dcfed61f0492acb` / 26148 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `(OD01c)` | `9bc958199364951250897d945b6a20f72e84099aff257d55bb99067a380e56bc` / 20925 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `(OD01c)` | `2e450d23aa1500da05eab5158220f2c4a853a91c7508e6f80e177ca2f072323d` / 25056 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `(OD01c)` | `598d7eefec26fec602d040875cbc8a6978c848400fdf514f5d3644103f8e1e90` / 21672 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `(OD01c)` | `9144af9bed56d5ce0860d8791b0f0b3734e7390284999ebac2558c31b5d21a07` / 23782 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `(OD01c)` | `f2879558ffdb36361f13e1d6eaa5513adb361c65ea9e6f5764713f6684d71d7b` / 20942 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `(OD01c)` | `704a2bba3af159898d56a5d30b7a7bcfd5ba67b7186faf5764f626fdc63c3bd0` / 22017 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `(OD01c)` | `6142a98447994a72dad72e0ecb024209b7fafa6fc29135c6ce9aec556a547a4a` / 23263 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `(OD01c)` | `dd4c5d38878dbe7bff3329dba76ee4c6fcebaa7637045078e4441a816e979b9e` / 21611 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `(OD01c)` | `52255d947eafdd8a635bd4ba216b5a10fd136992c2efa60e23d1b176f8b2a4e8` / 21887 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `(OD01c)` | `65a433b6be8ee903dd48c3e434c3478bc5e5ce829021a4ee79733ad4e0c74b66` / 19112 |
+| `agent-tasks/README.md` | MODIFY | `(OD01c)` | `c8d0371ecce4995d5f01304878cc57ed07572173c5e2385be764b4e8d5867414` / 20245 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `(OD01c)` | `b0472a5ad761e54cb3f1b31554641628d8cfb441620e2bb824dd3d253590063c` / 12203 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `(OD01c)` | `86b61eb077451cf8fea63cfc0b707567bcfc93ffdbf741dd8de3cb302bc24cce` / 17424 |
+| `precode/README.md` | MODIFY | `(OD01c)` | `ccc799ea11700c9e4b6dc083ab6aa835a0e3753ade6d743b2e796b916eb172f0` / 21633 |
+
+**22 file MODIFY. 0 CREATE, 0 DELETE.** Đúng grant (`agent-tasks/*`, `precode/README.md` dòng
+epoch, handoff này). `docs/master-plan.md` **không** bị chạm: nó dẫn `ADR-0011` theo đường dẫn chứ
+không pin hash, nên `ADR-0011` landing không làm nó sai. Không `__pycache__`; script chạy từ
+`…/scratchpad/w7/`; không lệnh git; không mạng.
+
+## M.5 Evidence (chạy lại lần 13)
+
+**EV-PC10-01 (lần 13):** `SELF_VALIDATION`, 2026-09-07T07:24Z, exit 0, **PASS**. Mười ba phép kiểm
+(a)…(m). epoch đọc từ card `PC10-PIN-OD01d-20260907` (18/18 đồng thuận); **501 dòng hash / 144 file
+khớp 100 %**; 687 path; 155 operation ID; 116 SC; 99 mã lỗi §7; 18/18 có `SC49` + bảng ranh giới
+R5-01 + fixture boundary; 0 nhãn claim ngoài SRC-PLAN §2; 0 file PC09 bị pin hash; 0 epoch stale;
+0 dấu vết stack A; 0 vi phạm quy ước ngôn ngữ Stack B.
+
+**EV-PC10-02 (lần 13):** 18/18 card đủ `## §0.`…`## §13.` + front-matter. exit 0, **PASS**.
+
+**Vẫn `NOT_RUN`:** `evidence/tools/e0_check.py`, validator OpenAPI 3.1, mọi test E1–E4, probe SP1,
+probe CLI/ACP.
+
+*Giới hạn:* self-validation; `audit_route` là `INDEPENDENT_REQUIRED`. Check (k) vẫn không phủ
+`precode/review.md` (`CR-PC10-05`).
+
+## M.6 CR
+
+Không CR mới, không CR nào đóng. Còn mở: `CR-PC10-05` (`precode/review.md` còn epoch cũ — nay lệch
+mười thế hệ), `CR-PC10-07`, `CR-PC10-08`; `CR-PC07-04` **vẫn chặn** nhánh multipart; `CR-PC05-03`;
+`CR-PC06-04`; `REQ-OQ03` (chặn M3); SP1 và E1–E4 `NOT_RUN`.
+
+`status` là `DONE_WITH_CONCERNS` vì các mục trên, không vì bất kỳ điều gì trong vòng pin này.
+
+---
+
+*PKT-PC10-FIX13 · worker-W7 · `lease_released_at` 2026-09-07T07:26Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX14 (A2-R7 + re-pin OD01e)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX14` · authority `AUTH-COORD-PC10-FIX14` · lease `LEASE-PC10-e15` (fencing 15) |
+| expires_at | 2026-09-08T08:00Z · enforcement `DOCUMENTARY_DRAFT` · ceiling `DRAFT_FOR_REVIEW` |
+| trigger | Bốn finding A2-R7 + `ADR-0011` được sửa (`PKT-PC00-FIX14`, release 07:21Z) |
+| status | `DONE_WITH_CONCERNS` · completion_claim `DRAFT_FOR_REVIEW` |
+| started / finished (UTC) | 2026-09-07T07:30Z / 2026-09-07T07:52Z |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-07T07:52Z |
+| **pin epoch mới** | **`PC10-PIN-OD01e-20260907`** (thay `PC10-PIN-OD01d-20260907`) |
+
+## N.1 Bốn finding A2-R7
+
+| Finding | Đã sửa gì | Kiểm |
+| --- | --- | --- |
+| **F-A2R7-01** | `docs/master-plan.md` §1.2 ghi "12 fixture `reporting/`" — **sai**. `ls acceptance/fixtures/reporting/*.json` trả **14**. Đã sửa thành 14 và thêm "cũng đã lên `CONTRACT_READY`" cho khớp cách viết của hàng `identity/` ngay trên | đếm trực tiếp trên đĩa |
+| **F-A2R7-02** | Thêm khoảng trống **validator OpenAPI 3.1** vào §1.5 (danh sách mục còn mở) và §7.5 (điều kế hoạch không thiết lập); thêm job CI **`openapi`** ở §2.4 chạy **trước** bước sinh code. Công cụ ghi **PROVISIONAL**: `openapi-spec-validator` hoặc Redocly CLI, chốt ở bản sửa kế tiếp của `ADR-0011` | — |
+| **F-A2R7-03** | §1.3 hàng SP1 dùng `NOT_RUN` — từ vựng của **bằng chứng**, không phải của **cổng**. Đã đổi sang `NOT_MET` và tách rõ hai mệnh đề: (a) cổng Owner ở `collector-probe.md` §6 chưa mở; (b) bằng chứng probe là `NOT_RUN` | — |
+| **F-A2R7-04** | `agent-tasks/README.md` §5.3 chỉ khai sáu thư mục. Thêm **`shared/rr_contracts/`** để đủ **bảy**, kèm luật *sinh-đừng-sửa-tay*: file sinh ra mà bị sửa tay làm code và hợp đồng trôi khỏi nhau **âm thầm**; E0 sẽ có thêm phép kiểm "file sinh khớp hash hợp đồng"; đổi hành vi ⇒ sửa hợp đồng ⇒ sinh lại ⇒ card `STALE` theo `INV-06` | — |
+
+Lý do `F-A2R7-02` đáng hơn một dòng ghi chú: `contracts/http/openapi.yaml` là **nguồn sinh** model
+Pydantic (server) **và** client TypeScript (web). Một lỗi cấu trúc trong nó lan thẳng vào code sinh
+của **cả hai** tầng, và cho tới nay **chưa validator nào chạy trên nó trong toàn bộ Pre-code**. Đó
+là lý do job `openapi` phải chạy **trước** bước sinh, không phải sau.
+
+## N.2 Re-pin
+
+`PKT-PC00-FIX14` release 07:21Z (`PC00-handoff.md` dòng 1385). `ADR-0011` ổn định ở
+`9cdec0d78592c67068188e7dffcf9e03f361fe202263bb47a95b2298337a8340` / 17052 B (đã tăng từ 12584 B khi
+W1 sửa). `precode/baseline.json` và `decision-register.md` không đổi so với `OD01d`.
+
+Tập pin: **144 file / 501 dòng hash**, không đổi số lượng — chỉ nội dung `ADR-0011` đổi.
+
+## N.3 Check (k) bắt được một lỗi thật của chính tôi
+
+Lần chạy verifier đầu tiên sau re-pin cho **5 FAIL**: bốn file khẳng định pin vẫn nêu
+`PC10-PIN-OD01d-20260907`. Nguyên nhân: script cập nhật prose chạy trong một lệnh ghép bắt đầu bằng
+`cd …/scratchpad/w7`, nên **đường dẫn tương đối trỏ sai chỗ** và `open('precode/README.md')` ném
+`FileNotFoundError` — bốn file không được sửa, trong khi 18 card thì đã pin sang epoch mới.
+
+Nếu không có check (k), tôi đã phát hành một baseline trong đó card nói `OD01e` còn điểm vào nói
+`OD01d` — **đúng thất bại mà `F-A2R1-03` đã phạt một lần**. Đã chạy lại bằng đường dẫn tuyệt đối;
+lần hai sạch. Đây là lần thứ hai check (k) bắt lỗi thật kể từ khi thêm vào.
+
+## N.4 Changes
+
+| Path | Op | Before | After sha256 / bytes |
+| --- | --- | --- | --- |
+| `agent-tasks/TC-analysis-adapter-validation.md` | MODIFY | `(OD01d)` | `65f4a00f7cd2616519565a168432552629468da4533b3947e9d840a03a23510d` / 23815 |
+| `agent-tasks/TC-analysis-once-per-generation.md` | MODIFY | `(OD01d)` | `589ca882e951cb2fc03a96eeffa6f88d65fcbb4288f4d44524e6926a780fff1a` / 21925 |
+| `agent-tasks/TC-backfill-pending-ledger.md` | MODIFY | `(OD01d)` | `5b8b4a93c62ff2ae35cc969327b9549fe5ac6a505f03895113ffde61fd88e5f2` / 21062 |
+| `agent-tasks/TC-backup-restore-drill.md` | MODIFY | `(OD01d)` | `1037599bf5e542fd983961341890ee77bd106c5c6c4a2461de883586c2d23604` / 21038 |
+| `agent-tasks/TC-canonical-identity-merge.md` | MODIFY | `(OD01d)` | `75d2f2d2ea6938ddd1ae4a9dd0f79a331943d71d551c1f876cc88eb9f8a1a3c3` / 22067 |
+| `agent-tasks/TC-collector-checkpoint-resume.md` | MODIFY | `(OD01d)` | `7a9a911aa8c2fdb8546f8d61698412a4f939261a59a2e86887c873ad9f489140` / 24583 |
+| `agent-tasks/TC-embedding-generation-switch.md` | MODIFY | `(OD01d)` | `8892095810fe73b3493b88179c49574263ba8f973ba1e25b7a99e7c02602828d` / 20100 |
+| `agent-tasks/TC-ingest-idempotent-ack-lost.md` | MODIFY | `(OD01d)` | `336a30f6a752cd865469cdad9db23bc5ff2f760f4a84e99ed1281c29dd6f84bb` / 26153 |
+| `agent-tasks/TC-owner-auth-session.md` | MODIFY | `(OD01d)` | `59b7b2ac6cf37943a43ce72571be6b39adf631c7e50e9baac597bd25f9311cd3` / 20930 |
+| `agent-tasks/TC-report-coverage-publish-cas.md` | MODIFY | `(OD01d)` | `7079468b7238b2c11e25adddec46ec8f998756e2ec489ece980dbf55c4a9df17` / 25061 |
+| `agent-tasks/TC-saved-snapshot.md` | MODIFY | `(OD01d)` | `4df0106a24a21a9c14b3b78fe24b8205ffdebc2b651df829ecbe42f1172a7aeb` / 21677 |
+| `agent-tasks/TC-scheduler-lease-claim.md` | MODIFY | `(OD01d)` | `1ae9a8eda56506d890cb12b959c6ff50e4c4a7f0e4096d7c2562b539c483a3ee` / 23787 |
+| `agent-tasks/TC-storage-write-blocked-readiness.md` | MODIFY | `(OD01d)` | `5cbdde74447a63d8e522a7e118b0b6ebf4fd8a1503eca49ace7d8585f026a2c5` / 20947 |
+| `agent-tasks/TC-telegram-linking-auth.md` | MODIFY | `(OD01d)` | `408ad3d11970b4430c87a6429a360e5a642564ab3449de237ccc497682ec3383` / 22022 |
+| `agent-tasks/TC-telegram-unknown-delivery.md` | MODIFY | `(OD01d)` | `68710b735b089fa9243f7cb4443696270ba0d44f2c63bf66a41c8619263883d4` / 23268 |
+| `agent-tasks/TC-ui-reports-detail.md` | MODIFY | `(OD01d)` | `6fc278ebd38d4d5e54fba293370cd7c2f24ab4595e27c9ba000d3cd54375472b` / 21616 |
+| `agent-tasks/TC-ui-runs-three-states.md` | MODIFY | `(OD01d)` | `4df9ea34ea0aa079ad2dae8c080708aa841318434cba22edcbde6d74431ae085` / 21892 |
+| `agent-tasks/TC-x-feasibility-probe.md` | MODIFY | `(OD01d)` | `8f8b163cdef9d92ace247a98a38fd7bffefaab99392e793378e5dda21266c573` / 19117 |
+| `agent-tasks/README.md` | MODIFY | `(OD01d)` | `8204861dee721d2b642382216c1f672f7fcbdd27119c86f50c818511069cadc6` / 20844 |
+| `agent-tasks/TEMPLATE.md` | MODIFY | `(OD01d)` | `1660ba17bc0cc555bf6f1db2a4fa9195fb26b1f92bfc1e445ba0c6c99853aec7` / 12203 |
+| `agent-tasks/WALKTHROUGH.md` | MODIFY | `(OD01d)` | `74bfdd16d01e3e3b8d974c9e602681dc21d3638527cae50f8efefa3460eb811e` / 17478 |
+| `precode/README.md` | MODIFY | `(OD01d)` | `f98254c3f2ee54a8879dc03aee492ba773016a796fae0ff18f1bb85f4e2569ac` / 21663 |
+| `docs/master-plan.md` | MODIFY | `(OD01d)` | `a785e4168b1f3f51d0395118681acae377bf372c73dd684b3d56a0758bb69d03` / 38904 |
+
+**23 file MODIFY. 0 CREATE, 0 DELETE.** Đúng grant (`docs/master-plan.md`, `agent-tasks/*`,
+`precode/README.md` dòng epoch, handoff này). Không `__pycache__`; script chạy từ `…/scratchpad/w7/`;
+không lệnh git; không mạng.
+
+## N.5 Evidence (chạy lại lần 14)
+
+**EV-PC10-01 (lần 14):** `SELF_VALIDATION`, 2026-09-07T07:48Z, exit 0, **PASS**. Mười ba phép kiểm
+(a)…(m). epoch từ card `PC10-PIN-OD01e-20260907` (18/18 đồng thuận); **501 dòng hash / 144 file khớp
+100 %**; 687 path; 155 operation ID; 116 SC; 99 mã lỗi §7; 18/18 có `SC49` + bảng R5-01 + fixture
+boundary; 0 nhãn claim ngoài SRC-PLAN §2; 0 file PC09 bị pin hash; 0 epoch stale; 0 dấu vết stack A;
+0 vi phạm quy ước ngôn ngữ Stack B.
+
+**EV-PC10-02 (lần 14):** 18/18 card đủ `## §0.`…`## §13.` + front-matter. exit 0, **PASS**.
+
+**EV-PC10-07 (prose-token gate trên `docs/master-plan.md`, chạy lại):** **PASS**, 0 token không giải
+được — 78 operation ID, 3 mã lỗi, 1 `MOD-*`, 18 card ID, 31 `REQ-*`, 50 `SC*`, 17 invariant, và mọi
+đường dẫn repo (trừ `ADR-0011`, nay đã tồn tại và **vẫn** cố ý không pin hash trong kế hoạch — kế
+hoạch dẫn nó theo đường dẫn, nên bản sửa của W1 không làm kế hoạch sai).
+
+**Vẫn `NOT_RUN`:** `evidence/tools/e0_check.py`, **validator OpenAPI 3.1** (nay đã được ghi thành
+một mục còn mở, không còn ẩn), mọi test E1–E4, probe SP1, probe CLI/ACP.
+
+*Giới hạn:* self-validation; `audit_route` là `INDEPENDENT_REQUIRED`.
+
+## N.6 CR
+
+Không CR mới, không CR nào đóng. Còn mở: `CR-PC10-05`, `-07`, `-08`; `CR-PC07-04` (vẫn chặn nhánh
+multipart); `CR-PC05-03`; `CR-PC06-04`; `REQ-OQ03` (chặn M3); SP1 và E1–E4 `NOT_RUN`; validator
+OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX14 · worker-W7 · `lease_released_at` 2026-09-07T07:52Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
