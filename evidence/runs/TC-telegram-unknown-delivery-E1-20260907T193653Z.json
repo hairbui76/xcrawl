@@ -1,0 +1,257 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-01-tc-telegram-unknown-delivery",
+  "created_at": "2026-09-07T19:40:00Z",
+  "producer_principal": "worker-W5C",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "2d0db93e7ccd90d97b55c4cdd5f2fe1c464291a2a29af5f4a76d08f9e973ec98",
+      "precode/decision-register.md": "089b2a9b1a5d5597271f2c7620611ac5504eca24e63e738b8d20678f8cd5f779",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+      "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807",
+      "contracts/telegram/delivery.md": "18dc7c175a56efbfd434b63aac603d8408030f5fe68b63046cd83c3c9db8a0e1",
+      "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+      "precode/adr/ADR-0003-delivery-unknown-state.md": "567828c11049d26993cbeee0d0bd6c157d9938263ec69c5a05fa045da3ceb0e3",
+      "precode/adr/ADR-0004-tag-freeze-point.md": "4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f",
+      "acceptance/fixtures/telegram/README.md": "dbb368afae93bd40530a153769106995643996669a57a26dd2e55fb1ef905863",
+      "acceptance/fixtures/telegram/a-multipart-part2-unknown-no-resend.json": "555bf7edf28f1d7b8b27718bf54d77f79046720cd47035db09a8d9a45846bed6",
+      "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
+      "acceptance/fixtures/telegram/c-permanent-failure-report-intact.json": "2d15cca5df3249dc1d52f94648b617c7bf2cb2a702000f97a5ad5bd1b5631d2b",
+      "acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json": "248cda9cfe131aa4f6f72d36289082895d9d4162e93c7c195f239059d38ece95",
+      "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json": "9289f962019f337d542fe0f044e2d99e1eeb42aa48e7b7605c013b1a2f48ab91",
+      "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+      "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json": "e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+      "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+      "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+      "acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json": "90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94",
+      "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+      "acceptance/scenarios.yaml": "421f7048cc7f0f0a3c7fe50d45255ae3b25dbe18c49b673bf90195d78f55f5cb"
+    },
+    "contract_versions": {
+      "CT-state-delivery": "0.2.0",
+      "CT-telegram-delivery": "0.2.1",
+      "CT-arch-ports": "0.1.0"
+    },
+    "implementation_revision": "PKT-TC-DELIVERY working tree, pin epoch PC10-PIN-P3-20260908; alembic head 0009_tc_telegram_unknown_delivery; __init__.py=bd6956ddd1fa4555fa2080e8e90b6f30e5b5c1487e2e6914a52b6e635000da5e, service.py=1825a79e953c75aa26c0f947aa77b6bc11e3abffd509de53b5e616ec84edeb08, parts.py=6f388d833072ccced4254d8455339f0dba173c36dc35615fb666a5f19c73d1d5, outbox.py=0610ec6f3869f878bdf1daa2beef6f4d3d7f0924a1f7aa614095349cd923d88a, router.py=37482f0689eba2b851200ebe82381d47e2046b2e365053dde352f9af6eecee47, 0009_tc_telegram_unknown_delivery.py=90a80155de1a775c3d49d5030a932d020b036005f03eb275a5da4d4da336fd9c, test_delivery_unknown_no_retry.py=21eec633371b3bce9dd9936b092a12b8b002aa7dcf7e7dbee32e9698192cebd3, test_multipart_partial_receipt.py=c5c59e68c3579fa83af053572abe90962800de822a85cf59fa2de257507014e3, test_permanent_failure_report_intact.py=50e0a44eaa03f4a7f7e054fb0deb8a8adcad4abdc072ae2cc3163afad6bb5adb"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "uv": "0.12.9",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "telegram_bot_token": "không tồn tại — không lời gọi Bot API nào được phát ra",
+      "RR_DATABASE_URL": "tmp_path của pytest, một file SQLite dùng một lần cho mỗi test"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC14",
+      "SC15",
+      "SC19",
+      "SC25",
+      "SC27",
+      "SC49",
+      "SC50"
+    ],
+    "requirement_ids": [
+      "REQ-AC14",
+      "REQ-AC15",
+      "REQ-AC04",
+      "REQ-D57",
+      "REQ-S9.3-06",
+      "REQ-D37"
+    ],
+    "invariant_ids": [
+      "I05",
+      "I09",
+      "I13",
+      "I15"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/e2e/README.md",
+        "sha256": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+        "bytes": 6013
+      },
+      {
+        "path": "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json",
+        "sha256": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+        "bytes": 30745
+      },
+      {
+        "path": "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json",
+        "sha256": "e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838",
+        "bytes": 4194
+      },
+      {
+        "path": "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json",
+        "sha256": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+        "bytes": 3665
+      },
+      {
+        "path": "acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json",
+        "sha256": "90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94",
+        "bytes": 7808
+      },
+      {
+        "path": "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json",
+        "sha256": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+        "bytes": 6023
+      },
+      {
+        "path": "acceptance/fixtures/telegram/README.md",
+        "sha256": "dbb368afae93bd40530a153769106995643996669a57a26dd2e55fb1ef905863",
+        "bytes": 10508
+      },
+      {
+        "path": "acceptance/fixtures/telegram/a-multipart-part2-unknown-no-resend.json",
+        "sha256": "555bf7edf28f1d7b8b27718bf54d77f79046720cd47035db09a8d9a45846bed6",
+        "bytes": 7129
+      },
+      {
+        "path": "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json",
+        "sha256": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
+        "bytes": 5047
+      },
+      {
+        "path": "acceptance/fixtures/telegram/c-permanent-failure-report-intact.json",
+        "sha256": "2d15cca5df3249dc1d52f94648b617c7bf2cb2a702000f97a5ad5bd1b5631d2b",
+        "bytes": 4938
+      },
+      {
+        "path": "acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json",
+        "sha256": "248cda9cfe131aa4f6f72d36289082895d9d4162e93c7c195f239059d38ece95",
+        "bytes": 4259
+      },
+      {
+        "path": "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json",
+        "sha256": "9289f962019f337d542fe0f044e2d99e1eeb42aa48e7b7605c013b1a2f48ab91",
+        "bytes": 4729
+      }
+    ],
+    "seed": null,
+    "clock": "2026-09-07T19:00:00Z (đồng hồ giả trong tiến trình, chỉ ở test budget/backoff)"
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider tests/integration/test_delivery_unknown_no_retry.py tests/integration/test_multipart_partial_receipt.py tests/integration/test_permanent_failure_report_intact.py",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-07T19:34:33Z",
+    "ended_at": "2026-09-07T19:34:39Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Đếm hàng, đếm lời gọi và so hash — không đọc log. (1) fixture telegram/b: sau timeout, delivery.state = unknown và số lời gọi telegram.send_payload KHÔNG tăng ở mọi vòng dispatch sau; (2) fixture telegram/a: delivery_part[0].state = sent kèm provider_message_id, delivery_part[1].state = unknown, delivery_attempt = 2, telegram.sendMessage = 2 (sự kiện 6 không sinh lời gọi thứ ba); (3) fixture telegram/c: hết telegram_send_attempts = 4 ⇒ delivery.state = failed, hàng report và hàng run giống hệt trước/sau (so tuple SELECT), và KHÔNG statement INSERT/UPDATE/DELETE nào chạm bảng report hay run (đo bằng before_cursor_execute); (4) fixture reporting/c: payload của hai lần thử bằng nhau từng byte sau khi tag_config_version_id đổi; (5) fixture telegram/d và e: 0 lời gọi, 0 attempt, delivery.state = cancelled; (6) recovery/a: RESTORE_UNVERIFIED và 0 lời gọi khi storage.health = recovery_required, intent generation cũ không đủ điều kiện; (7) SC49: FE-24 và FE-34 trả FORBIDDEN_EDGE; (8) thứ tự: transport đọc DB TRONG lúc gửi và thấy đúng 1 hàng delivery_attempt đã commit, 0 receipt.",
+    "expected": "29 test; mỗi oracle ở trên đúng; 2 test xfail có lý do trỏ tới card phụ thuộc chưa land.",
+    "observed": "29 test: 27 pass, 2 xfail (strict), 0 fail, 0 error, exit code 0. Toàn bộ suite của repo sau khi thêm gói này: 828 test, 0 fail, 0 error, 11 skipped/xfail; alembic get_heads() = ['0009_tc_telegram_unknown_delivery'] (đúng MỘT head); ruff check + ruff format --check sạch; mypy --strict (files = server/app) 'Success: no issues found in 49 source files'."
+  },
+  "result": "STALE",
+  "stale_reason": "Superseded by EV-E1-02-tc-telegram-unknown-delivery (evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json) under PKT-TC-DELIVERY-FIX1. Hai đầu vào của bản ghi này đã đổi byte sau khi nó được ghi: server/app/telegram/ingress.py (PKT-TC-TGAUTH-FIX1 cho TelegramSender.send_message trả `str`) và tests/integration/test_multipart_partial_receipt.py (xfail CR-TC-DELIVERY-09 thay bằng assertion thật). Quy tắc STALE đọc BYTE: bản ghi cũ vẫn đúng với những byte nó đã chạy trên, nhưng nó không còn mô tả cây làm việc hiện tại và KHÔNG được dùng làm bằng chứng cho nó.",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 29,
+    "not_checked_vi": [
+      "KHÔNG có lời gọi Telegram Bot API thật. telegram.send_payload là một transport ghi lại trong tiến trình; AC-14 mức E3 nằm ngoài card này và vẫn NOT_RUN.",
+      "Nhánh multipart phụ thuộc parse_mode, inline keyboard hoặc callback_data KHÔNG được hiện thực và KHÔNG được kiểm: ba dữ kiện ấy còn KC ở contracts/telegram/delivery.md §3.4. Ghi NOT_RUN (BLOCKED_DEPENDENCY CR-PC07-04). Nút Save của §3.1 mục 3 và §8 vì vậy chưa tồn tại.",
+      "Đơn vị đếm 4096 (ký tự Unicode hay đơn vị mã UTF-16) chưa có nguồn; code áp giới hạn lên GIÁ TRỊ LỚN HƠN của hai cách đọc, nhưng điều đó KHÔNG chứng minh cách Telegram thật sự đếm.",
+      "Bảng report và bảng run KHÔNG tồn tại trong schema (TC-report-coverage-publish-cas và TC-scheduler-lease-claim chưa land). Test dựng bảng thế chỗ ba/hai cột, có nhãn rõ; oracle 'hash report không đổi' vì vậy đo trên hàng thế chỗ CỘNG một phép đo cấu trúc (không statement ghi nào chạm hai bảng đó).",
+      "backup.reconcile_after_restore chưa tồn tại: bảy mệnh đề của reconciliation_complete và ca fixture recovery/j (báo đúng mệnh đề 4 và 7 chưa đạt) là xfail strict, KHÔNG phải pass.",
+      "telegram.send_payload chưa có nửa RESPONSE: TelegramSender.send_message của TC-telegram-linking-auth trả None, nên provider_message_id và phân loại lỗi chưa đi qua seam thật — xfail strict.",
+      "Sender lease là CAS trên outbox_intent.dispatch_state cộng epoch trong bộ nhớ tiến trình. Nó KHÔNG chứng minh loại trừ giữa hai TIẾN TRÌNH khác nhau qua một bản ghi lease bền vững; entities.yaml không khai bảng nào cho việc đó.",
+      "Không có bản ghi bền vững cho quyết định của operator (delivery.decide_unknown): idempotency được suy ra từ máy trạng thái, nên bằng chứng 'người đã chấp nhận nguy cơ trùng' KHÔNG bền vững.",
+      "Tự kiểm (SELF_VALIDATION). Không audit độc lập nào chạy trên gói này."
+    ],
+    "uncertainty_vi": "Ba dữ kiện định dạng Telegram còn KC, nên phần digest có nút Save và định dạng chưa hiện thực được; và vì Telegram không nhận idempotency key của client, KHÔNG bằng chứng nội bộ nào chứng minh người nhận không thấy tin trùng — chỉ chứng minh hệ thống không tự gửi lần hai.",
+    "unresolved_issue_refs": [
+      "CR-PC07-04",
+      "CR-TC-DELIVERY-01",
+      "CR-TC-DELIVERY-02",
+      "CR-TC-DELIVERY-03",
+      "CR-TC-DELIVERY-04",
+      "CR-TC-DELIVERY-05",
+      "CR-TC-DELIVERY-06",
+      "CR-TC-DELIVERY-07",
+      "CR-TC-DELIVERY-08",
+      "CR-TC-DELIVERY-09",
+      "REQ-A6"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "contracts/state/delivery.yaml",
+      "contracts/telegram/delivery.md",
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/retry-policy.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml",
+      "contracts/modules.yaml",
+      "acceptance/fixtures/telegram/a-multipart-part2-unknown-no-resend.json",
+      "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json",
+      "acceptance/fixtures/telegram/c-permanent-failure-report-intact.json",
+      "acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json",
+      "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json",
+      "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json",
+      "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json",
+      "server/app/delivery/service.py",
+      "server/app/delivery/parts.py",
+      "server/app/delivery/outbox.py",
+      "server/app/delivery/router.py",
+      "server/migrations/versions/0009_tc_telegram_unknown_delivery.py"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "Chống đỡ cho: sáu operation delivery.* tồn tại, chạy trên schema thật, và tám oracle ở trường `oracle` đo được trên fixture đã pin. Trần của CARD là IMPLEMENTATION_VERIFIED, nhưng một bản ghi SELF_VALIDATION không chống đỡ nhãn đó (evidence/manifest.schema.json §x-maximum-claim-by-review-type): cần một audit độc lập trên candidate đã freeze.",
+    "not_established_vi": [
+      "Gửi Telegram thật hoạt động — không lời gọi Bot API nào đã chạy (E3 NOT_RUN).",
+      "Người nhận không bao giờ thấy tin trùng — AMD-B03 nói rõ điều này KHÔNG được bảo đảm.",
+      "Nhánh multipart có nút Save / parse mode — chưa hiện thực, ba dữ kiện còn KC.",
+      "Khóa dispatcher mở lại đúng sau restore — backup.reconcile_after_restore chưa tồn tại.",
+      "Loại trừ hai tiến trình bằng một lease bền vững — chưa có entity cho nó.",
+      "Hợp đồng report/run được tôn trọng ở mức bảng thật — hai bảng ấy chưa tồn tại."
+    ]
+  }
+}

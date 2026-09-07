@@ -33,7 +33,18 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > Vòng bốn ở `precode/owner-decisions-04.md` — `OD-20260907-04` (authority `AUTH-OWNER-20260907-05`): đóng nốt
 > hai mục mà vòng ba để mở — cổng probe `§6` mục 2–4, và một quyền mạng hẹp một lần để đọc tài liệu chính thức
 > phục vụ `REQ-A6` (**không** giải `REQ-A6`).
-> Biên bản này **không** bị chúng thay thế; **bốn** biên bản cộng dồn.
+> Vòng năm ở `precode/owner-decisions-05.md` — `OD-20260908-05` (authority `AUTH-OWNER-20260908-06`,
+> 2026-09-08): **ủy quyền nghiên cứu** `REQ-OQ03` (không giải nó) và cấp quyền mạng hẹp chỉ-đọc-tài-liệu
+> `core.telegram.org` cho `CR-PC07-04`. Lựa chọn model cụ thể là một biên bản **riêng**, `OD-20260908-06`.
+> Vòng bảy và vòng tám ở `precode/owner-decisions-07.md` và `-08.md` — `OD-20260908-07`
+> (authority `AUTH-OWNER-20260908-08`: nới quyền tìm dữ kiện Telegram sang WebSearch; chốt rằng **Owner tự
+> ký** `REQ-A5`) và `OD-20260908-08` (authority `AUTH-OWNER-20260908-09`: Owner **đích thân ký** `REQ-A5`
+> cho Anthropic, chấp nhận tường minh bảo đảm `TC-A5-01`). Hai file đó là **bản ghi song hành theo quy ước**;
+> hiệu lực thực chất nằm ở `decision-register.md` §8.14.3 và §8.15.1.
+> Vòng chín ở `precode/owner-decisions-09.md` — `OD-20260908-09` (authority `AUTH-OWNER-20260908-10`,
+> 2026-09-08): **thay** điều kiện khởi động Giai đoạn 5 của vòng năm (từ *"năm dữ kiện land"* — chưa bao giờ
+> thỏa — thành **khởi động có phạm vi, chỉ văn bản thuần**). Nó **không** giải ba dữ kiện Telegram còn lại.
+> Biên bản này **không** bị chúng thay thế; các biên bản **cộng dồn** (`OD-20260907-01` … `OD-20260908-09`).
 
 ## 1. Định danh
 

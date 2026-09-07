@@ -1790,6 +1790,9 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
         "`evidence/runs/**` is walked separately for this rule (it is excluded from `files_scanned` "
         "by F-A2R1-11, which is why F-A3R3-01 found the oracle describing a tree the loop never "
         "read) and is examined in STRUCTURED claim/status fields only, `supports_label` included. "
+        "A record's `supports_label` inside an evidence tree is exempt from the ratified-vocabulary "
+        "and four-scope legs (it says what a RUN supports, not what a FILE is) but NOT from the "
+        "above-CONTRACT_READY cap. "
         "The citation is checked per FILE, not per record — see the notes below. Structured claim "
         "fields are read in `.yaml`/`.json` AND in Markdown front matter (F-A3R4-01). "
         "`agent-tasks/` is NOT scanned by this tool; the cards there use "
@@ -1848,11 +1851,22 @@ def check_forbidden_strings(repo: Repo, idx: Index) -> None:
                 if v == "TBD":
                     c.fail(rel, "value TBD is forbidden (baseline §3: no vagueness)", at=path)
                 claim_label_violation(c, repo, rel, path, v)
-                if v in ratified_words and not (has_rat or under_precode
-                                                or node in ratified_nodes):
+                # A RECORD's `supports_label` says "this run supports a claim up to X". A
+                # FILE's `claim_ceiling` says "this file IS X". The ratified-vocabulary and
+                # four-scope rules police the second; applying them to the first conflates two
+                # different assertions — and the manifest schema already caps a SELF_VALIDATION
+                # record at exactly CONTRACT_READY, so the value is legitimate there by
+                # construction. Found by this check itself when the Phase-3 workers became the
+                # first to use that cap (PKT-PC09-P3). The cap that matters is untouched:
+                # anything ABOVE CONTRACT_READY in these trees still goes through
+                # `claim_label_violation` above, citation rule and all.
+                record_label = (leaf in RECORD_CLAIM_KEYS
+                                and in_evidence_record_tree(rel))
+                if v in ratified_words and not record_label and not (
+                        has_rat or under_precode or node in ratified_nodes):
                     c.fail(rel, "uses ratified vocabulary %r without `ratification_ref: %s`"
                            % (v, RATIFICATION_ID), at=path)
-                if v == "CONTRACT_READY" and not under_precode:
+                if v == "CONTRACT_READY" and not under_precode and not record_label:
                     if not contract_ready_eligible(repo, rel):
                         c.fail(rel, "claims CONTRACT_READY but this file is outside the four "
                                     "scopes the Owner ratified (OD-20260907-01)", at=path)
@@ -2871,6 +2885,131 @@ def check_generated_matches(repo: Repo, idx: Index) -> None:
 
 
 # --------------------------------------------------------------------------------------
+# CHECK 20 — every §2 fixture of an IMPLEMENTED card is accounted for
+#
+# Third recurrence of one defect class: `F-A3R1-09` (Phase 1), `F-A3-P2-01` (Phase 2) and
+# `F-A3-P3-03` (Phase 3) are all "a card's read-set fixture is neither exercised by a test nor
+# recorded NOT_RUN". Three rounds of an auditor finding the same shape by hand is the signal
+# that it should stop being a per-round finding and become a standing check (Coordinator ruling,
+# post-A3-P3-R1 fix wave).
+#
+# The rule, stated so it can be argued with:
+#   * A card is IMPLEMENTED when `evidence/runs/<card>-E1-*.json` exists. Cards nobody has built
+#     yet are out of scope — their fixtures cannot be exercised and saying so every run would be
+#     noise, not signal.
+#   * For an implemented card, every `acceptance/fixtures/**.json` path named in its `§2. Read
+#     set` must be EITHER referenced by some file under `tests/`, OR named in that card's handoff
+#     in a paragraph that also says `NOT_RUN`.
+#   * READMEs are excluded: a directory README is documentation, not an oracle.
+#
+# What this proves: no fixture a card was told to read disappears silently. What it does NOT
+# prove: that the test which references a fixture actually asserts anything with it. A reference
+# is presence, not coverage — that judgement stays with the reviewer, and this check says so
+# rather than letting a clean run be read as "every fixture is covered".
+# --------------------------------------------------------------------------------------
+
+CARD_DIR = "agent-tasks"
+FIXTURE_IN_PROSE = re.compile(r"acceptance/fixtures/[A-Za-z0-9_./-]+\.json")
+
+
+def card_read_set_fixtures(repo: Repo, card_path: str) -> "list[str]":
+    """Fixture paths named in a card's `§2. Read set`, READMEs excluded."""
+    try:
+        with open(card_path, "r", encoding="utf-8") as fh:
+            text = fh.read()
+    except Exception:
+        return []
+    m = re.search(r"^##\s*§2\..*?$(.*?)^##\s*§3\.", text, re.S | re.M)
+    if not m:
+        return []
+    return sorted({p for p in FIXTURE_IN_PROSE.findall(m.group(1))
+                   if not p.endswith("README.md")})
+
+
+def paragraphs_naming(text: str, needle: str) -> "list[str]":
+    """Blank-line-separated blocks of `text` that mention `needle`."""
+    return [b for b in re.split(r"\n\s*\n", text) if needle in b]
+
+
+def check_card_fixture_accounting(repo: Repo, idx: Index) -> None:
+    c = new_check(
+        "E0-20-card-fixture-accounting",
+        "Every §2 fixture of an implemented card is exercised by a test or recorded NOT_RUN",
+        "A card counts as IMPLEMENTED when `evidence/runs/<card>-E1-*.json` exists. For each such "
+        "card, every `acceptance/fixtures/**.json` named in its `§2. Read set` (READMEs excluded) "
+        "must be EITHER referenced by a file under `tests/`, OR named in "
+        "`evidence/handoffs/<card>-handoff.md` in a paragraph that also contains `NOT_RUN`. "
+        "Silence is the defect this catches, not absence of coverage: `F-A3R1-09`, `F-A3-P2-01` "
+        "and `F-A3-P3-03` are the same finding three rounds running, which is why it is now a "
+        "check instead of a reviewer's memory. A reference is PRESENCE, not coverage — this "
+        "check cannot tell whether the test that names a fixture asserts anything with it, and a "
+        "clean result must not be read as 'every fixture is covered'.",
+    )
+    cards_dir = os.path.join(repo.root, CARD_DIR)
+    runs_dir = os.path.join(repo.root, "evidence", "runs")
+    if not os.path.isdir(cards_dir) or not os.path.isdir(runs_dir):
+        c.blocked("agent-tasks/ or evidence/runs/ is absent; the check refuses to report a clean "
+                  "PASS on a subject it cannot see")
+        return
+
+    runs = os.listdir(runs_dir)
+    # every text file under tests/, read once
+    test_blob = []
+    tests_root = os.path.join(repo.root, "tests")
+    for dirpath, dirnames, filenames in os.walk(tests_root):
+        dirnames[:] = [d for d in dirnames if d not in ("__pycache__", ".pytest_cache")]
+        for fn in filenames:
+            if fn.endswith((".pyc", ".json")):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), "r", encoding="utf-8") as fh:
+                    test_blob.append(fh.read())
+            except Exception:
+                continue
+    tests_text = "\n".join(test_blob)
+
+    implemented, skipped = [], []
+    for fn in sorted(os.listdir(cards_dir)):
+        if not (fn.startswith("TC-") and fn.endswith(".md")):
+            continue
+        card = fn[:-3]
+        if not any(r.startswith(card + "-E1-") and r.endswith(".json") for r in runs):
+            skipped.append(card)
+            continue
+        implemented.append(card)
+        handoff = os.path.join(repo.root, "evidence", "handoffs", card + "-handoff.md")
+        try:
+            with open(handoff, "r", encoding="utf-8") as fh:
+                handoff_text = fh.read()
+        except Exception:
+            handoff_text = ""
+            c.fail("agent-tasks/%s" % fn,
+                   "card is implemented but %s is unreadable, so no fixture of it can be "
+                   "accounted for" % os.path.relpath(handoff, repo.root))
+        for fixture in card_read_set_fixtures(repo, os.path.join(cards_dir, fn)):
+            c.checked += 1
+            base = os.path.basename(fixture)[:-5]
+            if fixture in tests_text or base in tests_text:
+                continue
+            blocks = paragraphs_naming(handoff_text, fixture) or \
+                paragraphs_naming(handoff_text, base)
+            if any("NOT_RUN" in b for b in blocks):
+                continue
+            if blocks:
+                c.fail("agent-tasks/%s" % fn,
+                       "§2 fixture %s is named in the handoff but not as NOT_RUN, and no test "
+                       "references it: a mention is not a disposition" % fixture)
+            else:
+                c.fail("agent-tasks/%s" % fn,
+                       "§2 fixture %s is referenced by no test and named nowhere in the card's "
+                       "handoff — the silence F-A3R1-09 / F-A3-P2-01 / F-A3-P3-03 each caught "
+                       "by hand" % fixture)
+    c.note("%d card(s) implemented and checked: %s. %d card(s) not implemented and therefore out "
+           "of scope: %s."
+           % (len(implemented), ", ".join(implemented) or "none",
+              len(skipped), ", ".join(skipped) or "none"))
+
+# --------------------------------------------------------------------------------------
 # Runner
 # --------------------------------------------------------------------------------------
 
@@ -2908,6 +3047,7 @@ def main(argv=None) -> int:
     check_purge_sets(repo, idx)
     check_declared_deviations(repo, idx)
     check_generated_matches(repo, idx)
+    check_card_fixture_accounting(repo, idx)
 
     for _c in CHECKS:
         _c.finalize()

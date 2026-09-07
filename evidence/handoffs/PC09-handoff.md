@@ -1988,3 +1988,171 @@ vế nào không đo được).
 - **lease_released_at (UTC):** 2026-09-08T00:45Z. `LEASE-PC09-e3` nhả tại đây.
 - **Claim:** `DRAFT_FOR_REVIEW`. Lượt này **không** nâng nhãn của bất kỳ scenario hay card nào —
   nó chỉ thay một khoảng trống bằng một phép đo.
+
+---
+
+# ADDENDUM — `PKT-PC09-P3` (Giai đoạn 3 (M3) + Giai đoạn 5 (M6 plain text))
+
+## U1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P3` · authority `AUTH-COORD-PC09-P3` (cha `AUTH-OWNER-20260908-10`) · lease `LEASE-PC09-e4` |
+| candidate | `FC-P3` epoch 2, **545 entry**, `manifest_sha256 41c475065793ee4ca5993a5ab1f98657fc23d617212ca1452475a9c90f76556a` |
+| status | **DONE_WITH_CONCERNS** — mọi mục của packet đã làm; một mục vượt phạm vi grant được khai ở U7 |
+| next actor | `Coordinator` · `lease_released_at` **2026-09-08T04:05Z** |
+
+Cổng chờ được tôn trọng: **không byte nào của repo được ghi** trước khi
+`…/scratchpad/audits/A3-P3-R2-report.md` tồn tại. Trong lúc chờ, tôi đọc R1, sáu handoff, sáu
+manifest, rulings và `owner-decisions-05…09`, rồi **dựng sẵn** `E0-20` cùng bộ đột biến của nó
+trong scratch — dựng trong scratch không phải ghi vào candidate.
+
+## U2. Sáu card, và tại sao Giai đoạn này chuyển được nhãn scenario
+
+Sáu manifest **mới nhất** được đăng ký (năm bản phát lại sau đợt sửa + `TC-saved-snapshot`);
+năm bản cũ mang `result: STALE` và **được giữ**, không xóa. Tôi băm lại từng cặp
+`{path, sha256}` của cả 24 manifest: mọi bản mới nhất **0 pin lệch**.
+
+**Sáu scenario chuyển nhãn — lần đầu một giai đoạn làm con số này nhúc nhích đáng kể:**
+`SC48` → `PASS (E1)`; `SC12`, `SC13`, `SC18`, `SC28`, `SC47` → `PASS (E2)`.
+
+Lý do chuyển được lần này mà Giai đoạn 2 thì không, và nó là **cấu trúc**: các bảng mà oracle
+đếm — `saved_item`, `saved_snapshot`, `telegram_link`, `telegram_link_attempt`, `analysis`,
+`analysis_attempt` — **nay tồn tại**, nên phép đếm không còn chạm vào chỗ trống. Giai đoạn 2
+viết code phía client; Giai đoạn 3/5 viết cả hai phía của những gì nó tuyên bố.
+
+Ba phép đo tôi thấy đáng gọi tên vì chúng khó làm giả:
+
+* `SC12` — `content_hash` được **tính lại từ bytes trên đĩa** ở bốn mốc, và khớp hai chuỗi hex
+  tính **bên ngoài repo**. "Bằng chính nó" không đủ để pass.
+* `SC13` — phép kiểm nghiêm nhất là **bịt mắt** cả hai lần đọc "đã lưu chưa" rồi gọi lại: vẫn
+  không có hàng thứ hai, vì UNIQUE partial là trọng tài chứ không phải một phép đọc trước ghi.
+* `SC18` — có một test riêng cho đúng mệnh đề "**204 kể cả khi im lặng**", vì một status phân
+  biệt được sẽ tự xác nhận bot tồn tại.
+
+**19 dòng giữ `NOT_RUN`, bốn lý do khác nhau, không gộp làm một** (chi tiết `review.md` §16.4):
+cấp bằng chứng chưa mở (6, E3/E4); bảng `report`/`report_item`/`coverage_window`/
+`pending_item_ledger` chưa tồn tại (8); cố ý không hiện thực (3); hợp đồng còn `KC` hoặc đang
+tranh chấp (2). Card delivery chạy trên một **bảng `report` giả ba cột** và khai thẳng — nên
+mọi vế đếm `report.content_hash` chưa đo được trên bảng thật.
+
+**Phạm vi được chứng minh bằng máy:** parse `scenarios.yaml` trước và sau, so từng scenario —
+**đúng 25 dòng đổi**, chính 25 dòng sáu card khai chạm. Không dòng nào ngoài chúng bị chạm.
+
+## U3. `E0-20-card-fixture-accounting` — quy tắc thường trực thay cho lần thứ tư
+
+`F-A3R1-09` (Giai đoạn 1) → `F-A3-P2-01` (Giai đoạn 2) → `F-A3-P3-03` (Giai đoạn 3): **ba lượt,
+cùng một hình dạng** — một fixture read-set của card không được chạy cũng không được ghi
+`NOT_RUN`. Ba lần một auditor tìm ra bằng tay là tín hiệu rằng nó nên thôi làm finding từng
+vòng, và ruling nói đúng như vậy.
+
+Quy tắc, viết ra để có thể phản bác: một card được coi là **ĐÃ HIỆN THỰC** khi
+`evidence/runs/<card>-E1-*.json` tồn tại; với mỗi card như vậy, mọi `acceptance/fixtures/**.json`
+mà `§2. Read set` nêu tên phải **hoặc** được một file dưới `tests/` tham chiếu, **hoặc** được
+nêu trong handoff của chính card **trong một đoạn cũng chứa `NOT_RUN`**. Card chưa ai xây thì
+ngoài phạm vi — fixture của chúng không thể được chạy, và nói điều đó mỗi lượt là nhiễu.
+
+**Điều check này KHÔNG chứng minh, và oracle của nó nói ra:** một tham chiếu là **sự có mặt**,
+không phải độ phủ. Nó không biết test nhắc tên một fixture có khẳng định gì với nó hay không.
+Một kết quả sạch **không** được đọc là "mọi fixture đã được phủ".
+
+Kết quả trên cây hiện tại: **PASS, 90 mục, 0 vi phạm**; 13 card đã hiện thực được kiểm, 6 card
+ngoài phạm vi được đếm và in tên. Mutation **5/5** (bảng ở `evidence/tools/README.md` §5n), gồm
+hai đối chứng dương. Hàng đáng nói nhất là hàng 2: một handoff **nhắc tên** fixture mà không
+cho disposition vẫn **FAIL** — nếu check chỉ hỏi "có được nhắc tới không", nó sẽ cho qua đúng
+thứ ba vòng audit đã bắt, chỉ là sự im lặng được thay bằng một câu vô thưởng vô phạt.
+
+## U4. Check của tôi bắt lỗi của chính tôi, trong cùng gói
+
+Lần chạy đóng gói đầu tiên **FAIL**: `E0-12` báo 8 vi phạm trên `evidence/index.json`, tất cả ở
+`records[*].claim.supports_label = "CONTRACT_READY"` của bốn manifest Giai đoạn 3/5.
+
+Tôi dừng lại để hỏi cái nào sai — quy tắc hay việc đăng ký — và kết luận là **quy tắc quá
+rộng**. Hai mệnh đề khác nhau bị gộp: `claim_ceiling` của một FILE nói *"file này LÀ X"*;
+`supports_label` của một BẢN GHI nói *"lần chạy này chống đỡ được tới X"*. Luật từ vựng phê
+chuẩn và luật bốn phạm vi canh mệnh đề thứ nhất; áp chúng cho mệnh đề thứ hai là conflate — và
+`evidence/manifest.schema.json` **đã** chặn một bản ghi `SELF_VALIDATION` ở đúng
+`CONTRACT_READY`, nên giá trị đó hợp lệ ở đó **theo cấu trúc**.
+
+Bản sửa **thu hẹp** đúng hai vế đó cho `supports_label` trong cây bản ghi bằng chứng, và
+**không đụng** vế quan trọng: mọi thứ **trên** `CONTRACT_READY` vẫn đi qua
+`claim_label_violation`, kèm luật trích dẫn `CR-P0-02`. Ba hàng đột biến mới chứng minh cả hai
+chiều: bản ghi khai `CONTRACT_READY` **qua**; cùng bản ghi nâng lên `INTEGRATION_VERIFIED`
+**FAIL**; một file **hợp đồng** khai `CONTRACT_READY` ngoài bốn phạm vi phê chuẩn vẫn **FAIL**.
+
+Ghi lại vì đây là lần đầu Worker Giai đoạn 3 dùng trần `CONTRACT_READY` của schema — không phải
+hồi quy tôi gây ra, mà là một tương tác chưa từng xảy ra, và nó chỉ lộ ra vì cửa kiểm chạy.
+
+## U5. Cổng — vẫn không cổng nào chuyển, và một lý do bị **thay** chứ không **mất**
+
+`G5` `PARTIALLY_MET` · `SP1` `NOT_MET` · `G6` `NOT_MET`. Phép đo `G6`: **10/48 · 0/5 · 0/2**.
+
+**`REQ-OQ03` nay đã được Owner trả lời** (`OD-20260908-05…09`) và không còn chặn `G5`. Nhưng nó
+được **thay bằng một lý do khác**, không phải bằng không có lý do: cả hai adapter AI ship
+`enabled: false` trên căn cứ **cô lập** (ISO-03/ISO-05), không phải điều khoản. **Một provider
+đã được chọn không phải là một provider đã được chứng minh chạy được.**
+
+Hai điều tôi giữ đúng chữ theo yêu cầu của packet:
+
+* **`MOD-ai-adapter` có code KHÔNG phải là một cổng MET.** Mười ba module nay có code; ba trong
+  số đó (`ai-adapter` tắt, `telegram-adapter` chặn cứng, `research-connector` không
+  `CONTRACT_READY`) có code mà không chuyển cổng nào.
+* **`REQ-AC16` là `BLOCKED`, không phải `FAIL`.** Nó chờ một probe với binary thật, không chờ
+  một bản sửa — và Giai đoạn 3/5 không đổi điều đó.
+
+## U6. CR cần **Owner** quyết định
+
+Sáu Worker phát ra 42 CR. Phần lớn là mâu thuẫn hợp đồng thuộc PC01–PC10. **Ba** cái cần chính
+Owner, vì chúng hỏi về **sản phẩm** chứ không về tính nhất quán:
+
+| CR | Câu hỏi cho Owner | Hiện đang làm gì |
+| --- | --- | --- |
+| `CR-TC-SAVED-04` | **Nhãn "thiếu summary".** `snapshot_content.summary` là `required` với ba trường `minLength: 1`, nhưng `analysis_id_at_save` được phép NULL "khi target chưa có analysis valid". Hai điều đó không thể cùng đúng trừ khi có **câu chữ cho nhãn thiếu** của B16 — không hợp đồng nào cấp câu chữ đó. Owner chốt câu chữ, **hoặc** chốt rằng không lưu được target chưa phân tích | `VALIDATION_ERROR`, **0 hàng ghi** — hướng an toàn, không bịa nội dung vào một hàng bất biến |
+| `CR-TC-TGAUTH-02` | **Trigger `/save <report_item_id>`.** Hợp đồng chỉ cho `CMD-save` một trigger duy nhất là nút callback, mà phạm vi plain-text (`OD-20260908-09`) không dựng được khi `CR-PC07-04` còn mở. Card ánh xạ một trigger gõ tay ở tầng adapter để phạm vi plain-text có đường Save nào đó. Owner xác nhận hoặc thay chuỗi trigger khi đường callback được mở | thêm **không** lệnh nào và đổi **không** hợp đồng nào |
+| `CR-TC-TGAUTH-04` | **Chat đã liên kết gõ sai lệnh: im lặng hay một câu ngắn?** Fixture sweep nói ba cạnh `UNAUTHORIZED_COMMAND` **không phản hồi gì** (dẫn `REQ-S11.3-02`/`AC-18`); `commands.yaml` nói một chat **đã liên kết** nhận "một câu ngắn nêu ba lệnh khả dụng". `REQ-S11.3-02`/`AC-18` là luật về chat **chưa** liên kết, nên hai văn bản có thể đang nói về hai tình huống khác nhau — nhưng chỉ Owner chốt được sản phẩm cư xử thế nào | theo `commands.yaml` (hợp đồng sở hữu ngữ nghĩa lệnh), ghi `UNAUTHORIZED_COMMAND` làm mã audit, **0 mutation** |
+
+Hệ quả đo được: `CR-TC-TGAUTH-04` là một trong hai lý do `SC49` giữ `NOT_RUN` — một oracle đang
+tranh chấp không thể chống đỡ một PASS.
+
+## U7. Một mục vượt câu chữ của grant, khai ra thay vì làm lặng
+
+Write set của packet **không** liệt kê `evidence/runs/`. Nhưng packet bảo "run e0", và một lần
+chạy E0 **là** một file trong thư mục đó — `evidence/index.json` không thể trích một run không
+tồn tại. Tôi đọc đó là quyền CREATE ngầm (mọi lease PC09 trước đều cấp nó tường minh) và đã
+tạo ba file: `E0-…205729Z.json`, `numbers-…`, `cr_summary-…`. Nếu Coordinator đọc khác, ba file
+đó cần được gỡ và `e0_run_ref` của index trỏ về run trước.
+
+## U8. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P3-01` | `e0_check.py --json-out evidence/runs/E0-20260907T205729Z.json` | **26 check · 26 PASS · 0 FAIL · 0 vi phạm**, exit 0 |
+| `EV-PC09-P3-02` | `selftest_p3.py` (5 đột biến `E0-20` + 3 đột biến `E0-12`, gồm 4 đối chứng dương) | **8/8 đúng đặc tả** |
+| `EV-PC09-P3-03` | `selftest_p2` / `selftest_fix1` / `selftest_p1` chạy lại | **6/6**, **12/12**, **11/11** — không quy tắc cũ nào bị hỏng |
+| `EV-PC09-P3-04` | `validate_index.py` | **94 record, 0 invalid** |
+| `EV-PC09-P3-05` | băm lại từng pin của 24 manifest | mọi bản mới nhất **0 pin lệch** |
+| `EV-PC09-P3-06` | parse `scenarios.yaml` trước/sau | **đúng 25 dòng đổi**, 6 chuyển nhãn |
+| `EV-PC09-P3-07` | `gate.py` | **CONSISTENT** |
+
+Tất cả `SELF_VALIDATION`, chạy bằng công cụ tôi vừa sửa.
+
+## U9. Mối lo còn lại
+
+1. **`E0-20` chưa được ai độc lập kiểm.** 5/5 là tự kiểm bằng check tôi vừa viết; bản thu hẹp
+   `E0-12` ở U4 cũng vậy. Cả hai `FIX_PROPOSED`.
+2. **`SC49` mang một mâu thuẫn hợp đồng chưa giải** (`CR-TC-TGAUTH-04`) — nó cần Owner, không
+   cần thêm test.
+3. **Ba dữ kiện `delivery.md` §3.4 vẫn `KC`**; `MOD-telegram-adapter` chặn cứng; `SC46` và mọi
+   đường callback `NOT_RUN`.
+4. **Bốn file của `F-A3-P3-01`**: auditor **từ chối** tự khẳng định chúng chỉ đổi định dạng, và
+   tôi không khẳng định thay họ.
+5. **`TC-A5-01` phủ điều khoản Anthropic**; chính sách của arXiv/OpenAlex/X về xử lý lại nội
+   dung của họ vẫn là câu hỏi riêng, chưa trả lời.
+6. **SP1 chưa chạy; E3/E4 bằng 0 ở mọi nhóm.** `NOT_READY_FOR_PRODUCT_CODE` giữ nguyên cho hệ
+   thống. 38/48 scenario cấp ≤ E2 vẫn `NOT_RUN`.
+
+## U10. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-08T04:05Z. `LEASE-PC09-e4` nhả tại đây.
+- **Claim:** `DRAFT_FOR_REVIEW`. Sáu nhãn `IMPLEMENTATION_VERIFIED` thuộc `A3-P3-R2` §4, có
+  phạm vi từng card; tôi chỉ chép, kèm hash của bản gốc.

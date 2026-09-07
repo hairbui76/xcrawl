@@ -425,6 +425,13 @@ scenarios:
       Bộ đếm lời gọi provider là oracle số học; adapter giả đủ để chứng minh delta = 0.
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy: `test_re_adding_a_tag_enqueues_nothing_and_calls_no_provider` và
+      `test_a_tag_change_is_not_a_reason_a_reanalysis_can_be_asked_for` — delta bộ đếm lời gọi
+      provider bằng **0** và `COUNT(analysis valid WHERE analysis_key=K) = 1` trước và sau.
+      KHÔNG đo được vế thứ ba: `analysis.id` mà `report_item` trỏ tới ở kỳ n+1 — bảng
+      `report_item` chưa tồn tại (`TC-report-coverage-publish-cas`, Giai đoạn 4). Hai phần ba
+      oracle đã đo; một phần ba chạm bảng chưa có.
 
   - id: SC07
     title_vi: "Năm post từ năm account cộng thread của tác giả cùng dẫn một arXiv ID → MỘT mục công trình"
@@ -525,6 +532,10 @@ scenarios:
       Toàn bộ là transaction và truy vấn; crash inject được; CAS kiểm bằng hai tiến trình giả.
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Giai đoạn 3/5 không thêm gì cho dòng này. `coverage_window`, `report` và `report_build_id`
+      đều chưa tồn tại, nên cả bốn kỳ của scenario — kỳ rỗng, hai publisher tranh CAS, builder
+      crash — chưa có bảng nào để quan sát.
     notes_vi: >
       Lựa chọn (b) cho kỳ rỗng (giữ hàng `report(status='aborted')` mang `report_build_id` làm
       mỏ neo replay) là quyết định PROVISIONAL của PC04 TRÁI với khuyến nghị (a) của Coordinator;
@@ -636,6 +647,11 @@ scenarios:
       trên desktop, điện thoại và Telegram thật (E4), theo rubric `contracts/ai/grounding.md` §6.
       Giới hạn định dạng Telegram vẫn `KC` (CR-PC07-04) nên phần render Telegram chưa chốt được.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E4** (review nội dung qua nhiều kỳ), nên dòng này không thể
+      rời `NOT_RUN` ở giai đoạn hiện tại bất kể code. Phần đã chạy:
+      `test_analysis_once_per_key.py` chứng minh một mục có `analysis` hợp lệ và các trường của
+      nó; "tự đủ trên cả app và Telegram" là phán đoán của người đọc.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`ui/sc10-…`, ruling R5-02): nó khẳng định cùng một
       `analysis_id` và cùng `generation_number` trên cả hai kênh, cộng đủ năm trường của REQ-D20.
@@ -692,13 +708,11 @@ scenarios:
       ≥ 3 kỳ) — E4, `NOT_RUN`.
     status: NOT_RUN
     partial_evidence_vi: >
-      `evidence_level_required` là **E4** và không lượt review nội dung nào đã chạy, nên
-      scenario này KHÔNG thể rời `NOT_RUN` ở giai đoạn hiện tại — quy tắc §14.5 chặn nó ở điều
-      kiện thứ nhất. Phần đã chạy: connector xử lý fixture
-      `collection/h-metadata-unavailable-post-only.json` (nguồn không có gì ⇒ giữ 'chỉ có post',
-      không bịa). Vế thật của oracle — `claim_kind`, `comparator='unknown'`, và groundedness
-      review theo `contracts/ai/grounding.md` §6 — thuộc `MOD-analysis-service` và cần người
-      đọc.
+      `evidence_level_required` là **E4**. Phần đã chạy: adapter từ chối kết quả
+      `source_verified` khi `evidence_level='post_only'` (SV-03) và ép `comparator='unknown'`
+      thay vì bịa baseline — `test_analysis_result_schema.py`,
+      `test_research_metadata_fixtures.py`. Vế còn lại ("trình bày là suy luận") cần
+      groundedness review của người theo `contracts/ai/grounding.md` §6.
 
   - id: SC12
     title_vi: "Save một mục, khởi động lại, bài gốc bị xóa trên X → snapshot còn nguyên và đọc được"
@@ -743,7 +757,22 @@ scenarios:
     needs_live_or_human_vi: >
       Restore THẬT vào môi trường sạch chưa từng chạy (`contracts/ops/backup-restore.md` §5.7);
       chỉ một drill thật mới chứng minh khôi phục được, hash một artifact thì không.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "tests/integration/test_snapshot_survives_delete.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo, và đo lại chứ không so bằng chính nó: `content_hash` được **tính lại
+      từ bytes `payload` trên đĩa** ở bốn mốc — sau khi lưu, sau khi ghi
+      `post.source_deleted_observed_at`, sau khi khởi động lại (engine mới trên cùng file), và
+      sau `VACUUM INTO` + copy sang đường dẫn sạch — và `len(set(...)) == 1`. Rằng phép tính
+      khớp HỢP ĐỒNG được chứng minh riêng: hai fixture dương mang chuỗi hex tính bên ngoài repo
+      và `compute_content_hash` tái lập đúng cả hai. `COUNT(saved_item active WHERE
+      target_key=T) = 1` ở mọi mốc; sau khi xóa `post_work` + `post`, Saved vẫn trả nội dung chứ
+      không trả NOT_FOUND. KHÔNG thiết lập: một drill restore THẬT vào môi trường sạch
+      (`TC-backup-restore-drill`, Giai đoạn 6) — ở đây chỉ có `VACUUM INTO` + copy.
 
   - id: SC13
     title_vi: "Save đồng thời từ app và Telegram, bấm năm lần → đúng MỘT bản ghi, năm phản hồi"
@@ -789,7 +818,24 @@ scenarios:
     needs_live_or_human_vi: >
       Hành vi callback THẬT của Telegram (thứ tự, độ trễ, giới hạn `callback_data`) vẫn `KC` —
       CR-PC07-04; cần một lần đọc tài liệu Bot API và một probe E3.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "tests/integration/test_concurrent_save.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo với **hai card thật nối vào nhau**, không mô phỏng:
+      `CommandPorts.save_create` của `TC-telegram-linking-auth` gọi `save.create` của
+      `TC-saved-snapshot`. Hai luồng đồng thời (app + Telegram) trên một database ⇒ `saved_item`
+      active = 1, `saved_snapshot` = 1, 0 snapshot mồ côi, cả hai bên nhận CÙNG một
+      `saved_item_id`, một bên `created` một bên `already_saved` — tức bên thua nhận lại receipt
+      đã commit, đúng nhánh thứ hai của oracle. Năm lần bấm Telegram ⇒ **1 hàng, 5 phản hồi**.
+      `content_hash` không đổi. Bài kiểm nghiêm nhất: **bịt mắt** cả hai phép đọc "đã lưu chưa"
+      rồi gọi lại — vẫn không có hàng thứ hai, vì UNIQUE partial là trọng tài chứ không phải một
+      phép đọc trước khi ghi. KHÔNG thiết lập: hành vi callback THẬT của Telegram (`CR-PC07-04`,
+      E3), và đồng thời ở mức hai TIẾN TRÌNH — ở đây là hai luồng trong một tiến trình.
 
   - id: SC14
     title_vi: "Telegram gửi lỗi: unknown, multipart và lỗi vĩnh viễn → app giữ report đủ, không gửi lặp tự động"
@@ -841,6 +887,13 @@ scenarios:
       (E3). SRC-PLAN §3.1 đã ghi: `sendMessage` không nhận idempotency key của client, nên UNIQUE
       trong SQLite KHÔNG phải bằng chứng exactly-once ở mạng ngoài.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E3** (một lần gửi THẬT tới Telegram), và **không lời gọi
+      Bot API nào đã xảy ra** ở bất kỳ gói nào. Phần đã chạy rất nhiều và đáng ghi: `unknown`
+      không sinh gửi lại tự động, multipart nhận receipt từng phần, lỗi vĩnh viễn giữ report
+      nguyên vẹn — `test_delivery_unknown_no_retry.py`, `test_multipart_partial_receipt.py`,
+      `test_permanent_failure_report_intact.py`. Nhưng cấp bằng chứng mà scenario đòi chưa đạt
+      được, và ba dữ kiện định dạng của `delivery.md` §3.4 vẫn `KC` (`CR-PC07-04`).
 
   - id: SC15
     title_vi: "Ba run — không có nội dung phù hợp, dừng vì giới hạn, thất bại vì nguồn — hiển thị KHÁC NHAU"
@@ -889,6 +942,10 @@ scenarios:
       "Ba trạng thái hiển thị khác nhau" ở mức người dùng hiểu được cần review giao diện thật
       trên desktop và điện thoại (E4); `screens.yaml` hiện chưa có fixture render.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E4**: "ba trạng thái hiển thị khác nhau" ở mức người dùng
+      hiểu được cần review giao diện thật. Giai đoạn 3/5 không thêm gì cho dòng này; `run` vẫn
+      chưa tồn tại, nên cả ba bộ ba trạng thái cũng chưa đo được.
 
   - id: SC16
     title_vi: "Không có API key nào: cả ba tác vụ AI chạy qua CLI/ACP, embedding local ở server → đợt hoàn tất"
@@ -954,6 +1011,12 @@ scenarios:
       KHÔNG phải `FAIL`** (ADR-0010, CR-PC06-04). REQ-A5 (điều khoản từng nhà) vẫn `KC` và mọi
       adapter mặc định `enabled=false` cho tới khi owner đọc và xác nhận.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E3** (một lượt chạy thật qua CLI/ACP với binary thật). Phần
+      đã chạy: khi không có API key nào, cả hai adapter **từ chối từ registry thật trước khi
+      chạm transport** — A3-P3-R1 §2 tự nạp registry và xác minh thứ tự từ chối thay vì đọc
+      code. `REQ-OQ03` để cả hai adapter `enabled: false`, nên nhánh "đợt hoàn tất qua CLI" chưa
+      từng chạy.
 
   - id: SC17
     title_vi: "Nội dung nguồn là dữ liệu, không phải lệnh: injection, canary secret, yêu cầu gọi tool đều bị chặn"
@@ -1013,6 +1076,12 @@ scenarios:
       minh được bằng probe E3 với binary thật. Tuyên bố được phép là "bán kính thiệt hại bị giới
       hạn và đo được", KHÔNG phải "miễn nhiễm prompt injection" (`grounding.md` §5.3).
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E3** (cô lập THẬT của một adapter CLI/ACP với binary thật).
+      Phần đã chạy và mạnh: `test_injection_canary.py` chứng minh nội dung nguồn được xử lý như
+      dữ liệu — injection bị chặn, yêu cầu gọi tool bị bỏ, và bộ test cố ý **không giữ canary
+      thật nào trong repo**. Vế còn lại là cô lập tiến trình đo trên binary thật, và
+      `tool_definitions_registered = 0` chỉ mới đúng trên adapter đã tắt.
 
   - id: SC18
     title_vi: "Chat ID chưa liên kết → bot không phản hồi gì, không mutation; ngoại lệ hẹp cho đúng định dạng mã"
@@ -1059,7 +1128,21 @@ scenarios:
       Fake update và đếm outbound call là oracle số học; toàn bộ kiểm được offline.
     needs_live_or_human_vi: >
       Secret token webhook và so sánh constant-time cần một endpoint thật để kiểm ở E3 (CR-PC07-03).
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "tests/integration/test_unknown_chat_silent.py"
+      - "tests/contract/test_telegram_command_allowlist.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo. Với các ca (a), (b), (d): outbound tới Telegram = **0**, số hàng
+      nghiệp vụ đổi = **0**, `run.list` calls = 0; và `telegram.receive_update` trả **204 kể cả
+      khi update bị bỏ im lặng** — có test riêng cho đúng mệnh đề đó, vì một status phân biệt
+      được sẽ tự xác nhận bot tồn tại (REQ-S11.3-02). Với ca (c): `COUNT(telegram_link active) =
+      1`. Bộ đếm B09 tăng đúng một đơn vị cho **mỗi chuỗi khớp định dạng** và **không** ghi hàng
+      nào cho thông điệp không khớp — cả hai chiều đều được khẳng định. KHÔNG thiết lập: secret
+      token webhook và so sánh constant-time trên một endpoint thật (`CR-PC07-03`, E3).
 
   # ------------------------------------------------------------------------------------
   # SC19–SC28 — mười scenario bổ sung tối thiểu của SRC-PLAN §13 dòng 505, đúng thứ tự
@@ -1102,6 +1185,12 @@ scenarios:
     mockable_vi: "Hash trước/sau; delivery giả; hoàn toàn offline."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      KHÔNG đo được: `report.content_hash` trước/sau là vế trung tâm, và card delivery chạy trên
+      một **bảng `report` giả ba cột** chứ không phải bảng thật — nó khai điều đó thẳng trong
+      handoff §3. Đã chạy: `delivery_part.payload_hash` được tính từ nội dung đã publish và
+      delivery không tự sinh hàng cho generation mới. Một hash tính trên một bảng thay thế không
+      chứng minh được bất biến của bảng thật.
 
   - id: SC20
     title_vi: "Lease cũ (stale) — hai worker cùng claim, và một worker từ trước backup quay lại sau restore"
@@ -1258,6 +1347,12 @@ scenarios:
     mockable_vi: "Toàn bộ là ledger và transaction; offline."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      KHÔNG đo được: `pending_item_ledger` chưa tồn tại (`MOD-report-service`, Giai đoạn 4), và
+      card analysis đánh dấu đúng nghĩa vụ đó là `xfail(strict=True)` thay vì để service giả vờ
+      đã ghi — `ledger_state()` báo port chưa nối. Nghĩa vụ B04/B17 "mục hết ngân sách không
+      được biến mất khỏi report" vì vậy **chưa** được thiết lập. Đã chạy:
+      `test_a_late_summary_commits_and_touches_no_published_period`.
 
   - id: SC23
     title_vi: "Định danh mâu thuẫn → identity_conflict quarantine, giữ nguyên nguồn, KHÔNG merge đoán"
@@ -1348,6 +1443,13 @@ scenarios:
       Chất lượng của model đa ngôn ngữ trên thuật ngữ khoa học (REQ-A3) cần so sánh với một model
       chỉ tiếng Anh trên cùng tập thử — E4, rubric khóa trước khi đo.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy phần âm và đo bằng instrument, không bằng log: số phép cosine giữa hai generation
+      khác nhau = **0** trên fixture `l`/`n`, và selection bị chặn khi generation không khớp.
+      KHÔNG đo được: `report.abort_reason = 'embedding_generation_mismatch'` — bảng `report`
+      chưa tồn tại, và card embedding đánh dấu đúng vế đó `xfail(strict=True, run=True)` pending
+      `TC-report-coverage-publish-cas`, nên ngày card đó land, một XPASS sẽ làm vỡ suite thay vì
+      để marker mục ruỗng.
 
   - id: SC25
     title_vi: "Liên kết Telegram bị hủy hoặc liên kết lại trước khi gửi → delivery cancelled, không gửi cho recipient cũ"
@@ -1388,6 +1490,14 @@ scenarios:
     mockable_vi: "Telegram giả; đếm outbound call."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy nửa liên kết: liên kết lại trước khi gửi ⇒ generation cũ `revoked`, mới `active`,
+      `COUNT(telegram_link active) = 1`, đúng **một** xác nhận và **không** gửi lại digest của
+      generation cũ; và adapter Telegram không ghi hàng delivery nào của riêng nó (khẳng định
+      trên chính source của package). KHÔNG đo được: `delivery.state = 'cancelled'` và
+      `report.content_hash` không đổi — card `TC-telegram-linking-auth` khai thẳng rằng
+      "delivery cancellation on relink" không được thiết lập, và card delivery chạy trên bảng
+      `report` giả.
 
   - id: SC26
     title_vi: "Hết ổ đĩa giữa lúc ingest → không ACK, con trỏ không tiến, readiness đỏ mà liveness vẫn up"
@@ -1492,6 +1602,13 @@ scenarios:
       rõ: runbook là thiết kế, KHÔNG phải bằng chứng rằng restore hoạt động; hash một artifact
       backup không chứng minh nó khôi phục được.
     status: NOT_RUN
+    partial_evidence_vi: >
+      KHÔNG đo được, và card delivery khai đúng như vậy:
+      `test_reconciliation_reports_which_clauses_are_unmet` là `xfail(strict=True)` pending
+      `TC-backup-restore-drill` (Giai đoạn 6). Đã chạy: cổng khóa dispatch khi vị từ
+      `reconciliation_complete` trả `False`, và 0 outbound trong cửa sổ đó. Nhưng chưa lần
+      restore nào chạy vào môi trường sạch, và `backup_manifest` chưa tồn tại để so count/hash —
+      cùng lý do đã giữ dòng này `NOT_RUN` từ Giai đoạn 1.
 
   - id: SC28
     title_vi: "Worker chết sau khi provider đã chạy xong, trước khi submit → unknown_attempt, không hai kết quả cùng key"
@@ -1542,7 +1659,23 @@ scenarios:
       Không thể hứa inference bên ngoài chạy đúng một lần (SRC-PLAN §8.2); điều được bảo đảm là
       không có hai KẾT QUẢ ĐÃ COMMIT cùng key. Quyết định tự chạy lại một lần là PROVISIONAL
       (`PROV-PC03-04`) và cần Owner phê chuẩn.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json"
+      - "tests/integration/test_attempt_not_result.py"
+      - "tests/contract/test_analysis_key.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo, gồm cả nhánh sự cố: worker chết SAU khi provider chạy xong và TRƯỚC
+      khi submit ⇒ `unknown_attempt`, và một submit muộn sau đó **không** ghi kết quả
+      (`unknown_attempt → valid` là transition bị cấm). `COUNT(analysis WHERE analysis_key=K AND
+      generation_number=g AND state='valid') = 1` sau mọi bước. Tổng lời gọi model cho `(K, g)`
+      ≤ **2**: một lần tự chạy lại được phép, lần `unknown` thứ hai làm hỏng item thay vì chạy
+      tiếp — nên D43 được giữ mà RPC-08 không bị vượt. `usage.unknown = true` với **ba trường
+      NULL**, có test riêng khẳng định usage KHÔNG BAO GIỜ được ghi 0 khi không biết (I14). Một
+      attempt không bao giờ được trả về như một kết quả (I16). KHÔNG thiết lập: rằng inference
+      bên ngoài chạy đúng một lần — điều được bảo đảm là không có hai KẾT QUẢ ĐÃ COMMIT.
 
   # ------------------------------------------------------------------------------------
   # SC29–SC31 — do PC02 đăng ký (ruling R-08)
@@ -1748,6 +1881,13 @@ scenarios:
     mockable_vi: "Transaction và cascade kiểm được offline khi có fixture."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      **Không hiện thực, và card nói thẳng.** `TC-saved-snapshot` §1 liệt kê
+      `data.delete_target` là non-goal và `SG-01` chặn nó; handoff §7 ghi lại điều đó. Vì vậy
+      `COUNT(work WHERE id=W) = 0`, `data_deletion_audit` và nhánh thiếu cờ xác nhận đều chưa có
+      gì để quan sát. Thêm nữa `CR-TC-SAVED-08` chỉ ra fixture `recovery/k` mâu thuẫn với FK `ON
+      DELETE RESTRICT` hiện có — oracle của dòng này cần một phán quyết hợp đồng trước khi nó có
+      thể chạy.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`recovery/k-…`, ruling R5-02), đóng phần dữ liệu của
       `CR-PC02-13`. Danh sách bảng cascade vẫn thuộc `CR-PC01-05` và chưa đóng.
@@ -2377,6 +2517,13 @@ scenarios:
     mockable_vi: "Offline; đếm hàng."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy phía adapter: `/run_now` khi run đang `needs_user` ⇒ **không** resume, **không**
+      run thứ hai, đúng **một** phản hồi trỏ người dùng vào app, và `run.resume` không tồn tại
+      trong allowlist ba lệnh (AMD-B10 giữ nguyên). KHÔNG đo được nửa server: `run.status`
+      trước/sau, `COUNT(run)` và `COUNT(assignment_lease held)` — `run` chưa tồn tại và
+      `run.list`/`run.run_now` chạy qua một double theo chữ ký `ports.yaml`; card khai điều đó
+      là `xfail(run=False)` pending `TC-scheduler-lease-claim`.
 
   - id: SC46
     title_vi: "Callback Telegram cũ (revision hoặc link generation đã đổi) → KHÔNG Save, không sửa snapshot"
@@ -2412,6 +2559,13 @@ scenarios:
     needs_live_or_human_vi: >
       Giới hạn độ dài `callback_data` thật vẫn `KC` (CR-PC07-04) — chưa đọc tài liệu Bot API.
     status: NOT_RUN
+    partial_evidence_vi: >
+      **Cố ý `NOT_RUN`, được khai đích danh chứ không im lặng.** Card `TC-telegram-linking-auth`
+      ghi `NOT_RUN (BLOCKED_DEPENDENCY CR-PC07-04)` cho fixture `f-stale-callback-no-save`, cho
+      `validation_order` năm bước của `CMD-save` và cho mọi đường keyboard/parse-mode — ba dữ
+      kiện định dạng Telegram vẫn `KC`. Điều ĐƯỢC chứng minh là đường bị chặn không thể vào
+      nhầm: một `callback_query` bị bỏ, `save.create` không bao giờ được gọi, không hàng nào
+      chuyển, không phản hồi nào được gửi.
 
   - id: SC47
     title_vi: "Vòng đời mã liên kết: một lần dùng, có hạn, rate-limit; ngoại lệ B09 chỉ mở cho chuỗi khớp định dạng"
@@ -2455,7 +2609,22 @@ scenarios:
     needs_live_or_human_vi: >
       Ba con số (định dạng, hạn 15 phút, 5 lần/giờ) là PROVISIONAL và cần Owner xác nhận
       (CR-PC07-01).
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "tests/integration/test_link_code_once.py"
+      - "tests/integration/test_unknown_chat_silent.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo qua bốn ca của vòng đời mã: dùng lại mã đã dùng ⇒ im lặng và chat B
+      **không** chiếm quyền, `COUNT(telegram_link active) = 1`; mã sai định dạng ⇒ 0 lookup, 0
+      hàng attempt; mã đúng định dạng nhưng sai ⇒ im lặng, 1 hàng attempt với `outcome =
+      FORMAT_MATCH_CODE_INVALID` và `link_code_id` NULL; quá hạn mức ⇒ hàng thứ sáu ghi
+      `outcome` chặn, tức `telegram_link_attempt` tăng đúng 6. Outbound ở các ca
+      không-thành-công = 0. Bề mặt tấn công chỉ mở cho chuỗi khớp định dạng (AMD-B09). KHÔNG
+      thiết lập: ba con số (định dạng, hạn 15 phút, 5 lần/giờ) vẫn là giá trị làm việc Owner
+      chấp nhận, không phải giá trị chốt (`CR-PC07-01`).
 
   - id: SC48
     title_vi: "Schema Saved từ chối payload sai: năm ca âm và hai ca dương"
@@ -2497,7 +2666,21 @@ scenarios:
     evidence_level_required: E1
     mockable_vi: "Thuần schema; chạy được ngay ở E0/E1."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E1)"
+    status_evidence_refs:
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "tests/contract/test_saved_snapshot_schema.py"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle của SC48 đo được và đã đo. Hai ca dương validate sạch với
+      `saved-snapshot.schema.json`; năm ca âm sinh lỗi tại đúng con trỏ fixture khai, và mỗi
+      khuyết tật còn bị chặn lần thứ hai ở tầng thật với số hàng không đổi (summary thiếu dòng
+      hạn chế ⇒ `VALIDATION_ERROR` từ service; target đặt cả hai id ⇒ lỗi ở biên VÀ CHECK của
+      bảng; `content_hash` NULL hoặc sai định dạng ⇒ NOT NULL / `GLOB 'sha256:*'`). Ràng buộc
+      REQ-D20 được ép ở mức **schema**, không bằng lời khuyên, và tagged union ép đúng MỘT trong
+      hai id (B06). KHÔNG thiết lập: nội dung summary có tốt hay không — đó là E4 và thuộc
+      rubric groundedness.
 
   # ------------------------------------------------------------------------------------
   # SC49–SC53 — do PC09 cấp. Bốn lỗ hổng đo được trong danh mục trước khi PC09 chạy:
@@ -2615,14 +2798,15 @@ scenarios:
       không bao giờ mở ra LAN hay reverse proxy (REQ-S11.2-06).
     status: NOT_RUN
     partial_evidence_vi: >
-      Đã chạy trên phần chạm được ở tầng HTTP/service, và Giai đoạn 2 mở rộng nó: phân hoạch 36
-      cạnh **12 UNAUTHORIZED / 10 FORBIDDEN_EDGE / 14 CAPABILITY_DENIED** được khẳng định bằng
-      máy (A3-R2 §2), cộng hai cạnh chạm module nghiên cứu được ghim ở
-      `test_research_connector_health.py` (`test_sc49_rows_20_and_21_pin_capability_denied`,
-      `test_sc49_fe21_no_research_module_can_reach_a_browser`) và cấu trúc default-deny của
-      `CollectorClient` (`test_collector_stop_reasons.py`, NC-01). Oracle vẫn đòi **cả ba** cơ
-      chế ép buộc (import/dependency, API auth, network/process capability); 14 cạnh
-      `CAPABILITY_DENIED` vẫn là `NOT_TESTABLE_AT_THIS_LAYER` và KHÔNG được tính là pass.
+      Giai đoạn 3/5 mở rộng đáng kể phần chạm được: `test_concurrent_save.py` phủ NC-01
+      (collector token), NC-20 (analysis worker token), NC-36 (không credential) và `FE-14`;
+      `test_telegram_command_allowlist.py` phủ ba cạnh `UNAUTHORIZED_COMMAND`;
+      `test_injection_canary.py`, `test_delivery_unknown_no_retry.py` và
+      `test_analysis_once_per_key.py` thêm các cạnh AI và delivery. Oracle vẫn đòi **cả ba** cơ
+      chế ép buộc, và 14 cạnh `CAPABILITY_DENIED` vẫn là `NOT_TESTABLE_AT_THIS_LAYER`. Thêm một
+      mâu thuẫn hợp đồng chưa giải: `CR-TC-TGAUTH-04` — fixture sweep nói ba cạnh đó **không
+      phản hồi gì**, `commands.yaml` nói một chat ĐÃ liên kết nhận một câu ngắn. Một oracle đang
+      tranh chấp không thể chống đỡ một PASS.
     notes_vi: >
       HAI THIẾU SÓT ĐÃ ĐO. (a) 26 trong 36 cạnh KHÔNG có `denied_cases[]` với
       `expected_error_code` được pin, nên scenario này có oracle "không đổi trạng thái" cho cả 36
@@ -2726,13 +2910,11 @@ scenarios:
       giai đoạn triển khai; giá trị của khối "hướng đang nổi" là E4 và cần 3–4 kỳ thật (REQ-A4).
     status: NOT_RUN
     partial_evidence_vi: >
-      Đã chạy: hai trong 18 sự kiện của fixture e2e (`ingest.submit_batch` seq 4 và 5) chạy thật
-      qua service ở Giai đoạn 1; Giai đoạn 2 thêm chặng thu thập ở phía collector và chặng làm
-      giàu metadata ở phía connector, **nhưng không chặng nào được nối vào một đường chạy duy
-      nhất**. KHÔNG đo được: sáu đẳng thức của oracle phải cùng đúng, và bốn trong sáu (I05
-      `report.content_hash`, I06 `coverage_window`, I07 `first_announced_ledger`, I12
-      `embedding_generation_id`) chạm các bảng chưa tồn tại. Một đợt chạy THẬT đầu-cuối là E3 và
-      thuộc SP1.
+      Giai đoạn 3/5 thêm hai chặng nữa (phân tích, gửi) nhưng **không chặng nào được nối vào một
+      đường chạy duy nhất**, và card delivery chạy trên bảng `report` và `run` **giả**. Trong
+      sáu đẳng thức của oracle, bốn chạm `report`, `coverage_window` hoặc
+      `first_announced_ledger` ở vai trò publish — chưa quan sát được. Một đợt chạy THẬT
+      đầu-cuối là E3 và thuộc SP1 + Giai đoạn triển khai.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`e2e/a-happy-path-schedule-to-delivered.json`, ruling R5-02),
       trong một thư mục mới `e2e/` và ở dạng `rows.<entity>[]` có cấu trúc để cửa kiểm cột không bị
@@ -2872,6 +3054,14 @@ scenarios:
       (REQ-OQ09) là E4 và `KC`: cần so với một model chỉ tiếng Anh trên cùng tập thử, rubric khóa
       trước khi đo.
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy mặt dương ở tầng generation: dựng lại rồi chuyển active là **nguyên tử**, chuyển
+      khi chưa đủ vector bị từ chối, và số phép cosine giữa hai generation = **0** trong toàn
+      chuỗi (instrument trên hàm similarity) — `test_generation_activation.py`,
+      `test_embedding_generation_guard.py`. KHÔNG đo được: "báo cáo trước bước 4 mang
+      `embedding_generation_id = G1`, báo cáo sau mang G2" — bảng `report` chưa tồn tại. Ghi
+      chú: `CR-TC-embedding-04` nêu số bước bên trong chính SC52 bị lệch, nên oracle này cần một
+      lần sửa văn bản trước khi nó đo được sạch.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`reporting/n-…`, ruling R5-02). `event_order` ở trên trích đúng
       hai operation authoritative của `contracts/ports.yaml` — `embedding.start_generation_rebuild`

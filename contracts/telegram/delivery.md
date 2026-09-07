@@ -1,6 +1,6 @@
 ---
 contract_id: CT-telegram-delivery
-version: 0.1.0
+version: 0.2.1
 status: draft
 owner_role: interaction contract owner
 source_refs:
@@ -38,7 +38,14 @@ verification: >-
   E0: mọi trạng thái delivery được nhắc phải tồn tại trong contracts/state/delivery.yaml; mọi
   error code phải tồn tại trong contracts/errors.yaml; mọi con số retry phải trích từ
   contracts/retry-policy.yaml (EV-PC07-02). Fixture (a)–(e) trong acceptance/fixtures/telegram/.
-  E1–E4: NOT_RUN. Giới hạn định dạng Telegram là `KC` — chưa đọc tài liệu (không có mạng).
+  E1–E4: NOT_RUN. Giới hạn định dạng Telegram (§3.4): **hai** trong năm dữ kiện đã đọc từ tài liệu
+  chính thức dưới `core.telegram.org` ngày 2026-09-08 (độ dài tối đa một tin = 4096 ký tự; rate limit
+  gửi) và mang nhãn `DOCS_derived` — chúng đúng với tài liệu đọc ngày ấy và hết hiệu lực khi Telegram
+  đổi chính sách. **Ba** dữ kiện còn `KC` ở `BLOCKED_DEPENDENCY`: độ dài `callback_data`, parse mode +
+  bảng escape, số nút mỗi hàng/mỗi bàn phím. Ba dòng ấy thiếu **tool capability**, không thiếu nguồn —
+  trang mang chúng nằm trong host được cấp nhưng vượt trần nội dung của công cụ đọc (§3.4;
+  `precode/decision-register.md` §8.14). Hệ quả: nhánh multipart của §3.5 **vẫn** chưa hiện thực được và
+  `MOD-telegram-adapter` **vẫn** bị chặn cứng.
 claim_ceiling: DRAFT_FOR_REVIEW
 ---
 
@@ -122,21 +129,103 @@ cậy** (SRC-SPEC §11.4, I11).
 - Nếu escaping thất bại hoặc không chắc, gửi **plain text**; mất định dạng đẹp là chấp nhận
   được, chèn markup từ nội dung ngoài thì không.
 
-### 3.4 Giới hạn định dạng — `KC`
+### 3.4 Giới hạn định dạng — hai dòng ĐÃ ĐỌC, ba dòng còn `KC`
 
-| Hạng mục | Trạng thái | Ghi chú |
-| --- | --- | --- |
-| Độ dài tối đa một tin | `KC` | Phải đọc tài liệu chính thức trước khi triển khai |
-| Độ dài callback data | `KC` (PROVISIONAL 64 byte) | Định dạng `1:<ri>:<ii>:<lg>:<rv>` được thiết kế để vừa |
-| Parse mode và tập ký tự phải escape | `KC` | Chọn MỘT parse mode và khóa bảng escape của đúng chế độ đó |
-| Số nút mỗi hàng / mỗi bàn phím | `KC` | |
-| Rate limit gửi | `KC` | `Retry-After` của Telegram **thắng** mọi số trong `retry-policy.yaml` |
+Cập nhật bởi `PKT-PC07-FIX-TELEGRAM` (worker `worker-WT`, `AUTH-COORD-TELEGRAM-FACTS`, cha
+`AUTH-OWNER-20260908-06`). Ngày lấy: **2026-09-08** theo giờ Owner (`Asia/Ho_Chi_Minh`) —
+UTC `2026-09-07T17:52Z`…`2026-09-07T18:06Z`; hai cách viết cùng một lúc, ghi cả hai để không ai
+phải đoán. Quyền mạng: **chỉ** trang tài liệu dưới `core.telegram.org`, **chỉ** GET qua `WebFetch`.
+`api.telegram.org` **không** được gọi, **không** token nào được dùng, **không** gì được gửi đi.
 
-Nguồn phải đọc: <https://core.telegram.org/bots/api#sendmessage>.
+| Hạng mục | Trạng thái | Giá trị | Nguồn (đọc 2026-09-08) |
+| --- | --- | --- | --- |
+| Độ dài tối đa một tin | **`DOCS_derived`** | `4096` ký tự cho `sendMessage.text` | `https://core.telegram.org/bots/tutorial` §"Sending Messages" — *"A `String` object containing the message text, 1-4096 characters."* |
+| Độ dài callback data | `KC` (PROVISIONAL 64 byte GIỮ NGUYÊN) | — | Chưa đọc được — xem "Ba dòng còn `KC`" |
+| Parse mode và tập ký tự phải escape | `KC` | — | như trên |
+| Số nút mỗi hàng / mỗi bàn phím | `KC` | — | như trên |
+| Rate limit gửi | **`DOCS_derived`** | 1 tin/giây **trong một chat**; 20 tin/phút **trong một group**; ~30 tin/giây khi **broadcast** | `https://core.telegram.org/bots/faq` §"My bot is hitting limits, how do I avoid this?" — ba câu nguyên văn ở dưới |
 
-**Chưa đọc trong gói này** — không có mạng (baseline §3). Mọi số ở trên là giả định cho tới khi
-có người đọc tài liệu thật và ghi lại; đó là điều kiện của SRC-SPEC §13.2 và REQ-A6 áp dụng cho
-Telegram. Cấm suy ra giới hạn từ trí nhớ.
+`DOCS_derived` là token của `contracts/retry-policy.yaml` v0.8.0 (`precode/decision-register.md`
+§8.13.2): giá trị đứng trên **trang tài liệu**, không trên chữ ký của ai, và nó **hết hiệu lực khi
+nguồn đổi chính sách**. Đọc lại thấy khác ⇒ CR mới, không phải "ai đó đổi ý".
+
+**Rate limit — ba câu nguyên văn** (`/bots/faq`, cùng ngày):
+
+> "In a single chat, avoid sending more than one message per second. We may allow short bursts that
+> go over this limit, but eventually you'll begin receiving 429 errors."
+> "In a group, bots are not be able to send more than 20 messages per minute."
+> "For bulk notifications, bots are not able to broadcast more than about 30 messages per second,
+> unless they enable paid broadcasts to increase the limit."
+
+Ba câu ấy là **trần lập kế hoạch**, không phải ngân sách retry: chúng **không** đặt số mới ở đây và
+**không** đụng `contracts/retry-policy.yaml` §4.2. `Retry-After` của Telegram trên một `429` thật
+**thắng** mọi con số trên. Chú ý văn phong của chính nguồn — *"avoid"*, *"about"*, *"may allow short
+bursts"* — đây là hướng dẫn có biên, không phải hằng số; và mệnh đề *"unless they enable paid
+broadcasts"* nói rằng trần 30/giây là trần **mặc định**, không phải trần tuyệt đối. Với một hệ một
+người dùng gửi một digest mỗi kỳ, ràng buộc thực tế là dòng thứ nhất: **1 tin/giây trong một chat** —
+và nó áp thẳng vào §3.5, nơi một digest nhiều part là nhiều lời gọi `sendMessage` liên tiếp.
+
+**Ba điều con số 4096 KHÔNG nói.** (a) Nó lấy từ `/bots/tutorial`, **không** phải từ hàng `text` của
+`/bots/api#sendmessage` — trang chuẩn ấy không đọc được bằng công cụ được cấp (dưới đây), nên **ngữ
+nghĩa đếm** ("after entities parsing" hay không) **chưa** có câu trích. (b) Vì vậy §3.5 đếm trên
+**chuỗi thô đã escape** chứ không trên văn bản sau khi parse: escape chỉ **thêm** ký tự, nên chuỗi thô
+≤ 4096 kéo theo văn bản sau parse ≤ 4096 dưới **cả hai** cách đọc — đây là suy luận an toàn một chiều,
+không phải một giả định về chính con số. (c) Đơn vị đếm (ký tự Unicode hay đơn vị mã UTF-16) **chưa**
+có nguồn; emoji và ký tự ngoài BMP có thể đếm đôi, nên chỗ cắt phải chừa biên, và **cấm** đặt một con
+số biên ở đây khi chưa đọc được nguồn.
+
+**Ba dòng còn `KC` — `BLOCKED_DEPENDENCY` vì thiếu *tool capability* (protocol.md §5, worker.md điều 5),
+KHÔNG phải "chưa tìm kỹ" và cũng KHÔNG phải `BLOCKED_SCOPE`.** Cả ba nằm trên đúng một trang:
+<https://core.telegram.org/bots/api> (hàng `callback_data` của `InlineKeyboardButton`, §Formatting
+options / MarkdownV2 style, `InlineKeyboardMarkup`). Trang ấy nằm **trong** host được cấp nhưng vượt
+giới hạn nội dung của `WebFetch`: bản chuyển sang markdown bị cắt **trước** mục `Available methods`, nên
+`sendMessage`, `InlineKeyboardButton`, `InlineKeyboardMarkup` và bảng escape **không bao giờ** vào tầm
+đọc. Đó là trần **công cụ**, không phải thiếu nguồn, và không sửa được bằng cách hỏi khéo hơn: **bảy**
+anchor đã thử (8 lần gọi, hai vòng, cùng ngày) — `#sendmessage`, `#inlinekeyboardbutton`,
+`#formatting-options`, `#markdownv2-style`, `#html-style`, `#inlinekeyboardmarkup`,
+`#replykeyboardmarkup` — và **cả bảy** đều bị cắt, chỉ khác nhau ở điểm dừng
+(`MessageAutoDeleteTimerChanged`, `date-time entity formatting`, `WebAppData`, `InputChecklist`).
+Anchor **không** dời được cửa sổ đọc tới phần cần đọc.
+
+Các trang cùng host đã thử và **không** chứa ba dữ kiện ấy: `/bots/features`, `/bots/faq`,
+`/bots/tutorial`, `/bots/webhooks`, `/bots/inline`, `/bots/games`, `/bots/2-0-intro`,
+`/bots/api-changelog`, `/api/bots/buttons`, `/api/entities`, `/constructor/keyboardButtonCallback`,
+`/constructor/replyInlineMarkup`. Cách giải là một khả năng đọc **lấy được cả trang** (fetch theo
+đoạn, hoặc tải trang rồi grep cục bộ) dưới cùng ranh giới host — không phải một con số nhớ được.
+
+**Vòng ba: quyền đã được nới, ba dòng vẫn không đọc được.** `OD-20260908-07` mục 1 cho phép dùng **tìm
+kiếm web** để tìm **đường đọc** chính trang ấy (bản lưu trữ/cache), vẫn cấm `api.telegram.org`, token và
+mọi việc gửi. Đã dùng: hai lần tìm kiếm (một lần giới hạn `allowed_domains = core.telegram.org`), hai URL
+Wayback (`web.archive.org/web/2020…id_/` và `…/2016…id_/`), `archive.ph/newest/`, và
+`corefork.telegram.org/bots/api` (host mirror của chính Telegram). Kết quả: `web.archive.org` và
+`archive.ph` **bị công cụ chặn ở tầng nền tảng** (*"unable to fetch"*, không phải 404); `corefork` là
+**cùng một trang cỡ ấy** nên cắt y hệt; snippet tìm kiếm không mang câu cần trích. Các trang thứ ba
+(n8n, grammY, blog) **có** nêu số, và **cố ý không dùng**: gói này trích lời của Telegram, không trích lời
+người khác kể lại lời Telegram (`OD-20260908-07` mục 1 nói đúng điều đó). Vậy ba dòng **giữ** `KC`.
+**Đường đi duy nhất còn lại** — và là việc cần xin ở vòng sau — là một cách đọc **theo lát** cùng URL ấy
+(HTTP `Range`, hoặc một công cụ fetch có offset): trang nặng ~1.5 MB, dữ kiện nằm ở nửa sau, và mọi thứ đã
+thử đều thất bại vì **kích thước**, không vì host.
+
+**Về dòng "số nút mỗi hàng / mỗi bàn phím": một PHỦ ĐỊNH CÓ PHẠM VI, chưa phải một kết luận.** Mười hai
+trang trên là **không** trang nào nêu con số ấy — nhưng trang có nhiều khả năng nêu nó nhất
+(`InlineKeyboardMarkup` trên `/bots/api`) chính là trang không đọc được. Vì vậy câu đúng hôm nay là
+*"không tìm thấy con số chính thức trên **12 trang đã đọc được** dưới `core.telegram.org` ngày
+2026-09-08"*, **không** phải *"Telegram không công bố con số nào"*. Hai câu ấy khác nhau, và chỉ câu thứ
+nhất có bằng chứng. Dòng này vì vậy giữ `KC`. Một cách tìm khác — hỏi công cụ tìm kiếm — **không** được
+dùng: quyền của `OD-20260908-05` mục 2 chỉ có `core.telegram.org`, và một truy vấn tìm kiếm là một lời
+gọi **ra ngoài** host ấy mang theo nội dung truy vấn. Coordinator **không** nới được grant của Owner
+(`protocol.md` §2: grant con là subset của grant cha), nên bước ấy dừng ở `BLOCKED_SCOPE` và chỉ Owner
+mở được.
+
+**Hệ quả còn nguyên.** `1:<ri>:<ii>:<lg>:<rv>` vẫn đứng trên một giả định 64 byte **chưa kiểm**;
+`contracts/telegram/commands.yaml` §CMD-save `size_note_vi` vẫn đúng khi nó gọi đây là `KC`. Chưa
+chọn được parse mode ⇒ §3.3 vẫn chỉ có luật "escape theo đúng parse mode được chọn" mà **chưa** có
+bảng escape để hiện thực; nhánh an toàn "gửi plain text" của §3.3 là đường đi duy nhất còn dùng được.
+Chưa có số nút mỗi hàng ⇒ bố cục bàn phím của §3.1 mục 3 **chưa** khóa được.
+
+`REQ-A6` áp dụng cho Telegram (SRC-SPEC §13.2) **đã hoàn thành một phần**: hai dữ kiện có nguồn, ba
+dữ kiện `BLOCKED_DEPENDENCY`. **Cấm suy ra ba giới hạn còn lại từ trí nhớ** — điều cấm này KHÔNG được nới
+bởi lần đọc này, và §9 hàng 12 giữ nguyên hiệu lực cho chúng.
 
 ### 3.5 Tách phần
 

@@ -1703,6 +1703,133 @@
           "decision_record": "precode/decision-register.md §8.13",
           "registered_by_ruling": "PKT-PC00-FIX21",
           "note_vi": "Bien ban vong bon KHONG thay the ba bien ban truoc; BON bien ban cong don."
+        },
+        {
+          "anchor_id": "OD-20260908-05",
+          "label": "OD-20260908-05",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-08, vong nam (2 muc)",
+          "source_file": "precode/owner-decisions-05.md",
+          "authority_created": "AUTH-OWNER-20260908-06",
+          "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08 - phong van AskUserQuestion",
+          "delegates_only": [
+            "REQ-OQ03: Coordinator NGHIEN CUU va DE XUAT; Owner phe duyet o mot vong sau. Day la mot loi UY QUYEN NGHIEN CUU, KHONG phai mot quyet dinh san pham."
+          ],
+          "grants": [
+            "Quyen mang mot lan, hep theo host, CHI TRANG TAI LIEU duoi core.telegram.org (cu the core.telegram.org/bots/api) - phuc vu CR-PC07-04",
+            "Loi vao Giai doan 5 CO DIEU KIEN (TC-telegram-linking-auth, TC-saved-snapshot, TC-telegram-unknown-delivery) - dieu kien nguyen van: 'once the five facts land'"
+          ],
+          "network_grant": {
+            "kind": "one-off, host-narrow, documentation pages only",
+            "allowed_hosts": ["core.telegram.org"],
+            "forbidden_by_name": ["api.telegram.org"],
+            "forbidden_kind": "any live Bot API call; any bot token; any message sent"
+          },
+          "condition_status_20260908_vi": "CHUA THOA. Dieu kien la NAM du kien; sau HAI vong cua worker-WT (§8.14.1, §8.14.2) moi co HAI (do dai toi da mot tin 4096; rate limit gui). BA du kien con lai - do dai callback_data, parse mode + bang escape, so nut moi hang/moi ban phim - van BLOCKED_DEPENDENCY. CR-PC07-04 = PARTIALLY_RESOLVED, KHONG phai CLOSED. Vi vay Giai doan 5 CHUA duoc go chan; 2 khong bang 5. Ket luan do thuoc Coordinator/Owner - CR-PC00-31.",
+          "scope_boundary_note_vi": "O vong hai, Worker TU CHOI mot WebSearch ma packet goi y, voi ly do QUYEN: bien ban cap quyen cho core.telegram.org, con mot truy van tim kiem la loi goi toi HOST KHAC mang theo noi dung truy van. Do la BLOCKED_SCOPE dung nghia va no bao ve chinh do tin cay cua hai du kien da lay duoc. Muon di huong ay can mot amendment cua OWNER, khong phai mot cau trong packet.",
+          "not_decided": [
+            "REQ-OQ03 - VAN OWNER_DECISION_REQUIRED tinh den vong nam; bien ban chi uy quyen viec NGHIEN CUU",
+            "REQ-A5 - cong RIENG, theo TUNG adapter, phai xong TRUOC khi dat enabled = true; chon duoc model KHONG lam cong nay bien mat",
+            "Khong mo mang noi chung - quyen nen van la cai goi PyPI/npm da khai (OD-20260907-02 muc 4) cong cac allowlist doc-tai-lieu da cap truoc do",
+            "Khong nang tran claim cua file nao, ke ca contracts/telegram/delivery.md",
+            "Khong dong finding nao"
+          ],
+          "successor_record_vi": "Lua chon model CU THE cua Owner la mot bien ban RIENG: OD-20260908-06 (precode/owner-decisions-06.md, decision-register §8.15, ghi boi worker-WAI). PC00 CO Y KHONG chep noi dung do vao anchor nay de tranh hai ban ghi cung mo ta mot quyet dinh roi lech nhau (lop loi ma F-A1R1-01 da phat). Khi hai ben lech: ban ghi cua OD-20260908-06 THANG.",
+          "decision_record": "precode/decision-register.md §0 (Cap nhat vong nam); chi tiet du kien o §8.14 - noi dung cua worker-WT",
+          "registered_by_ruling": "PKT-PC00-FIX26",
+          "note_vi": "Bien ban vong nam KHONG thay the bon bien ban truoc; NAM bien ban cong don (cong OD-20260908-06)."
+        },
+        {
+          "anchor_id": "OD-20260908-07",
+          "label": "OD-20260908-07",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-08, vong bay (2 muc)",
+          "source_file": "precode/owner-decisions-07.md",
+          "effect_record": "precode/decision-register.md §8.14.3 (worker-WT) - BAN GHI HIEU LUC; file owner-decisions-07.md la ban ghi SONG HANH THEO QUY UOC, tao o PKT-PC00-FIX28. Khi hai ben lech: §8.14.3 THANG.",
+          "authority_created": "AUTH-OWNER-20260908-08",
+          "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08 - phong van AskUserQuestion",
+          "grants": [
+            "Noi CONG CU tim ba du kien Telegram: them WebSearch canh WebFetch - CHI de dinh vi noi dung cua CHINH trang core.telegram.org/bots/api (ban cache/luu tru cua chinh trang ay)"
+          ],
+          "boundary_note_vi": "Noi CONG CU, KHONG noi PHAM VI NOI DUNG. Truy van phai xoay quanh viec dat toi noi dung cua CHINH trang ay; KHONG duoc lay mot con so KHAC tu mot site Telegram-lan-can khac. Neu bo ranh gioi nay, mot han muc doc tu blog ben thu ba se di vao hop dong duoi danh nghia 'tai lieu chinh thuc'. Van cam: api.telegram.org, moi bot token, moi lan gui tin.",
+          "outcome_vi": "NOI QUYEN KHONG TAO RA DU KIEN. Vong ba chay duoi quyen moi va CA BA du kien VAN BLOCKED_DEPENDENCY: WebSearch gioi han host khong tra ve cau can trich, con web.archive.org BI CHAN O TANG CONG CU (khong phai 404, khong phai quyen). Xem §8.14.3.",
+          "authority_correction_vi": "Muc 2 la mot sua sai ve THAM QUYEN, khong phai ve noi dung: providers.yaml §5 noi reviewer la Owner, nen dien ten mot Worker vao do se lam mot truong tham quyen NOI SAI SU THAT. Owner chon tu doc, nen CR-PC06-OQ03-02 GIU MO qua het vong bay va chi dong o vong tam.",
+          "not_decided": [
+            "Chinh chu ky REQ-A5 - duoc hoi ngay sau do trong cung luot, tach rieng: do la OD-20260908-08"
+          ],
+          "registered_by_ruling": "PKT-PC00-FIX28",
+          "note_vi": "Anchor nay duoc tao MUON (o FIX28) de vong bay co cung hinh dang ho so nhu cac vong khac; no KHONG quyet lai dieu gi."
+        },
+        {
+          "anchor_id": "OD-20260908-08",
+          "label": "OD-20260908-08",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-08, vong tam (1 muc) - chu ky REQ-A5 cho Anthropic",
+          "source_file": "precode/owner-decisions-08.md",
+          "effect_record": "precode/decision-register.md §8.15.1 (worker-WAI) + contracts/ai/providers.yaml §2.1 terms_check.reviewer - BAN GHI HIEU LUC; file owner-decisions-08.md la ban ghi SONG HANH THEO QUY UOC, tao o PKT-PC00-FIX28. Khi hai ben lech: §8.15.1 THANG.",
+          "authority_created": "AUTH-OWNER-20260908-09",
+          "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08 - Owner TU DOC ban tom tat REQ-A5, trinh truc tiep trong phien",
+          "signed_scope": {
+            "provider": "Anthropic (Claude Sonnet 5 / Claude Opus 5, ho api_key)",
+            "exact_read": [
+              "Commercial ToS - eff. 2025-06-17",
+              "Usage Policy - eff. 2025-09-15",
+              "Service Specific Terms - eff. 2026-06-08"
+            ],
+            "citations": "precode/owner-decisions-06.md §3 (bang A5-1..A5-8)",
+            "warranty_accepted": "TC-A5-01 - quyen doi voi du lieu dau vao: OWNER, khong phai Anthropic, la ben tuyen bo he thong nay CO QUYEN gui van ban nghien cuu cua ben thu ba (abstract arXiv/OpenAlex va tuong tu) lam Input"
+          },
+          "closes": "CR-PC06-OQ03-02",
+          "three_boundaries_vi": [
+            "HEP THEO NHA CUNG CAP VA THEO BAN DOC: chu ky ap cho rieng Anthropic va dung ba trang co ngay hieu luc; no HET HIEU LUC khi mot trong ba trang doi phien ban (luat cua ADR-0010). REQ-A5 van la mot cong THEO TUNG ADAPTER, khong phai mot o da tich mot lan cho moi lan sau.",
+            "KY KHONG PHAI BAT: enabled = true van bi B13 chan - ISO-03/ISO-05 chua kiem, E3 NOT_RUN, REQ-AC16 van BLOCKED. Hai cong nay DOC LAP; qua cong dieu khoan KHONG mo cong co lap. Doc 'REQ-A5 da ky' thanh 'adapter dung duoc' la doc sai dung cho nguy hiem nhat.",
+            "BAO DAM DUOC GANH, KHONG DUOC GIAI: lieu arXiv/OpenAlex/X co cho phep he thong nay tai xu ly noi dung cua ho hay khong VAN LA MOT CAU HOI CHUA AI TRA LOI - bien ban noi thang nhu vay. Chap nhan mot bao dam khong lam cho dieu duoc bao dam tro thanh dung; no chi dinh AI CHIU TRACH NHIEM neu no sai."
+          ],
+          "not_decided": [
+            "Chinh sach cua arXiv/OpenAlex/X ve viec tai xu ly noi dung - cau hoi nen cua TC-A5-01, RIENG va CHUA duoc tra loi",
+            "Khong bat adapter nao; khong nang tran claim cua file nao; khong dong finding nao"
+          ],
+          "registered_by_ruling": "PKT-PC00-FIX28",
+          "note_vi": "Vong tam ton tai TACH khoi vong bay vi OD-20260908-07 muc 2 chot rang OWNER phai ky va CO Y khong ky. Giu hai vong tach nhau la dieu khien truong reviewer noi dung su that."
+        },
+        {
+          "anchor_id": "OD-20260908-09",
+          "label": "OD-20260908-09",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-08, vong chin (1 muc)",
+          "source_file": "precode/owner-decisions-09.md",
+          "authority_created": "AUTH-OWNER-20260908-10",
+          "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08 - phong van AskUserQuestion",
+          "verbatim_instruction": "Start with plain text now, add formatting later",
+          "replaces_condition": {
+            "of": "OD-20260908-05 muc 2",
+            "old_condition": "once the five facts land",
+            "old_condition_met": false,
+            "old_condition_state": "2/5 - CHUA BAO GIO THOA",
+            "note_vi": "Dieu kien duoc THAY, KHONG phai duoc THOA. Owner doi dieu kien thay vi de ai do tuyen bo dieu kien cu da dat. Ghi condition_met: true cho dieu kien cu se la mot cau SAI KIEM DUOC."
+          },
+          "grants": [
+            "Loi vao Giai doan 5 CO PHAM VI: TC-telegram-linking-auth, TC-saved-snapshot, TC-telegram-unknown-delivery - CHI TIN NHAN VAN BAN THUAN"
+          ],
+          "in_scope": [
+            "Cat tin theo gioi han 4096 ky tu (du kien da giai, co trich dan nguyen van)",
+            "Dieu tiet nhip gui theo rate limit da giai (1 tin/giay mot chat; 20 tin/phut mot group; ~30 tin/giay khi broadcast)"
+          ],
+          "out_of_scope_unimplemented": [
+            "parse_mode (Markdown/HTML)",
+            "inline keyboard",
+            "nut mang callback_data"
+          ],
+          "out_of_scope_note_vi": "TUONG MINH ngoai pham vi, co SG-01 canh, CHUA DUOC HIEN THUC - KHONG phai stub-roi-giau. Bien ban dung dung cum 'not stubbed-and-hidden'. Mot ham tra ve gi do trong hop le se khien mot gioi han callback_data DOAN di vao ma san pham ma khong ai thay.",
+          "not_decided": [
+            "CR-PC07-04 VAN PARTIALLY_RESOLVED - ba du kien van BLOCKED_DEPENDENCY; vong chin KHONG giai chung ma quyet dinh di tiep MA KHONG CAN chung",
+            "Cach giai ba du kien con lai (amendment cong cu cho fetch phan trang, hoac Owner tu doc trang) - hoan sang vong sau",
+            "Khong cho phep dinh dang hay ban phim",
+            "Khong mo quyen mang moi - api.telegram.org van cam, khong bot token, khong gui tin that",
+            "Khong tao bang chung runtime - cho phep VIET ma Giai doan 5 khong phai la da chay no; E3/E4 van NOT_RUN",
+            "Khong nang tran claim cua file nao; khong dong finding nao"
+          ],
+          "resolves_cr": "CR-PC00-31 - giai bang cach DOI DIEU KIEN, khong phai bang cach tuyen bo dieu kien cu da thoa",
+          "process_note_vi": "Vong cong viec dan toi bien ban nay co HAI lan lease chong nhau giua worker-WT va worker-WAI; ca hai lan da kiem va KHONG mat du lieu. Nhung 'khong mat du lieu' la mot KET QUA, khong phai mot BAO DAM: duoi PROV-PC00-08 lease theo doi bang thong diep, khong co fencing that, nen hai Worker cham vung khac nhau la may chu khong phai co che. Day dung la che do hong (b) ma PROV-PC00-08 da liet ke khi Owner chap nhan rui ro con lai - nay xay ra that HAI LAN trong mot vong. Xem CR-PC00-32.",
+          "decision_record": "precode/decision-register.md §0 (Cap nhat vong chin); chi tiet du kien o §8.14.x - noi dung cua worker-WT",
+          "registered_by_ruling": "PKT-PC00-FIX27",
+          "note_vi": "Bien ban vong chin KHONG thay the cac bien ban truoc; chung cong don. No CHI thay mot DIEU KIEN cua vong nam."
         }
       ],
       "invariants": [

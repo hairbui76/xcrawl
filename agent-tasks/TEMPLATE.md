@@ -52,7 +52,7 @@ Chưa đủ bốn điều kiện thì card tồn tại như tài liệu review, 
 
 *Bảng hash là hợp đồng của card. Không viết "latest", không viết "bản mới nhất".*
 
-**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-P2d-20260907; epoch cũ ví dụ PC10-PIN-P2c-20260907>`
+**Pin epoch:** `<ID epoch — hiện hành là PC10-PIN-P3b-20260908; epoch cũ ví dụ PC10-PIN-P3-20260908>`
 
 *Card là nguồn chuẩn của tên epoch. File nào khác khẳng định pin hiện hành thì phải đọc tên từ card, không
 chép tay — finding `F-A2R1-03`; EV-PC10-01 phép kiểm (k) ép điều này bằng máy.* — nói rõ hash được **tính lại trực tiếp** hay **chép từ

@@ -2,7 +2,7 @@
 # CT-ai-providers — Ma trận năng lực adapter cho hai họ provider
 # =============================================================================
 contract_id: CT-ai-providers
-version: 0.1.0
+version: 0.2.0
 status: draft
 owner_role: AI contract owner
 source_refs:
@@ -20,8 +20,8 @@ source_refs:
   - "SRC-PLAN §11 PC06"
 requirement_refs:
   [REQ-D39, REQ-D40, REQ-D41, REQ-D43, REQ-D44, REQ-D51, REQ-A5, REQ-AC16, REQ-AC17,
-   REQ-S10.2-02, REQ-S10.2-06, REQ-S11.2-01, REQ-S13.2-02, REQ-S13.2-03]
-decision_refs: [B13, ADR-0010]
+   REQ-OQ03, REQ-S10.2-02, REQ-S10.2-06, REQ-S11.2-01, REQ-S13.2-02, REQ-S13.2-03]
+decision_refs: [B13, ADR-0010, OD-20260908-06]
 invariant_refs: [I11, I13, I14]
 producers: [MOD-ai-adapter]
 consumers: [MOD-analysis-worker, MOD-analysis-service, MOD-settings-service, MOD-web-ui]
@@ -41,6 +41,12 @@ scope: >-
   và **cách kiểm chứng** cô lập, allowlist fallback, và hình dạng cấu hình provider/model theo
   tác vụ. File này KHÔNG khẳng định điều khoản của bất kỳ nhà cung cấp thật nào và KHÔNG liệt kê
   provider thật nào là "đã được duyệt".
+  **Cập nhật 2026-09-08 (v0.2.0), REQ-OQ03 / OD-20260908-06:** §2.1 nay ghi HAI mục adapter của
+  một nhà cung cấp THẬT (Anthropic — `claude-sonnet-5`, `claude-opus-5`). Câu ngay trên được đọc
+  lại chứ không bị xoá, và vẫn đúng theo cả hai vế: (a) file vẫn KHÔNG liệt kê adapter nào là
+  "đã được duyệt" — cả hai mục mang `enabled: false`; (b) mọi phát biểu về điều khoản trong §2.1
+  là bản ghi của một lần ĐỌC có URL, ngày đọc và trích dẫn nguyên văn
+  (`precode/owner-decisions-06.md` §3), không phải một khẳng định không nguồn.
 verification: >-
   E0 SELF_VALIDATION ở gói PC06: EV-PC06-01 (YAML parse), EV-PC06-02 (operation/entity/error code
   được trích dẫn có tồn tại). Việc kiểm chứng cô lập THẬT là E3 và `NOT_RUN`
@@ -127,6 +133,224 @@ adapter_entry_template:
     terms_check: {read_official_docs: false, read_at: null, reviewer: null, outcome: not_read}
     enabled: false
     disabled_reason: "Placeholder. Chưa đọc tài liệu chính thức (REQ-A5) và chưa kiểm chứng cô lập (B13). Đây là ví dụ về HÌNH DẠNG, không phải một provider thật."
+
+# -----------------------------------------------------------------------------
+# 2.1 Hai mục adapter đã đăng ký — REQ-OQ03 (OD-20260908-06). CẢ HAI enabled = false
+# -----------------------------------------------------------------------------
+registered_adapters:
+  decision_refs: [OD-20260908-06, B13, ADR-0010]
+  requirement_refs: [REQ-OQ03, REQ-A5, REQ-D39, REQ-D40, REQ-D41, REQ-D43, REQ-D44]
+  recorded_by: "worker-WAI · PKT-PC06-FIX-OQ03 · LEASE-PC06-OQ03 · AUTH-COORD-OQ03 (cha AUTH-OWNER-20260908-06) · 2026-09-08"
+  owner_answer_verbatim: "sonnet 5 + opus 5 for summary"
+  claim_ceiling: DRAFT_FOR_REVIEW
+  what_this_block_is_vi: >-
+    Bản ghi của một QUYẾT ĐỊNH (provider/model — REQ-OQ03) cộng một lần ĐỌC tài liệu (REQ-A5).
+    Nó KHÔNG là bằng chứng cô lập và KHÔNG bật adapter nào. Trạng thái bật/tắt do §4 và §5 quyết,
+    và cả hai mục dưới đây `enabled: false`.
+
+  adapter_id_version_note_vi: >-
+    §2 đòi `<provider_slug>@<version>` với version cụ thể, cấm `latest`. Hai model này không có
+    bản snapshot đính ngày, nên chuỗi **model id chính là token version** được pin; `provider_slug`
+    là `anthropic`. Phiên bản API (`anthropic-version`) **không** được pin ở đây và đó là một
+    khoảng trống ĐÃ BIẾT, không phải một giá trị đã kiểm: trang mang dữ kiện đó
+    (`https://docs.anthropic.com/en/api/versioning`) trả `301` sang `platform.claude.com` — NGOÀI
+    quyền mạng được cấp — nên Worker DỪNG tại redirect (`BLOCKED_SCOPE`, `protocol.md` §3), giống
+    tiền lệ `docs.openalex.org` ở `precode/decision-register.md` §8.13.1.
+  model_id_source_vi: >-
+    Nguồn của hai chuỗi `claude-sonnet-5` / `claude-opus-5` và của luật "không đính hậu tố ngày" là
+    skill `claude-api` đóng gói sẵn trong Claude Code (bảng *Current Models*, cached 2026-06-24) —
+    **không** phải một trang tài liệu đã tải trong quyền mạng này, vì mọi trang model/pricing của
+    Anthropic đều redirect ra `platform.claude.com` / `claude.com`. Ghi rõ để lần kiểm sau biết
+    phải xác nhận lại chuỗi id từ tài liệu chính thức khi quyền mạng cho phép.
+
+  terms_conditions_vi:
+    note_vi: >-
+      `terms_check.outcome = permitted_for_this_use` của cả hai mục là kết luận cho ĐÚNG cách dùng
+      của hệ này (gắn nhãn + summary tự động, không người trực, cho văn bản nghiên cứu của bên thứ
+      ba; kết quả lưu và dùng lại trong một công cụ tự vận hành). Nó đi kèm HAI điều kiện thuộc về
+      PHÍA MÌNH, không phải hạn chế do Anthropic đặt lên cách dùng:
+    conditions:
+      - id: TC-A5-01
+        text_vi: >-
+          Commercial ToS: *"Customer further represents and warrants that it has all rights and
+          permissions required to submit Inputs to the Services."* Hệ này gửi văn bản của bên thứ
+          ba (abstract arXiv/OpenAlex, nội dung post) làm Input ⇒ nghĩa vụ về quyền đối với Input
+          nằm ở phía Owner. Đây là điều kiện ĐANG MỞ, không phải điều kiện đã thỏa.
+      - id: TC-A5-02
+        text_vi: >-
+          Usage Policy cấm *"Utilization of inputs and outputs to train an AI model (e.g., 'model
+          scraping' or 'model distillation') without prior authorization from Anthropic."* Kiến
+          trúc hiện tại KHÔNG train model nào (embedding là model local đã có sẵn, REQ-D48/D50),
+          nên điều cấm này hiện không kích hoạt — nhưng nó chặn mọi ý định về sau dùng output đã
+          lưu để huấn luyện.
+    reviewer_caveat_vi: >-
+      §5 `what_pc06_must_not_do_vi` viết "PC06 KHÔNG đọc thay và KHÔNG đoán", và §5 `reviewer` ghi
+      "Ở MVP một người dùng, đây là Owner". Lần đọc này do một **Worker** thực hiện, theo đúng
+      `OD-20260908-05` mục 1 ("a Worker still does that, separately"). Hai câu đó vì vậy lệch nhau
+      — đó là `CR-PC06-OQ03-02`. **Owner ĐÃ ký xác nhận (`OD-20260908-08`, authority
+      `AUTH-OWNER-20260908-09`, 2026-09-08)**, sau khi tự đọc bảng trích dẫn A5-1..A5-8 và hai điều
+      kiện mở ở `precode/owner-decisions-06.md` §3: chỗ lệch được Owner chốt theo hướng "Worker đọc,
+      **Owner ký**", nên §5 `reviewer = Owner` nay THOẢ — cho ĐÚNG Anthropic và ĐÚNG ba trang có
+      ngày hiệu lực ở `source_urls`, và hết hiệu lực khi một trong ba đổi phiên bản (ADR-0010).
+      `CR-PC06-OQ03-02` **đóng bởi Owner**, không phải bởi người phát hiện. Hai đoạn trước dấu gạch
+      ngang giữ nguyên câu chữ của ngày chúng được viết (2026-09-08, trước chữ ký) và không được đọc
+      như trạng thái hiện hành. Chữ ký này **không** bật adapter nào: cổng đang đóng là cô lập
+      (`B13`/ADR-0010), không phải điều khoản.
+
+  isolation_determination_vi:
+    question_vi: >-
+      Một adapter `api_key` HTTP thuần, không có bề mặt tool-calling, có mục nào trong ISO-01..05
+      được mang `not_applicable` để đi tới `enabled: true` mà không cần probe không?
+    answer_vi: KHÔNG — và kết luận này bị chặn bởi chính văn bản, không phải bởi sự thận trọng.
+    basis:
+      - where: "§4 `status_values` → `not_applicable`"
+        text_vi: >-
+          *"Chỉ dùng cho họ `api_key` với các tính chất mà **kiến trúc đã loại bỏ**; phải ghi lý do."*
+          Chốt nằm ở "kiến trúc đã loại bỏ". ISO-03 (network egress) và ISO-05 (credential đúng
+          provider, đúng task đang giữ lease) là những tính chất mà đường `api_key` **tạo ra**, chứ
+          không phải loại bỏ: nó là đường DUY NHẤT gọi mạng ra một endpoint nhà cung cấp (§1
+          `api_key`) và là đường DUY NHẤT nhận `secret_ref` (§1 `cli_acp` có `secret_ref = NULL`,
+          REQ-D51; ADR-0010 điểm 1). Vậy hai tính chất này không thuộc tập mà `not_applicable` phủ,
+          với BẤT KỲ cách đọc nào của câu đó.
+      - where: "§4 `current_status_vi`"
+        text_vi: >-
+          *"Ở giai đoạn Pre-code, **mọi** adapter có `isolation.* = unverified` và do đó
+          `enabled = false`. Không có ngoại lệ, vì chưa có probe nào chạy (E3 = `NOT_RUN`)."*
+          Câu này phủ luôn ISO-01/02/04. Thêm một lý do độc lập: `not_applicable` giả định một kiến
+          trúc ĐÃ tồn tại để "loại bỏ" được một tính chất; ở Pre-code `MOD-ai-adapter` chưa có một
+          dòng mã nào, nên cái được loại bỏ mới là DỰ ĐỊNH — mà §4 `principle_vi` nói thẳng: *"Một
+          lời hứa trong tài liệu của nhà cung cấp KHÔNG phải bằng chứng cô lập."*
+      - where: "ADR-0010 điểm 3 và §4 `principle_vi`"
+        text_vi: >-
+          *"Không kiểm chứng được thì không bật."* Cách kiểm ISO-03 là ghi lại tập đích của một lần
+          chạy; cách kiểm ISO-05 là gọi `secret.issue_task_credential` cho một worker KHÔNG giữ
+          lease và thấy nó bị từ chối. Cả hai đòi một lần CHẠY, và E3 = `NOT_RUN`
+          (`contracts/ops/cli-acp-probe.md`); `secret.issue_task_credential` cũng chưa có mã.
+    what_would_change_it_vi: >-
+      Không phải một cách đọc khác của hợp đồng, mà một lần chạy: probe E3 quan sát được egress của
+      adapter và một denied-case thật cho `secret.issue_task_credential`. Trước đó, `enabled: true`
+      cho hai mục này là một tuyên bố không có oracle.
+    template_gap_vi: >-
+      Object `isolation` trong `example_entry` chỉ có ba trạng thái (`tools_disabled`,
+      `filesystem_scope`, `network_egress`) + `verification_method`, trong khi §4 đòi **năm** tính
+      chất: ISO-04 (Telegram) và ISO-05 (phạm vi credential) **không có ô để ghi**. Hai mục dưới
+      đây giữ đúng hình dạng của template (không tự thêm khoá vào một object đã có ví dụ chuẩn) và
+      nêu khoảng trống ở đây — xem `CR-PC06-OQ03-01`.
+
+  entries:
+    - adapter_id: "anthropic@claude-sonnet-5"
+      provider_name: Anthropic
+      model_name: "claude-sonnet-5"
+      auth_family: api_key
+      task_support: [label, direction_phrasing]
+      max_concurrency: 1
+      request_timeout_seconds: 120
+      cancellation_support: cooperative
+      json_extraction_method: native_json
+      usage_reporting: exact
+      isolation:
+        tools_disabled: unverified
+        filesystem_scope: unverified
+        network_egress: unverified
+        verification_method: null
+      terms_check:
+        read_official_docs: true
+        read_at: "2026-09-07T18:08:00.000Z"
+        source_urls:
+          - "https://www.anthropic.com/legal/commercial-terms"
+          - "https://www.anthropic.com/legal/aup"
+          - "https://www.anthropic.com/legal/service-specific-terms"
+        reviewer: "Owner — ĐÃ KÝ XÁC NHẬN, OD-20260908-08 (authority AUTH-OWNER-20260908-09), 2026-09-08, sau khi tự đọc bản tóm tắt A5-1..A5-8 và hai điều kiện mở; lần đọc gốc do worker-WAI thực hiện (PKT-PC06-FIX-OQ03). §5 `reviewer = Owner` nay THOẢ cho ĐÚNG Anthropic và ĐÚNG ba trang đã dẫn ở source_urls, hết hiệu lực khi một trong ba đổi phiên bản (ADR-0010). Owner chấp nhận TƯỜNG MINH bảo đảm TC-A5-01 (quyền đưa văn bản bên thứ ba vào làm Input). Ghi chú: terms_conditions_vi.reviewer_caveat_vi và mệnh đề cuối của disabled_reason mục sonnet-5 viết TRƯỚC chữ ký này nên nay ĐÃ CŨ — ngoài lease LEASE-PC06-OQ03-p3, xem CR-PC06-OQ03-08."
+        outcome: permitted_for_this_use
+      enabled: false
+      disabled_reason: >-
+        Cô lập chưa kiểm chứng — KHÔNG phải "chưa cấu hình" và KHÔNG phải vì điều khoản.
+        `isolation.network_egress` (ISO-03) và tính chất credential-theo-task (ISO-05) là hai tính
+        chất mà đường `api_key` TẠO RA nên không đủ điều kiện mang `not_applicable` theo §4
+        `status_values`; cách kiểm cả hai đều đòi một lần chạy quan sát được, và E3 = `NOT_RUN`
+        (`contracts/ops/cli-acp-probe.md`) trong khi `secret.issue_task_credential` chưa có mã.
+        `unverified ⇒ enabled = false` là luật của chính §4. Điều khoản (`terms_check`) KHÔNG phải
+        cái đang chặn: `REQ-A5` cho Anthropic đã được **Owner ký xác nhận** (`OD-20260908-08`,
+        2026-09-08), và chữ ký đó KHÔNG còn là điều kiện mở. Còn ĐÚNG MỘT điều kiện thuộc phía mình,
+        và nó đã đổi hình: phần bảo đảm với Anthropic của TC-A5-01 (quyền đưa văn bản bên thứ ba vào
+        làm Input) được Owner NHẬN tường minh; phần chính sách nguồn — arXiv/OpenAlex/X có cho phép
+        hệ này tái xử lý nội dung của họ hay không — VẪN MỞ, chưa ai được giao đi hỏi, và
+        `OD-20260908-08` nói thẳng rằng chữ ký này không chạm tới nó. Điều kiện ấy KHÔNG phải cái
+        đang giữ `enabled = false`; cái đang giữ là cô lập, đúng như đoạn trên.
+      task_support_note_vi: >-
+        `label` được Owner đặt trên model MẠNH thay vì model rẻ. §7 `rules_vi` cho phép: *"REQ-D40
+        là khuyến nghị mặc định (rẻ cho `label`, mạnh cho `summary`), không phải ràng buộc cứng:
+        Owner được phép đặt khác."* Đây là mục có KHỐI LƯỢNG LỚN NHẤT (mọi post/work — tasks.yaml
+        `label.volume_vi`), nên đó là dòng chi phí đáng chú ý nhất của lựa chọn này, không phải một
+        lỗi hợp đồng. `direction_phrasing` khớp thẳng: tasks.yaml khai `model_class: strong` cho nó
+        (1 lần mỗi kỳ), và Sonnet 5 là model lớp mạnh.
+      request_timeout_note_vi: >-
+        120 s = `inference_timeout` NHỎ NHẤT trong hai task mà mục này phục vụ (`label` 120 s,
+        `direction_phrasing` 180 s). §2 đòi `≤ inference_timeout` của task, nên một mục adapter
+        phục vụ nhiều task phải lấy min, không lấy max. Vẫn `< lease_ttl_analysis` (900 s).
+      max_concurrency_note_vi: >-
+        `1` là SÀN thận trọng, **chưa đo**. §1 `api_key` nói "provider tự khai"; hạn mức thật của
+        Anthropic phụ thuộc tier tài khoản và không đọc được từ trang pháp lý trong quyền mạng này
+        (`docs.anthropic.com` redirect ra ngoài allowlist). Nâng số này cần một dữ kiện có nguồn
+        hoặc một lần đo, không phải một con số nhớ được.
+      usage_reporting_note_vi: >-
+        `exact` cho SỐ TOKEN (API trả `usage.input_tokens` / `output_tokens`). `cost_micro_usd` thì
+        KHÔNG do API trả — nó phải suy từ bảng giá công bố, mà bảng giá cũng nằm sau redirect ra
+        ngoài allowlist. Khi chưa có giá có nguồn, `cost_micro_usd` phải đi đường `unknown` chứ
+        tuyệt đối không ghi `0` (I14). Xem `CR-PC06-OQ03-03`.
+
+    - adapter_id: "anthropic@claude-opus-5"
+      provider_name: Anthropic
+      model_name: "claude-opus-5"
+      auth_family: api_key
+      task_support: [summary]
+      max_concurrency: 1
+      request_timeout_seconds: 300
+      cancellation_support: cooperative
+      json_extraction_method: native_json
+      usage_reporting: exact
+      isolation:
+        tools_disabled: unverified
+        filesystem_scope: unverified
+        network_egress: unverified
+        verification_method: null
+      terms_check:
+        read_official_docs: true
+        read_at: "2026-09-07T18:08:00.000Z"
+        source_urls:
+          - "https://www.anthropic.com/legal/commercial-terms"
+          - "https://www.anthropic.com/legal/aup"
+          - "https://www.anthropic.com/legal/service-specific-terms"
+        reviewer: "Owner — ĐÃ KÝ XÁC NHẬN, OD-20260908-08 (authority AUTH-OWNER-20260908-09), 2026-09-08, sau khi tự đọc bản tóm tắt A5-1..A5-8 và hai điều kiện mở; lần đọc gốc do worker-WAI thực hiện (PKT-PC06-FIX-OQ03). §5 `reviewer = Owner` nay THOẢ cho ĐÚNG Anthropic và ĐÚNG ba trang đã dẫn ở source_urls, hết hiệu lực khi một trong ba đổi phiên bản (ADR-0010). Owner chấp nhận TƯỜNG MINH bảo đảm TC-A5-01 (quyền đưa văn bản bên thứ ba vào làm Input). Ghi chú: terms_conditions_vi.reviewer_caveat_vi và mệnh đề cuối của disabled_reason mục sonnet-5 viết TRƯỚC chữ ký này nên nay ĐÃ CŨ — ngoài lease LEASE-PC06-OQ03-p3, xem CR-PC06-OQ03-08."
+        outcome: permitted_for_this_use
+      enabled: false
+      disabled_reason: >-
+        Cùng một lý do với `anthropic@claude-sonnet-5`, và nó là lý do CỦA MỤC NÀY chứ không phải
+        một dòng dùng chung: `isolation.network_egress` (ISO-03) và tính chất credential-theo-task
+        (ISO-05) chưa kiểm chứng được vì chưa có probe (E3 = `NOT_RUN`) và chưa có
+        `secret.issue_task_credential` để chạy denied-case. §4: `unverified ⇒ enabled = false`.
+        Điều khoản KHÔNG phải cái đang chặn.
+      request_timeout_note_vi: >-
+        300 s = đúng `inference_timeout` của `summary` (tasks.yaml, `PROVISIONAL`); còn 600 s dư
+        trong `lease_ttl_analysis` = 900 s cho bóc JSON, validate và submit.
+      task_support_note_vi: >-
+        Owner nói nguyên văn "opus 5 **for summary**", nên mục này phục vụ ĐÚNG một task. Đây cũng
+        là task mà tasks.yaml khai `model_class: strong` và `volume_vi: Nhỏ` — khớp REQ-D40 và
+        §10.4 (kiểm soát chi phí bằng số lượng, không bằng hạ model).
+      max_concurrency_note_vi: "Như mục trên: `1` là sàn thận trọng, chưa đo."
+      usage_reporting_note_vi: "Như mục trên: `exact` cho token; `cost_micro_usd` chưa có giá có nguồn ⇒ không được ghi `0` (I14)."
+
+  not_configured_vi: >-
+    Hai mục này KHÔNG tự sinh hàng `ENT-provider-config`. Bảng đó thuộc `MOD-settings-service` và
+    mỗi hàng còn cần `secret_ref`, `terms_check_at`, `terms_check_by` (entities.yaml
+    `ck_provider_config_terms_before_enable`: `enabled = 1 ⇒ terms_check_at IS NOT NULL`). Không
+    hàng nào được tạo ở gói này.
+  fallback_note_vi: >-
+    §6: chỉ adapter `enabled = true` mới được vào allowlist fallback. Cả hai mục đang `false`, nên
+    **không có** allowlist fallback nào hợp lệ lúc này — và §6 `default: off` vẫn là mặc định.
+  ac16_unchanged_vi: >-
+    Hai mục này thuộc họ `api_key`, nên chúng KHÔNG chạm REQ-AC16 (đường không cần API key). §4
+    `ac16_reporting_rule_vi` không đổi: nếu mọi adapter CLI bị disabled thì AC-16 báo `BLOCKED`.
 
 # -----------------------------------------------------------------------------
 # 3. Bóc JSON

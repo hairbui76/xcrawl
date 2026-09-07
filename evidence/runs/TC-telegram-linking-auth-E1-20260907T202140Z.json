@@ -1,0 +1,327 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-02-tc-telegram-linking-auth",
+  "created_at": "2026-09-07T20:25:00Z",
+  "producer_principal": "worker-W5A",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "ffd1efb3588f87504f61c037b4a242b29a6afb0ddd0f1fd1780c677b22a8bf64",
+      "precode/decision-register.md": "058621d0649b798cb8882f718c450d548df1f4672bdee512e330bee77d46e8b0",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "c61be0a4f8dc5884e82bf1ed79c86f0c38da3d0f6aa41e96205c1089f900a4fc",
+      "contracts/telegram/commands.yaml": "fc1a18dac332ea51e63721536d6a47b1d5a3048ed408af24ae787a91874e3556",
+      "contracts/telegram/delivery.md": "cb3a4b30a26f2a5ca5cf9d11359b84ce5612c003dfe51c3acbdbba5d7fde226c",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "precode/adr/ADR-0003-delivery-unknown-state.md": "567828c11049d26993cbeee0d0bd6c157d9938263ec69c5a05fa045da3ceb0e3",
+      "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md": "aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317",
+      "acceptance/scenarios.yaml": "421f7048cc7f0f0a3c7fe50d45255ae3b25dbe18c49b673bf90195d78f55f5cb",
+      "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8"
+    },
+    "contract_versions": {
+      "CT-telegram-commands": "0.1.0",
+      "CT-telegram-delivery": "0.2.1"
+    },
+    "implementation_revision": "PKT-TC-TGAUTH-FIX1 working tree, pin epoch PC10-PIN-P3-20260908; package sha256: ingress=354a8d174d3127d7374a0832c372a6487e4a44eecdfe106bfea491153bff82d6, commands=a3c56856c470617ce9d12055b435ff3a5f4f695fafdccb9411ad4b0a86bca275, linking=417794171076abcbc2b0c0fab5e868c6ece1971e76877d7f3533fbcb7d671ee9, router=0f6d7b1f72aafe19b97d30f50638f72c84b05e4a98500b52719eaefc37893bd4, migration_0006=c6e84237cdae1ad9088cec5835913f08c0c8d7cd71e62b5f960aece19d2e8f68, migration_0007_merge=31e8b1bd9197ec1298ce3ac3e6f4436ae7f0dc89388330529737828b6d65f2b7"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "uv": "0.12.9",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "httpx": "0.28.1",
+      "pydantic": "2.13.5"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "telegram_bot_token": "không tồn tại trong môi trường này — không một lời gọi Bot API nào được phát ra",
+      "telegram_ingress_secret_token": "chuỗi test tường minh trong tests/, không phải secret thật",
+      "webhook_url": "không cấu hình — endpoint chỉ được gọi qua fastapi TestClient trong tiến trình"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC13",
+      "SC18",
+      "SC25",
+      "SC45",
+      "SC46",
+      "SC47",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-D35",
+      "REQ-D36",
+      "REQ-D37",
+      "REQ-D38",
+      "REQ-AC13",
+      "REQ-AC15",
+      "REQ-AC18",
+      "REQ-S11.3-01",
+      "REQ-S11.3-02",
+      "REQ-S11.3-03",
+      "REQ-S11.3-04",
+      "REQ-S11.3-05",
+      "REQ-S5.4-04"
+    ],
+    "invariant_ids": [
+      "I01",
+      "I11"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/telegram/README.md",
+        "sha256": "dbb368afae93bd40530a153769106995643996669a57a26dd2e55fb1ef905863",
+        "bytes": 10508
+      },
+      {
+        "path": "acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json",
+        "sha256": "248cda9cfe131aa4f6f72d36289082895d9d4162e93c7c195f239059d38ece95",
+        "bytes": 4259
+      },
+      {
+        "path": "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json",
+        "sha256": "9289f962019f337d542fe0f044e2d99e1eeb42aa48e7b7605c013b1a2f48ab91",
+        "bytes": 4729
+      },
+      {
+        "path": "acceptance/fixtures/telegram/f-stale-callback-no-save.json",
+        "sha256": "c364bd77a60ac71f2c534714e77329a019756c8198ff353c6ed5052189b4f495",
+        "bytes": 3890
+      },
+      {
+        "path": "acceptance/fixtures/telegram/g-link-code-used-twice.json",
+        "sha256": "db813e76477f1be7d940d30205be25409d4e4b345bc4cc77e28e3b718506ae7b",
+        "bytes": 3700
+      },
+      {
+        "path": "acceptance/fixtures/telegram/h-unknown-chat-status-silent.json",
+        "sha256": "1e368114fb976d708aa131518afe36db932c4df5e42c6dad17c2aa6078032ed2",
+        "bytes": 3293
+      },
+      {
+        "path": "acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json",
+        "sha256": "8fa94e8db3007272fd7888e29778a383d354f8ba79380eaf3fc1186422e0d253",
+        "bytes": 6967
+      },
+      {
+        "path": "acceptance/fixtures/telegram/l-run-now-while-needs-user.json",
+        "sha256": "504781a5e21794e0774f9efaae0bbafb5eff92e7945b94e399d36ff5dd1e5350",
+        "bytes": 4273
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      }
+    ]
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/contract/test_telegram_command_allowlist.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_link_code_once.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_unknown_chat_silent.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/contract/test_schema_matches_entities.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff check server/app/telegram tests/contract/test_telegram_command_allowlist.py tests/integration/test_link_code_once.py tests/integration/test_unknown_chat_silent.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run mypy  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-07T20:21:21Z",
+    "ended_at": "2026-09-07T20:23:24Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Bốn oracle của card §8, đo bằng đếm hàng, đếm lời gọi ra và so chuỗi — không đọc log. (1) Fixture h: chat lạ gửi /status ⇒ outbound call count = 0, 0 mutation trên mọi bảng nghiệp vụ, 0 reply, và chat ID lạ không xuất hiện ở dạng thô trong bất kỳ cột nào. (2) Fixture i: chỉ chuỗi khớp đúng regex mã mới được đối chiếu; chuỗi không khớp ⇒ 0 hàng telegram_link_attempt; sai mã ⇒ im lặng. (3) Fixture g: mã dùng lần hai bị từ chối, COUNT(telegram_link active) = 1, chat B không chiếm được liên kết. (4) Fixture l: /run_now khi run needs_user ⇒ không resume, đúng 1 tin trả lời trỏ vào app. Cộng thêm: allowlist đúng ba lệnh và không có lệnh thứ tư; ba tham số làm việc bằng đúng giá trị trong contracts/telegram/commands.yaml; mã lỗi theo bảng R5-01 (FORBIDDEN_EDGE ở mức cạnh cho FE-33, UNAUTHORIZED_COMMAND ở mức đường đi); và không một dòng mã nào trong gói dùng parse_mode / reply_markup / inline_keyboard / answerCallbackQuery. PKT-TC-TGAUTH-FIX1 thêm ba oracle: (5) `/save <target>` từ chat đã liên kết đi qua `TelegramSaveAdapter` THẬT của TC-saved-snapshot vào `save.create` thật — hai lần bấm ⇒ 1 `saved_item`, 1 `saved_snapshot`, 0 snapshot mồ côi, 2 phản hồi, `save_channel='telegram'`; (6) adapter KHÔNG tự parse target — chuỗi sai được chuyển nguyên văn và saved service trả `VALIDATION_ERROR`, 0 hàng; (7) `TelegramSender.send_message` trả `message_id` của provider và `IngressOutcome.message_ids` mang đúng thứ tự gửi; đường im lặng trả tuple rỗng, không phải một id rỗng (CR-TC-DELIVERY-09).",
+    "expected": {
+      "pytest_card_section_8": "3 lệnh, exit 0, 0 failed",
+      "outbound_sendMessage_unknown_chat": 0,
+      "telegram_link_active_after_second_use": 1,
+      "telegram_link_attempt_rows_for_non_matching_text": 0,
+      "run_list_calls_for_unknown_chat": 0,
+      "sendMessage_for_run_now_while_needs_user": 1,
+      "allowlist_size": 3,
+      "alembic_heads": 1,
+      "saved_item_after_two_presses": 1,
+      "saved_snapshot_after_two_presses": 1,
+      "orphan_saved_snapshot": 0,
+      "replies_for_two_presses": 2,
+      "send_message_return_type": "str (provider message_id)"
+    },
+    "observed": {
+      "pytest_card_section_8": "24 passed + 2 xfailed (contract), 8 passed (link code), 8 passed (unknown chat); exit 0 mỗi lệnh",
+      "outbound_sendMessage_unknown_chat": 0,
+      "telegram_link_active_after_second_use": 1,
+      "telegram_link_attempt_rows_for_non_matching_text": 0,
+      "run_list_calls_for_unknown_chat": 0,
+      "sendMessage_for_run_now_while_needs_user": 1,
+      "allowlist_size": 3,
+      "alembic_heads": 1,
+      "schema_vs_entities": "10 passed — 4 bảng telegram_* khớp contracts/data/entities.yaml theo cả hai chiều, khóa unique và CHECK đúng tên, DDL giống nhau dưới 4 thứ tự duyệt",
+      "ruff": "All checks passed",
+      "mypy": "Success: no issues found in 49 source files",
+      "saved_item_after_two_presses": 1,
+      "saved_snapshot_after_two_presses": 1,
+      "orphan_saved_snapshot": 0,
+      "replies_for_two_presses": 2,
+      "send_message_return_type": "str (provider message_id); RecordingSender trả rec-1, rec-2, …",
+      "full_suite": "826 passed, 9 xfailed, 1 failed — lần failed duy nhất là XPASS strict trong tests/integration/test_multipart_partial_receipt.py của TC-telegram-unknown-delivery, đúng thứ họ sẽ gỡ xfail"
+    }
+  },
+  "result": "PASS",
+  "artifacts": [
+    {
+      "path": "server/app/telegram/ingress.py",
+      "sha256": "354a8d174d3127d7374a0832c372a6487e4a44eecdfe106bfea491153bff82d6",
+      "bytes": 30277,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn. Không chứa bot token, webhook secret, chat ID thật hay mã liên kết; chuỗi secret duy nhất xuất hiện trong test là hằng test tường minh."
+    },
+    {
+      "path": "server/app/telegram/commands.py",
+      "sha256": "a3c56856c470617ce9d12055b435ff3a5f4f695fafdccb9411ad4b0a86bca275",
+      "bytes": 19894,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn. Không chứa secret."
+    },
+    {
+      "path": "server/app/telegram/linking.py",
+      "sha256": "417794171076abcbc2b0c0fab5e868c6ece1971e76877d7f3533fbcb7d671ee9",
+      "bytes": 25082,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn. Mã liên kết chỉ tồn tại trong bộ nhớ tiến trình; chỉ sha256 được ghi xuống đĩa."
+    },
+    {
+      "path": "server/app/telegram/router.py",
+      "sha256": "0f6d7b1f72aafe19b97d30f50638f72c84b05e4a98500b52719eaefc37893bd4",
+      "bytes": 10383,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn. Không chứa secret."
+    },
+    {
+      "path": "server/migrations/versions/0006_tc_telegram_linking_auth.py",
+      "sha256": "c6e84237cdae1ad9088cec5835913f08c0c8d7cd71e62b5f960aece19d2e8f68",
+      "bytes": 8024,
+      "kind": "other",
+      "redaction_note_vi": "DDL của bốn bảng telegram_*."
+    },
+    {
+      "path": "server/migrations/versions/0007_merge_phase3_5_heads.py",
+      "sha256": "31e8b1bd9197ec1298ce3ac3e6f4436ae7f0dc89388330529737828b6d65f2b7",
+      "bytes": 1825,
+      "kind": "other",
+      "redaction_note_vi": "Merge revision, không DDL."
+    },
+    {
+      "path": "tests/contract/test_telegram_command_allowlist.py",
+      "sha256": "6c13c7a63a0db41a3182287a672ecd53caf44a821dd3f6b27f40228b3328fc3b",
+      "bytes": 40477,
+      "kind": "other",
+      "redaction_note_vi": "Test. Chat ID và webhook secret trong file là hằng test tường minh."
+    },
+    {
+      "path": "tests/integration/test_link_code_once.py",
+      "sha256": "542aa82ccaaf1c90db32b4c3efc31f537b77cec967d9d5623cdcbaa1e0a41601",
+      "bytes": 20080,
+      "kind": "other",
+      "redaction_note_vi": "Test."
+    },
+    {
+      "path": "tests/integration/test_unknown_chat_silent.py",
+      "sha256": "c1c57ecadb0c22c2fdac913454a7eedbbb754ffd592bd22a49fc82124385c092",
+      "bytes": 17999,
+      "kind": "other",
+      "redaction_note_vi": "Test."
+    },
+    {
+      "path": "server/app/main.py",
+      "sha256": "8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59",
+      "bytes": 11088,
+      "kind": "other",
+      "redaction_note_vi": "File dùng chung; gói này chỉ thêm một khối include có phân định `# >>> TC-telegram-linking-auth`."
+    }
+  ],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 40,
+    "not_checked_vi": [
+      "KHÔNG gọi Bot API thật: không token, không mạng, không webhook đăng ký. Mọi lời gọi ra đi qua cổng TelegramSender với bản ghi trong tiến trình. E3 (gửi thật tới Telegram) là NOT_RUN và không thuộc card này (§8 'Yêu cầu live').",
+      "NOT_RUN (BLOCKED_DEPENDENCY CR-PC07-04): toàn bộ đường callback của CMD-save — fixture f-stale-callback-no-save, năm bước validation_order của commands.yaml §3, SC46 — không được hiện thực. Ba dữ kiện định dạng (độ dài callback_data, bảng escape parse mode, số nút mỗi hàng/bàn phím) vẫn KC trong contracts/telegram/delivery.md §3.4. Cái ĐƯỢC chứng minh là đường bị chặn không thể chạm tới do nhầm: một callback query bị bỏ, 0 lời gọi save.create, 0 hàng, 0 phản hồi.",
+      "run.list và run.run_now được đo qua port theo chữ ký của contracts/ports.yaml với test double; server/app/job/service.py chưa tồn tại (TC-scheduler-lease-claim, Giai đoạn 6). Nửa phía server của RN-01 — 'run vẫn ở needs_user, run__status_changes = 0' — là NOT_RUN; nửa phía adapter (không resume, đúng một tin trả lời trỏ vào app) đã chạy.",
+      "`/save` nay chạy end-to-end vào `server.app.saved.service` thật qua `TelegramSaveAdapter` của TC-saved-snapshot. Điểm DỪNG chính xác: đối số mang theo là **target reference** (`work:<ulid>` / `post:<ulid>`), KHÔNG phải `report_item_id` mà `ii` của hợp đồng nói tới. Bước `report_item_id → target` cùng hai phép kiểm `lg`/`rv` quanh nó vẫn NOT_RUN vì cần (a) đường callback (CR-PC07-04, còn KC) và (b) bảng `report_item` của Phase 4 (TC-report-coverage-publish-cas). Xem CR-TC-TGAUTH-06 và CR-TC-SAVED-07 — hai card đi tới cùng một kết luận độc lập. Chuỗi 'bấm 5 lần' được đo ở hai lần trong bản ghi này và ở năm lần trong suite của TC-saved-snapshot.",
+      "Bảng `run` chưa tồn tại trong schema, nên hàng `given.rows.run` của fixture h và l không được nạp; oracle phụ thuộc nó (run_list_calls = 0, run__status_changes = 0) được khẳng định ở cổng thay vì ở bảng.",
+      "Việc hủy delivery của generation cũ (T-DL-08, fixture d và e) KHÔNG thuộc gói này: cạnh đó là của MOD-delivery-service. Cái được khẳng định là adapter không tự ghi hàng delivery nào — kiểm trên mã nguồn.",
+      "Tính chất constant-time của so sánh webhook secret được khẳng định bằng việc dùng hmac.compare_digest, KHÔNG bằng đo thời gian: một phép đo timing trong unit test sẽ nhiễu và sẽ là bằng chứng giả.",
+      "EDGE-06 (kho ở write_blocked) được hiện thực nhưng chỉ chạy ở nhánh 'không có storage guard' — chưa có test bơm lỗi ổ đĩa cho đường Telegram; đó là E2 và là NOT_RUN ở đây.",
+      "Ba tham số làm việc (định dạng mã, hạn 15 phút, 5 lần/giờ) vẫn PROVISIONAL trong hợp đồng (CR-PC07-01) và telegram_update_max_age vẫn PROVISIONAL (CR-PC07-05). Chúng được đọc từ settings và được test đối chiếu với hợp đồng; điều đó KHÔNG biến chúng thành giá trị đã chốt.",
+      "Lần chạy này không chứng minh bất kỳ điều gì về hai card anh em cùng đợt (TC-saved-snapshot, TC-telegram-unknown-delivery); hai test thất bại trong tests/integration/test_multipart_partial_receipt.py ở lượt chạy toàn bộ thuộc gói khác và không nằm trong phạm vi bản ghi này.",
+      "`TelegramSender.send_message` nay trả `message_id` của provider (CR-TC-DELIVERY-09), nhưng giá trị THẬT chỉ tồn tại khi có lời gọi Bot API thật: ở đây nó đến từ `RecordingSender` với id xác định (`rec-<n>`), có tiền tố cố ý khác id của Telegram để không test nào pass được bằng cách coi id ghi lại là một biên nhận thật. `HttpxTelegramSender` đọc `result.message_id` và ném `INTERNAL` nếu 200 không mang id — đường đó là E3, NOT_RUN.",
+      "Quy tắc xfail mới (strict=True, run=True) áp cho card anh em vắng mặt: `test_run_now_against_the_real_job_service` sẽ XPASS ồn ào khi TC-scheduler-lease-claim land. Xfail của đường callback giữ `run=False` vì nó KHÔNG chờ một card anh em — nó chờ một dữ kiện hợp đồng (CR-PC07-04), và chạy một thân test không tồn tại không nói thêm điều gì."
+    ],
+    "uncertainty_vi": "Rủi ro còn lại lớn nhất là CR-PC07-04: chừng nào ba dữ kiện định dạng của Telegram còn KC, nhánh callback/keyboard/parse-mode của MOD-telegram-adapter vẫn không thể xây, và một phần REQ-D38 (nút Save trong digest) vẫn nằm ngoài tầm. Rủi ro thứ hai: `/save <target>` là ánh xạ trigger ở tầng adapter do gói này chọn (CR-TC-TGAUTH-02) để phạm vi plain-text có một đường Save, và đối số nó mang là target reference chứ không phải `report_item_id` (CR-TC-TGAUTH-06); Owner có thể thay cả hai khi đường callback mở.",
+    "unresolved_issue_refs": [
+      "CR-PC07-01",
+      "CR-PC07-03",
+      "CR-PC07-04",
+      "CR-PC07-05"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/telegram/e-relink-old-generation-cancelled.json",
+      "acceptance/fixtures/telegram/g-link-code-used-twice.json",
+      "acceptance/fixtures/telegram/h-unknown-chat-status-silent.json",
+      "acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json",
+      "acceptance/fixtures/telegram/l-run-now-while-needs-user.json",
+      "contracts/capabilities.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml",
+      "contracts/modules.yaml",
+      "contracts/ops/secrets.md",
+      "contracts/ports.yaml",
+      "contracts/telegram/commands.yaml",
+      "contracts/telegram/delivery.md",
+      "server/app/main.py",
+      "server/app/saved/service.py",
+      "server/app/telegram/commands.py",
+      "server/app/telegram/ingress.py",
+      "server/app/telegram/linking.py",
+      "server/app/telegram/router.py",
+      "server/migrations/versions/0006_tc_telegram_linking_auth.py",
+      "server/migrations/versions/0007_merge_phase3_5_heads.py"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "Chống đỡ DUY NHẤT cho: cổng vào Telegram, vòng đời mã liên kết và allowlist ba lệnh tồn tại như hợp đồng mô tả, và 40 test trên fixture đã pin pass với ruff/mypy sạch. Trần của card là IMPLEMENTATION_VERIFIED; một bản ghi SELF_VALIDATION KHÔNG chống đỡ nhãn đó (protocol §9, evidence/manifest.schema.json §x-maximum-claim-by-review-type). Nâng lên IMPLEMENTATION_VERIFIED cần một audit độc lập trên đúng các byte này.",
+    "not_established_vi": [
+      "Telegram thật hành xử như mô tả — không một lời gọi Bot API nào được phát ra.",
+      "Đường callback/nút Save hoạt động — NOT_RUN, BLOCKED_DEPENDENCY CR-PC07-04.",
+      "run.run_now/run.list phía server tôn trọng needs_user — nửa server là của TC-scheduler-lease-claim, NOT_RUN.",
+      "`save.create` tạo đúng một snapshot khi bấm nhiều lần — ĐÃ chạy qua service thật ở hai lần bấm; năm lần bấm và nhánh `report_item_id` vẫn thuộc TC-saved-snapshot / Phase 4.",
+      "Delivery của generation cũ bị hủy — của TC-telegram-unknown-delivery, NOT_RUN.",
+      "Ba tham số PROVISIONAL (định dạng mã, hạn, rate limit) là giá trị cuối — CR-PC07-01 vẫn mở.",
+      "Hành vi dưới write_blocked đã được kiểm bằng bơm lỗi — E2, NOT_RUN.",
+      "Bất kỳ khẳng định nào về independent review — bản ghi này là SELF_VALIDATION."
+    ]
+  }
+}

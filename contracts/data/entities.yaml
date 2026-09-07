@@ -1621,9 +1621,21 @@ entities:
       - {name: ck_provider_config_terms_before_enable, expression: "enabled = 0 OR terms_check_at IS NOT NULL", requirement_refs: [REQ-A5], decision_refs: [ADR-0010, CR-PC07-07], rationale_vi: "REQ-A5 và ADR-0010: đọc điều khoản của TỪNG nhà trước khi bật đường CLI/ACP cho nhà đó. Trước FIX5 điều này chỉ là văn xuôi; nay là ràng buộc kiểm được, và là dạng MẠNH của oracle SC51 mà fixture đã chờ."}
       - {name: ck_provider_config_terms_by, expression: "terms_check_at IS NULL OR terms_check_by IS NOT NULL"}
     terms_check_note_vi: >-
-      Ba cột `terms_*` ghi nhận VIỆC ĐÃ ĐỌC, không thay thế việc đọc. `terms_doc_ref` là `KC`
-      (REQ-A5): giai đoạn Pre-code không có mạng nên chưa nhà nào được đọc; adapter vì vậy mặc
-      định `enabled = false` và CHECK ở trên giữ nguyên trạng đó cho tới khi có người đọc thật.
+      Ba cột `terms_*` ghi nhận VIỆC ĐÃ ĐỌC, không thay thế việc đọc. Cập nhật 2026-09-08
+      (`OD-20260908-06` §3, đọc dưới một quyền chỉ-đọc-tài-liệu do Owner cấp): câu cũ ở đây —
+      "giai đoạn Pre-code không có mạng nên CHƯA NHÀ NÀO ĐƯỢC ĐỌC" — nay KHÔNG còn đúng cho MỌI
+      nhà. Điều khoản chính thức của **Anthropic** ĐÃ ĐƯỢC ĐỌC (Commercial ToS hiệu lực
+      2025-06-17, Usage Policy 2025-09-15, Service Specific Terms 2026-06-08), kết luận
+      `permitted_for_this_use` cho đúng cách dùng của hệ này, trích dẫn nguyên văn ở
+      `precode/owner-decisions-06.md` §3. Ba điều KHÔNG đổi vì lần đọc đó. (1) Nó KHÔNG tự đặt
+      `enabled = true`: `enabled` bị chặn bởi B13 — adapter phải kiểm chứng được cô lập — và đó
+      là một điều kiện KHÁC, không liên quan tới ghi chú này; CHECK
+      `ck_provider_config_terms_before_enable` vẫn là điều kiện CẦN, không phải điều kiện ĐỦ.
+      (2) Nó KHÔNG tự điền `terms_check_at`/`terms_doc_ref`: ba cột đó là bản ghi vận hành trên
+      một hàng thật, do principal xác nhận ghi vào, không phải do một biên bản ghi hộ. (3) Nó
+      KHÔNG mở cho nhà nào khác: các nhà còn lại vẫn CHƯA được đọc và vẫn `KC` theo REQ-A5, nên
+      với họ câu cũ vẫn nguyên giá trị. Kết luận của lần đọc có hạn dùng: nó hết hiệu lực khi
+      một trong ba trang đổi phiên bản (ADR-0010), và khi đó phải đọc lại.
     owned_by_package: PC06 (capability matrix), PC08 (secret distribution).
 
   - name: provider_test_result

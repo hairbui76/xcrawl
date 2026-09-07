@@ -3263,3 +3263,136 @@ mở, vận hành thuộc Owner); E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_
 ---
 
 *PKT-PC10-FIX23 · worker-WP · `lease_released_at` 2026-09-08T00:10Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX24 (re-pin `P3`, dưới lệnh đóng băng `precode/`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX24` · lease `LEASE-PC10-e25` (fencing 25) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-08T00:45Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P3-20260908`** (thay `PC10-PIN-P2d-20260907`) |
+
+## X.1 Cổng chờ — lần này chờ vì đúng lý do
+
+Coordinator báo `precode/owner-decisions-09.md` đang được một gói song song ghi. Tôi **không** pin ngay:
+pin trong lúc một gói còn ghi `precode/` là cách chắc chắn nhất để mua thêm một vòng stale — đúng bài học
+`CR-PC10-15`. Điều kiện chờ có hai vế, không chỉ một: `-09.md` **xuất hiện** *và* `precode/baseline.json`
+cùng `precode/decision-register.md` **giữ nguyên hash hai phút liên tiếp**. Mở ở phút thứ 7.
+
+**Ghi nhận để Coordinator theo dõi:** danh sách trong packet nêu bốn file mới `-05`, `-06`, `-07`, `-08`;
+trên đĩa lúc bàn giao có `-02`, `-03`, `-04`, `-05`, `-06`, `-09`. **`-07` và `-08` không tồn tại.** Không
+file nào trong nhóm này được card pin (chúng không nằm trong read set), nên chúng **không** ảnh hưởng lần
+pin này — nhưng nếu hai số đó lẽ ra phải có mặt thì một gói nào đó chưa land, và đó là việc của Coordinator.
+
+## X.2 Re-pin
+
+Trước: **61 vi phạm `pins`** trên năm file đã pin — `contracts/ai/providers.yaml`,
+`contracts/telegram/delivery.md`, `contracts/data/entities.yaml`, `precode/baseline.json`,
+`precode/decision-register.md`; 12 check còn lại PASS. Sau: **0**.
+
+Tập pin **528 dòng hash / 144 file**. §0 của card nay kể vòng này bằng một câu: `providers.yaml` có adapter
+Anthropic thật (**cả hai `enabled: false`**, `terms_check` đã điền và Owner ký), `telegram/delivery.md` lên
+`0.2.1` (2/5 dữ kiện định dạng đã giải), `entities.yaml` chỉ sửa chữ trong một ghi chú (**không trường nào
+đổi**). Tôi ghi "không trường nào đổi" là **lời khai của gói viết nó**, không phải phép đo của tôi — không
+công cụ nào ở đây so sánh cấu trúc YAML hai phiên bản.
+
+Phép kiểm hai vùng: **19/19 card giống hệt ngoài §0**. Front-matter và §1–§13 không đổi một byte, nên không
+Worker nào đang đọc card bị đổi nghĩa vụ giữa chừng.
+
+## X.3 Phạm vi — đúng write set
+
+Gói này ghi **đúng 24 file**: 19 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`,
+`agent-tasks/TEMPLATE.md`, `agent-tasks/WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum
+này. **Không** file nào khác — không `contracts/`, `acceptance/`, `server/`, `collector/`, `worker/`,
+`probe/`, `web/`, `tests/`, `shared/`, `tools/`, `evidence/runs/`, `evidence/tools/`, `.github/`,
+`agent_profile/`, `docs/`, hay handoff khác. Hai cơ chế ghi duy nhất: generator (chỉ ghi
+`agent-tasks/TC-*.md`) và bốn phép thay chuỗi tường minh trên bốn file khẳng định pin.
+
+## X.4 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 639 assertion, 0 violation**; epoch
+`PC10-PIN-P3-20260908` (19/19 card đồng thuận + 4 file khẳng định khớp). exit 0.
+
+**Generator verifier (a…m):** `PASS: no failures`; 528 dòng hash / 144 file. exit 0.
+
+**`--self-test`:** **14/14 đột biến bị bắt**, exit 0, baseline sạch.
+
+Tất cả `SELF_VALIDATION`; `audit_route` vẫn `INDEPENDENT_REQUIRED`.
+
+## X.5 CR
+
+Không CR mới. Đóng băng `precode/` đã có tác dụng đo được: đây là vòng pin đầu tiên kể từ `P2` mà file đã
+pin **không** đổi byte trong lúc gói chạy.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; A3-R2 chưa chạy; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`precode/owner-decisions-07.md` và `-08.md` chưa tồn tại (§X.1).
+
+---
+
+*PKT-PC10-FIX24 · worker-WP · `lease_released_at` 2026-09-08T00:45Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX25 (re-pin `P3b` — bản pin đưa vào freeze)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX25` · lease `LEASE-PC10-e26` (fencing 26) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-08T03:05Z · next actor `Coordinator` (freeze) |
+| **pin epoch mới** | **`PC10-PIN-P3b-20260908`** (thay `PC10-PIN-P3-20260908`) |
+| trigger | `PKT-PC00-FIX28` (worker-W1n) — lần ghi `precode/` **cuối cùng** trước freeze |
+
+## Y.1 Re-pin
+
+Trước: **38 vi phạm `pins`** = 19 card × **hai** file (`precode/baseline.json`,
+`precode/decision-register.md`); 12 check còn lại PASS. Sau: **0**.
+
+`agent_profile/registry.json` cũng đổi trong lượt đó nhưng **không card nào pin nó** — tôi kiểm trực tiếp
+danh sách vi phạm chứ không suy đoán: chỉ hai tên file xuất hiện, mỗi tên đúng 19 lần. Nên nó không kéo theo
+gì ở đây.
+
+Tập pin **528 dòng hash / 144 file**. Phép kiểm hai vùng: **19/19 card giống hệt ngoài §0** — front-matter
+và §1–§13 không đổi một byte. §0 nay ghi thêm một câu rằng `P3b` là bản pin sau lần ghi `precode/` cuối cùng
+và rằng đợt sáu card Giai đoạn 1/2 đã land.
+
+**Điều bản pin này KHÔNG khẳng định.** Coordinator đo được 817 passed / 11 xfailed / 0 failed, một Alembic
+head `0009`, ruff sạch, e0 25/25. Tôi **không** chạy lại bộ nào trong số đó và **không** chép chúng vào card:
+một lần pin chỉ nói "byte trên đĩa khớp byte card đang khai", không nói gì về việc code có đúng không. Con số
+kiểm thử là bằng chứng của gói khác, và mọi card vẫn `DRAFT_FOR_REVIEW` với `audit_route:
+INDEPENDENT_REQUIRED` — **A3-R2 vẫn chưa chạy**.
+
+## Y.2 Phạm vi — đúng write set
+
+Ghi **đúng 24 file**: 19 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`,
+`agent-tasks/TEMPLATE.md`, `agent-tasks/WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum
+này. Không file nào khác — không `contracts/`, `acceptance/`, `precode/` ngoài `README.md`, `server/`,
+`collector/`, `worker/`, `probe/`, `web/`, `tests/`, `shared/`, `tools/`, `evidence/runs/`,
+`evidence/tools/`, `.github/`, `agent_profile/`, `docs/`, hay handoff khác. Hai cơ chế ghi: generator (chỉ
+`agent-tasks/TC-*.md`) và bốn phép thay chuỗi tường minh.
+
+## Y.3 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 685 assertion, 0 violation**; epoch
+`PC10-PIN-P3b-20260908` (19/19 card đồng thuận + 4 file khẳng định khớp). exit 0.
+
+**Generator verifier (a…m):** `PASS: no failures`; 528 dòng hash / 144 file. exit 0.
+
+**`--self-test`:** **14/14 đột biến bị bắt**, exit 0, baseline sạch.
+
+Tất cả `SELF_VALIDATION`.
+
+## Y.4 CR
+
+Không CR mới. `precode/owner-decisions-07.md` và `-08.md` (thiếu ở §X.1 của vòng trước) **nay đã tồn tại** —
+mục đó đóng.
+
+**Còn mở khi freeze:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`;
+`CR-PC06-04`; `REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN` (cổng hành chính mở, vận hành thuộc Owner);
+E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX25 · worker-WP · `lease_released_at` 2026-09-08T03:05Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

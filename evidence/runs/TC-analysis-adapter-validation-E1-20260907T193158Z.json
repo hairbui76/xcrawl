@@ -1,0 +1,304 @@
+{
+    "schema_version": "0.1.0",
+    "evidence_id": "EV-E1-01-tc-analysis-adapter-validation",
+    "created_at": "2026-09-07T19:31:58Z",
+    "producer_principal": "worker-W3A",
+    "producer_role": "Worker",
+    "review_type": "SELF_VALIDATION",
+    "evidence_level": "E1",
+    "baseline": {
+        "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+        "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+        "contract_hashes": {
+            "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+            "precode/baseline.json": "2d0db93e7ccd90d97b55c4cdd5f2fe1c464291a2a29af5f4a76d08f9e973ec98",
+            "precode/decision-register.md": "089b2a9b1a5d5597271f2c7620611ac5504eca24e63e738b8d20678f8cd5f779",
+            "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+            "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+            "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+            "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+            "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+            "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+            "contracts/ai/tasks.yaml": "0048bbdd3185fc4b7719014e7d70238c50720766f19e2968cb8e25101bbc05e7",
+            "contracts/ai/providers.yaml": "b3b27bcc55fe32c55d5232215c6ea9629af014f65c20915f0d9e90e2486418f1",
+            "contracts/ai/grounding.md": "b54cec8b3f9f6a9cb2221daaafe8a61a149d0a6686d0d23dcbf7bf9f17995172",
+            "contracts/ops/cli-acp-probe.md": "d78f546fdfbeff0388c4d89171179082da6477aea0bdfcd7c85e995fa3f0909b",
+            "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+            "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+            "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
+            "contracts/state/analysis.yaml": "06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce",
+            "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md": "aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317",
+            "precode/adr/ADR-0008-analysis-key-and-generation.md": "bbf649f5e9239d0de28c24255469ce0498f9f108bfdd45ada2ddeac859b8f1c5",
+            "acceptance/fixtures/ai/README.md": "6b7ede2bc9866eed00ecdd45d52009fe7c3b895ed3c64764694b42c1f577c6a0",
+            "acceptance/fixtures/ai/b-instruction-injection-in-post.json": "94db889e48aac2a74c3e645d44143075309d33bbef6010593db64340fee6c05b",
+            "acceptance/fixtures/ai/c-citation-to-unknown-source.json": "c91286d2106f8de49c0bfb0a158157321bb76de21cb03a29816933f886ba6a65",
+            "acceptance/fixtures/ai/d-schema-valid-but-uncited.json": "cf4662a1713d11fd4c60698cc416b0637bd1cfbfb35dce3a86b298e26c52bcbe",
+            "acceptance/fixtures/ai/e-transcript-secret-canary.json": "17c41531562ad41c9a869aa201df018e2973a7df319bff6009dfe7239e125ee1",
+            "acceptance/fixtures/ai/f-tool-request-in-transcript.json": "dac72388abd272b69e62333aecf1b817923807a5726424d342e0b758a17fdedd",
+            "acceptance/fixtures/ai/g-cli-json-embedded-in-prose.json": "d8136a15657e3032a2c1e1b58b4ab04df98c45ff3c6dd63c46d557a79bbf865d",
+            "acceptance/fixtures/ai/h-provider-unavailable-no-fallback.json": "202895c3a8d9816878fc67962286e6da0d0a331b6d81cb1a8c541c48c881545e",
+            "acceptance/fixtures/ai/k-zero-api-key-all-tasks-via-cli.json": "8f46b4c4205f82f72e2093b654b1972344746d6af84369020d4e75f2cef6912f",
+            "acceptance/fixtures/recovery/f-secret-canary-injection.json": "3f3a754bd3aed6b0ce56321584f3eadf17df69b0ff08d2cfaea8a13af6617d15",
+            "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+            "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+            "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+            "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+            "acceptance/fixtures/ai/i-crash-after-provider-completion.json": "0e7563734963fb71666f023d5d84b3a2d819afc3bb76cd9b1de9c3cc2c0dead0",
+            "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json": "9bc1dc1b6404dd1892ce291dd23136f2291e8a40816c4cafbe8d4814516e76f9",
+            "acceptance/scenarios.yaml": "421f7048cc7f0f0a3c7fe50d45255ae3b25dbe18c49b673bf90195d78f55f5cb",
+            "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+            "agent-tasks/TC-analysis-adapter-validation.md": "c24af16de8f9a17feb39cf70d14f4151b3f65e91adac1795a5273f7d4914aa3a"
+        },
+        "implementation_revision": "PKT-TC-ADAPTER working tree; base.py=82d3a8966ffcea511a94eb30003d4a56028580c083d2d2441278ac7c4988d48f; api_provider.py=bb562111361b6abc50848a2f85cc5d89c280b3c9028eef09d76af0140e755ebf; cli_acp.py=6865a0991d6c9117cdca1fcf4adc423ad2dadd0d8cbc44505baa9555ddadf1d9; extract_json.py=3be004606f2781f2d24a7ae90b8116c45ea3db73f6f3f3e83cac7ee5d405b38e; validate.py=b6f108c65d08a632d952f17bcedbd34997d594a42682807569fe902c827f36e9; test_analysis_result_schema.py=ee7fe412474223b78a62b05d4cb38704da76641d7f0fdf57dc0597e3601a6f61; test_injection_canary.py=4b43ba08efe2142da67f66c2578690853c4eeeaef7466612dda8984a4e4316ec",
+        "contract_versions": {
+            "CT-ai-providers": "0.2.0",
+            "CT-ai-tasks": "0.1.0",
+            "CT-ai-grounding": "0.1.0",
+            "CT-schema-analysis-result": "0.1.0"
+        }
+    },
+    "environment": {
+        "os": "Linux 7.0.0-30-generic",
+        "runtimes": {
+            "python": "3.12.3",
+            "pytest": "8.4.2",
+            "jsonschema": "4.26.0",
+            "pydantic": "2.13.5",
+            "PyYAML": "6.0.3",
+            "ruff": "0.6.9",
+            "mypy": "1.20.2",
+            "uv": "0.12.9",
+            "sqlite": "3.45.1"
+        },
+        "config_redacted": {
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "ai_provider_transport": "an in-test RecordedTransport object; the adapter has no default transport, so no HTTP client is constructed anywhere in this run",
+            "cli_runner": "an in-test RecordedCliRunner / _NonceEchoRunner object; no subprocess is spawned",
+            "AI_KEY_CANARY": "<generated per test with secrets.token_hex(16), set in os.environ via monkeypatch, never written to any file>",
+            "registered_adapters": "read from contracts/ai/providers.yaml §2.1 as data; both entries carry enabled=false and are refused before any transport is touched",
+            "endpoint_allowlist": "provider.example.invalid — a reserved-TLD name that cannot resolve; no destination in this run names a real provider"
+        },
+        "provider": null,
+        "model": null,
+        "embedding_generation_id": null,
+        "network_access": false
+    },
+    "inputs": {
+        "scenario_ids": [
+            "SC11",
+            "SC16",
+            "SC17",
+            "SC49"
+        ],
+        "requirement_ids": [
+            "REQ-D41",
+            "REQ-D43",
+            "REQ-D44",
+            "REQ-D51",
+            "REQ-D54",
+            "REQ-A5",
+            "REQ-AC11",
+            "REQ-AC16",
+            "REQ-AC17",
+            "REQ-OQ03",
+            "REQ-S11.4-01",
+            "REQ-S11.4-02",
+            "REQ-S11.4-03",
+            "REQ-S9.3-04"
+        ],
+        "invariant_ids": [
+            "I11",
+            "I14",
+            "I16"
+        ],
+        "fixtures": [
+            {
+                "path": "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json",
+                "sha256": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+                "bytes": 5694
+            },
+            {
+                "path": "acceptance/fixtures/ai/b-instruction-injection-in-post.json",
+                "sha256": "94db889e48aac2a74c3e645d44143075309d33bbef6010593db64340fee6c05b",
+                "bytes": 5590
+            },
+            {
+                "path": "acceptance/fixtures/ai/c-citation-to-unknown-source.json",
+                "sha256": "c91286d2106f8de49c0bfb0a158157321bb76de21cb03a29816933f886ba6a65",
+                "bytes": 4760
+            },
+            {
+                "path": "acceptance/fixtures/ai/d-schema-valid-but-uncited.json",
+                "sha256": "cf4662a1713d11fd4c60698cc416b0637bd1cfbfb35dce3a86b298e26c52bcbe",
+                "bytes": 6158
+            },
+            {
+                "path": "acceptance/fixtures/ai/e-transcript-secret-canary.json",
+                "sha256": "17c41531562ad41c9a869aa201df018e2973a7df319bff6009dfe7239e125ee1",
+                "bytes": 5240
+            },
+            {
+                "path": "acceptance/fixtures/ai/f-tool-request-in-transcript.json",
+                "sha256": "dac72388abd272b69e62333aecf1b817923807a5726424d342e0b758a17fdedd",
+                "bytes": 4622
+            },
+            {
+                "path": "acceptance/fixtures/ai/g-cli-json-embedded-in-prose.json",
+                "sha256": "d8136a15657e3032a2c1e1b58b4ab04df98c45ff3c6dd63c46d557a79bbf865d",
+                "bytes": 4345
+            },
+            {
+                "path": "acceptance/fixtures/ai/h-provider-unavailable-no-fallback.json",
+                "sha256": "202895c3a8d9816878fc67962286e6da0d0a331b6d81cb1a8c541c48c881545e",
+                "bytes": 5577
+            },
+            {
+                "path": "acceptance/fixtures/ai/i-crash-after-provider-completion.json",
+                "sha256": "0e7563734963fb71666f023d5d84b3a2d819afc3bb76cd9b1de9c3cc2c0dead0",
+                "bytes": 4302
+            },
+            {
+                "path": "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json",
+                "sha256": "9bc1dc1b6404dd1892ce291dd23136f2291e8a40816c4cafbe8d4814516e76f9",
+                "bytes": 4947
+            },
+            {
+                "path": "acceptance/fixtures/ai/k-zero-api-key-all-tasks-via-cli.json",
+                "sha256": "8f46b4c4205f82f72e2093b654b1972344746d6af84369020d4e75f2cef6912f",
+                "bytes": 10599
+            },
+            {
+                "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+                "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+                "bytes": 31529
+            }
+        ],
+        "seed": null,
+        "clock": "host UTC clock; it reads 2026-09-07 while the dispatch packet and the PC10-FIX24 addendum are dated 2026-09-08. Timestamps in this record are the clock's, not the calendar's — see limitations.",
+        "protocol_version": "card pin epoch PC10-PIN-P3-20260908 (agent-tasks/TC-analysis-adapter-validation.md §0; `baseline.candidate_epoch` is typed integer in evidence/manifest.schema.json, so the epoch NAME is recorded here)"
+    },
+    "execution": {
+        "kind": "command",
+        "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/contract/test_analysis_result_schema.py tests/integration/test_injection_canary.py -p no:warnings",
+        "working_directory": "/mnt/virtual/repo/xcrawl",
+        "started_at": "2026-09-07T19:31:55Z",
+        "ended_at": "2026-09-07T19:31:58Z",
+        "exit_code": 0,
+        "attempts": 1,
+        "error_classification": null
+    },
+    "oracle": {
+        "statement_vi": "Fixture là oracle (SRC-PLAN §15). (a) Mọi fixture ai/* được kiểm ĐÚNG ở lớp nó khai: `accept` ⇒ 0 lỗi schema; `reject_schema` ⇒ ≥1 lỗi VÀ json_pointer khớp `expected_violation`; `reject_semantic` ⇒ **0 lỗi schema** rồi mới bị SV bắt (README §3.3 — nếu schema đã bắt được thì fixture đang phóng đại tầng ngữ nghĩa). (b) `d` giữ cả hai biến thể: biến thể 1 fail tại /result/statements/0/citation_refs, biến thể 2 pass schema và fail SV-03. (c) `c` và `e` fail SV-02 với `validation_failure_kind = citation_unknown_source`; không hàng analysis nào được tạo vì validate_result RAISE chứ không return. (d) `b`: tool_definitions_registered = 0, tool_calls_executed = 0, tập host outbound = {provider.example.invalid}, 0 kết nối tới URL trong nội dung nguồn, canary xuất hiện 0 lần trong payload/envelope/log. (e) `f`: 3 yêu cầu gọi tool được ĐẾM và 0 lần thực thi; payload gửi provider có tools = (). (f) `h`: 3 lần dispatch = 3 lần gọi transport (adapter KHÔNG tự retry), 1 provider duy nhất, và một endpoint thứ hai bị CAPABILITY_DENIED trước socket. (g) `k`: cả ba task_type validate; đường CLI từ chối credential; usage.unknown = true với ba trường null. (h) providers.yaml §2.1 đọc như dữ liệu: hai adapter Anthropic đều enabled=false, refusal_reason_code = isolation_unverified, và ac16_status() = BLOCKED.",
+        "expected": {
+            "card_tests": 47,
+            "card_failures": 0,
+            "ai_fixtures_driven": 11,
+            "schema_errors_on_reject_semantic_fixtures": 0,
+            "tool_definitions_registered": 0,
+            "tool_calls_executed": 0,
+            "canary_occurrences_in_result_envelope_and_log": 0,
+            "outbound_hosts_outside_allowlist": 0,
+            "telegram_calls": 0,
+            "provider_calls_by_a_disabled_adapter": 0,
+            "distinct_providers_called_without_fallback": 1,
+            "adapter_level_retries": 0,
+            "registered_adapters_enabled": 0,
+            "ac16_status": "BLOCKED"
+        },
+        "observed": {
+            "card_tests": 47,
+            "card_failures": 0,
+            "ai_fixtures_driven": 11,
+            "schema_errors_on_reject_semantic_fixtures": 0,
+            "tool_definitions_registered": 0,
+            "tool_calls_executed": 0,
+            "canary_occurrences_in_result_envelope_and_log": 0,
+            "outbound_hosts_outside_allowlist": 0,
+            "telegram_calls": 0,
+            "provider_calls_by_a_disabled_adapter": 0,
+            "distinct_providers_called_without_fallback": 1,
+            "adapter_level_retries": 0,
+            "registered_adapters_enabled": 0,
+            "ac16_status": "BLOCKED",
+            "full_suite": {
+                "tests": 795,
+                "failures": 0,
+                "errors": 0,
+                "xfail": 10,
+                "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:warnings",
+                "note_vi": "Hai lần chạy TRƯỚC đó trong cùng phiên báo 2–4 fail ở tests/contract/test_saved_snapshot_schema.py và tests/integration/test_snapshot_survives_delete.py — write set của worker-W5B, đang được ghi song song. Lần chạy ghi ở đây là sau khi các file đó ổn định. Không lần nào chạm hai file của card này."
+            },
+            "static": {
+                "ruff": "All checks passed! (worker/app/adapter + hai file test)",
+                "mypy": "Success: no issues found in 5 source files",
+                "mypy_command": "PYTHONDONTWRITEBYTECODE=1 MYPYPATH=.:shared/rr_contracts uv run mypy --strict --namespace-packages --explicit-package-bases --disable-error-code=import-untyped worker/app/adapter"
+            }
+        }
+    },
+    "result": "STALE",
+    "artifacts": [],
+    "limitations": {
+        "mock_or_live": "mock",
+        "sample_size": 47,
+        "not_checked_vi": [
+            "E3 KHÔNG chạy và không được phép chạy ở gói này: không có lời gọi thật nào tới bất kỳ provider AI nào. Toàn bộ contracts/ops/cli-acp-probe.md §3 (T-ISO, T-JSON-01, T-TIME, T-CONC, T-USAGE, T-TASK) là NOT_RUN.",
+            "Do đó KHÔNG có bằng chứng nào ở đây rằng một tiến trình provider THẬT bị cô lập. Cái được chứng minh là QUYẾT ĐỊNH của adapter: nó từ chối dispatch, từ chối endpoint ngoài allowlist, không đăng ký tool và không thực thi tool. ISO-01..05 vẫn `unverified` trong contracts/ai/providers.yaml §2.1 và cả hai adapter Anthropic vẫn enabled=false.",
+            "REQ-AC16 báo **BLOCKED**, không phải PASS và không phải FAIL (ADR-0010 §Hệ quả, providers.yaml §4 ac16_reporting_rule_vi): chưa adapter CLI nào qua probe.",
+            "T-ISO-02 (canary NGOÀI thư mục làm việc, syscall mở file) KHÔNG được kiểm: canary ở đây nằm trong biến môi trường của tiến trình test và phép đếm là 'chuỗi xuất hiện 0 lần', không phải một quan sát syscall. `files_read_outside_working_dir` là một counter mà không có đường nào trong code này tăng được — đó là một khẳng định về cấu trúc, không phải một lần đo.",
+            "ISO-05 chỉ được kiểm ở NỬA của adapter: credential sai task ⇒ 0 lời gọi provider. Nửa còn lại — `secret.issue_task_credential` từ chối một worker KHÔNG giữ lease — thuộc MOD-secret-service/MOD-analysis-service (server/app/analysis/service.py verify_task_lease, card TC-analysis-once-per-generation) và KHÔNG được chạy từ đây; contracts/modules.yaml cho MOD-ai-adapter outbound_operations: [] nên adapter không gọi operation đó.",
+            "SC28 (crash sau khi provider chạy xong ⇒ AI_ATTEMPT_UNCERTAIN / unknown_attempt) và SC51 (thiết lập lần đầu) là anchor ở card §8 nhưng KHÔNG được chạy ở đây: cả hai nằm ở vòng đời task và ở Settings, không ở adapter. AI_ATTEMPT_UNCERTAIN có mã lỗi và details_safe_keys trong base.py nhưng KHÔNG có test nào phát nó ⇒ NOT_RUN.",
+            "SC49 chỉ được kiểm ở 4 trong 36 cạnh (FE-16..FE-19, các cạnh chạm MOD-ai-adapter), và kiểm bằng cách đọc fixture + khẳng định rằng không có counter/đường code nào cho các cạnh đó — KHÔNG bằng cách gọi thật rồi nhận mã lỗi.",
+            "TỰ THAM CHIẾU: response của provider và transcript của CLI đều do CHÍNH worker này viết, cùng người viết bộ bóc JSON và validator. Sự khớp nhau chứng minh tính nhất quán nội bộ, KHÔNG chứng minh một provider thật trả về hình dạng đó.",
+            "Ngưỡng timeout theo task (120/300/180 s) là PROVISIONAL trong contracts/ai/tasks.yaml; test khẳng định code LẤY đúng con số của hợp đồng, không khẳng định con số đúng.",
+            "E2 (fault injection) không áp dụng: adapter không ghi state và không chạm SQLite (FE-18).",
+            "E4 (rubric groundedness, contracts/ai/grounding.md §6) là NOT_RUN — chưa có kỳ báo cáo thật nào.",
+            "Đồng hồ host đọc 2026-09-07 trong khi packet dispatch và addendum PKT-PC10-FIX24 ghi 2026-09-08. Mọi timestamp trong bản ghi này là của đồng hồ host, không phải của lịch; ghi ra để một người đọc sau không coi độ lệch là bịa.",
+            "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy.",
+            "Hai CR đã có của gói PC06 vẫn mở và chạm code này — `CR-PC06-OQ03-01` (object `isolation` chỉ có ô cho 3/5 tính chất; ISO-04 và ISO-05 không có chỗ ghi) và `CR-PC06-OQ03-03` (`cost_micro_usd` chưa có bảng giá có nguồn nên phải đi đường unknown). Chúng không nằm trong `unresolved_issue_refs` vì `evidence/manifest.schema.json` ràng buộc pattern của trường đó và hai ID này không khớp; ghi ở đây để không bị mất."
+        ],
+        "uncertainty_vi": "Card §4 khai `secret.issue_task_credential` ở mục **Consumes**, trong khi contracts/modules.yaml khai MOD-ai-adapter `outbound_operations: []` và contracts/ports.yaml khai caller_modules của operation đó là [MOD-analysis-worker]. Code theo hợp đồng: adapter NHẬN credential qua một port do worker thoả mãn, không tự gọi operation — cách đọc này khớp chính §3 của card ('đường API, nhận credential per-task ngắn hạn'). Xem CR-TC-adapter-01.",
+        "unresolved_issue_refs": [
+            "CR-TC-adapter-01",
+            "CR-TC-adapter-02",
+            "CR-TC-adapter-03",
+            "CR-TC-adapter-04",
+            "REQ-A5"
+        ]
+    },
+    "invalidation": {
+        "invalidated_by_paths": [
+            "contracts/ai/providers.yaml",
+            "contracts/ai/tasks.yaml",
+            "contracts/ai/grounding.md",
+            "contracts/schemas/analysis-result.schema.json",
+            "contracts/capabilities.yaml",
+            "contracts/errors.yaml",
+            "contracts/modules.yaml",
+            "contracts/ports.yaml",
+            "contracts/state/analysis.yaml",
+            "contracts/ops/cli-acp-probe.md",
+            "contracts/ops/secrets.md",
+            "contracts/ops/internet-boundary.md",
+            "contracts/data/entities.yaml",
+            "contracts/retry-policy.yaml",
+            "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json",
+            "acceptance/fixtures/ai/b-instruction-injection-in-post.json",
+            "acceptance/fixtures/ai/c-citation-to-unknown-source.json",
+            "acceptance/fixtures/ai/d-schema-valid-but-uncited.json",
+            "acceptance/fixtures/ai/e-transcript-secret-canary.json",
+            "acceptance/fixtures/ai/f-tool-request-in-transcript.json",
+            "acceptance/fixtures/ai/g-cli-json-embedded-in-prose.json",
+            "acceptance/fixtures/ai/h-provider-unavailable-no-fallback.json",
+            "acceptance/fixtures/ai/i-crash-after-provider-completion.json",
+            "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json",
+            "acceptance/fixtures/ai/k-zero-api-key-all-tasks-via-cli.json",
+            "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+            "acceptance/scenarios.yaml",
+            "agent-tasks/TC-analysis-adapter-validation.md"
+        ],
+        "invalidated_by_rule_ids": [
+            "INV-06"
+        ]
+    },
+    "stale_reason": "Superseded by evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json under PKT-TC-ADAPTER-FIX1 (lease LEASE-TC-ADAPTER-e2). Two reasons, both byte-level: (a) F-A3-P3-01 — `ruff format` was never run, so four of this card's files would be reformatted by a required CI step (.github/workflows/python.yml:38); running it moved the bytes of api_provider.py, validate.py and both test files, which moves implementation_revision. (b) F-A3-P3-03 — two §2 fixtures (ai/g, recovery/f) were neither exercised nor recorded NOT_RUN; both are now driven by name, adding 2 tests (47 -> 49). The pin epoch also advanced PC10-PIN-P3-20260908 -> PC10-PIN-P3b-20260908. Observations in this record were true of the bytes it names and are kept for trace; they are not current."
+}

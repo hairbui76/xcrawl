@@ -76,6 +76,40 @@
       "scope": "Ratifies OD-20260907-04 (2 items), closing everything OD-20260907-03 left open. (1) contracts/ops/collector-probe.md §6 items 2-4 accepted, so §6 items 1-4 are all satisfied - the probe gate is open ADMINISTRATIVELY only; live execution stays physically gated on the Owner's own machine and real X account (Playwright install, hand-login to a project-only Chrome profile, filled probe-config.json, four owner_confirmations citing this decision) and NO WORKER MAY RUN IT. (2) A one-off, domain-narrow network grant for the REQ-A6 fact-finding packet: documentation pages only under arxiv.org / info.arxiv.org / openalex.org / docs.openalex.org, each fact recorded with source URL, retrieval date and a short verbatim quote. FORBIDDEN by name: export.arxiv.org, api.openalex.org, and any other live endpoint - no live API traffic. Parent of the REQ-A6 fact-finding packet and of the probe-gate record. Does NOT resolve REQ-A6 (it stays KC until the numbers land with sources), does NOT permit running the probe, does NOT widen network access generally, does NOT raise any file's claim ceiling, does NOT decide REQ-OQ03, does NOT close any finding.",
       "decision_record": "precode/owner-decisions-04.md",
       "evidence_ref": "Claude Code session (Coordinator), 2026-09-07"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260908-06",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-08",
+      "scope": "Ratifies OD-20260908-05 (2 items). (1) REQ-OQ03 DELEGATED FOR RESEARCH ONLY: the Coordinator researches candidate providers against contracts/ai/tasks.yaml and providers.yaml and proposes a pick; REQ-OQ03 STAYS OWNER_DECISION_REQUIRED until the Owner approves a specific recommendation, and this does NOT resolve REQ-A5 (per-adapter terms reading, a separate gate, required before any adapter is set enabled = true). The Owner's actual model pick is a SEPARATE record, OD-20260908-06 (precode/owner-decisions-06.md, decision-register §8.15) - do not read it from here. (2) CR-PC07-04: a one-off, host-narrow, documentation-pages-only network grant under core.telegram.org (specifically core.telegram.org/bots/api) to read and quote Bot API format limits; FORBIDDEN: api.telegram.org, any live Bot API call, any bot token, any message sent. Phase 5 (TC-telegram-linking-auth, TC-saved-snapshot, TC-telegram-unknown-delivery) is authorised to start ONCE THE FIVE FACTS LAND - a conditional grant, not an open one. Parent of the Telegram fact-finding packet and of the Phase 5 card dispatch; also covers the REQ-OQ03 research task. Does NOT resolve REQ-OQ03, does NOT resolve REQ-A5, does NOT widen network access generally, does NOT raise any file's claim ceiling, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-05.md",
+      "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260908-08",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-08",
+      "scope": "Ratifies OD-20260908-07 (2 items). (1) Widens the Telegram fact-finding grant to allow WebSearch in addition to WebFetch, for the sole purpose of LOCATING the truncated sections of the same official page core.telegram.org/bots/api (e.g. a cached or archived copy of that page). The query must stay about reaching THAT page's content; it does NOT authorise taking a different number from another Telegram-adjacent site. All other limits unchanged - still forbidden: api.telegram.org, any bot token, any message sent. (2) The REQ-A5 reviewer under contracts/ai/providers.yaml §5 must be the OWNER personally, not a delegated Worker; until the Owner signs off explicitly, CR-PC06-OQ03-02 stays OPEN and the reviewer field is not filled with a Worker's name. Parent of the widened Telegram retry. Does NOT itself sign REQ-A5 (that is OD-20260908-08). Widening the tool did NOT produce the facts: round three ran under this grant and all three facts remain BLOCKED_DEPENDENCY (decision-register §8.14.3).",
+      "decision_record": "precode/owner-decisions-07.md",
+      "effect_record": "precode/decision-register.md §8.14.3 (worker-WT)",
+      "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260908-09",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-08",
+      "scope": "Ratifies OD-20260908-08 (1 item): the Owner PERSONALLY signs off REQ-A5 for Anthropic (Claude Sonnet 5 / Claude Opus 5, api_key family), having read the summary directly, and EXPLICITLY ACCEPTS the TC-A5-01 input-rights warranty - the Owner, not Anthropic, represents that this system has the right to submit third-party research text (arXiv/OpenAlex abstracts and similar) as Input. Satisfies the reviewer = Owner convention of contracts/ai/providers.yaml §5 for ANTHROPIC SPECIFICALLY and for THIS EXACT READ: Commercial ToS eff. 2025-06-17, Usage Policy eff. 2025-09-15, Service Specific Terms eff. 2026-06-08. CR-PC06-OQ03-02 CLOSES. THREE BOUNDARIES: the conclusion EXPIRES if any of those three pages changes version (ADR-0010's own rule); signing is NOT enabling - enabled = true stays gated on B13 isolation verification (ISO-03/ISO-05 unverified, E3 NOT_RUN, REQ-AC16 still BLOCKED), an independent gate; and whether arXiv/OpenAlex/X's own policies permit this reprocessing is a SEPARATE, UNANSWERED question that this sign-off does NOT resolve - the Owner BEARS that warranty rather than discharging it.",
+      "decision_record": "precode/owner-decisions-08.md",
+      "effect_record": "precode/decision-register.md §8.15.1 (worker-WAI); contracts/ai/providers.yaml §2.1 terms_check.reviewer",
+      "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260908-10",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-08",
+      "scope": "Ratifies OD-20260908-09 (1 item): Phase 5 (Telegram) is authorised to start NOW, SCOPED TO PLAIN TEXT ONLY - message splitting on the resolved 4096-character limit and send-rate throttling on the resolved rate-limit facts, both of which carry verbatim citations. parse_mode (Markdown/HTML), inline keyboards and callback_data-bearing buttons are EXPLICITLY OUT OF SCOPE and STAY UNIMPLEMENTED behind an SG-01 guard - NOT stubbed-and-hidden - until the remaining three Telegram facts resolve. This REPLACES the Phase 5 entry condition set by OD-20260908-05 item 2 ('once the five facts land'), which was NEVER MET (2 of 5). Parent of the scoped Phase 5 dispatch. Does NOT resolve CR-PC07-04 (still PARTIALLY_RESOLVED, three facts still BLOCKED_DEPENDENCY), does NOT permit formatting or keyboards, does NOT grant new network access (api.telegram.org still forbidden, no bot token, no real message sent), does NOT create runtime evidence (E3/E4 still NOT_RUN), does NOT raise any claim ceiling, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-09.md",
+      "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
     }
   ],
   "coding_phase": {
@@ -102,6 +136,42 @@
       "2A probe live runs: contracts/ops/collector-probe.md §6 items 1-4 are now ALL satisfied (OD-20260907-04), but live execution remains PHYSICALLY gated - Owner's own machine and real X account, hand-login, filled probe-config.json, four owner_confirmations; NO WORKER MAY RUN IT",
       "2B paper connector: REQ-A6 is STILL KC - the four rate/identity facts have not landed yet; no number may be guessed; a card must be written first"
     ],
+    "phase_5_entry": {
+      "current": {
+        "authorised_by": "OD-20260908-09 item 1 (AUTH-OWNER-20260908-10)",
+        "condition_stated_by_owner": "start with plain text now, add formatting later",
+        "started": true,
+        "scope": "PLAIN TEXT ONLY - message splitting on the 4096-character limit; send-rate throttling on the resolved rate-limit facts. Both facts carry verbatim citations (decision-register §8.14.1).",
+        "out_of_scope_and_unimplemented": [
+          "parse_mode (Markdown/HTML)",
+          "inline keyboards",
+          "buttons carrying callback_data"
+        ],
+        "out_of_scope_note_vi": "Ba duong ma nay KHONG TON TAI trong ma, co SG-01 canh - KHONG phai stub-roi-giau. Mot khoang trong ON AO thi an toan; mot khoang trong IM LANG thi khong. Cung luat da ap cho research_connector_rate_limit khi bon gia tri con null: tu choi khoi dong thay vi chay voi so doan.",
+        "cards": ["TC-telegram-linking-auth", "TC-saved-snapshot", "TC-telegram-unknown-delivery"]
+      },
+      "superseded_condition": {
+        "authorised_by": "OD-20260908-05 item 2 (AUTH-OWNER-20260908-06)",
+        "condition_stated_by_owner": "once the five facts land",
+        "condition_met": false,
+        "facts_landed": 2,
+        "facts_required": 5,
+        "status": "SUPERSEDED by OD-20260908-09 - REPLACED, NOT SATISFIED",
+        "note_vi": "Dieu kien nay CHUA BAO GIO THOA. Ghi condition_met: true cho no se la mot cau SAI KIEM DUOC - van la 2/5. Owner DOI dieu kien thay vi tuyen bo dieu kien cu da thoa; do la cach CR-PC00-31 duoc giai, va ca hai dieu kien duoc luu lai de khong ai doc nham."
+      },
+      "cr_status": "CR-PC07-04 = PARTIALLY_RESOLVED (NOT closed)",
+      "blocked_facts": ["callback_data length", "parse mode + escape table", "buttons per row / per keyboard"],
+      "blocked_reason_vi": "Gioi han kich thuoc trang cua cong cu doc, KHONG phai mot khoang trong chinh sach. Vong ba (§8.14.3) da thu ca WebSearch gioi han host lan ban luu tru; web.archive.org bi chan o TANG CONG CU. Cach giai chua duoc quyet (amendment cong cu cho fetch phan trang, hoac Owner tu doc trang) - hoan sang vong sau.",
+      "evidence": "precode/decision-register.md §8.14.1, §8.14.2, §8.14.3 (worker-WT, three rounds)"
+    },
+    "lease_discipline_observed": {
+      "issue": "CR-PC00-32 - overlapping leases",
+      "what_happened_vi": "Vong cong viec dan toi OD-20260908-09 co HAI lan lease chong nhau giua worker-WT va worker-WAI. Ca hai lan da kiem va KHONG mat du lieu, nhung do la mot KET QUA chu khong phai mot BAO DAM: duoi PROV-PC00-08 khong co fencing that, nen hai Worker cham vung khac nhau la may.",
+      "fix_applied": "scheduling, not worker diligence",
+      "fix_detail_vi": "Coordinator ngung cap hai packet cham cung mot file trong cung mot cua so, thay vi trong vao viec cac Worker tranh nhau.",
+      "result_vi": "Dot sau - SAU card, tap ghi §3 roi nhau, precode/ dong bang - co KHONG lan lease chong nhau. Day la bang chung ung ho cach sua bang LICH DISPATCH; no KHONG chung minh rang rui ro cua PROV-PC00-08 da bien mat: enforcement van NOT_IMPLEMENTED, va mot lich dispatch sai van se gay ra dung loi cu.",
+      "residual_risk_unchanged": true
+    },
     "phase_2_gates_opened": [
       {
         "gate": "contracts/ops/collector-probe.md §6 items 2-4 (per-run budget/stop conditions, go/no-go criteria, real-account risk REQ-A7)",

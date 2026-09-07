@@ -7,7 +7,7 @@ source_refs:
   - SRC-SPEC §1.4, §2, §3, §4, §5, §6, §7, §8, §9, §10, §11, §12, §13
   - SRC-PLAN §3, §3.1, §6, §7, §8, §9, §10, §11, §12
 requirement_refs: [precode/requirements.csv — toàn bộ 246 dòng]
-decision_refs: [OD-20260907-01, OD-20260907-02, OD-20260907-03, OD-20260907-04, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0011]
+decision_refs: [OD-20260907-01, OD-20260907-02, OD-20260907-03, OD-20260907-04, OD-20260908-05, OD-20260908-06, B01..B17, AMD-B01, AMD-B02, AMD-B03, AMD-B04, AMD-B05, AMD-B07, AMD-B08, AMD-B09, AMD-B10, AMD-B11, AMD-B12, AMD-B15, AMD-B16, AMD-B17, ADR-0001..ADR-0011]
 invariant_refs: [I01..I15]
 producers: [PC00]
 consumers: [PC01, PC02, PC03, PC04, PC05, PC06, PC07, PC08, PC09, PC10]
@@ -28,6 +28,11 @@ scope: >
   finding audit nào. Cập nhật vòng bốn 2026-09-07: OD-20260907-04 (precode/owner-decisions-04.md)
   đóng cổng chấp nhận probe §6 mục 2-4 và cấp một quyền mạng hẹp một lần để đọc tài liệu chính thức
   phục vụ REQ-A6 — REQ-A6 VẪN KC, biên bản không cung cấp dữ kiện, chỉ cho phép đi lấy.
+  Cập nhật vòng sáu 2026-09-08: OD-20260908-06 (precode/owner-decisions-06.md) TRẢ LỜI REQ-OQ03 —
+  summary = claude-opus-5; label + direction_phrasing = claude-sonnet-5; cả hai họ api_key. Câu
+  "REQ-OQ03 vẫn OWNER_DECISION_REQUIRED" ở trên đọc theo đúng thì của nó (vòng một, 2026-09-07) và
+  nay đã bị §8.15 thay thế. Việc BẬT adapter thì KHÔNG được mở: cả hai enabled = false vì cô lập
+  chưa kiểm chứng.
 verification: E0 — self-validation bằng script kiểm đếm (EV-PC00-04); không có E1–E4.
 claim_ceiling: DRAFT_FOR_REVIEW
 ---
@@ -47,6 +52,9 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `ACCEPTED (OD-20260907-02)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng hai** — xem `precode/owner-decisions-02.md` |
 | `ACCEPTED (OD-20260907-03)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng ba** — xem `precode/owner-decisions-03.md` |
 | `ACCEPTED (OD-20260907-04)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng bốn** — xem `precode/owner-decisions-04.md` |
+| `ACCEPTED (OD-20260908-06)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng sáu** — xem `precode/owner-decisions-06.md`. (Vòng **năm**, `OD-20260908-05`, không dùng nhãn này: nó giao việc nghiên cứu chứ không chấp nhận một phương án — xem §8.14) |
+| `ACCEPTED (OD-20260908-08)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng tám** — xem `precode/owner-decisions-08.md` (bản ghi hiệu lực: §8.15.1) |
+| `ACCEPTED (OD-20260908-09)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng chín** — xem `precode/owner-decisions-09.md` |
 | `OWNER_DECISION_REQUIRED` | Không có phương án mặc định an toàn; phạm vi liên quan bị chặn tường minh |
 
 **Cập nhật 2026-09-07.** Owner đã trả lời bản yêu cầu quyết định. Biên bản `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`) phê chuẩn B01–B17 và các amendment tương ứng. `agent_profile/registry.json` nay có `open_product_blockers: []` và một danh sách `ratified_product_blockers` trích `evidence_ref`.
@@ -58,6 +66,14 @@ Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv`
 **Cập nhật vòng hai 2026-09-07.** Biên bản thứ hai `OD-20260907-02` (`precode/owner-decisions-02.md`, authority `AUTH-OWNER-20260907-03`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **hai** việc: phê chuẩn `ADR-0011` (nên `PROV-PC00-07` ở §8 nay `ACCEPTED (OD-20260907-02)`) và mở lối vào Giai đoạn 0 và Giai đoạn 1 của `docs/master-plan.md` (§8.10). Nó **không** đổi trạng thái của một dòng nào trong `precode/requirements.csv`, **không** giải `REQ-OQ03`, **không** đổi một mục `KC` nào và **không** đóng finding nào. Chế độ vận hành cho việc ghi mã — hệ quả *hàm ý* của lối vào đó, do Coordinator ruling chứ không do Owner phát biểu — nằm ở `PROV-PC00-08` — **nay `ACCEPTED (OD-20260907-03)`**.
 
 **Cập nhật vòng ba 2026-09-07.** Biên bản thứ ba `OD-20260907-03` (`precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **ba** việc: phê chuẩn `AMD-ENT-owner-01` (§8.11), phê chuẩn `PROV-PC00-08` (§8), và mở lối vào Giai đoạn 2 (§8.12). Nó **không** mở quyền mạng, **không** gỡ cổng probe (`collector-probe.md` §6 mục 2–4), **không** cho phép đoán bốn dữ kiện `REQ-A6`, **không** phê chuẩn mục `PROVISIONAL` nào khác, và **không** giải `REQ-OQ03`.
+
+**Cập nhật vòng bảy và vòng tám 2026-09-08.** Hai vòng này được `worker-WT` và `worker-WAI` ghi hiệu lực ngay khi chúng xảy ra (**§8.14.3** và **§8.15.1**); `PKT-PC00-FIX28` bổ sung **bản ghi song hành theo quy ước** để chúng có cùng hình dạng hồ sơ như các vòng khác — file độc lập, anchor `baseline.json`, authority trong `agent_profile/registry.json`. **Không** quyết lại điều gì; khi hai bên lệch thì **§8.14.3 / §8.15.1 thắng**. `OD-20260908-07` (`AUTH-OWNER-20260908-08`) **nới công cụ** tìm ba dữ kiện Telegram sang `WebSearch` — vẫn chỉ để **định vị nội dung của chính trang** `core.telegram.org/bots/api`, **không** để lấy một con số khác từ site khác; và chốt rằng người ký `REQ-A5` phải là **Owner đích thân**, nên `CR-PC06-OQ03-02` **giữ mở** qua hết vòng bảy. Nới quyền **không** tạo ra dữ kiện: vòng ba chạy dưới quyền mới và **cả ba dữ kiện vẫn `BLOCKED_DEPENDENCY`** (§8.14.3). `OD-20260908-08` (`AUTH-OWNER-20260908-09`) là **chữ ký `REQ-A5`** của Owner cho **riêng Anthropic**, trên **đúng ba trang có ngày hiệu lực**, kèm **chấp nhận tường minh** bảo đảm `TC-A5-01`; `CR-PC06-OQ03-02` **đóng**. Ba ranh giới phải giữ: chữ ký **hết hiệu lực** khi một trong ba trang đổi phiên bản (`ADR-0010`); **ký không phải bật** — `enabled = true` vẫn bị `B13` chặn (`ISO-03`/`ISO-05` chưa kiểm, `E3 NOT_RUN`, `REQ-AC16` vẫn `BLOCKED`); và câu hỏi **arXiv/OpenAlex/X có cho phép tái xử lý nội dung của họ hay không** vẫn **chưa ai trả lời** — Owner **gánh** bảo đảm ấy, không **giải** nó.
+
+**Cập nhật vòng chín 2026-09-08.** Biên bản `OD-20260908-09` (`precode/owner-decisions-09.md`, authority `AUTH-OWNER-20260908-10`) **thay** điều kiện khởi động Giai đoạn 5 mà vòng năm đặt ra. Điều kiện cũ — *"một khi **năm** dữ kiện land"* — **chưa bao giờ thỏa** (2/5) và nay **không còn hiệu lực**; điều kiện mới là **khởi động có phạm vi**: các card Giai đoạn 5 được phép chạy **chỉ với tin nhắn văn bản thuần** — cắt tin theo giới hạn 4096 ký tự và điều tiết nhịp gửi, cả hai dựa trên **hai dữ kiện đã có trích dẫn nguyên văn** (§8.14.1). `parse_mode`, inline keyboard và nút mang `callback_data` **tường minh nằm ngoài phạm vi**, có `SG-01` canh, và **chưa được hiện thực** — **không** phải stub-rồi-giấu. `CR-PC07-04` **vẫn `PARTIALLY_RESOLVED`**, ba dữ kiện vẫn `BLOCKED_DEPENDENCY` (§8.14.3); vòng chín **không** giải chúng mà quyết định đi tiếp **mà không cần** chúng. Vì vậy `CR-PC00-31` được giải bằng cách **đổi điều kiện**, không phải bằng cách tuyên bố điều kiện cũ đã thỏa — ghi `condition_met: true` cho điều kiện cũ sẽ là một câu **sai kiểm được**, và `agent_profile/registry.json` vì thế lưu **cả hai** điều kiện kèm trạng thái của từng cái.
+
+**Cập nhật vòng năm 2026-09-08.** Biên bản thứ năm `OD-20260908-05` (`precode/owner-decisions-05.md`, authority `AUTH-OWNER-20260908-06`, evidence `session_017CTbS7F4oTr4ZtFYkhdabD`) làm **hai** việc: **ủy quyền nghiên cứu** `REQ-OQ03` — Coordinator đề xuất, Owner phê duyệt ở một vòng sau — và cấp một quyền mạng **một lần, hẹp theo host, chỉ đọc tài liệu** dưới `core.telegram.org` cho `CR-PC07-04`, kèm lối vào Giai đoạn 5 **có điều kiện**: *"một khi **năm** dữ kiện land"*. Vòng này **không** mang nhãn `ACCEPTED (OD-20260908-05)` ở đâu cả — nó **giao việc**, không chấp nhận một phương án; nhãn `ACCEPTED` chỉ xuất hiện cho vòng **sáu** (§8.15). Nó **không** giải `REQ-OQ03` (vẫn `OWNER_DECISION_REQUIRED` tính đến vòng năm), **không** giải `REQ-A5` (cổng riêng, theo từng adapter, trước khi đặt `enabled = true`), **không** mở mạng nói chung (`api.telegram.org` bị cấm đích danh; không bot token; không gửi tin), **không** nâng trần claim của file nào và **không** đóng finding nào.
+
+**Giai đoạn 5 CHƯA được gỡ chặn tính đến 2026-09-08.** Điều kiện Owner đặt là **năm** dữ kiện; sau **hai** vòng của `worker-WT` (§8.14.1, §8.14.2) mới có **hai** — ba dữ kiện còn lại (`callback_data`, parse mode + bảng escape, số nút mỗi hàng) vẫn `BLOCKED_DEPENDENCY`, nên `CR-PC07-04` là **`PARTIALLY_RESOLVED`**, không `CLOSED`. 2 ≠ 5, vì vậy PC00 **không** tuyên bố Giai đoạn 5 đủ điều kiện khởi động; kết luận ấy thuộc Coordinator/Owner (`CR-PC00-31`). Chi tiết dữ kiện, nguồn và lý do ba mục kia dừng nằm ở **§8.14** — nội dung của `worker-WT`, PC00 không chép lại.
 
 ## 1. Bảng tổng hợp B01–B17
 
@@ -527,7 +543,7 @@ quyết định sản phẩm đóng.
 | --- | --- | --- | --- | --- |
 | REQ-OQ01 | Chrome profile riêng? | **ĐÃ TRẢ LỜI** — có, profile riêng của dự án (mục 1) | Owner ✅ | — (M0 không còn bị chặn bởi câu hỏi này) |
 | REQ-OQ02 | Stack? | **ĐÃ TRẢ LỜI** — **B: Python workers + TypeScript web** (mục 3); khuyến nghị A của đặc tả bị bác | Owner ✅ | — (M1 không còn bị chặn; 18 card cần viết lại §3/§8) |
-| REQ-OQ03 | Provider và model cụ thể? | **Không có mặc định** — `OWNER_DECISION_REQUIRED` | Owner | M3, việc bật provider |
+| REQ-OQ03 | Provider và model cụ thể? | **ĐÃ TRẢ LỜI** (`OD-20260908-06`, vòng sáu) — `summary` = Claude Opus 5 (`claude-opus-5`); `label` và `direction_phrasing` = Claude Sonnet 5 (`claude-sonnet-5`); cả hai họ `api_key` | Owner ✅ | — (cổng vào M3 được thỏa). **Việc bật provider vẫn bị chặn** bởi cô lập chưa kiểm chứng — §8.15 |
 | REQ-OQ04 | N ngày backfill? | 7 ngày | Owner | — |
 | REQ-OQ05 | Giới hạn mỗi đợt? | 200 post hoặc 30 phút, cái nào tới trước | Owner (sau M0) | — |
 | REQ-OQ06 | Lịch cụ thể? | 08:00 và 20:00 theo timezone của Owner | Owner | — |
@@ -536,6 +552,8 @@ quyết định sản phẩm đóng.
 | REQ-OQ09 | Model embedding cụ thể? | **Không đặt tên** — ràng buộc: local, đa ngôn ngữ | Kỹ thuật, sau A3 | — |
 | REQ-OQ10 | Export Saved ở MVP? | Hoãn sang P1 | Owner | — |
 | — | Timezone của Owner | `Asia/Ho_Chi_Minh` | Owner | Fixture lịch |
+
+**Cập nhật 2026-09-08:** dòng `REQ-OQ03` của bảng trên đã đổi; đoạn "Kết quả 2026-09-07" ngay dưới giữ nguyên câu chữ của **ngày nó được viết** và không được đọc như trạng thái hiện hành — trạng thái hiện hành ở §8.15.
 
 **Kết quả 2026-09-07:** Owner chấp nhận toàn bộ bảng trên (mục 20), **trừ `REQ-OQ03`** vẫn `OWNER_DECISION_REQUIRED` và vẫn chặn M3 (mục 21). Các giá trị cần đo — `REQ-OQ05` (sau M0), `REQ-OQ08` (sau M3), `REQ-OQ09` (sau A3) — được chấp nhận làm **giá trị làm việc**, không phải giá trị đã đo.
 
@@ -1005,3 +1023,290 @@ cấu trúc tài liệu (`docs.openalex.org` → `help.openalex.org`) ngay trong
 kèm mục này. (c) **Không** chạm một card đã pin nào; `contracts/retry-policy.yaml` `0.7.0 → 0.8.0` nên
 mọi card pin hash file đó **`STALE`** và chờ Coordinator pin lại. (d) **Không** đi theo một redirect nào
 ra ngoài allowlist, và **không** gọi `api.openalex.org` hay `export.arxiv.org`.
+
+### 8.14 Quyết định của `OD-20260908-05` và kết quả packet tìm dữ kiện `CR-PC07-04`
+
+`OD-20260908-05` (2026-09-08, `AUTH-OWNER-20260908-06`) có hai mục. Mục 1 giao Coordinator **nghiên cứu và
+đề xuất** nhà cung cấp/model cho `REQ-OQ03`; `REQ-OQ03` **vẫn** `OWNER_DECISION_REQUIRED` cho tới khi Owner
+duyệt một đề xuất cụ thể, và nó **không** giải `REQ-A5` (đọc điều khoản thật của chính nhà đó trước khi bật
+adapter là một cổng riêng). Mục 2 cấp một **quyền mạng một lần, hẹp, chỉ đọc** cho `CR-PC07-04`: chỉ trang
+tài liệu dưới `core.telegram.org`, không gọi `api.telegram.org`, không dùng token, không gửi gì.
+
+#### 8.14.1 `PKT-PC07-FIX-TELEGRAM` — `CR-PC07-04` = `PARTIALLY_RESOLVED` (2026-09-08)
+
+Worker `worker-WT`, authority `AUTH-COORD-TELEGRAM-FACTS` (cha `AUTH-OWNER-20260908-06`), lease
+`LEASE-PC07-TELEGRAM`. Công cụ đọc: `WebFetch` (GET, chỉ đọc); **không** một lời gọi nào tới
+`api.telegram.org`. Ngày lấy **2026-09-08** theo giờ Owner (`Asia/Ho_Chi_Minh`) = UTC
+`2026-09-07T17:52Z`…`2026-09-07T18:06Z` — hai cách viết một lúc; ghi cả hai vì đồng hồ máy chạy UTC còn
+packet nói theo ngày của Owner. Kết quả: **hai** trong năm dữ kiện có nguồn, **ba** dừng ở `BLOCKED_DEPENDENCY`.
+
+| Dữ kiện | Trạng thái | Giá trị | Nguồn (đọc 2026-09-08) |
+| --- | --- | --- | --- |
+| Độ dài tối đa một tin | **`RESOLVED`** (nguồn thứ cấp) | `4096` ký tự cho `sendMessage.text` | `https://core.telegram.org/bots/tutorial` §"Sending Messages" — nguyên văn: *"A `String` object containing the message text, 1-4096 characters."* |
+| Rate limit gửi | **`RESOLVED`** | 1 tin/giây trong một chat; 20 tin/phút trong một group; ~30 tin/giây khi broadcast | `https://core.telegram.org/bots/faq` §"My bot is hitting limits, how do I avoid this?" — nguyên văn: *"In a single chat, avoid sending more than one message per second. We may allow short bursts that go over this limit, but eventually you'll begin receiving 429 errors."* · *"In a group, bots are not be able to send more than 20 messages per minute."* · *"For bulk notifications, bots are not able to broadcast more than about 30 messages per second, unless they enable paid broadcasts to increase the limit."* |
+| Độ dài `callback_data` | **`BLOCKED_DEPENDENCY`** | vẫn PROVISIONAL 64 byte, **chưa kiểm** | `https://core.telegram.org/bots/api` — trong host được cấp, ngoài tầm công cụ (dưới) |
+| Parse mode + bảng escape | **`BLOCKED_DEPENDENCY`** | — | như trên |
+| Số nút mỗi hàng / mỗi bàn phím | **`BLOCKED_DEPENDENCY`** | — | như trên |
+
+**Vì sao ba dòng dừng, và vì sao đó KHÔNG phải "chưa tìm kỹ" — cũng KHÔNG phải `BLOCKED_SCOPE`.** Khác
+`REQ-A6` §8.13.1 (ở đó trang tài liệu redirect sang một host **ngoài** allowlist, nên cái chặn là ranh giới
+**quyền**), ở đây trang mang cả ba dữ kiện — `https://core.telegram.org/bots/api` — nằm **đúng trong** host
+được cấp. Cái chặn là **trần công cụ**: `WebFetch` chuyển trang sang markdown rồi cắt theo độ dài, và điểm
+cắt rơi giữa `MessageAutoDeleteTimerChanged`, tức **trước** cả mục `Available methods`. `sendMessage`,
+`InlineKeyboardButton` và bảng escape MarkdownV2 nằm sau điểm cắt và không lần đọc nào chạm tới được —
+đã thử cả `#sendmessage` và `#inlinekeyboardbutton` (fragment không đổi phần được cắt). Mười hai trang
+cùng host đã thử và **không** trang nào chứa ba dữ kiện ấy: `/bots/features`, `/bots/faq`, `/bots/tutorial`,
+`/bots/webhooks`, `/bots/inline`, `/bots/games`, `/bots/2-0-intro`, `/bots/api-changelog`,
+`/api/bots/buttons`, `/api/entities`, `/constructor/keyboardButtonCallback`, `/constructor/replyInlineMarkup`.
+Cách giải là một **khả năng đọc lấy được cả trang** (fetch theo đoạn, hoặc tải rồi grep cục bộ) dưới **cùng**
+ranh giới host — một amendment về **công cụ**, không phải về host, và tuyệt đối không phải một con số nhớ được.
+
+**Con số 4096 đứng trên một nguồn THỨ CẤP, và điều đó phải đọc được.** Nó lấy từ `/bots/tutorial`, không
+phải từ hàng `text` của `/bots/api#sendmessage`. Hệ quả: **ngữ nghĩa đếm** ("after entities parsing" hay
+không) và **đơn vị đếm** (ký tự Unicode hay đơn vị mã UTF-16) **chưa** có câu trích. `contracts/telegram/delivery.md`
+§3.4 vì vậy khóa một luật **an toàn một chiều** thay vì một giả định: đếm trên **chuỗi thô đã escape**, vì
+escape chỉ **thêm** ký tự nên "thô ≤ 4096" kéo theo "sau parse ≤ 4096" dưới cả hai cách đọc. Đó là suy luận
+về **quan hệ** giữa hai phép đếm, không phải suy luận ra con số — ranh giới ấy là chỗ "đọc tài liệu" khác
+"điền cho đủ ô", đúng như §8.13.2 đã ghi cho ngân sách ngày của OpenAlex.
+
+**Rate limit là trần LẬP KẾ HOẠCH, không phải ngân sách retry.** Chính nguồn viết có biên — *"avoid"*,
+*"about"*, *"may allow short bursts"* — và mệnh đề *"unless they enable paid broadcasts"* nói 30/giây là trần
+**mặc định**. `Retry-After` của Telegram trên một `429` thật **thắng** mọi số ở trên; `contracts/retry-policy.yaml`
+**không** bị đụng bởi packet này (ngoài lease) và không nhận số mới nào. Ràng buộc thực tế cho hệ này là dòng
+thứ nhất — **1 tin/giây trong một chat** — vì §3.5 gửi một digest nhiều part bằng nhiều lời gọi liên tiếp.
+
+**Nhãn `DOCS_derived` dùng lại đúng nghĩa của §8.13.2:** giá trị đứng trên trang tài liệu, không trên chữ ký
+của ai; nó mang hạn dùng và hết hiệu lực khi Telegram đổi chính sách. Owner cấp **quyền đi lấy**, không cấp
+nội dung — nên đây **không** phải một quyết định sản phẩm, và ai đọc lại thấy khác thì mở CR mới.
+
+**Sáu điều packet này KHÔNG làm.** (a) **Không** đóng `CR-PC07-04`: ba trong năm dữ kiện còn thiếu, nên nó
+là `PARTIALLY_RESOLVED`, không `CLOSED`. (b) **Không** nâng trần claim của `contracts/telegram/delivery.md`
+(vẫn `DRAFT_FOR_REVIEW`) và **không** gỡ `BLOCKED (cứng)` của `MOD-telegram-adapter`. (c) **Không** chạm
+`contracts/telegram/commands.yaml`, `contracts/retry-policy.yaml`, `acceptance/scenarios.yaml`,
+`precode/review.md`, `precode/gates.yaml`, `docs/master-plan.md` hay một card `agent-tasks/*` nào — tất cả
+ngoài lease, và tất cả còn câu chữ mô tả **năm** dòng `KC` cần Coordinator sửa bằng một packet khác.
+(d) **Không** sửa `verification:` ở front matter `delivery.md` (ngoài vùng §3.4 được cấp) — dòng ấy vẫn viết
+"Giới hạn định dạng Telegram là `KC` — chưa đọc tài liệu (không có mạng)", nay **sai một phần**. (e) **Không**
+nới `SG-01` của `TC-telegram-unknown-delivery`/`TC-telegram-linking-auth`: nhánh multipart cần chỗ cắt, và
+chỗ cắt cần bố cục nút + parse mode. (f) **Không** gọi `api.telegram.org`, **không** dùng token, **không**
+gửi một tin nào.
+
+**Điều kiện Phase 5 của `OD-20260908-05` mục 2 CHƯA đạt như đã viết.** Câu ấy là *"Phase 5 … is authorised to
+start once the five facts land"*; **hai** dữ kiện đáp, **ba** không. Nới câu ấy là quyết định của Owner —
+Worker chỉ ghi nhận rằng điều kiện, đọc theo nguyên văn, chưa được thỏa.
+
+#### 8.14.2 Vòng hai (`PKT-PC07-FIX-TELEGRAM-2`, `LEASE-PC07-TELEGRAM-p2`, cùng ngày)
+
+Coordinator mở lại lease với ba hướng thử cụ thể cho ba dữ kiện còn `KC`, cộng việc sửa front matter của
+`contracts/telegram/delivery.md`. Kết quả: **ba dữ kiện GIỮ NGUYÊN `BLOCKED_DEPENDENCY`**; front matter đã sửa.
+
+**Hướng 1 và 2 — anchor khác.** Giả thuyết: `#formatting-options` / `#inlinekeyboardbutton` /
+`#markdownv2-style` / `#html-style` / `#inlinekeyboardmarkup` / `#replykeyboardmarkup` có thể rơi vào một
+cửa sổ đọc khác `#sendmessage`. **Bác bỏ bằng quan sát**: bảy anchor, tám lần gọi, **cả tám** đều bị cắt.
+Điểm dừng có xê dịch giữa các lần — `MessageAutoDeleteTimerChanged`, `date-time entity formatting`,
+`WebAppData`, `InputChecklist` — nên cửa sổ đọc **không** hoàn toàn tất định; nhưng lần xa nhất
+(`InputChecklist`) vẫn nằm **trong** `Available types` và vẫn **trước** `InlineKeyboardMarkup`,
+`InlineKeyboardButton`, `Formatting options` và toàn bộ `Available methods`. Anchor không dời được cửa sổ;
+giả thuyết ấy đã được thử thật và đã sai.
+
+**Hướng 3 — tìm kiếm web: KHÔNG chạy, `BLOCKED_SCOPE`.** Packet vòng hai đề nghị một `WebSearch` dạng
+`site:core.telegram.org …` cho dòng "số nút mỗi hàng". Worker **từ chối** và dừng ở đó. Lý do là quyền, không
+phải kỹ thuật: `OD-20260908-05` mục 2 cho phép *"fetch documentation pages only under `core.telegram.org`"*
+kèm *"no message sent"*; một truy vấn tìm kiếm là một lời gọi tới **một host khác**, mang theo nội dung truy
+vấn. `protocol.md` §2 nói grant con là **subset** của grant cha và Coordinator không mở rộng được grant của
+Owner; `worker.md` cấm dùng live network ngoài capability/authority explicit. Một Worker tự nới host vì
+Coordinator gợi ý là đúng cái `BLOCKED_SCOPE` sinh ra để chặn — và nó sẽ làm hỏng chính điều khiến hai dữ
+kiện kia đáng tin. Muốn đi hướng ấy: một amendment của **Owner**, không phải một câu trong packet.
+
+**Vì sao dòng "số nút" KHÔNG được đóng bằng câu "Telegram không công bố".** Packet vòng hai gợi ý, nếu tìm kỹ
+mà không thấy, thì ghi *"no official maximum found on core.telegram.org as of 2026-09-08"* thay vì để `KC`
+mãi. Ghi nhận tinh thần ấy, nhưng **chưa** đủ điều kiện: 12 trang đã đọc không nêu con số, song trang có
+nhiều khả năng nêu nó nhất — `InlineKeyboardMarkup` trên `/bots/api` — **chính là** trang không đọc được.
+Một phủ định chỉ có giá trị khi **tập đã đọc bao được chỗ dữ kiện có thể nằm**; ở đây tập ấy có một lỗ thủng
+đúng ngay giữa. Câu ghi được hôm nay là *"không tìm thấy trên 12 trang đã đọc được"* — một **phủ định có
+phạm vi**, cùng loại với `arxiv_identification_required = false` ở §8.13.1 — và nó **không** nâng dòng ấy ra
+khỏi `KC`. Viết câu mạnh hơn sẽ là suy diễn từ một lần đọc thiếu, đúng thứ SRC-SPEC §13.2 cấm.
+
+**Front matter `delivery.md` đã sửa** (vòng một cố ý không đụng vì ngoài vùng §3.4; vòng hai được cấp cả file):
+`version` `0.1.0 → 0.2.0` theo `precode/change-control.md` §2 hàng minor, và `verification:` bỏ câu
+*"Giới hạn định dạng Telegram là `KC` — chưa đọc tài liệu (không có mạng)"* — nay sai một phần — thay bằng
+phát biểu **đếm được**: hai dữ kiện `DOCS_derived` (kèm hạn dùng), ba dữ kiện `KC`/`BLOCKED_DEPENDENCY` nêu
+đích danh, và câu kết luận rằng nhánh multipart của §3.5 vẫn chưa hiện thực được. `claim_ceiling` **giữ**
+`DRAFT_FOR_REVIEW`: đọc được hai giới hạn không làm một hợp đồng sẵn sàng, và bump version **không** phải
+một lần nâng trần claim.
+
+#### 8.14.3 Vòng ba — `OD-20260908-07` mục 1 nới quyền sang tìm kiếm web; ba dữ kiện vẫn `BLOCKED_DEPENDENCY`
+
+`OD-20260908-07` (`AUTH-OWNER-20260908-08`) mục 1 mở đúng cái ranh giới mà vòng hai dừng lại: Worker được
+dùng **WebSearch** để tìm **đường đọc** chính trang `core.telegram.org/bots/api` — bản lưu trữ, bản cache,
+hoặc một cách lấy lát nhỏ hơn. Mọi hạn chế khác giữ nguyên, và Owner nói rõ: tìm kiếm để **định vị nội dung
+của trang ấy**, **không** phải để lấy một con số từ một site khác. Packet vòng ba (`LEASE-PC07-TELEGRAM-p3`)
+thi hành đúng như vậy. **Kết quả: cả ba dữ kiện vẫn `BLOCKED_DEPENDENCY`.**
+
+| Đường đã thử | Kết quả |
+| --- | --- |
+| WebSearch (tự do) — tìm bản lưu trữ của chính trang ấy | Xác nhận Wayback có snapshot; trỏ tới `web.archive.org/web/*/core.telegram.org/bots/api` |
+| WebSearch giới hạn `allowed_domains = core.telegram.org` — `callback_data "1-64 bytes"` | Trả về danh sách URL của chính host, **không** có câu cần trích trong snippet |
+| `web.archive.org/web/20200215000000id_/…/bots/api` (bản 2020, sau Bot API 4.5 nên CÓ MarkdownV2, và nhỏ hơn bản hiện tại) | **Bị chặn ở tầng công cụ**: *"Claude Code is unable to fetch from web.archive.org"* — không phải 404, không phải quyền |
+| `web.archive.org/web/20160801000000id_/…/bots/api` (bản 2016, nhỏ hơn nữa) | Cùng lỗi chặn |
+| `archive.ph/newest/…` | *"unable to fetch from archive.ph"* |
+| `corefork.telegram.org/bots/api` (host mirror của **chính Telegram**) | Tải được nhưng **cùng cỡ trang** ⇒ cắt y hệt, dừng trong `Message` |
+
+**Giả thuyết của vòng ba, và vì sao nó đúng nhưng không dùng được.** Suy luận là: trang Bot API **lớn dần
+theo năm**, nên một snapshot 2020 (đã có MarkdownV2 từ Bot API 4.5, tháng 12/2019) sẽ nhỏ hơn bản 2026 đủ để
+lọt vào cửa sổ đọc. Suy luận ấy vẫn hợp lý; nó chết vì một lý do **không liên quan gì tới Telegram**: nền
+tảng chặn cứng mọi host lưu trữ. Đây là **loại chặn thứ ba** trong hồ sơ này, và đáng gọi đúng tên — không
+phải `BLOCKED_SCOPE` (quyền đã đủ, Owner vừa nới), không phải thiếu nguồn (trang tồn tại, snapshot tồn tại),
+mà vẫn là `BLOCKED_DEPENDENCY`: thiếu **tool capability**, lần này ở một chỗ khác của cùng bức tường.
+
+**Điều vòng ba KHÔNG làm, và đây là chỗ dễ trượt nhất.** Tìm kiếm **có** trả về con số: các trang thứ ba
+(n8n docs, grammY, một blog) nêu *"4096 characters after entities parsing"*, *"UTF-16 length limit of
+4096"*, và mô tả luật escape của MarkdownV2. **Không** một chữ nào trong số đó được đưa vào hợp đồng.
+`OD-20260908-07` mục 1 viết thẳng: *"not substituting a third-party's restatement of the numbers as if it
+were the source"*. Một con số đúng lấy từ người kể lại vẫn là một trích dẫn sai — và trớ trêu là những trang
+ấy **đồng ý** với giả định 64 byte đang nằm trong `1:<ri>:<ii>:<lg>:<rv>`, tức là cám dỗ lớn nhất chính là
+lúc câu trả lời "trông đã đúng rồi". Ghi lại ở đây rằng chúng tồn tại và cố ý bị bỏ qua, để lần sau không ai
+tưởng là chưa ai tìm thấy gì.
+
+**Việc cần xin ở vòng sau, cụ thể và duy nhất.** Cả ba vòng thất bại vì **kích thước**, không vì host: trang
+nặng ~1.5 MB và dữ kiện nằm ở nửa sau. Thứ giải được là một cách đọc **theo lát** trên **đúng URL chính
+thức** — HTTP `Range`, hoặc một công cụ fetch có offset/phân trang. Đó là một amendment về **công cụ**
+(không mở thêm host, không đổi điều cấm nào), và nó **không** cần Owner cấp thêm quyền mạng nào ngoài cái
+đã có. Nếu cả cách ấy cũng không có, ba dòng ở lại `KC` — và `MOD-telegram-adapter` ở lại **BLOCKED (cứng)**,
+đúng như ba vòng qua đã ghi.
+
+### 8.15 Quyết định của `OD-20260908-06` (vòng sáu, 2026-09-08) — `REQ-OQ03` **đã được trả lời**
+
+Mục này trả lời đúng điều **§8.14 để mở**: câu ở §8.14 (*"`REQ-OQ03` **vẫn** `OWNER_DECISION_REQUIRED` cho
+tới khi Owner duyệt một đề xuất cụ thể"*) đúng ở thời điểm nó được viết và **nay đã được thoả** — Owner đã
+duyệt. Biên bản: `precode/owner-decisions-06.md`, ghi bởi `worker-WAI` (`PKT-PC06-FIX-OQ03`) dưới
+`AUTH-COORD-OQ03` (cha `AUTH-OWNER-20260908-06`), evidence `session_017CTbS7F4oTr4ZtFYkhdabD`. Câu trả lời
+**nguyên văn** của Owner: **"sonnet 5 + opus 5 for summary"**.
+
+| # | Quyết định | Trạng thái | Ghi ở đâu |
+| --- | --- | --- | --- |
+| 1 | `summary` → Claude **Opus 5** (`claude-opus-5`); `label` và `direction_phrasing` → Claude **Sonnet 5** (`claude-sonnet-5`); cả hai họ `api_key`, **không** phải `cli_acp` | `ACCEPTED (OD-20260908-06)` | `contracts/ai/providers.yaml` §2.1 (v0.1.0 → 0.2.0); `precode/owner-decisions-06.md` §2; `precode/requirements.csv` hàng `REQ-OQ03` (`ĐX` → `XN`) |
+
+**Cổng vào Giai đoạn 3 đòi một CÂU TRẢ LỜI, không đòi một adapter đã bật.** `docs/master-plan.md` §3 viết
+*"Cổng vào: `REQ-OQ03` phải được Owner trả lời."* Câu trả lời đã có, nên cổng ấy được thoả. Việc **gọi được
+model** thì chưa: cả hai mục adapter mang `enabled: false`. Hai chuyện đó tách nhau, và trộn chúng lại là
+cách dễ nhất để đọc mục này rộng hơn nó là.
+
+**`REQ-A5` cho Anthropic: `permitted_for_this_use`, có điều kiện — và có nguồn.** Một **Worker** (không phải
+Owner — xem dưới) đã đọc `www.anthropic.com/legal/commercial-terms` (eff. **2025-06-17**), `/legal/aup`
+(Usage Policy, eff. **2025-09-15**) và `/legal/service-specific-terms` (eff. **2026-06-08**) ngày
+**2026-09-08** (giờ Owner) = `2026-09-07T18:0xZ` UTC; công cụ `WebFetch` GET, chỉ đọc; **không** một lời gọi
+nào tới `api.anthropic.com`, **không** dùng API key, **không** một lần inference nào. Bảy trích dẫn nguyên
+văn ở `precode/owner-decisions-06.md` §3. Kết quả: ToS áp cho *"Customer's use of Anthropic API keys"*, nhập
+Usage Policy vào hợp đồng, cho *"Customer… owns its Outputs"* và cho dùng Services để *"power products and
+services"*; **toàn bộ 82 gạch** của *Universal Usage Standards* đã đọc hết và **không** gạch nào cấm chạy tự
+động không người trực, chạy khối lượng lớn, gắn nhãn/tóm tắt văn bản của bên thứ ba, hay lưu và dùng lại
+output. Hai điều kiện còn mở **thuộc về phía mình**, không phải hạn chế do Anthropic đặt lên cách dùng:
+(a) quyền đối với Input — *"Customer further represents and warrants that it has all rights and permissions
+required to submit Inputs to the Services."*, và ta gửi abstract/post của bên thứ ba; (b) cấm dùng
+input/output để **train** model — hiện không kích hoạt vì embedding là model local (REQ-D48/D50), nhưng nó
+chặn trước mọi ý định về sau.
+
+**Vì sao cả hai adapter vẫn `enabled: false` — và vì sao đó là kết luận của VĂN BẢN, không phải của sự thận
+trọng.** `providers.yaml` §4 `status_values` chỉ cho `not_applicable` với *"các tính chất mà **kiến trúc đã
+loại bỏ**"*. `ISO-03` (network egress) và `ISO-05` (credential đúng provider, đúng task đang giữ lease) là
+những tính chất mà đường `api_key` **tạo ra**: nó là đường **duy nhất** gọi mạng tới endpoint nhà cung cấp
+(§1 `api_key`) và là đường **duy nhất** nhận credential (`cli_acp` có `secret_ref = NULL`, REQ-D51; ADR-0010
+điểm 1 đặt secret theo từng task). Chúng nằm **ngoài** tập mà `not_applicable` phủ, với bất kỳ cách đọc nào
+của câu đó ⇒ `unverified` ⇒ `enabled = false` **theo chính §4**. `ISO-01`/`02`/`04` cũng `unverified` theo §4
+`current_status_vi` (*"Không có ngoại lệ, vì chưa có probe nào chạy (E3 = `NOT_RUN`)"*), cộng một lý do độc
+lập: `not_applicable` giả định một **kiến trúc đã tồn tại** để loại bỏ được một tính chất, mà `MOD-ai-adapter`
+chưa có một dòng mã nào — nên cái "đã loại bỏ" mới là **dự định**, và §4 `principle_vi` nói thẳng *"Một lời
+hứa… KHÔNG phải bằng chứng cô lập"*. Cách kiểm hai mục quyết định đều đòi một lần **chạy**: ghi tập đích của
+một lần chạy (`ISO-03`), và gọi `secret.issue_task_credential` cho một worker **không** giữ lease rồi thấy nó
+bị từ chối (`ISO-05`) — E3 = `NOT_RUN` và operation đó chưa có mã.
+
+**Chỗ văn bản thật sự mơ hồ, ghi ra thay vì giấu.** Với `ISO-01`/`ISO-02`, ADR-0010 điểm 2 khoanh yêu cầu
+"tắt tool, tắt file, tắt mạng" cho **đường CLI/ACP**, và §1 chỉ đặt `isolation_required: true` dưới `cli_acp`
+— nên có thể lập luận rằng một adapter `api_key` không có bề mặt tool thì hai mục ấy là `not_applicable`.
+Bản ghi này **không** đi theo lập luận đó (hai lý do ở đoạn trên), và quan trọng hơn: nó **không đổi được kết
+quả**, vì `ISO-03`/`ISO-05` vẫn `unverified`. Muốn chốt khác cho `ISO-01`/`ISO-02` thì đó là một **quyết định
+hợp đồng** (`CR-PC06-OQ03-01` chạm cùng vùng), không phải một cách đọc Worker được tự chọn.
+
+**Một điểm CHI PHÍ Owner nên thấy, vì nó không tự lộ ra.** `label` là task khối lượng **lớn nhất** (mọi
+post/work — `contracts/ai/tasks.yaml` `label.volume_vi`) và `REQ-D40` khuyến nghị **model rẻ** cho nó; lựa
+chọn này đặt nó lên model **mạnh**. `providers.yaml` §7 `rules_vi` cho phép tường minh (*"REQ-D40 là khuyến
+nghị mặc định… không phải ràng buộc cứng: Owner được phép đặt khác"*), nên đây **không** phải vi phạm hợp
+đồng — nó là một chi phí **đã được chọn**. Chỗ để hạ chi phí về sau là `label`, không phải `summary`.
+`direction_phrasing` thì khớp thẳng: `tasks.yaml` khai `model_class: strong` cho nó (1 lần mỗi kỳ) và
+Sonnet 5 là model lớp mạnh — Owner khoanh Opus 5 vào **đúng chữ `summary`**, nên phần còn lại rơi về Sonnet 5
+mà không mâu thuẫn với `tasks.yaml`.
+
+**Năm điều vòng sáu KHÔNG làm.** (a) **Không** bật adapter nào. (b) **Không** tạo hàng `ENT-provider-config`,
+không đặt `secret_ref`, không chạm secret store. (c) **Không** mở allowlist fallback — `providers.yaml` §6
+chỉ nhận adapter `enabled = true`, và hiện không có adapter nào như vậy. (d) **Không** đổi `REQ-AC16`: hai
+adapter này thuộc họ `api_key`, đường không-API-key vẫn phụ thuộc adapter `cli_acp`, và luật báo cáo
+`BLOCKED` (**không** phải `FAIL`) của §4 giữ nguyên. (e) **Không** nâng trần claim của file nào và **không**
+đóng finding nào — `contracts/ai/providers.yaml` v0.2.0 vẫn `DRAFT_FOR_REVIEW`.
+
+**Bảy CR phát sinh** — bản ghi một dòng ở `precode/owner-decisions-06.md` §7; ba cái chạm hợp đồng
+(`CR-PC06-OQ03-01`, `-02`, `-03`) có khối YAML đầy đủ ở `precode/change-control.md` §10. Đáng chú ý nhất:
+`-02` (§5 ghi `reviewer` *"đây là Owner"* và *"PC06 KHÔNG đọc thay"*, trong khi `OD-20260908-05` mục 1 giao
+việc đọc `REQ-A5` cho một **Worker** — hai câu không thể cùng đúng, và phải chốt **trước** lần bật đầu tiên
+vì `entities.yaml` `ck_provider_config_terms_before_enable` biến nó thành một CHECK chạy được) và `-05`
+(quyền mạng thực tế chỉ đọc được `www.anthropic.com/legal/*`: `docs.anthropic.com` **301 →**
+`platform.claude.com` và `www.anthropic.com/pricing` **301 →** `claude.com`; Worker **dừng tại redirect**,
+đúng tiền lệ `docs.openalex.org` ở §8.13.1 — nên `anthropic-version`, chuỗi model id và bảng giá **chưa** có
+nguồn chính thức đọc được).
+
+**Ghi chú lease — vì sao mục này land sau `§8.14` một nhịp.** `PKT-PC06-FIX-OQ03` và `PKT-PC07-FIX-TELEGRAM`
+được dispatch **cùng lúc** với write set **chồng nhau** trên đúng ba file (`decision-register.md`,
+`change-control.md`, `requirements.csv`). `protocol.md` §2 không bật range-sharing, nên hai lease "chỉ một
+hàng" vẫn là hai lease **toàn file**. `worker-WAI` quan sát ba file đổi bytes hai lần trong 13 phút khi
+`worker-WT` chưa handoff, nên **dừng trước khi ghi** (`BLOCKED_LEASE`) thay vì ghi đè — rồi land phần này
+dưới `LEASE-PC06-OQ03-p2` sau khi `LEASE-PC07-TELEGRAM` được nhả và baseline được đọc lại. Nội dung của
+`worker-WT` ở §8.14 **không** bị chạm một byte.
+
+#### 8.15.1 `OD-20260908-08` — Owner **ký xác nhận** `REQ-A5` cho Anthropic; `CR-PC06-OQ03-02` đóng (2026-09-08)
+
+Biên bản vòng tám — `…/packets/OWNER-DECISIONS-20260908-08.md`, authority **`AUTH-OWNER-20260908-09`**,
+evidence `session_017CTbS7F4oTr4ZtFYkhdabD` — có **một** mục, và mục đó đóng đúng khoảng lệch mà §8.15 nêu:
+Owner **tự đọc** bản tóm tắt `REQ-A5` (bảng trích dẫn `A5-1`…`A5-8` cộng hai điều kiện còn mở ở
+`precode/owner-decisions-06.md` §3) rồi **ký**.
+
+| # | Quyết định | Trạng thái | Ghi ở đâu |
+| --- | --- | --- | --- |
+| 1 | `REQ-A5` cho Anthropic (Claude Sonnet 5 / Claude Opus 5, họ `api_key`) — **ký xác nhận**, **chấp nhận tường minh** bảo đảm `TC-A5-01` | `ACCEPTED (OD-20260908-08)` | Hàng này; `contracts/ai/providers.yaml` §2.1 → `terms_check.reviewer` của **cả hai** mục |
+
+**Cái được ký, viết hẹp đúng bằng cái Owner đọc.** Chữ ký áp cho **đúng Anthropic** và **đúng ba trang có
+ngày hiệu lực** đã dẫn ở `source_urls`: Commercial ToS (eff. 2025-06-17), Usage Policy (eff. 2025-09-15),
+Service Specific Terms (eff. 2026-06-08). Chính biên bản nhắc lại luật hết hạn của `ADR-0010`: *"The
+conclusion expires if any of the three cited pages changes version"*. Nó **không** là một chữ ký cho "nhà
+cung cấp Anthropic nói chung", cũng **không** cho một model hay một version khác.
+
+**`TC-A5-01`: Owner nhận phần của mình — và phần còn lại vẫn để ngỏ.** Điều Owner chấp nhận là **bảo đảm với
+Anthropic**: *"Customer further represents and warrants that it has all rights and permissions required to
+submit Inputs to the Services."* — tức Owner (không phải Anthropic) là bên đứng ra bảo đảm rằng hệ này có
+quyền đưa văn bản nghiên cứu của bên thứ ba vào làm Input. Điều **KHÔNG** được quyết ở vòng này, nguyên văn
+biên bản: *"whether arXiv/OpenAlex/X's own policies permit this system reprocessing their content this way
+(`TC-A5-01`'s underlying question, distinct from Anthropic's terms) — flagged by the Worker as a separate,
+unanswered question, not resolved by this sign-off."* Hai câu hỏi ấy **khác nhau** và trộn chúng là cách dễ
+nhất để đọc chữ ký này rộng hơn nó là: nhận bảo đảm với Anthropic **không** trả lời được câu hỏi chính sách
+của arXiv/OpenAlex/X. Câu đó vẫn **chưa có ai trả lời**, và không packet nào tới giờ được giao đi hỏi nó.
+
+**`CR-PC06-OQ03-02` đóng — và đóng đúng cách.** CR ấy hỏi: `reviewer` phải là Owner (§5) hay được là một
+Worker (`OD-20260908-05` mục 1)? Biên bản chọn phương án **(a)** của CR: lần đọc do Worker thực hiện được
+Owner **ký xác nhận**, và chữ ký ấy là thứ làm §5 `reviewer = Owner` thoả. `protocol.md` §8: disposition do
+authority được chỉ định ký — ở đây là chính Owner — nên đây là một lần đóng hợp lệ, không phải Worker tự khai.
+`entities.yaml` `ck_provider_config_terms_before_enable` (`enabled = 0 OR terms_check_at IS NOT NULL`) nay có
+một mốc thật để trỏ vào, khi nào có hàng `provider_config` đầu tiên.
+
+**Chữ ký này KHÔNG bật adapter nào — và đó là điều dễ đọc nhầm nhất ở đây.** Biên bản nói thẳng: *"This does
+**not** set `enabled = true` on either adapter — that remains gated on `B13` isolation verification
+(`ISO-03`/`ISO-05` unverified, `E3 NOT_RUN`), unrelated to this sign-off."* Hai cổng vẫn **tách nhau** đúng
+như §8.15 mô tả: cổng điều khoản (`REQ-A5`) nay **đã qua**; cổng cô lập (`B13`/`ADR-0010`) **vẫn đóng**, và
+chỉ một lần chạy E3 mở được nó. `enabled: false` **không bị chạm** ở vòng này.
+
+**Ba câu chữ nay đã cũ, ghi ra thay vì im lặng sửa.** Lease `LEASE-PC06-OQ03-p3` cấp **đúng** object
+`terms_check` của hai mục adapter, nên hai câu sau trong `contracts/ai/providers.yaml` §2.1 — viết **trước**
+chữ ký — **không** được chạm và nay đọc sai: (1) `terms_conditions_vi.reviewer_caveat_vi` (*"Owner **chưa** ký
+xác nhận nội dung đã đọc"*); (2) mệnh đề cuối của `disabled_reason` mục `anthropic@claude-sonnet-5` (*"hai
+điều kiện còn mở là TC-A5-01… **và chữ ký xác nhận của Owner**"* — nay chỉ còn **một**, và bản thân
+`TC-A5-01` đã đổi hình: phần bảo đảm với Anthropic được Owner nhận, phần chính sách nguồn vẫn mở). Trường
+`terms_check.reviewer` của cả hai mục mang câu đính chính và trỏ tới `CR-PC06-OQ03-08`. Sửa hai câu ấy cần
+một packet khác — viết trước rồi hợp thức hoá sau chính là thứ `BLOCKED_SCOPE` sinh ra để chặn.

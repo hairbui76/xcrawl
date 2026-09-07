@@ -1,9 +1,10 @@
 # Hồ sơ audit độc lập — Research Radar Pre-code
 
-**Mười lăm** AUDIT_REPORT của **ba** auditor độc lập (`auditor-A1` ×3, `auditor-A2` ×7, `auditor-A3` ×5) và
-**mười bốn** FROZEN_CANDIDATE manifest, được lưu lại nguyên văn để chúng không mất cùng phiên làm việc. Chuỗi
+**Mười bảy** AUDIT_REPORT của **ba** auditor độc lập (`auditor-A1` ×3, `auditor-A2` ×7, `auditor-A3` ×7) và
+**mười sáu** FROZEN_CANDIDATE manifest, được lưu lại nguyên văn để chúng không mất cùng phiên làm việc. Chuỗi
 epoch: `FC-W1` 1 → `FC-W2` 2 → `FC-W3` 3 → `FC-W4` 4, 5, 6, 7, **8 (epoch phê chuẩn của Owner)**, **9 (epoch
-cuối của baseline hợp đồng)** → **`FC-P1` 1, 2, 3 và 4 (Giai đoạn 0/1)** → **`FC-P2` (Giai đoạn 2)**.
+cuối của baseline hợp đồng)** → **`FC-P1` 1, 2, 3 và 4 (Giai đoạn 0/1)** → **`FC-P2` (Giai đoạn 2)** →
+**`FC-P3` 1 và 2 (Giai đoạn 3 + Giai đoạn 5 văn bản thuần)**.
 
 **`A2-R7` là ngoại lệ về hình dạng, không phải về hiệu lực.** Nó là báo cáo duy nhất **không có freeze
 manifest**: Coordinator dispatch nó lúc 18 task card đang được re-pin đồng thời, nên thay vì một manifest,
@@ -11,8 +12,8 @@ manifest**: Coordinator dispatch nó lúc 18 task card đang được re-pin đ�
 minh được cùng một thứ mà một manifest chứng minh cho một phạm vi hai file — không có drift trong lúc review —
 nhưng nó **không** phải một epoch trong chuỗi trên, nên đừng tìm `FC-` tương ứng.
 
-**Năm báo cáo `A3-*` khác mọi báo cáo trước chúng ở một điểm cần nói rõ:** mười báo cáo A1/A2 đều ở mức bằng
-chứng **E0** — kiểm tính nhất quán tĩnh của văn bản hợp đồng, không có gì được chạy. Năm báo cáo A3 audit
+**Bảy báo cáo `A3-*` khác mọi báo cáo trước chúng ở một điểm cần nói rõ:** mười báo cáo A1/A2 đều ở mức bằng
+chứng **E0** — kiểm tính nhất quán tĩnh của văn bản hợp đồng, không có gì được chạy. Bảy báo cáo A3 audit
 **code đang chạy**: auditor tự cài từ lockfile, tự chạy toàn bộ bộ test, tự dựng lại cơ sở dữ liệu dưới bốn
 thứ tự duyệt migration, và tự viết harness riêng thay vì tin bộ test của Worker. `A3-R3` đi thêm một bước:
 nó **mutation-test** chính các phép kiểm mà Worker viết ra — bỏ một cột đã khai, thêm một cột chưa khai, khai
@@ -29,9 +30,10 @@ evidence artifact trong packaging phase; không chèn report vào manifest mà r
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
 
-Thư mục được bổ sung **năm** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
+Thư mục được bổ sung **sáu** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
 epoch 9, `PKT-PC00-FIX18` chép `A2-R7`, `A3-R3` cùng ba manifest `FC-P1`, `PKT-PC00-FIX19` chép `A3-R4` cùng
-manifest epoch 4, và `PKT-PC00-FIX24` chép `A3-P2-R1` cùng manifest `FC-P2` của Giai đoạn 2. Mỗi lần chép đều
+manifest epoch 4, `PKT-PC00-FIX24` chép `A3-P2-R1` cùng manifest `FC-P2`, và `PKT-PC00-FIX29` chép **hai**
+báo cáo `A3-P3-*` cùng **hai** manifest `FC-P3`. Mỗi lần chép đều
 `cmp`-verified và hash được tính lại sau khi chép.
 
 **Bảy bản ghi mới nhất ra đời SAU epoch mà chính chúng audit** (`FC-P1` epoch 3 cho `A3-R3`, epoch 4 cho
@@ -63,6 +65,8 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A2-R7-report.md` | AUDIT_REPORT `A2-R7` — re-review có phạm vi hai văn bản (`docs/master-plan.md`, `ADR-0011`). **Không có freeze manifest**: hai file được hash đầu và cuối vòng thay cho manifest. Sinh ra `F-A2R7-04` và `F-A2R7-05`, hai finding đã được `PKT-PC00-FIX14` xử lý | *(không epoch — xem ghi chú ở trên)* | `12b0dbcc39919cc4c74bccaae24670ea480660ab1a945d06a0bc2ab28dd74880` | 17667 |
 | `A3-R3-report.md` | AUDIT_REPORT `A3-R3` — xác minh có phạm vi `F-A3R2-01..04` cộng phần đăng ký của PC09. Verdict tổng **PASS**; `F-A3R2-02` được xác minh bằng **mutation test** trên chính guard của Worker; ba finding mới `F-A3R3-01..03`, trong đó `F-A3R3-01` là một lỗ thật trong phép kiểm E0-12 | `FC-P1` epoch 3 | `5d9a4ce609f24b785f7d2d5753602f5f52008e01bc01886e2667807adfce6284` | 14574 |
 | `A3-R4-report.md` | AUDIT_REPORT `A3-R4` — xác minh có phạm vi `F-A3R3-01..03`. Verdict tổng **PASS**, cả ba VERIFIED bằng tái lập của chính auditor; **một** finding mới `F-A3R4-01` (LOW) | `FC-P1` epoch 4 | `1bb41470b4730a25e199be3f367da24b51d89856248f35a681cb61c9c66bf08e` | 8672 |
+| `A3-P3-R1-report.md` | AUDIT_REPORT `A3-P3-R1` — audit độc lập **Giai đoạn 3 (M3)** cộng **Giai đoạn 5 (M6, văn bản thuần)**. Verdict **PASS CÓ MỘT ĐIỀU KIỆN**: mọi phép đo tái lập đúng, **trừ** `ruff format --check` đỏ trên bốn file và sẽ làm CI fail (`F-A3-P3-01`); auditor viết thẳng *"tôi sẽ không ký một commit của những byte này cho tới khi formatter chạy"*. Ba finding mới `F-A3-P3-01..03` | `FC-P3` epoch 1 (540 entry) | `d6368b95f4a277abbf1c2e1a90c1bffce75b36b20adf6ee3454b0594b238420f` | 16371 |
+| `A3-P3-R2-report.md` | AUDIT_REPORT `A3-P3-R2` — xác minh có phạm vi `F-A3-P3-01..03`. Verdict **PASS**, cả ba VERIFIED bằng tái lập của chính auditor; **điều kiện của R1 được giải**, `FC-P3` epoch 2 sạch với mọi cổng auditor chạy được. **0 finding mới**; auditor ghi rõ *"tôi không đóng gì cả"* | `FC-P3` epoch 2 (545 entry) | `a62a74b5839383566e65f2bdec3d46463b4fde389896247f5538bc1fe72c1a16` | 10479 |
 | `A3-P2-R1-report.md` | AUDIT_REPORT `A3-P2-R1` — audit độc lập của **Giai đoạn 2**: probe, connector paper, và `REQ-A6`. Verdict tổng **PASS** cho phạm vi review. Bản **duy nhất** có dùng mạng: bốn GET trang tài liệu trong allowlist Owner cấp, không host API nào. **Giải `CR-PC09-18`** — xem "Cách đọc" | `FC-P2` | `96efd7b1461677d0de52fe13905e654439dc305da2921dab648ab9ced97ed1e1` | 16829 |
 | `FC-W1-manifest.txt` | FROZEN_CANDIDATE manifest — thuật toán `sha256-path-role-hash-bytes-v1` | `FC-W1` epoch 1 | `6471df833d8d900cd8e92d67032927ca186756a56f69764279cbe2d3fe54e5f3` | 8059 |
 | `FC-W2-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-W2` epoch 2 | `0195d00a3b9ebb49053af9292eb3127cfa22c3591c76c20118050bbbe89d1ccd` | 12129 |
@@ -77,6 +81,8 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `FC-P1e2-manifest.txt` | FROZEN_CANDIDATE manifest | `FC-P1` epoch 2 | `0d172d4c394728f359996e66d773387d4180e8c96698912a03dc1e11fb282bb9` | 56885 |
 | `FC-P1e3-manifest.txt` | FROZEN_CANDIDATE manifest — 395 entry, `manifest_sha256 = 5f5b8aa425219de2621ef0a75a18ff3c6ed00a09b685cf6c13deeceeb12362b4` theo `A3-R3` §1 | `FC-P1` epoch 3 | `1a736950d1244c6bfc74d224d31c72d92b94a84528627850f1f0c459d11912d9` | 58266 |
 | `FC-P1e4-manifest.txt` | FROZEN_CANDIDATE manifest — 413 entry, `manifest_sha256 = 576a7572c8ac25852a5a44a200c1593c1f80887970755d5c6473e5105d40bd36` theo `A3-R4` §Reference | `FC-P1` epoch 4 | `736ca1ab7f061b05dd050bcf41e9dd8562db5b3a5920b35c94fd6b0dd3af241b` | 60916 |
+| `FC-P3-manifest.txt` | FROZEN_CANDIDATE manifest — **540 entry**, `manifest_sha256 = 1c43507bc84a5f627ad2df0d6ad89d99e1b90a4c8ab05228c046280a6fb53db3`, epoch pin `PC10-PIN-P3b-20260908`. Delta so với `FC-P2`: 74 thêm, 0 bỏ, 44 đổi | `FC-P3` epoch 1 | `2b211a8cedc7ee9aa550c7067300eee9525034a69f0463e5238ce499ea45c921` | 80046 |
+| `FC-P3e2-manifest.txt` | FROZEN_CANDIDATE manifest — **545 entry**, `manifest_sha256 = 41c475065793ee4ca5993a5ab1f98657fc23d617212ca1452475a9c90f76556a`. Delta: 5 thêm (manifest phát lại), 0 bỏ, 21 đổi; **không** file `contracts/`, `acceptance/`, `precode/` hay `agent-tasks/` nào dịch chuyển | `FC-P3` epoch 2 | `f9da1bd6abb6573090ee04e0ac92fce8fc600ae1abb38e1f7d857031d65d8ca5` | 80919 |
 | `FC-P2-manifest.txt` | FROZEN_CANDIDATE manifest — **466 entry**, `manifest_sha256 = dafc1c83ca2108d50ccc5cc700115849b9537be31ff0155f5dd37c7bc5e469f0` (giá trị này nằm ở dòng 2 của chính file; **khác** sha256 của file, xem "Cách đọc"). Delta so với `FC-P1e4`: 53 thêm, 0 bỏ, 42 đổi | `FC-P2` | `042fb77283ea423461e8020e8d581c1f73102de804f7600e20d42bc013ced0f9` | 68990 |
 
 ## Cách đọc
@@ -92,9 +98,10 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   product acceptance. **Mười** báo cáo `A1-*`/`A2-*` ở mức bằng chứng **E0** (kiểm tính nhất quán tĩnh của văn
   bản hợp đồng); không có gì được chạy trong chúng. **Ba** báo cáo `A3-*` ở mức **E1/E2** (contract test bằng
   fixture cộng fault injection) cho đúng bốn card và skeleton mà chúng kiểm — và **E3/E4 vẫn `NOT_RUN`** ở cả
-  năm: không một lời gọi live nào, không X, không Telegram, không provider AI, không Chrome. `A3-P2-R1`
-  là bản **duy nhất** có dùng mạng, và chỉ **bốn lần GET trang tài liệu** trong đúng allowlist Owner đã cấp
-  (`info.arxiv.org`, `help.openalex.org`) — **không** host API nào được chạm.
+  bảy: không một lời gọi live nào, không X, không Telegram, không provider AI, không Chrome. **Hai** bản có
+  dùng mạng, và chỉ để **đọc lại tài liệu** trong đúng allowlist Owner đã cấp — `A3-P2-R1` bốn lần GET
+  (`info.arxiv.org`, `help.openalex.org`) và `A3-P3-R1` bốn lần GET (`core.telegram.org`,
+  `www.anthropic.com`) — **không** host API nào được chạm ở cả hai.
 - **`F-A3R4-01` (LOW) — `PARKED` theo ruling của Coordinator.** `A3-R4` chứng minh rằng nhãn claim trong
   **front-matter của file Markdown** dưới `evidence/coordination/` **không được quét** bởi `E0-12`: auditor đặt
   `claim_ceiling: PRODUCT_ACCEPTED` vào front-matter một file `.md` ở đó và phép kiểm **PASS**. Ghi chú của
@@ -117,6 +124,23 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   thắng**. `EV-A3-07-round3` đã được thêm cho vòng 3. **Mười** báo cáo A1/A2 và **`A3-R4`** vẫn **không** có
   bản ghi tương ứng — `A3-R4` ra đời sau lượt đăng ký gần nhất, nên việc đăng ký nó là việc của một vòng PC09
   sau (`CR-PC00-22`, nay trỏ vào `A3-R4`).
+- **Hai báo cáo `A3-P3-*` cũng CHƯA có bản ghi trong `evidence/index.json` tại thời điểm chép**
+  (2026-09-07T20:43Z): `EV-A3-*` dừng ở `EV-A3-11-p2-overall`, và `evidence/handoffs/PC09-handoff.md`
+  chưa có addendum A3-P3. Packet `PC09-P3` của `worker-W6n` chạy **song song** và sẽ ghim hash. Vì vậy lần
+  chép này **không đối chiếu** được với một giá trị đã đăng ký — nó **cung cấp** giá trị đầu tiên, đúng như
+  `A3-P2-R1` ở `PKT-PC00-FIX24`. Bảo đảm ở đây là `cmp` byte-identical với bản gốc trong scratchpad, **không**
+  phải một lần khớp hash hai chiều. → `CR-PC00-33`.
+- **`A3-P3-R1` PASS *có điều kiện*, và điều kiện ấy không được nuốt vào chữ "PASS".** R1 nói: hành vi đúng,
+  **cổng thì không** — `ruff format --check` đỏ trên bốn file. Auditor từ chối ký commit của những byte đó.
+  Điều kiện được giải ở **epoch 2**, và `A3-P3-R2` xác minh bằng tái lập của chính họ. Đọc R1 mà bỏ vế điều
+  kiện là đọc ngược lại điều auditor cố ý viết ra. `A3-P3-R2` cũng ghi thẳng *"tôi không đóng gì cả —
+  disposition vẫn là của Coordinator"*, đúng `protocol.md` §8: một verdict `VERIFIED` **không** phải một
+  finding đã `CLOSED`.
+- **Cả hai bản `A3-P3-*` đều để lại phần còn nợ.** Ba trong năm dữ kiện `contracts/telegram/delivery.md`
+  §3.4 vẫn `KC`/`BLOCKED_DEPENDENCY` và `MOD-telegram-adapter` **vẫn bị chặn cứng**; bước tiếp là một
+  **range/offset fetch** trên chính URL chính thức — theo lời auditor, đó là **một amendment công cụ, không
+  phải một quyền mạng mới**. Cùng với `F-A3R4-01`, `F-A3-P2-01/02` và `F-A3-P3-01..03`, đây là danh sách
+  residual mà một lượt đọc "PASS" đơn thuần sẽ bỏ sót.
 - **`CR-PC09-18` được GIẢI bằng chính lần chép này, và đây là lý do nó tồn tại.** `evidence/index.json` bản
   ghi `EV-A3-11-p2-overall` **trích** `evidence/audits/A3-P2-R1-report.md` chín lần nhưng `artifacts[]`
   **không ghim được** sha256 của nó, và bản ghi tự khai đúng như vậy: *"Báo cáo gốc chưa nằm trong repo, nên

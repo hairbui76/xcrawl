@@ -121,12 +121,12 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-P2d-20260907`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+**Pin hiện tại: `PC10-PIN-P3b-20260908`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
 pin. Lần pin này chạy sau `PKT-PC02-FIX13` (release 11:44Z): `contracts/data/entities.yaml` được sửa **chỉ ở
 phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại, và
 đó là điểm mấu chốt: quy tắc `STALE` đọc **byte**, không đọc ý định. Một ngoại lệ "chỉ là văn xuôi" sẽ biến
 cửa pin thành thứ phải phán đoán mới dùng được, và phán đoán là thứ cơ chế này tồn tại để khỏi cần. Epoch cũ,
-theo thứ tự bị thay: `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
+theo thứ tự bị thay: `PC10-PIN-P3-20260908` ← `PC10-PIN-P2d-20260907` ← `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
 `PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
 `PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 

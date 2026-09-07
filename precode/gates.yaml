@@ -1,5 +1,5 @@
 contract_id: CT-precode-gates
-version: 0.3.0
+version: 0.4.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -516,6 +516,15 @@ gates:
       toàn bộ (`A3-P2-R1` §1). `G5-X4` đã `met: true` từ Giai đoạn 0 nên không có gì để nâng.
       Điều kiện **VÀO** (G4) vẫn `PARTIALLY_MET` và **`REQ-OQ03`** vẫn `OWNER_DECISION_REQUIRED`
       — hai lý do đó không phải là thứ code giải được, nên thêm ba card không đổi chúng.
+    phase3_note_vi: >
+      **Giai đoạn 3/5 lại không chuyển cổng này, và lý do vẫn y nguyên.** Sáu card nữa đã chạy,
+      `verify_cards.py` cho **13/13 check, 3 685 assertion** ở epoch `PC10-PIN-P3b-20260908`, và
+      hai lượt audit độc lập (`A3-P3-R1`, `A3-P3-R2`) chạy lại toàn bộ. `G5-X1..X4` đã đủ từ
+      Giai đoạn 0. Điều kiện **VÀO** (G4) vẫn `PARTIALLY_MET`. **`REQ-OQ03` nay đã được Owner
+      trả lời** (`OD-20260908-05…09`) và không còn là lý do chặn — nhưng nó được thay bằng một
+      lý do khác chứ không phải bằng không có lý do: cả hai adapter AI ship `enabled: false`
+      trên căn cứ **cô lập** (ISO-03/ISO-05), `REQ-AC16` vẫn `BLOCKED`, và E3 chưa từng chạy.
+      Một provider đã được chọn không phải là một provider đã được chứng minh chạy được.
     note_vi: >
       **Bốn điều kiện ra G5-X1..X4 nay đều `met: true`** — X4 là điều kiện cuối cùng và Giai
       đoạn 0 đã đạt nó. Cổng vẫn **`PARTIALLY_MET`**, không phải `MET`, vì hai lý do nằm ngoài
@@ -615,35 +624,32 @@ gates:
         machine_check: "acceptance/scenarios.yaml: mọi SC với level ≤ E2 có status `PASS (E1)` hoặc `PASS (E2)`"
         met: false
         gap_vi: >
-          **4 trong 48** scenario ở cấp ≤ E2 đã chạy và PASS: `SC21`, `SC26` (E2, fault
-          injection thật) và `SC29`, `SC31` (E1, contract test bằng fixture). 44 dòng còn lại
-          vẫn `NOT_RUN`, trong đó **17** mang `partial_evidence_vi` nói đích danh phần nào đã
-          chạy và phần nào không đo được.
+          **10 trong 48** scenario ở cấp ≤ E2 đã chạy và PASS: `SC12`, `SC13`, `SC18`, `SC21`,
+          `SC26`, `SC28`, `SC47` (E2) và `SC29`, `SC31`, `SC48` (E1). 38 dòng còn lại vẫn
+          `NOT_RUN`, trong đó **33** mang `partial_evidence_vi` nói đích danh vế nào đã chạy và
+          vế nào không đo được.
 
-          **Mẫu số được sửa: 51 → 48.** Con số cũ sai số học, không chỉ cũ: 56 scenario trừ 5
-          dòng cấp E3 và 3 dòng cấp E4 còn **48** dòng ở cấp ≤ E2. Sai số do `PKT-PC09-P1` viết
-          ra và `PKT-PC09-P2-FIX1` sửa. Nó làm cổng trông xa đích hơn thực tế ba dòng — lệch
-          theo hướng bi quan, nhưng một con số sai theo hướng nào cũng là con số sai.
+          **Giai đoạn 3/5 chuyển 6 dòng — lần đầu tiên một giai đoạn làm con số này nhúc nhích
+          đáng kể.** Sáu card khai chạm **25** scenario; cả 25 được xét từng dòng theo quy tắc
+          ba điều kiện ở `precode/review.md` §14.5 (`PKT-PC09-P3`). Sáu chuyển nhãn, 19 giữ
+          `NOT_RUN`. Lý do chuyển được lần này mà Giai đoạn 2 thì không: các bảng mà oracle đếm
+          — `saved_item`, `saved_snapshot`, `telegram_link`, `telegram_link_attempt`,
+          `analysis`, `analysis_attempt` — **nay tồn tại**, nên phép đếm không còn chạm vào chỗ
+          trống.
 
-          **Giai đoạn 2 nay ĐÃ được đánh giá, và kết quả là 0 dòng chuyển nhãn.** `CR-PC09-20`
-          đóng bằng phép đo chứ không bằng lập luận: cả **13** scenario mà ba card Giai đoạn 2
-          khai chạm (`SC01`, `SC03`, `SC04`, `SC07`, `SC11`, `SC20`, `SC21`, `SC23`, `SC29`,
-          `SC30`, `SC39`, `SC49`, `SC50`) được xét từng dòng theo quy tắc ba điều kiện ở
-          `precode/review.md` §14.5. Kết quả: **11 dòng giữ `NOT_RUN`** với ghi chú một phần
-          viết lại, và **2 dòng** (`SC21`, `SC29`) vốn đã PASS từ Giai đoạn 1 nay được củng cố
-          bằng bằng chứng phía đối diện mà **không** đổi nhãn.
-
-          Lý do 11 dòng không chuyển được là **cấu trúc, không phải chất lượng**: oracle của
-          chúng đếm trạng thái bền trong những bảng mà **chưa card nào tạo** — `run`,
-          `assignment_lease`, `outbox_intent`, `report`/`report_item` — hoặc đòi một cấp bằng
-          chứng chưa mở (`SC11` là E4). Code Giai đoạn 2 là code **phía client**: nó chứng minh
-          collector và connector cư xử đúng, không chứng minh trạng thái server sau đó.
-
-          Dòng gần chuyển nhãn nhất là `SC39` (SSRF): **mọi** vế đo được đều đã chạy thật —
-          chặn ở từng hop, DNS rebinding, câu trả lời DNS pha trộn, trần redirect, 0 kết nối tới
-          loopback và tới dải riêng — và đúng **một** vế không đo được (`COUNT(work_label)`
-          không đổi sau khi bị chặn: đường chạy bị chặn không ghi gì, fixture nói vậy bằng văn
-          xuôi, nhưng không assertion nào đếm hàng). "Không đo được" khác "đã sạch".
+          **Vì sao 19 dòng vẫn không chuyển**, phân theo lý do và không gộp lại làm một:
+          (a) **cấp bằng chứng chưa mở** — `SC10`, `SC11`, `SC15` đòi E4 và `SC14`, `SC16`,
+          `SC17` đòi E3; không lời gọi live nào đã xảy ra, nên sáu dòng này bị chặn ở điều kiện
+          thứ nhất bất kể code tốt đến đâu;
+          (b) **bảng `report` / `report_item` / `coverage_window` / `pending_item_ledger` chưa
+          tồn tại** — `SC06`, `SC08`, `SC19`, `SC22`, `SC24`, `SC25`, `SC50`, `SC52`. Đáng ghi:
+          card delivery chạy trên một **bảng `report` giả ba cột** và khai thẳng điều đó, nên
+          mọi vế đếm `report.content_hash` chưa đo được trên bảng thật;
+          (c) **chức năng cố ý không hiện thực** — `SC32` (`data.delete_target` là non-goal,
+          `SG-01`), `SC27` (drill restore thuộc Giai đoạn 6), `SC45` (nửa server thuộc
+          `TC-scheduler-lease-claim`);
+          (d) **hợp đồng còn `KC`** — `SC46` là `NOT_RUN (BLOCKED_DEPENDENCY CR-PC07-04)` được
+          khai đích danh, và `SC49` mang thêm một mâu thuẫn hợp đồng chưa giải (`CR-TC-TGAUTH-04`).
         evidence_refs:
           - "acceptance/scenarios.yaml (status + status_evidence_refs của SC21, SC26, SC29, SC31)"
           - "evidence/index.json"
@@ -675,17 +681,27 @@ gates:
       - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
       - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
       - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json (result NOT_RUN)"
+      - "evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json"
+      - "evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json"
+      - "evidence/runs/TC-embedding-generation-switch-E1-20260907T201528Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json"
+      - "evidence/audits/A3-P3-R1-report.md"
+      - "evidence/audits/A3-P3-R2-report.md"
     note_vi: >
       Cổng chuyển từ `NOT_APPLICABLE_YET` sang **`NOT_MET`**: lý do cũ ("chưa có code") không
       còn đúng, nên giữ nhãn "chưa áp dụng được" sẽ là che một phép đo nay làm được. Code Giai
       đoạn 0/1 tồn tại, đã chạy, và một auditor độc lập đã chạy lại nó — vì vậy G6 nay ĐO
-      được, và phép đo là **4/48 · 0/5 · 0/2** (mẫu số sửa từ 51 ở `PKT-PC09-P2-FIX1`).
+      được, và phép đo là **10/48 · 0/5 · 0/2** (mẫu số sửa từ 51 ở `PKT-PC09-P2-FIX1`;
+      tử số 4 → 10 ở `PKT-PC09-P3`).
       Không điều kiện ra nào đạt.
     blocked_by_open_items:
-      - "G6-X1: **44/48** scenario cấp ≤ E2 vẫn `NOT_RUN` (17 trong số đó có bằng chứng một phần đã ghi). Giai đoạn 2 **đã được đánh giá** ở `PKT-PC09-P2-FIX1`: 13/13 dòng được xét, **0 dòng chuyển nhãn**, `CR-PC09-20` đóng. Mẫu số sửa 51 → 48 (56 − 5 dòng E3 − 3 dòng E4)."
+      - "G6-X1: **38/48** scenario cấp ≤ E2 vẫn `NOT_RUN` (33 trong số đó có bằng chứng một phần đã ghi). Giai đoạn 3/5 chuyển **6** dòng: `SC12`, `SC13`, `SC18`, `SC28`, `SC47`, `SC48`."
       - "G6-X2: chưa có lời gọi live nào. Cổng SP1 nay mở về mặt **hành chính** (OD-20260907-04) nhưng `SP1-X2` vẫn 0/5–10 đợt: **cổng mở không phải là đợt chạy**."
       - "G6-X3: chưa có drill restore thật; `write_blocked → healthy` chưa chạy qua một lần ghi thật."
-      - "**Bảy** trong mười ba module nay có code (`MOD-ingest-service`, `MOD-identity-service`, `MOD-auth-service`, `MOD-data-store`, `MOD-health-service`, `MOD-x-collector`, `MOD-research-connector`) — Giai đoạn 2 thêm ba. Sáu module còn lại chưa có card nào chạy."
+      - "**Mười ba** module nay có code (Giai đoạn 3/5 thêm sáu: `MOD-analysis-service`, `MOD-ai-adapter`, `MOD-embedding-service`, `MOD-saved-service`, `MOD-telegram-adapter`, `MOD-delivery-service`). Có code **không phải** là đạt cổng: `MOD-ai-adapter` ship với cả hai adapter `enabled: false` vì **cô lập** (ISO-03/ISO-05), `MOD-telegram-adapter` vẫn **chặn cứng** trên ba dữ kiện `KC` của `delivery.md` §3.4, và `MOD-research-connector` vẫn không `CONTRACT_READY`."
+      - "`REQ-AC16` là **BLOCKED**, không phải FAIL, và Giai đoạn 3/5 **không** đổi điều đó: nó chờ một probe với binary thật, không chờ một bản sửa. Cùng lý do, `MOD-ai-adapter` có code mà không có cổng nào chuyển."
       - "`MOD-research-connector` có code nhưng **KHÔNG** `CONTRACT_READY`: không hợp đồng nào nêu tên host/endpoint của arXiv/OpenAlex (`SG-DOC`) và E3 chưa chạy (`SG-LIVE`) — `A3-P2-R1` §4/§7."
     allows_next_vi: >
       Gọi integration/live verified TRONG PHẠM VI đã đo. Ở thời điểm này phạm vi đó là **bốn

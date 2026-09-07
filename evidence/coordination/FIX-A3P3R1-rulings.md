@@ -1,0 +1,13 @@
+# Coordinator rulings — post-A3-P3-R1 fix wave — 2026-09-08
+
+Report: `…/scratchpad/audits/A3-P3-R1-report.md` (PASS with one condition). Authority `AUTH-OWNER-20260908-10`. Findings stay OPEN → FIX_PROPOSED; A3-P3-R2 verifies on FC-P3 epoch 2. Precode/contracts stay frozen; only card write sets + handoffs + manifests move.
+
+| Finding | Ruling | Owner |
+| --- | --- | --- |
+| F-A3-P3-01 MEDIUM — `ruff format --check` red on 4 files in `TC-analysis-adapter-validation` §3 (CI step `python.yml:38`) | Run `ruff format` on exactly those files; re-run `ruff check` + `mypy --strict` + the card tests; re-issue the E1 manifest (old → STALE). Add `ruff format --check` to the card's recorded verification commands. | W3A |
+| F-A3-P3-02 LOW — two `run=False` xfails name in-wave cards; `pending TC-saved-snapshot` premise already false | W5A: make `test_save_from_chat_against_the_real_saved_service` a real test against `server.app.saved.service` (W5B landed). W5A: make `TelegramSender.send_message` return the provider message id (own package, interface addition, no contract change) so W5C's `test_the_adapters_sender_can_report_a_provider_message_id` can become real — W5C un-xfails **after** W5A's addendum (sequential, disjoint files). Rule going forward (dispatch template): xfail markers for absent siblings use `strict=True` + `run=True` so arrival XPASSes loudly. | W5A → W5C |
+| F-A3-P3-03 LOW — four §2 fixtures neither exercised nor `NOT_RUN` (`ai/g`, `recovery/f` → adapter; `reporting/e` → analysis; `reporting/m` → embedding) | Each owner: exercise the fixture if it fits an existing test in one step; otherwise record `NOT_RUN` with the reason in a handoff addendum. No new claim. Standing check: PC09 (W6n) adds an E0-style rule "every §2 fixture of an implemented card is referenced by a test or listed NOT_RUN in the handoff" (third recurrence). | W3A, W3B, W3C; W6n (rule) |
+| Order | W3A ∥ W3B ∥ W3C ∥ W5A → W5C → freeze FC-P3 e2 → A3-P3-R2 (scoped) → W6n PC09-P3 (gated on R2 report) → W1n packaging → commit+push → Phase 4+6 wave. | |
+
+## Post-R2 addendum (2026-09-08)
+A3-P3-R2: PASS, 0 new findings; F-A3-P3-01/02/03 VERIFIED. Residual disclosed by A3 and **ruled ACCEPTED by the Coordinator**: one `xfail(run=False)` survives in `tests/contract/test_telegram_command_allowlist.py` (the `CR-PC07-04` callback fixture). It names a contract KC (three unresolved Telegram format facts), not an absent card; `SG-01` forbids implementing against a guessed `callback_data` budget, and the blocker cannot clear silently — resolving it changes `contracts/telegram/delivery.md` bytes, which trips every card pin and forces a re-pin round where the marker is revisited. No further fix round; FC-P3 e2 proceeds to PC09 registration, packaging, commit.

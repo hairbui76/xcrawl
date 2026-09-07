@@ -41,6 +41,11 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > lời — `REQ-OQ03`, các mục cổng probe `contracts/ops/collector-probe.md` §6 mục 2–4, và bốn dữ kiện
 > `REQ-A6` (hoặc quyền mạng để lấy chúng).
 >
+> **Vòng năm (2026-09-08).** Biên bản `OD-20260908-05` (`precode/owner-decisions-05.md`, authority
+> `AUTH-OWNER-20260908-06`) **ủy quyền nghiên cứu** `REQ-OQ03` — không giải nó — và cấp một quyền mạng hẹp
+> chỉ-đọc-tài-liệu `core.telegram.org` cho `CR-PC07-04`. Lựa chọn model cụ thể là một biên bản **riêng**,
+> `OD-20260908-06`. Phiếu ở cuối file phản ánh cả hai vòng.
+>
 > **Vòng bốn (2026-09-07).** Biên bản `OD-20260907-04` (`precode/owner-decisions-04.md`, authority
 > `AUTH-OWNER-20260907-05`) đóng **hai** trong ba mục đó: cổng probe §6 mục 2–4 được chấp nhận cả ba, và một
 > quyền mạng **một lần, hẹp theo tên miền, chỉ đọc tài liệu** được cấp cho việc đi tìm bốn dữ kiện `REQ-A6`.
@@ -509,9 +514,76 @@ REQ-A6: cho một Worker đọc tài liệu chính thức                ✅
        dữ kiện. retry-policy.yaml giữ bốn null + PLACEHOLDER_KC +
        min_interval_ms = 3000 tới khi bốn con số land kèm nguồn.
 
-── VẪN CHỜ (một mục sau vòng bốn) ──────────────────────────
-OQ03 provider + model: ______________________________________
-   (vẫn OWNER_DECISION_REQUIRED, vẫn chặn M3)
+── VÒNG NĂM · ĐÃ TRẢ LỜI 2026-09-08 · OD-20260908-05 · AUTH-OWNER-20260908-06 ──
+OQ03 provider + model: "nghiên cứu và đề xuất, tôi phê duyệt"    ✅ (ỦY QUYỀN)
+   >>> ĐÂY KHÔNG PHẢI CÂU TRẢ LỜI CHO OQ03. Owner giao việc NGHIÊN CỨU;
+       OQ03 VẪN OWNER_DECISION_REQUIRED tính đến vòng năm, và REQ-A5
+       (đọc điều khoản của từng nhà cung cấp) là một CỔNG RIÊNG phải
+       xong TRƯỚC khi đặt adapter enabled = true.
+       Lựa chọn model cụ thể nằm ở biên bản RIÊNG: OD-20260908-06
+       (precode/owner-decisions-06.md) — đừng đọc nó từ dòng này.
+CR-PC07-04 (5 dữ kiện giới hạn định dạng Telegram):
+   Lấy tài liệu ngay + khởi động Giai đoạn 5 song song            ✅
+   ĐƯỢC: chỉ trang tài liệu dưới core.telegram.org
+         (cụ thể core.telegram.org/bots/api)
+   KHÔNG ĐƯỢC: api.telegram.org, bất kỳ lời gọi Bot API thật nào,
+         bot token, hay gửi một tin nhắn nào.
+   ĐIỀU KIỆN Owner đặt cho Giai đoạn 5: "một khi NĂM dữ kiện land".
+   >>> TÍNH ĐẾN 2026-09-08 ĐIỀU KIỆN CHƯA THỎA: mới HAI/năm dữ kiện
+       có nguồn sau hai vòng của worker-WT; ba dữ kiện còn lại
+       (callback_data, parse mode + bảng escape, số nút mỗi hàng)
+       vẫn BLOCKED_DEPENDENCY. CR-PC07-04 = PARTIALLY_RESOLVED,
+       KHÔNG phải CLOSED. Giai đoạn 5 CHƯA được gỡ chặn (CR-PC00-31).
+
+── VÒNG BẢY · ĐÃ TRẢ LỜI 2026-09-08 · OD-20260908-07 · AUTH-OWNER-20260908-08 ──
+Ba dữ kiện Telegram — nới quyền? CÓ: thêm WebSearch            ✅
+   CHỈ để định vị nội dung của CHÍNH trang core.telegram.org/bots/api
+   (bản cache/lưu trữ của chính trang ấy). KHÔNG để lấy một con số
+   KHÁC từ site khác. Vẫn cấm api.telegram.org / bot token / gửi tin.
+   >>> NỚI QUYỀN KHÔNG TẠO RA DỮ KIỆN: vòng ba chạy dưới quyền mới,
+       cả ba dữ kiện VẪN BLOCKED_DEPENDENCY (§8.14.3).
+Người ký REQ-A5: OWNER ĐÍCH THÂN, không phải Worker             ✅
+   (CR-PC06-OQ03-02 GIỮ MỞ qua hết vòng bảy; trường reviewer KHÔNG
+    được điền tên một Worker.)
+
+── VÒNG TÁM · ĐÃ TRẢ LỜI 2026-09-08 · OD-20260908-08 · AUTH-OWNER-20260908-09 ──
+REQ-A5 cho Anthropic: KÝ                                        ✅
+   Đã đọc: Commercial ToS (eff. 2025-06-17), Usage Policy
+   (eff. 2025-09-15), Service Specific Terms (eff. 2026-06-08).
+   CHẤP NHẬN TƯỜNG MINH bảo đảm TC-A5-01 — Owner (không phải
+   Anthropic) tuyên bố hệ thống CÓ QUYỀN gửi abstract của bên thứ ba
+   làm Input.  → CR-PC06-OQ03-02 ĐÓNG.
+   >>> BA RANH GIỚI: (a) chỉ Anthropic, chỉ BẢN ĐỌC này — hết hiệu
+       lực khi một trong ba trang đổi phiên bản; (b) KÝ ≠ BẬT —
+       enabled = true vẫn bị B13 chặn (ISO-03/ISO-05 chưa kiểm,
+       E3 NOT_RUN, REQ-AC16 vẫn BLOCKED); (c) arXiv/OpenAlex/X có
+       cho phép tái xử lý hay không VẪN CHƯA AI TRẢ LỜI — Owner
+       GÁNH bảo đảm đó, không GIẢI nó.
+
+── VÒNG CHÍN · ĐÃ TRẢ LỜI 2026-09-08 · OD-20260908-09 · AUTH-OWNER-20260908-10 ──
+Phạm vi Giai đoạn 5: "bắt đầu với văn bản thuần ngay,
+   thêm định dạng sau"                                          ✅
+   TRONG PHẠM VI: cắt tin theo 4096 ký tự; điều tiết nhịp gửi.
+        Cả hai dựa trên dữ kiện ĐÃ GIẢI, có trích dẫn nguyên văn.
+   NGOÀI PHẠM VI, CHƯA HIỆN THỰC, CÓ SG-01 CANH:
+        parse_mode (Markdown/HTML), inline keyboard,
+        nút mang callback_data.
+        >>> KHÔNG phải stub-rồi-giấu. Ba đường mã đó KHÔNG TỒN TẠI.
+   >>> ĐIỀU KIỆN CŨ CỦA VÒNG NĂM ("năm dữ kiện land") ĐƯỢC **THAY**,
+       KHÔNG phải được THỎA — nó vẫn là 2/5 và chưa bao giờ đạt.
+       CR-PC07-04 VẪN PARTIALLY_RESOLVED.
+
+── VẪN CHỜ ─────────────────────────────────────────────────
+Ba dữ kiện Telegram còn lại — GIẢI BẰNG CÁCH NÀO: _______________
+   (amendment công cụ cho fetch phân trang, hay Owner tự đọc trang?
+    Vòng chín hoãn câu này. Chúng bị chặn bởi GIỚI HẠN CÔNG CỤ ĐỌC,
+    không phải bởi một khoảng trống chính sách — xem §8.14.3.)
+REQ-A5 cho các nhà cung cấp KHÁC Anthropic: ____________________
+   (Anthropic đã được Owner ký ở OD-20260908-08; cổng này vẫn là
+    RIÊNG cho TỪNG adapter, trước khi đặt enabled = true)
+Chính sách của arXiv/OpenAlex/X về tái xử lý nội dung: __________
+   (câu hỏi nền của TC-A5-01 — KHÁC với điều khoản của Anthropic.
+    Chữ ký vòng tám KHÔNG giải nó; Owner đang GÁNH bảo đảm ấy.)
 ```
 
 **Ba điều biên bản KHÔNG làm** (chép lại để không ai đọc rộng hơn): `REQ-OQ03` vẫn mở và vẫn chặn M3; mọi mục `KC` vẫn `KC` vì buổi phỏng vấn không tạo bằng chứng runtime nào; và không finding audit nào bị đóng.

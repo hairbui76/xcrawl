@@ -1,0 +1,302 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-01-tc-saved-snapshot",
+ "created_at": "2026-09-08T02:05:00Z",
+ "producer_principal": "worker-W5B",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/adr/ADR-0009-identity-alias-target-union.md": "67844f12e4fe77a6a25b443a8fe84d053fbcfc9c30649296f55efc41befa4ee1",
+   "precode/baseline.json": "2d0db93e7ccd90d97b55c4cdd5f2fe1c464291a2a29af5f4a76d08f9e973ec98",
+   "precode/decision-register.md": "089b2a9b1a5d5597271f2c7620611ac5504eca24e63e738b8d20678f8cd5f779",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+   "contracts/schemas/saved-snapshot.schema.json": "1178d314deb8dfdfbe24a9bd4645fd0fd34424fa1db0c237971b3dba3705ce3c",
+   "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+   "contracts/data/identity.md": "71fedc7f6996f5eebace1a53ec42b19bb16f0df4489d93a906e5c895bbb4f4fd",
+   "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+   "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+   "contracts/telegram/commands.yaml": "fc1a18dac332ea51e63721536d6a47b1d5a3048ed408af24ae787a91874e3556",
+   "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+   "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
+   "acceptance/scenarios.yaml": "421f7048cc7f0f0a3c7fe50d45255ae3b25dbe18c49b673bf90195d78f55f5cb",
+   "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8"
+  },
+  "contract_versions": {
+   "CT-schema-saved-snapshot": "0.1.0",
+   "CT-data-entities": "0.2.0",
+   "CT-arch-ports": "0.1.0",
+   "CT-state-storage": "0.3.0",
+   "CT-http-openapi": "0.3.0"
+  },
+  "implementation_revision": "PKT-TC-SAVED working tree, pin epoch PC10-PIN-P3-20260908; package sha256: service.py=c9830c23dec47288ac3b34a5f4f3a524a1059816c99a6537338ef3d78b0bbb44, snapshot.py=baed87d3b2e20a639c128c45e51f58ac97d73b8fb112b71453c05e0d1b418bd7, router.py=18f7bcd5d88cd7f470431bfeae7529bd9544b2692cdc3e0c149111ae0c0450b2, 0008_tc_saved_snapshot.py=f1c5c6b42412d77098dc5d8af40be8586008f95c815684a122f392b6575f2fe0, test_saved_snapshot_schema.py=b106112fb00e0d9fccd2a35b1321533ecc2d6e565f6e11a6d924d036ac683c58, test_concurrent_save.py=89a73368cdc7e8cb592830047191a399352c8fec797e85bdcfd9cb656fa1fd5c, test_snapshot_survives_delete.py=f5c11d768b9399746728debd8b883cd703e9135684b1d18bf27ee26e87b2836f, main.py=8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59"
+ },
+ "environment": {
+  "os": "Linux 7.0.0-30-generic",
+  "runtimes": {
+   "python": "3.12.3",
+   "sqlite": "3.45.1",
+   "uv": "0.12.9",
+   "pytest": "8.4.2",
+   "ruff": "0.6.9",
+   "mypy": "1.20.2",
+   "fastapi": "0.115.14",
+   "sqlalchemy": "2.0.52",
+   "alembic": "1.19.2",
+   "jsonschema": "4.26.0",
+   "pydantic": "2.13.5"
+  },
+  "config_redacted": {
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "telegram_ingress_secret": "hằng test tường minh trong tests/, không phải secret thật; không có token Bot API trong môi trường",
+   "owner_password": "hằng test tường minh; hash Argon2id được AuthService thật sinh ra trong tiến trình",
+   "database": "tệp SQLite tạm do pytest tmp_path cấp, dựng bằng alembic upgrade head"
+  },
+  "provider": null,
+  "model": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC12",
+   "SC13",
+   "SC48",
+   "SC32",
+   "SC49"
+  ],
+  "requirement_ids": [
+   "REQ-D20",
+   "REQ-D22",
+   "REQ-D33",
+   "REQ-D38",
+   "REQ-D55",
+   "REQ-D58",
+   "REQ-AC10",
+   "REQ-AC12",
+   "REQ-AC13",
+   "REQ-P0-08",
+   "REQ-S7.3-05",
+   "REQ-S7.3-06",
+   "REQ-S8.2-07",
+   "REQ-S4-05"
+  ],
+  "invariant_ids": [
+   "I02",
+   "I08",
+   "I17"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/identity/README.md",
+    "sha256": "ce9ec21ec1cebe8a257a677e67097f1883a35c403b4421d3219862d185335e14",
+    "bytes": 12611
+   },
+   {
+    "path": "acceptance/fixtures/identity/d-concurrent-save-app-telegram.json",
+    "sha256": "2b5e250ee3c21cd62e3cd87b42939cc0ed00b7d5167ab43ab67958477432b4ae",
+    "bytes": 9604
+   },
+   {
+    "path": "acceptance/fixtures/identity/e-source-deleted-snapshot-intact.json",
+    "sha256": "c2fd418bf32e5870b304508443144e6637355b81526c393a2f0ead3f445900c5",
+    "bytes": 10801
+   },
+   {
+    "path": "acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json",
+    "sha256": "3630edc83719ada07cae9b39f5da7ad8d1894379509c96bb1128cf958ca6ea0b",
+    "bytes": 3462
+   },
+   {
+    "path": "acceptance/fixtures/recovery/k-delete-target-preserves-saved.json",
+    "sha256": "0a02102333a7701b92c2b1c5b22032940cc0710d8b5faf98d67181ac16606486",
+    "bytes": 8045
+   },
+   {
+    "path": "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+    "sha256": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+    "bytes": 5229
+   },
+   {
+    "path": "acceptance/fixtures/telegram/j-concurrent-save-app-telegram.json",
+    "sha256": "1df94cec7d7b44998cd07ebb5fd6d493f4d33327f7b3190aa6f0929137b8ff5b",
+    "bytes": 8124
+   },
+   {
+    "path": "acceptance/fixtures/telegram/k-save-then-source-deleted.json",
+    "sha256": "8a27e20ffb5611374b3ff566b78e95fe0e3f621fc05bd4787a2f29c94a82b434",
+    "bytes": 7373
+   },
+   {
+    "path": "acceptance/fixtures/telegram/neg-saved-snapshot-missing-content-hash.json",
+    "sha256": "254528d628f9f5e855650ea15045ba9f8af8d28e48ee96b048399945d6f813de",
+    "bytes": 3491
+   },
+   {
+    "path": "acceptance/fixtures/telegram/neg-saved-snapshot-bad-hash-format.json",
+    "sha256": "2b02188603feda3f9050f74bf8345bc3fd2f28aff39dc2633825b4f80a5bb0ac",
+    "bytes": 3505
+   },
+   {
+    "path": "acceptance/fixtures/telegram/neg-saved-snapshot-item-without-snapshot.json",
+    "sha256": "76454f6e05984d307c91526b844f640bd4dd4ea8140024041ecb2a3ef3308acd",
+    "bytes": 3553
+   },
+   {
+    "path": "acceptance/fixtures/telegram/neg-saved-snapshot-target-both-ids.json",
+    "sha256": "2cd134a69a7e83696c25541664cfb8a554b3fba14e5bec22ddda641a37c2c95d",
+    "bytes": 3635
+   },
+   {
+    "path": "acceptance/fixtures/telegram/neg-saved-snapshot-summary-missing-limitation.json",
+    "sha256": "ff348f509d050cb27435d46203ea8bd77b43a6d8ab0e539bf0d5a474f0968df4",
+    "bytes": 3570
+   },
+   {
+    "path": "acceptance/fixtures/boundary/README.md",
+    "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+    "bytes": 10598
+   },
+   {
+    "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+    "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "bytes": 31529
+   }
+  ]
+ },
+ "execution": {
+  "kind": "command",
+  "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/contract/test_saved_snapshot_schema.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_concurrent_save.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_snapshot_survives_delete.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff check server/app/saved server/migrations/versions/0008_tc_saved_snapshot.py tests/contract/test_saved_snapshot_schema.py tests/integration/test_concurrent_save.py tests/integration/test_snapshot_survives_delete.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff format --check server/app/saved  &&  PYTHONDONTWRITEBYTECODE=1 uv run mypy --strict server/app/saved server/migrations/versions/0008_tc_saved_snapshot.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:randomly --tb=no -q",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "manual_procedure": null,
+  "started_at": "2026-09-08T01:52:00Z",
+  "ended_at": "2026-09-08T02:04:00Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Bốn oracle của card §8, đo bằng đếm hàng và so chuỗi hash — không đọc log. (1) COUNT(saved_item active WHERE target=T) ≤ 1 sau mọi dãy thao tác, kể cả khi app và Telegram chạy đồng thời trong hai luồng và kể cả khi mọi phép đọc 'đã lưu chưa' bị bịt mắt. (2) saved_snapshot.content_hash trước restart = sau restart = sau khi bài gốc bị xóa trên X = sau backup/restore, và tại mỗi mốc hash được TÍNH LẠI từ chính bytes payload trên đĩa. (3) Năm fixture neg-saved-snapshot-* bị schema từ chối, và khuyết tật tương ứng cũng bị chặn ở tầng service hoặc ràng buộc bảng, với số hàng không đổi. (4) Sau save.remove và sau khi bài gốc bị xóa, snapshot vẫn đọc được. Cộng thêm: hai fixture dương tái lập ĐÚNG chuỗi hex content_hash của hợp đồng; 0 snapshot mồ côi; 5 lần bấm Telegram = 1 hàng + 5 phản hồi; NC-01/NC-20/NC-36 trả UNAUTHORIZED với 0 thay đổi hàng; caller module ngoài registry trả FORBIDDEN_EDGE; identity.merge_works thật chuyển con trỏ mà không đụng snapshot; alembic heads = 1.",
+  "expected": {
+   "pytest_card_section_8": "3 lệnh, exit 0, 0 failed",
+   "saved_item__total_after_concurrent_save": 1,
+   "saved_item__state_active_after_concurrent_save": 1,
+   "saved_snapshot_after_concurrent_save": 1,
+   "orphan_saved_snapshot": 0,
+   "telegram_bot_responses": 5,
+   "content_hash_distinct_values_across_4_checkpoints": 1,
+   "fixture_literal_hashes_reproduced": 2,
+   "negative_fixtures_rejected_by_schema": 5,
+   "rows_written_by_each_negative": 0,
+   "denied_principals_error_code": "UNAUTHORIZED",
+   "rows_changed_by_denied_principals": 0,
+   "writes_attempted_when_guard_refuses": 0,
+   "alembic_heads": 1
+  },
+  "observed": {
+   "pytest_card_section_8": "18 passed (contract), 17 passed (concurrent save), 12 passed (survives delete); exit 0 mỗi lệnh",
+   "saved_item__total_after_concurrent_save": 1,
+   "saved_item__state_active_after_concurrent_save": 1,
+   "saved_snapshot_after_concurrent_save": 1,
+   "orphan_saved_snapshot": 0,
+   "telegram_bot_responses": 5,
+   "content_hash_distinct_values_across_4_checkpoints": 1,
+   "fixture_literal_hashes_reproduced": 2,
+   "negative_fixtures_rejected_by_schema": 5,
+   "rows_written_by_each_negative": 0,
+   "denied_principals_error_code": "UNAUTHORIZED",
+   "rows_changed_by_denied_principals": 0,
+   "writes_attempted_when_guard_refuses": 0,
+   "alembic_heads": 1,
+   "ruff": "All checks passed; ruff format --check clean",
+   "mypy": "Success: no issues found in 4 source files (--strict)",
+   "full_suite": "toàn bộ testpaths: exit 0, 0 failed, 11 xfailed (không cái nào thuộc gói này)"
+  }
+ },
+ "result": "PASS",
+ "artifacts": [
+  {
+   "path": "server/app/saved/service.py",
+   "sha256": "c9830c23dec47288ac3b34a5f4f3a524a1059816c99a6537338ef3d78b0bbb44",
+   "bytes": 50758,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Không chứa secret, cookie, token hay chat ID."
+  },
+  {
+   "path": "server/app/saved/snapshot.py",
+   "sha256": "baed87d3b2e20a639c128c45e51f58ac97d73b8fb112b71453c05e0d1b418bd7",
+   "bytes": 13529,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn thuần hàm: canonical JSON và content_hash."
+  },
+  {
+   "path": "server/app/saved/router.py",
+   "sha256": "18f7bcd5d88cd7f470431bfeae7529bd9544b2692cdc3e0c149111ae0c0450b2",
+   "bytes": 19114,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Bí mật ingress chỉ được so sánh, không bao giờ được ghi ra."
+  },
+  {
+   "path": "server/migrations/versions/0008_tc_saved_snapshot.py",
+   "sha256": "f1c5c6b42412d77098dc5d8af40be8586008f95c815684a122f392b6575f2fe0",
+   "bytes": 9894,
+   "kind": "other",
+   "redaction_note_vi": "DDL: thêm đúng một khóa ngoại lên saved_snapshot.analysis_id_at_save."
+  },
+  {
+   "path": "tests/contract/test_saved_snapshot_schema.py",
+   "sha256": "b106112fb00e0d9fccd2a35b1321533ecc2d6e565f6e11a6d924d036ac683c58",
+   "bytes": 16549,
+   "kind": "other",
+   "redaction_note_vi": "Test. Chuỗi secret duy nhất là hằng test tường minh."
+  },
+  {
+   "path": "tests/integration/test_concurrent_save.py",
+   "sha256": "89a73368cdc7e8cb592830047191a399352c8fec797e85bdcfd9cb656fa1fd5c",
+   "bytes": 27029,
+   "kind": "other",
+   "redaction_note_vi": "Test. Mật khẩu và secret trong file là hằng test tường minh, không phải secret thật."
+  },
+  {
+   "path": "tests/integration/test_snapshot_survives_delete.py",
+   "sha256": "f5c11d768b9399746728debd8b883cd703e9135684b1d18bf27ee26e87b2836f",
+   "bytes": 27339,
+   "kind": "other",
+   "redaction_note_vi": "Test. Không chứa secret."
+  },
+  {
+   "path": "server/app/main.py",
+   "sha256": "8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59",
+   "bytes": 11088,
+   "kind": "other",
+   "redaction_note_vi": "File dùng chung; gói này chỉ thêm một khối include có phân định."
+  }
+ ],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 47,
+  "not_checked_vi": [
+   "KHÔNG có lời gọi mạng nào: không Bot API, không nhà cung cấp AI, không X. E3 là NOT_RUN và card §8 ghi 'không cần live'.",
+   "data.delete_target KHÔNG được hiện thực (card §1 non-goal, thuộc MOD-data-admin-service). Fixture recovery/k chỉ được dùng cho nửa thuộc module này: xóa nội dung nguồn không chạm snapshot, và khóa ngoại làm cho oracle '0 vi phạm' của TXN-delete-target kiểm được. Nửa còn lại — hàng data_deletion_audit, cờ xác nhận, đếm cascade — là NOT_RUN.",
+   "recovery/k khai saved_item.state = 'saved', một giá trị KHÔNG có trong enum của entities.yaml ('active' | 'unsaved' | 'superseded_by_merge'). CR-TC-SAVED-03. Test dùng 'active' theo entities.yaml và KHÔNG sửa fixture.",
+   "Nhánh 'target chưa có analysis valid nào' (analysis_id_at_save = NULL) hiện bị TỪ CHỐI bằng VALIDATION_ERROR thay vì lưu một nhãn 'thiếu' theo B16: chữ của nhãn đó không có trong hợp đồng nào. CR-TC-SAVED-04. Không hàng nào được ghi ở nhánh này, nên I08 không bị ảnh hưởng.",
+   "save.create KHÔNG nằm trong danh sách refuses của contracts/state/storage.yaml, dù openapi khai 503 STORAGE_WRITE_FAILED cho nó. CR-TC-SAVED-09. Gói này gọi guard.assert_writable trên đường bình thường (nên nó sẽ tự có hiệu lực khi hợp đồng bổ sung), và yêu cầu thực chất — 'không ACK, không ghi gì' — được chứng minh bằng bơm lỗi ổ đĩa.",
+   "report_ref và source_report_item_id KHÔNG được đối chiếu với bảng report_item: bảng đó thuộc TC-report-coverage-publish-cas và chưa tồn tại. Revision đang đọc đi vào qua tham số analysis_id của request, đúng như ports.yaml mô tả request ('analysis revision đang đọc'). Nhánh report_ref của snapshot là NOT_RUN.",
+   "/save <ID mục> của TC-telegram-linking-auth khai tham số là report_item_id; adapter trong gói này đọc nó như một target reference vì chưa có bảng report_item để phân giải. CR-TC-SAVED-07.",
+   "matched_tags và topic_labels được chụp từ tham số của caller và từ bảng work_label; MOD-tag-service chưa tồn tại, nên 'tag nào đã khớp lúc lưu' chưa được kiểm end-to-end với dịch vụ tag thật. Cái ĐƯỢC chứng minh là mảng nằm trong nội dung được băm và không đổi về sau.",
+   "save.export KHÔNG được hiện thực (SG-01). Test khẳng định không có route nào mang operation_id đó.",
+   "Backup/restore được mô phỏng bằng VACUUM INTO + copy tệp artifact vào đường dẫn sạch. Đó KHÔNG phải drill backup/restore thật của TC-backup-restore-drill (Giai đoạn 6); I15 và bước reconcile là NOT_RUN.",
+   "Tính đồng thời được kiểm bằng hai luồng trong một tiến trình trên SQLite WAL với busy_timeout 5 s. Nó chứng minh UNIQUE là trọng tài; nó KHÔNG chứng minh hành vi dưới hai TIẾN TRÌNH hay dưới tranh chấp kéo dài.",
+   "Lần chạy này không khẳng định điều gì về các card anh em cùng đợt ngoài hai điểm tích hợp đã chạy thật: CommandPorts.save_create của TC-telegram-linking-auth và identity.merge_works của TC-canonical-identity-merge."
+  ],
+  "uncertainty_vi": "Rủi ro còn lại lớn nhất là CR-TC-SAVED-01: card §4 cho phép gọi identity.resolve_target nhưng contracts/modules.yaml không có cạnh đó, nên gói này tự phân giải target bằng cách đọc hàng work/post. Nếu Coordinator phán quyết ngược lại thì đường phân giải target phải viết lại (đổi một hàm, không đổi hình dạng snapshot). Rủi ro thứ hai là CR-TC-SAVED-04: nhánh không-có-analysis hiện từ chối lưu; nếu Owner muốn lưu kèm nhãn 'thiếu' thì cần chữ của nhãn đó, và mọi content_hash sinh ra theo nhãn mới sẽ khác. Không mục nào ở đây là independent audit."
+ }
+}

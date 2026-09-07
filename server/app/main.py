@@ -142,6 +142,63 @@ def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
     app.include_router(identity_router)
     # --- END include: TC-canonical-identity-merge --------------------------------------
 
+    # >>> TC-telegram-linking-auth (MOD-telegram-adapter) >>>
+    # One delimited include, import inside the delimiters (F-A3R1-13). The routes read
+    # `app.state.telegram_context`; nothing is defaulted here. With no context installed the
+    # webhook answers INTERNAL rather than inventing a database or a webhook secret, and
+    # `ingress.verify_webhook_secret` denies every update while the secret is unconfigured --
+    # default deny in the one place an unauthenticated caller can reach.
+    from server.app.telegram.router import install_telegram
+
+    install_telegram(app)
+    # <<< TC-telegram-linking-auth <<<
+
+    # >>> TC-saved-snapshot (MOD-saved-service) >>>
+    # One delimited include, import inside the delimiters (F-A3R1-13). The routes read
+    # `app.state.engine` (shared with the identity routes) and `app.state.storage_guard`
+    # (installed above by `install_storage`, so the write gate is live on the bare factory).
+    # Two more attributes are read and NOT defaulted here: `app.state.telegram_ingress_secret`
+    # and `app.state.telegram_link_resolver`. Without them the Telegram branch of
+    # `save.create` refuses -- an unlinked chat must not be able to write Saved rows, and
+    # "linking has not been configured" is not a reason to trust the caller.
+    #
+    # `save.export` is deliberately not routed: export is deferred for the MVP (F-PC00-02)
+    # and card §10 SG-01 makes shipping it a stop condition.
+    from server.app.saved.router import router as saved_router
+
+    app.include_router(saved_router)
+    # <<< TC-saved-snapshot <<<
+
+    # >>> TC-telegram-unknown-delivery (MOD-delivery-service) >>>
+    # One delimited include, imports inside the delimiters (F-A3R1-13). The router reads
+    # `app.state.delivery_context` for its engine, storage guard and the three ports
+    # (`telegram.send_payload`, the link generation, the published report payload). None is
+    # defaulted here: a deployment that wired no context gets 500 INTERNAL rather than a
+    # router that invents a Telegram transport or a chat id, and an unconfigured owner
+    # session answers 401 rather than serving delivery status to everybody.
+    from server.app.delivery.router import install_delivery
+
+    install_delivery(app)
+    # <<< TC-telegram-unknown-delivery <<<
+
+    # >>> TC-analysis-once-per-generation (MOD-analysis-service) >>>
+    # One delimited include, imports inside the delimiters (F-A3R1-13). The router reads
+    # `app.state.analysis_context` for its engine and ports, and `app.state.storage_guard`
+    # (installed above by `install_storage`) so the analysis write gate is live on the bare
+    # factory. Neither is defaulted here: a deployment that wired no context gets 500
+    # INTERNAL and one with no analysis worker token gets 401, rather than a router
+    # inventing a database connection or admitting every caller.
+    #
+    # `analysis.enqueue_tasks` is NOT routed: its transport is `internal`, so ingest and the
+    # report builder call the service function directly (contracts/ports.yaml). Publishing it
+    # would create the edge FE-07 exists to forbid.
+    from server.app.analysis.router import install_analysis_error_handlers
+    from server.app.analysis.router import router as analysis_router
+
+    install_analysis_error_handlers(app)
+    app.include_router(analysis_router)
+    # <<< TC-analysis-once-per-generation <<<
+
     @app.get("/healthz", operation_id=OperationId.HEALTH_GET_LIVENESS.value)
     def get_liveness() -> JSONResponse:
         """``health.get_liveness`` — DB-independent liveness (HC-01).

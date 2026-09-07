@@ -1,6 +1,6 @@
 ---
 contract_id: CT-evidence-tools
-version: 0.3.0
+version: 0.4.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -27,7 +27,7 @@ dependencies:
   - "python3 ≥ 3.10, PyYAML, jsonschema"
 scope: >
   Bộ công cụ kiểm tra tĩnh (E0) cho baseline hợp đồng Pre-code. **Hai** công cụ, cả hai chỉ đọc
-  và cả hai chạy trong job CI `e0`: `e0_check.py` chạy **25 check** trên contracts/, acceptance/,
+  và cả hai chạy trong job CI `e0`: `e0_check.py` chạy **26 check** trên contracts/, acceptance/,
   precode/, evidence/ (§1–§7); `verify_cards.py` chạy **13 check** trên 18 task card của
   agent-tasks/ — dạng chạy được của EV-PC10-01 — cộng một self-test âm (§8). Mỗi công cụ xuất một
   báo cáo JSON máy đọc được và một bản tóm tắt cho người. Đây là tài liệu sử dụng, giới hạn và
@@ -38,7 +38,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # E0 static checks
 
-*Hai công cụ: `e0_check.py` (§1–§7, 25 check) và `verify_cards.py` (§8, 13 check + self-test âm).*
+*Hai công cụ: `e0_check.py` (§1–§7, 26 check) và `verify_cards.py` (§8, 13 check + self-test âm).*
 
 ## 1. Cái này chứng minh gì và KHÔNG chứng minh gì
 
@@ -79,7 +79,7 @@ Một `BLOCKED` (thiếu file đầu vào) **không** làm exit code khác 0 —
 Phụ thuộc: python3 stdlib + PyYAML + jsonschema. Không có phụ thuộc nào khác và công cụ **không**
 truy cập mạng.
 
-## 3. Hai mươi lăm check
+## 3. Hai mươi sáu check
 
 | ID | Kiểm gì | Oracle |
 | --- | --- | --- |
@@ -108,6 +108,7 @@ truy cập mạng.
 | `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: 37 + 21 + 2 = 60. (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
 | `E0-17-declared-deviations` | `x-contract.deviations` và các ngoại lệ header | mỗi deviation có `rule`/`deviation`/`reason`/`evidence_refs`; ngoại lệ ADR (R-05) và ngoại lệ CSV được ghi ở nơi đọc được |
 | `E0-19-generated-matches` | Hai manifest `GENERATED_FROM.json` (`shared/rr_contracts/rr_contracts/generated/`, `web/src/generated/`) | Mỗi manifest parse được, khai `generator` và một `sources` **không rỗng**, và mọi `sources[].path` tồn tại với `sha256` **bằng** hash của file trên đĩa hôm nay (và `bytes` khớp khi được khai). Đây là quy tắc "sinh, đừng sửa tay" của ADR-0011 ở dạng check tĩnh. Nó **KHÔNG** chứng minh đầu ra của bộ sinh đúng, và **KHÔNG** bắt được một file sinh bị sửa tay — chỉ chạy lại bộ sinh mới bắt được, và hai cửa đó (`pytest shared/rr_contracts/tests/test_generated_matches_contracts.py`, `node web/scripts/generate.mjs --check`) **vẫn ở nguyên**. `contracts/data/entities.yaml` **cố ý** không phải nguồn của bộ sinh nào (`CR-P0-06`, `F-A3R2-04`): hình dạng bảng đi vào code bằng tay qua Alembic và được canh bởi **pytest** `tests/contract/test_schema_matches_entities.py` — cổng schema sống trong pytest, không trong E0. Check in ra sự vắng mặt đó thành một note thay vì để người đọc suy ra |
+| `E0-20-card-fixture-accounting` | Fixture `§2. Read set` của mọi card **đã hiện thực** (có `evidence/runs/<card>-E1-*.json`) | Mỗi `acceptance/fixtures/**.json` mà §2 nêu tên phải **hoặc** được một file dưới `tests/` tham chiếu, **hoặc** được nêu trong `evidence/handoffs/<card>-handoff.md` **trong một đoạn cũng chứa `NOT_RUN`**. Card chưa ai xây thì ngoài phạm vi và được đếm riêng trong note. Thêm ở `PKT-PC09-P3` vì đây là **lần thứ ba** một auditor tìm ra cùng hình dạng bằng tay (`F-A3R1-09` → `F-A3-P2-01` → `F-A3-P3-03`); ba lần là tín hiệu rằng nó nên thôi làm finding từng vòng. Điều nó **KHÔNG** chứng minh, và oracle nói ra: một tham chiếu là **sự có mặt**, không phải độ phủ — check không biết test nhắc tên một fixture có khẳng định gì với nó hay không, nên một kết quả sạch không được đọc là "mọi fixture đã được phủ" |
 
 ## 4. Cách đếm — một phương pháp duy nhất
 
@@ -322,6 +323,36 @@ miễn khỏi **quét văn xuôi** nhãn: một packet hỏi "nhãn X có đứn
 **trích** nhãn nó dispatch, giống hệt `claim_ceiling` trong một card `agent-tasks/`. Trường có
 cấu trúc của chúng vẫn bị kiểm, và số lần trích được **đếm và in ra** trong note của `E0-12` —
 cùng cách xử lý §5f đã dùng, vì cùng một rủi ro.
+
+## 5m. `F-A3R4-01` đã được sửa, và §5k ở trên nay đúng với công cụ
+
+`PKT-PC09-P1-FIX1` mở `E0-12` sang `evidence/runs/**` và `evidence/index.json`; `PKT-PC09-P2`
+mở phép quét trường có cấu trúc sang **front matter của Markdown** (`claim_fields()`), nên câu
+"trường có cấu trúc vẫn được kiểm" ở §5k đúng với **mọi** loại file vòng lặp đi qua, không chỉ
+`.yaml`/`.json`. `E0-12` `checked` đi **976 → 1 157** khi bản sửa đó land.
+
+Tài liệu này đã **lạc hậu suốt hai lượt** so với công cụ (`CR-PC09-21`), lệch theo hướng an
+toàn — nó hứa ÍT hơn công cụ làm — nhưng vẫn là tài liệu không khớp công cụ, đúng lớp lỗi mà
+`F-A3R3-01` và `F-A3R4-01` đã bắt hai lần. `PKT-PC09-P3` đóng nó: `evidence/tools/README.md`
+lần này nằm trong write set.
+
+## 5n. Self-test âm cho `E0-20`
+
+Cùng kỷ luật §5b và §5j. `selftest_p3.py` tiêm từng khiếm khuyết vào một **bản sao** repo:
+**5/5 hành xử đúng đặc tả**, gồm **hai** đối chứng dương.
+
+| # | Tiêm gì | Kỳ vọng | Quan sát |
+| --- | --- | --- | --- |
+| — | repo không đột biến | PASS | PASS, 0 vi phạm, 90 mục |
+| 1 | xóa mọi nhắc tên fixture khỏi `tests/` **và** khỏi handoff (đúng hình dạng `F-A3-P3-03`) | FAIL | **FAIL** |
+| 2 | handoff **nhắc tên** fixture nhưng không cho disposition `NOT_RUN` | FAIL | **FAIL** |
+| 3 | handoff nêu tên **kèm** `NOT_RUN` và một lý do (đối chứng dương) | PASS | **PASS** |
+| 4 | vẫn im lặng, nhưng card **chưa** có manifest ⇒ ngoài phạm vi (đối chứng dương) | PASS | **PASS**, 79 mục |
+
+Hàng 2 là hàng đáng nói: một lời nhắc tên **không phải** một disposition. Nếu check chỉ hỏi
+"fixture có được nhắc tới không", nó sẽ cho qua đúng thứ mà ba vòng audit đã bắt — sự im lặng
+được thay bằng một câu vô thưởng vô phạt. Hàng 4 kiểm chiều ngược lại: một quy tắc chỉ biết từ
+chối cũng vô dụng như một quy tắc không bắt được gì.
 
 ## 5j. Self-test âm cho ba quy tắc của `PKT-PC09-P1`
 

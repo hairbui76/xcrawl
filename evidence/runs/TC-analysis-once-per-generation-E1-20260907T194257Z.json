@@ -1,0 +1,225 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-01-tc-analysis-once-per-generation",
+ "created_at": "2026-09-07T19:42:57Z",
+ "producer_principal": "worker-W3B",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/baseline.json": "2d0db93e7ccd90d97b55c4cdd5f2fe1c464291a2a29af5f4a76d08f9e973ec98",
+   "precode/decision-register.md": "089b2a9b1a5d5597271f2c7620611ac5504eca24e63e738b8d20678f8cd5f779",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+   "contracts/state/analysis.yaml": "06b18de42c3bbffff9a74b2e990025361cf2b179736f1994a5558f5eef3618ce",
+   "contracts/ai/tasks.yaml": "0048bbdd3185fc4b7719014e7d70238c50720766f19e2968cb8e25101bbc05e7",
+   "contracts/schemas/analysis-result.schema.json": "f26720ee04852161b4e71b4ab61c0f11c0187fcbfd25759e05245cfdb7ac172d",
+   "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+   "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+   "precode/adr/ADR-0008-analysis-key-and-generation.md": "bbf649f5e9239d0de28c24255469ce0498f9f108bfdd45ada2ddeac859b8f1c5",
+   "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md": "aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317",
+   "acceptance/fixtures/ai/README.md": "6b7ede2bc9866eed00ecdd45d52009fe7c3b895ed3c64764694b42c1f577c6a0",
+   "acceptance/fixtures/ai/i-crash-after-provider-completion.json": "0e7563734963fb71666f023d5d84b3a2d819afc3bb76cd9b1de9c3cc2c0dead0",
+   "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json": "9bc1dc1b6404dd1892ce291dd23136f2291e8a40816c4cafbe8d4814516e76f9",
+   "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+   "acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json": "57d26a0a8381b1b76c0c3109358e132a40bd3a2b5873c515bb5c5dcc828bc1c3",
+   "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+   "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+   "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+   "agent-tasks/TC-analysis-once-per-generation.md": "ce5fd01a5e2ca760a67d1b2373805eecb01abc1b5c0cd930109fca70e8a53e9e"
+  },
+  "implementation_revision": "PKT-TC-ANALYSIS working tree, pin epoch PC10-PIN-P3-20260908; service.py=a95b78401683a077775c2333f07d375296a161b23bc19825fe94cec129ed3991; key.py=cca4d9291d025041759816c4121d02a43a63afa448f710b3d092efe41be8b2f9; router.py=e08ae84fa63b0fe7ac95f2dfb168ffc51a9ed6c269a46a00840b276f26038d73; repository.py=648ae9b428b366ac7afa1827303a52deee73ee7cf8cfdf8c7eeb0f7a898bd204; 0006_tc_analysis_once_per_generation.py=a12bc6e493a9f8c3bda9b534128ed54af56466d6a5788532a7afec52532c8c0f; test_analysis_key.py=70db817c5969cac7a1c121c4ac5a570e87605641d77305d78f091220d08b9a90; test_analysis_once_per_key.py=f00d16a69355ef4a379de3495cd8ac85a850b19fefbccb41239a7cc35d72109e; test_attempt_not_result.py=7e6d533d99ada902596fd92b90a62fd8960eda03f0a0d36f5cc6b2cb9d807134"
+ },
+ "environment": {
+  "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+  "runtimes": {
+   "python": "3.12.3",
+   "sqlite": "3.45.1",
+   "sqlalchemy": "2.0.52",
+   "alembic": "1.19.2",
+   "pydantic": "2.13.5",
+   "fastapi": "0.115.14",
+   "pytest": "8.4.2",
+   "PyYAML": "6.0.3",
+   "ruff": "0.6.9",
+   "mypy": "1.20.2",
+   "uv": "0.12.9"
+  },
+  "config_redacted": {
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path",
+   "provider_transport": "NONE. MOD-analysis-service never calls a provider: ai.run_inference_task runs inside MOD-analysis-worker on the personal machine. The provider registry in these runs is a test double (FakeProviderConfig); the provider call counter is a test double that was asserted to stay at 0.",
+   "network_calls_made": 0,
+   "secrets_used": "none. The only secret operation this module may call is secret.revoke_task_credential and it was wired to a recording double; no credential value existed in this run."
+  },
+  "provider": null,
+  "model": null,
+  "embedding_generation_id": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC06",
+   "SC10",
+   "SC11",
+   "SC17",
+   "SC22",
+   "SC28",
+   "SC49"
+  ],
+  "requirement_ids": [
+   "REQ-D25",
+   "REQ-D26",
+   "REQ-D42",
+   "REQ-D43",
+   "REQ-D44",
+   "REQ-AC06",
+   "REQ-AC10",
+   "REQ-AC11",
+   "REQ-S9.3-03",
+   "REQ-S10.4-02"
+  ],
+  "invariant_ids": [
+   "I04",
+   "I10",
+   "I13",
+   "I14",
+   "I16"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/ai/i-crash-after-provider-completion.json",
+    "sha256": "0e7563734963fb71666f023d5d84b3a2d819afc3bb76cd9b1de9c3cc2c0dead0",
+    "bytes": 4302
+   },
+   {
+    "path": "acceptance/fixtures/ai/j-same-key-resubmitted-one-result.json",
+    "sha256": "9bc1dc1b6404dd1892ce291dd23136f2291e8a40816c4cafbe8d4814516e76f9",
+    "bytes": 4947
+   },
+   {
+    "path": "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json",
+    "sha256": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+    "bytes": 5694
+   },
+   {
+    "path": "acceptance/fixtures/reporting/b-tag-removed-then-readded-reuse-analysis.json",
+    "sha256": "57d26a0a8381b1b76c0c3109358e132a40bd3a2b5873c515bb5c5dcc828bc1c3",
+    "bytes": 16540
+   },
+   {
+    "path": "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json",
+    "sha256": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+    "bytes": 10989
+   },
+   {
+    "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+    "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "bytes": 31529
+   }
+  ]
+ },
+ "execution": {
+  "kind": "command",
+  "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/contract/test_analysis_key.py tests/integration/test_analysis_once_per_key.py tests/integration/test_attempt_not_result.py -p no:warnings -p no:cacheprovider -q",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "started_at": "2026-09-07T19:42:47Z",
+  "ended_at": "2026-09-07T19:42:57Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Fixture là oracle duy nhất (SRC-PLAN §15). (a) AC-06 / reporting/b: sau khi bỏ rồi thêm lại tag, chạy lại đúng đường enqueue của report builder trên cùng target ⇒ created = [], skipped = [already_valid], và ba delta bằng 0 đo bằng SQL: COUNT(analysis_generation), COUNT(analysis_attempt), provider call counter. Không phải 'không gọi gì cả' — đường enqueue THỰC SỰ chạy lần thứ hai. (b) ai/j event 1: COUNT(analysis WHERE status='valid') = 1, COUNT(analysis_attempt) = 1, usage_tokens_in/out = (1200, 300) đọc từ hàng thật, accepted_from_attempt_id trỏ đúng attempt. (c) ai/j event 2 (after_event_2): nộp lại cùng key + cùng payload ⇒ duplicate_replay, cùng payload_hash, cùng analysis_id, counts không đổi. (d) ai/j event 3 (after_event_3): cùng key + payload KHÁC ⇒ IDEMPOTENCY_CONFLICT (409) và payload_hash đã commit KHÔNG đổi. (e) ai/i: crash sau provider ⇒ so từng cột với expected.rows.analysis_attempt[0] (outcome=timeout_unknown, error_code=AI_ATTEMPT_UNCERTAIN, ended_at IS NULL, cost_uncertain=true, attempt_number=1, worker_lease_id); counts = {analysis[status='valid']: 0, analysis_attempt[cost_uncertain=true]: 1}. (f) I16: find_valid_by_key trả None trong khi COUNT(analysis_attempt)=1 — truy vấn kết quả không bao giờ trả một attempt. forbidden_effects của ai/i được kiểm bằng phản chứng: worker cũ nộp một kết quả ĐÚNG schema sau đó và bị từ chối WORKER_LEASE_EXPIRED (412), COUNT(valid) vẫn 0. (g) T-AN-09/T-AN-10: đúng MỘT lần tự chạy lại; attempt 1 không bị sửa (vẫn cost_uncertain=true, ended_at NULL); lần unknown thứ hai ⇒ failed, tổng attempt = 2 ≤ analysis_attempts_per_item. (h) I10 / T-AN-11: sau reap_expired_leases, epoch mới = epoch cũ + 1; worker cũ submit ⇒ STALE_LEASE (409), COUNT(valid) không đổi, attempt cũ GIỮ NGUYÊN với outcome=cancelled_stale_lease và cost_uncertain=true. (i) ISO-05: verify_task_lease từ chối ba đường — sai worker, epoch cũ, provider enabled=false — bằng STALE_LEASE / STALE_LEASE / AI_PROVIDER_UNAVAILABLE. (j) forbidden transition running→valid khi chỉ pass schema: một document ĐÚNG schema trích dẫn source chưa được cấp ⇒ AI_OUTPUT_INVALID (422), validation_failure_kind=citation_unknown_source, COUNT(valid)=0, attempt ghi schema_invalid, task về retry_wait; envelope KHÔNG chứa id sai đó. (k) I14: usage.unknown=true ⇒ hai cột token IS NULL (không phải 0). (l) SG-DENY / R5-01: enqueue_tasks từ MOD-x-collector, MOD-analysis-worker, MOD-telegram-adapter ⇒ FORBIDDEN_EDGE (403) — KHÔNG phải UNAUTHORIZED — và cả bốn bảng vẫn rỗng. (m) providers.yaml enabled=false: claim_task trả {task: None, reason: no_enabled_provider}; task vẫn nằm trong hàng đợi và 0 attempt được mở; provider registry chưa nối cũng cho cùng kết quả (CAP-P5/I13). (n) E2: WriteFaultInjector.disk_full quanh submit_result ⇒ STORAGE_WRITE_FAILED (503), COUNT(valid)=0, task vẫn 'running', attempt chưa kết luận; sau khi gỡ lỗi đĩa, đúng lần submit đó commit được.",
+  "expected": {
+   "card_tests": 33,
+   "card_failures": 0,
+   "provider_call_counter_delta_after_tag_edit": 0,
+   "analysis_generation_delta_after_tag_edit": 0,
+   "analysis_attempt_delta_after_tag_edit": 0,
+   "valid_rows_after_resubmit_same_key": 1,
+   "valid_rows_after_crash_before_submit": 0,
+   "cost_uncertain_attempts_after_crash": 1,
+   "attempts_per_key_generation_max": 2,
+   "network_calls": 0,
+   "alembic_heads": 1
+  },
+  "observed": {
+   "card_tests": 33,
+   "card_passed": 32,
+   "card_xfailed": 1,
+   "card_failures": 0,
+   "provider_call_counter_delta_after_tag_edit": 0,
+   "analysis_generation_delta_after_tag_edit": 0,
+   "analysis_attempt_delta_after_tag_edit": 0,
+   "valid_rows_after_resubmit_same_key": 1,
+   "valid_rows_after_crash_before_submit": 0,
+   "cost_uncertain_attempts_after_crash": 1,
+   "attempts_per_key_generation_max": 2,
+   "network_calls": 0,
+   "alembic_heads": 1,
+   "xfail_detail": "tests/integration/test_attempt_not_result.py::test_a_failed_item_is_recorded_in_the_pending_item_ledger — xfail(strict=True, reason='pending TC-report-coverage-publish-cas'). pending_item_ledger thuộc MOD-report-service và chưa tồn tại, nên nghĩa vụ B04/B17 'mục hết ngân sách phải vào sổ pending' KHÔNG được thiết lập bởi lần chạy này. ledger_state() báo cổng chưa nối thay vì service giả vờ đã ghi.",
+   "gates_rerun": {
+    "tests/contract/test_schema_matches_entities.py": "PASS (10 test) — bốn bảng mới khớp contracts/data/entities.yaml theo cả hai chiều tập cột, mọi unique key đã pin có trên đĩa, và DDL giống hệt nhau dưới cả bốn thứ tự duyệt; test_alembic_has_exactly_one_head PASS.",
+    "full pytest suite": "817 passed, 11 xfailed, 0 failed, exit 0 (101 s)",
+    "ruff check + ruff format --check": "clean trên server/app/analysis/, migration 0006 và ba file test",
+    "mypy --strict": "Success: no issues found in 49 source files"
+   }
+  }
+ },
+ "result": "STALE",
+ "artifacts": [],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 33,
+  "not_checked_vi": [
+   "KHÔNG có lời gọi AI thật nào. contracts/ai/providers.yaml để cả hai adapter Anthropic enabled: false (ISO-03/ISO-05 chưa kiểm chứng), và card này dù sao cũng không gọi provider — inference chạy ở MOD-analysis-worker trên máy cá nhân. E3/E4: NOT_RUN.",
+   "REQ-AC16 (chạy được không cần API key) KHÔNG được đánh giá ở đây và phải báo cáo BLOCKED chứ không phải FAIL (providers.yaml §4 ac16_reporting_rule_vi). Card này không chạm họ cli_acp.",
+   "Chất lượng nội dung (A2/A3, REQ-AC10/AC11 ở mức nhận định) cần E4 review nhiều kỳ — ngoài phạm vi card (§8 'Yêu cầu live').",
+   "PHỤ THUỘC CÒN MỞ: pending_item_ledger (TC-report-coverage-publish-cas). Nghĩa vụ B04/B17 cho mục hết ngân sách là xfail, không phải pass.",
+   "assignment_lease được tạo bởi migration này với tư cách CUSTODIAN; TC-scheduler-lease-claim sở hữu bảng. Không có scheduler thật nào cấp lease trong lần chạy này — mọi lease ở đây do chính analysis service cấp. Xem CR-TC-ANALYSIS-01 và -02.",
+   "Idempotency của analysis.claim_task (claim_request_id) và analysis.request_reanalysis (request_id) là PROCESS-LOCAL: không entity nào có cột để lưu khóa. Sau khi tiến trình khởi động lại, cùng claim_request_id có thể cấp một lease mới. Cái BỀN vững là 'một task không có hai lease sống' và 'một key không có hai kết quả'. Xem CR-TC-ANALYSIS-04.",
+   "Đồng thời được kiểm bằng hai lời gọi TUẦN TỰ dựa vào UPDATE ... WHERE state='pending' và ux_lease_job_epoch, KHÔNG bằng hai tiến trình song song thật.",
+   "analysis.analysis_generation_id và analysis.accepted_from_attempt_id vẫn KHÔNG có REFERENCES: bảng analysis ra đời ở 0002b trước khi hai bảng kia tồn tại. Ràng buộc được áp ở tầng service trong cùng transaction, không ở tầng schema. Xem CR-TC-ANALYSIS-03.",
+   "SV-05 (direction_phrasing: member_refs và mọi con số phải khớp đầu vào) KHÔNG được hiện thực: member_target_keys và density do MOD-report-service tính trước khi task tồn tại, và analysis.get_task_input chưa có đường mang chúng. SV-01..SV-04, SV-06, SV-07 đã hiện thực và có test. Xem CR-TC-ANALYSIS-05.",
+   "36 cạnh của boundary/a: chỉ những cạnh chạm MOD-analysis-service được kiểm ở đây (FE-07 và các caller ngoài registry của analysis.enqueue_tasks). Nửa sandbox/capability của FE-15 (máy cá nhân không có đường tới SQLite server) KHÔNG kiểm được ở tầng này.",
+   "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy.",
+   "Card §13 đặt tên manifest là `EVM-TC-analysis-once-per-generation`, nhưng evidence/manifest.schema.json ép `evidence_id` theo pattern `^EV-(PC[0-9]{2}|A[0-9]|E[0-4]|COORD)-[0-9]{2,3}(-[a-z0-9-]+)?$`, mà tên của card không khớp. Schema thắng vì nó là cửa kiểm chạy được; tên của card giữ nguyên và lệch này đi kèm CR-TC-ANALYSIS-07. Mọi card Giai đoạn 1-5 khác đã landing đều làm y hệt."
+  ],
+  "uncertainty_vi": "contracts/ports.yaml mô tả response của analysis.claim_task/heartbeat bằng văn xuôi và openapi khai requestBody/response là GenericObject, nên hình dạng wire cụ thể của bốn route worker là lựa chọn của card này chứ không phải của hợp đồng; PC06 (contracts/ai/tasks.yaml) được nêu là chủ sở hữu hình dạng đó nhưng chưa định nghĩa nó. Ngoài ra ports.yaml viết reason của request_reanalysis là `manual` | `new_paper_version` trong khi ENT-analysis-generation.reason là `owner_reanalysis` | `new_work_version`; code nhận cả hai cách viết và LƯU theo entities.yaml (ruling R-03). Xem CR-TC-ANALYSIS-06.",
+  "unresolved_issue_refs": [
+   "CR-TC-ANALYSIS-01",
+   "CR-TC-ANALYSIS-02",
+   "CR-TC-ANALYSIS-03",
+   "CR-TC-ANALYSIS-04",
+   "CR-TC-ANALYSIS-05",
+   "CR-TC-ANALYSIS-06",
+   "REQ-OQ03",
+   "REQ-A5",
+   "CR-PC07-04",
+   "CR-TC-ANALYSIS-07"
+  ]
+ },
+ "claim": {
+  "supports_label": "CONTRACT_READY",
+  "scope_vi": "Bảy operation analysis.* của contracts/ports.yaml, invariant I04/I10/I14/I16 tại cổng của MOD-analysis-service, và bốn bảng analysis_generation + analysis_attempt + analysis_task + assignment_lease (custodian), trên baseline pin PC10-PIN-P3-20260908. Card §9 đặt trần IMPLEMENTATION_VERIFIED, nhưng bản ghi NÀY là SELF_VALIDATION và protocol §9 chặn tự kiểm ở CONTRACT_READY: nhãn cao hơn cần một audit độc lập trên đúng những byte này.",
+  "not_established_vi": [
+   "KHÔNG thiết lập IMPLEMENTATION_VERIFIED: đó là trần của card, không phải của một lần tự kiểm. Cần INDEPENDENT_AUDIT theo §12 của card.",
+   "KHÔNG thiết lập bất kỳ điều gì về một provider AI thật: không lời gọi nào được thực hiện, E3/E4 NOT_RUN, REQ-OQ03 vẫn để cả hai adapter disabled.",
+   "KHÔNG thiết lập nghĩa vụ pending_item_ledger (xfail, chờ TC-report-coverage-publish-cas).",
+   "KHÔNG thiết lập SV-05 cho direction_phrasing (chưa hiện thực, CR-TC-ANALYSIS-05).",
+   "KHÔNG thiết lập idempotency BỀN cho claim_task/request_reanalysis qua một lần khởi động lại tiến trình (CR-TC-ANALYSIS-04).",
+   "KHÔNG thiết lập hành vi dưới tranh chấp đồng thời thật (hai tiến trình song song).",
+   "KHÔNG phải independent audit: review_type là SELF_VALIDATION."
+  ]
+ },
+ "stale_reason": "Superseded by EV-E1-02-tc-analysis-once-per-generation (evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json) under packet PKT-TC-ANALYSIS-FIX1, lease LEASE-TC-ANALYSIS-e2. Audit finding F-A3-P3-03 (scratchpad/audits/A3-P3-R1-report.md): acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json is in card §2 but was neither exercised nor recorded NOT_RUN. tests/integration/test_analysis_once_per_key.py gained one test, so its bytes changed (f00d16a6… -> 35cf9c70…) and this record no longer describes the tree it was computed on. No claim changed and no result in it was contradicted."
+}
