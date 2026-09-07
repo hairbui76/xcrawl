@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/worker-assignment.schema.json",
+  "title": "Worker assignment (claim / heartbeat / release)",
+  "description": "Hình dạng wire của assignment mà server giao cho collector: request và response của `worker.claim_assignment`, `worker.heartbeat`, `worker.release_assignment`. Trạng thái và ngữ nghĩa transition thuộc contracts/state/run.yaml (PC03); file này chỉ khóa hình dạng dữ liệu trên dây. Checkpoint trong assignment CHỈ chứa dữ liệu server đã ACK (I02, AMD-B05, ruling R-01).",
+  "x-contract": {
+    "contract_id": "CT-schema-worker-assignment",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": ["SRC-PLAN §5.1", "SRC-PLAN §8.1", "SRC-PLAN §9.1", "SRC-PLAN §11 PC05", "SRC-SPEC §3.2", "SRC-SPEC §3.3 D11, D24", "SRC-SPEC §9.2"],
+    "requirement_refs": ["REQ-D08", "REQ-D09", "REQ-D11", "REQ-D24", "REQ-D31", "REQ-D32", "REQ-AC01", "REQ-AC03", "REQ-AC04", "REQ-OQ05", "REQ-A1", "REQ-A7"],
+    "decision_refs": ["B05", "B12", "AMD-B05", "AMD-B12", "R-01 (A1-R1)", "R-03 (A1-R1)"],
+    "invariant_refs": ["I02", "I10"],
+    "producers": ["MOD-job-service"],
+    "consumers": ["MOD-x-collector", "MOD-backend-api"],
+    "dependencies": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/state/run.yaml",
+      "contracts/retry-policy.yaml",
+      "contracts/http/openapi.yaml"
+    ],
+    "scope": "Chỉ hình dạng request/response của ba operation assignment. KHÔNG định nghĩa transition (contracts/state/run.yaml), KHÔNG định nghĩa nội dung lô ingest (contracts/schemas/ingest-batch.schema.json), KHÔNG định nghĩa task phân tích (PC06).",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): schema hợp lệ theo metaschema Draft 2020-12; fixture của acceptance/fixtures/collection/ validate được cả positive và negative.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "checkpoint_rule": "Trường `checkpoint` là ẢNH CHỤP CỦA SERVER, không phải đề xuất của client. Nó phản ánh đúng `checkpoint.acked_through_ingest_sequence` đã commit (contracts/state/run.yaml §CP-01, §CP-02). Collector KHÔNG được coi con trỏ nội bộ của mình là nguồn sự thật; khi claim lại, giá trị ở đây thắng.",
+    "tag_usage_rule": "`search_config.tags` chỉ dùng để TÌM KIẾM trên X (REQ-D24). Nó KHÔNG phải bộ lọc báo cáo: mốc hiệu lực tag là thời điểm publish report (B01/AMD-B01). Collector không đọc, không sửa cấu hình tag (denied case NC-02)."
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "oneOf": [
+    { "required": ["claim_request"] },
+    { "required": ["assignment"] },
+    { "required": ["heartbeat_request"] },
+    { "required": ["heartbeat_response"] },
+    { "required": ["release_request"] },
+    { "required": ["no_work"] }
+  ],
+  "properties": {
+    "claim_request": { "$ref": "#/$defs/claim_request" },
+    "assignment": { "$ref": "#/$defs/assignment" },
+    "no_work": { "$ref": "#/$defs/no_work" },
+    "heartbeat_request": { "$ref": "#/$defs/heartbeat_request" },
+    "heartbeat_response": { "$ref": "#/$defs/heartbeat_response" },
+    "release_request": { "$ref": "#/$defs/release_request" }
+  },
+  "$defs": {
+    "ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "timestamp_utc_ms": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "UTC RFC 3339, độ chính xác mili giây (AMD-B08). Không có offset nào khác `Z`."
+    },
+
+    "claim_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "schema_version", "claim_request_id", "worker_instance_id", "worker_kind", "capabilities", "max_assignments"],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/ulid", "description": "ID của lần gọi này. Retry sinh request_id mới nhưng GIỮ NGUYÊN claim_request_id." },
+        "schema_version": { "$ref": "#/$defs/semver" },
+        "claim_request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.:-]{16,128}$",
+          "description": "Idempotency key của claim (contracts/ports.yaml: 'Cùng claim_request_id trả cùng assignment; không cấp hai lease'). Timeout của claim là KHÔNG BIẾT KẾT QUẢ (SRC-PLAN §5.1): worker phải gọi lại với CÙNG key, không sinh key mới."
+        },
+        "worker_instance_id": { "$ref": "#/$defs/ulid" },
+        "worker_kind": { "type": "string", "enum": ["collector"], "description": "`worker.claim_assignment` chỉ dành cho collector. Analysis worker dùng `analysis.claim_task` (PC06)." },
+        "capabilities": { "$ref": "#/$defs/collector_capabilities" },
+        "max_assignments": { "type": "integer", "minimum": 1, "maximum": 1, "description": "Cố định 1: MVP một người dùng, một collector, một run đang chạy (contracts/state/run.yaml T-RUN-21 coalesce)." }
+      }
+    },
+
+    "collector_capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collector_online", "chrome_profile_ready", "x_session_state", "embedding_supported"],
+      "properties": {
+        "collector_online": { "type": "boolean" },
+        "chrome_profile_ready": { "type": "boolean", "description": "Chrome thật với PROFILE RIÊNG CỦA DỰ ÁN (REQ-D09), không phải profile mặc định. false ⇒ server không giao việc." },
+        "x_session_state": { "type": "string", "enum": ["ok", "challenge", "expired", "unknown"], "description": "`unknown` được đối xử như KHÔNG dùng được khi quyết định giao việc, nhưng hiển thị khác `unusable` (contracts/ops/deployment.md §7)." },
+        "embedding_supported": { "const": false, "description": "LUÔN false. Server TỪ CHỐI bản đăng ký khai true bằng VALIDATION_ERROR — guard cho D50/B12: embedding không bao giờ chạy trên máy cá nhân." },
+        "collector_version": { "$ref": "#/$defs/semver" }
+      }
+    },
+
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assignment_id", "run_id", "phase", "trigger_type", "lease", "capability_requirements", "search_config", "stop_conditions", "checkpoint", "is_resume", "x_coverage_note_vi"],
+      "properties": {
+        "assignment_id": { "$ref": "#/$defs/ulid" },
+        "run_id": { "$ref": "#/$defs/ulid", "description": "FK → run.id (contracts/data/entities.yaml ENT-run)." },
+        "phase": { "type": "string", "enum": ["collecting", "enriching", "analyzing", "reporting"], "description": "Phase cần làm tiếp. Collector chỉ nhận assignment ở `collecting`." },
+        "trigger_type": { "type": "string", "enum": ["scheduled", "manual"], "description": "REQ-D14." },
+        "catch_up_window": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["from", "to", "occurrence_count"],
+          "description": "NOT NULL khi run này gộp nhiều occurrence quá hạn (REQ-D15). Chỉ để hiển thị và để ghi khoảng bao trùm; KHÔNG phải bộ lọc dữ liệu (REQ-D12).",
+          "properties": {
+            "from": { "$ref": "#/$defs/timestamp_utc_ms" },
+            "to": { "$ref": "#/$defs/timestamp_utc_ms" },
+            "occurrence_count": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "lease": { "$ref": "#/$defs/lease" },
+        "capability_requirements": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requires_chrome_profile", "requires_x_session_ok"],
+          "properties": {
+            "requires_chrome_profile": { "const": true },
+            "requires_x_session_ok": { "const": true, "description": "Server chỉ giao khi worker khai `x_session_state = ok`. `challenge`/`expired`/`unknown` ⇒ không giao (contracts/state/run.yaml T-RUN-01 guard)." }
+          }
+        },
+        "search_config": { "$ref": "#/$defs/search_config" },
+        "stop_conditions": { "$ref": "#/$defs/stop_conditions" },
+        "checkpoint": { "$ref": "#/$defs/server_checkpoint" },
+        "is_resume": { "type": "boolean", "description": "true khi assignment này đến sau `run.resume` (needs_user → queued). Lease LUÔN mới; không có đường tiếp tục bằng lease cũ (contracts/state/run.yaml §LM-07, I10)." },
+        "x_coverage_note_vi": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "description": "Câu ghi rõ giới hạn bao phủ X cho đợt này. BẮT BUỘC không rỗng: `completed` không có nghĩa đã quét đủ toàn bộ X (AMD-B05). Collector chép lại nguyên văn vào metadata run khi báo dừng."
+        }
+      }
+    },
+
+    "no_work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "retry_after_ms"],
+      "description": "Response khi không có việc. KHÔNG phải lỗi.",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": ["no_due_occurrence", "run_needs_user", "run_blocked", "storage_not_healthy", "capability_not_met", "assignment_already_held"],
+          "description": "`run_needs_user`/`run_blocked`: có run nhưng nó chờ Owner — worker KHÔNG tự claim lại (I10). `storage_not_healthy`: xem contracts/state/storage.yaml."
+        },
+        "retry_after_ms": { "type": "integer", "minimum": 0, "description": "Gợi ý theo `claim_idle_backoff` (contracts/retry-policy.yaml: 5/15/45 giây)." }
+      }
+    },
+
+    "lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lease_id", "lease_epoch", "ttl_s", "heartbeat_interval_s", "expires_at"],
+      "description": "Quyền độc quyền trên một assignment (ENT-assignment-lease). Con số ở contracts/retry-policy.yaml; giá trị dưới đây do SERVER cấp cho từng lease, client không tự chọn.",
+      "properties": {
+        "lease_id": { "$ref": "#/$defs/ulid" },
+        "lease_epoch": { "type": "integer", "minimum": 1, "description": "Đơn điệu tăng cho một job; epoch cũ ⇒ STALE_LEASE và KHÔNG dữ liệu authoritative nào đổi (I10)." },
+        "ttl_s": { "type": "integer", "minimum": 1, "description": "PROVISIONAL 120 giây (contracts/retry-policy.yaml §lease_ttl_collector). Ràng buộc: >= 4 × heartbeat_interval_s và > online_threshold (90 s)." },
+        "heartbeat_interval_s": { "type": "integer", "minimum": 1, "description": "PROVISIONAL 30 giây (contracts/ops/deployment.md, PC01)." },
+        "expires_at": { "$ref": "#/$defs/timestamp_utc_ms", "description": "Giờ SERVER. Lease hết hạn khi `now > expires_at + heartbeat_grace` (30 s)." }
+      }
+    },
+
+    "search_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tags", "tag_config_version_id", "source_limits"],
+      "description": "Ảnh chụp cấu hình dùng để TÌM KIẾM. Bất biến trong suốt assignment: đổi tag giữa lúc chạy KHÔNG ảnh hưởng việc lọc (REQ-D24, REQ-S8.2-06).",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "maxItems": 200,
+          "items": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "description": "CHỈ là từ khóa tìm kiếm trên X. KHÔNG phải bộ lọc báo cáo."
+        },
+        "tag_config_version_id": { "$ref": "#/$defs/ulid", "description": "Version của ảnh chụp tìm kiếm. Ghi lại để truy vết; điểm ĐÓNG BĂNG tag của báo cáo là transaction publish, không phải ở đây (B01/AMD-B01)." },
+        "source_limits": { "$ref": "#/$defs/source_limits" }
+      }
+    },
+
+    "source_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["author_thread_only", "external_replies", "image_only_post_policy", "chrome_scope", "paper_metadata_source"],
+      "description": "Giới hạn nguồn, gửi kèm assignment để collector không phải suy diễn. Xem contracts/ops/collector-probe.md §Giới hạn nguồn.",
+      "properties": {
+        "author_thread_only": { "const": true, "description": "Chỉ mở thread khi đó là thread do CHÍNH TÁC GIẢ viết (REQ-D31)." },
+        "external_replies": { "const": "excluded", "description": "Replies của người ngoài bị HOÃN sang P1 (REQ-D31); không ingest." },
+        "image_only_post_policy": { "const": "post_only_no_id_guess", "description": "Post chỉ có ảnh chụp paper, không có link ⇒ KHÔNG đoán ID; thành mục 'chỉ có post' (REQ-D33, I03)." },
+        "chrome_scope": { "const": "x_only", "description": "Chrome của collector CHỈ lo X; không mở arXiv/OpenAlex (REQ-D32, denied case NC-08)." },
+        "paper_metadata_source": { "const": "server_api", "description": "Metadata paper lấy qua API từ SERVER (REQ-D32), không phải từ trình duyệt của collector." },
+        "max_thread_context_posts": { "type": "integer", "minimum": 1, "description": "PROVISIONAL 50 (contracts/data/entities.yaml §limits.ingest_thread_context_max_posts)." }
+      }
+    },
+
+    "stop_conditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_posts", "max_duration_s", "evaluation", "on_challenge", "on_blocked"],
+      "description": "Điều kiện dừng phải RÕ RÀNG (REQ-A7: X có thể hạn chế tài khoản dù người dùng tự giải CAPTCHA).",
+      "properties": {
+        "max_posts": { "type": "integer", "minimum": 1, "description": "PROVISIONAL 200 (contracts/retry-policy.yaml §per_run_post_limit; REQ-OQ05 — Owner chốt số thật sau M0)." },
+        "max_duration_s": { "type": "integer", "minimum": 1, "description": "PROVISIONAL 1800 giây (contracts/retry-policy.yaml §per_run_duration_limit)." },
+        "evaluation": { "const": "first_of_either", "description": "Chạm ngưỡng nào TRƯỚC thì dừng theo ngưỡng đó; `limit_kind` ghi rõ ngưỡng nào (contracts/state/run.yaml §coverage_metadata)." },
+        "on_challenge": { "const": "report_stop_and_halt", "description": "Gặp CAPTCHA/hết phiên ⇒ gọi `worker.report_stop`, DỪNG. Không tự thử lại, không giả lập thao tác xác minh (REQ-S9.3-01, SRC-SPEC §2.3)." },
+        "on_blocked": { "const": "report_stop_and_halt_no_rotation", "description": "Bị chặn ⇒ dừng và báo. KHÔNG luân chuyển account/proxy/fingerprint (SRC-SPEC §2.3, REQ-S9.3-02)." }
+      }
+    },
+
+    "server_checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase", "cursor_token", "cursor_state", "acked_through_ingest_sequence", "items_ingested_total", "checkpoint_sequence"],
+      "description": "Ảnh chụp CỦA SERVER về tiến độ ĐÃ ACK. Đây là nguồn sự thật khi worker claim lại (contracts/state/run.yaml §CP-02, I02). Rỗng-mới (sequence 0) cho một run chưa ingest gì.",
+      "properties": {
+        "phase": { "type": "string", "enum": ["collecting", "enriching", "analyzing", "reporting"] },
+        "cursor_token": { "type": ["string", "null"], "maxLength": 2048, "description": "null hợp lệ khi con trỏ mất hiệu lực; khi đó `cursor_state = invalidated` và recovery policy cho phép ĐỌC LẠI — dedup xảy ra ở ingest theo `x_post_id` (AMD-B05)." },
+        "cursor_state": { "type": "string", "enum": ["valid", "invalidated"] },
+        "acked_through_ingest_sequence": { "type": "integer", "minimum": 0, "description": "Mọi post có `ingest_sequence <= giá trị này` ĐÃ COMMIT ở server. Đây là định nghĩa vận hành của 'đã ACK' (contracts/state/run.yaml §CP-02)." },
+        "items_ingested_total": { "type": "integer", "minimum": 0 },
+        "checkpoint_sequence": { "type": "integer", "minimum": 0, "description": "`checkpoint.sequence` hiện hành. Append-only; seq lùi bị từ chối (§CP-04)." }
+      }
+    },
+
+    "heartbeat_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "schema_version", "assignment_id", "lease_id", "lease_epoch", "observed_progress", "x_session_state"],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/ulid" },
+        "schema_version": { "$ref": "#/$defs/semver" },
+        "assignment_id": { "$ref": "#/$defs/ulid" },
+        "lease_id": { "$ref": "#/$defs/ulid" },
+        "lease_epoch": { "type": "integer", "minimum": 1, "description": "Epoch cũ ⇒ STALE_LEASE và KHÔNG đổi dữ liệu (contracts/ports.yaml worker.heartbeat)." },
+        "observed_progress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["posts_seen_in_run", "posts_submitted_in_run", "elapsed_s"],
+          "description": "QUAN SÁT của collector, KHÔNG phải dữ liệu authoritative. Server không ghi các số này vào bảng nghiên cứu.",
+          "properties": {
+            "posts_seen_in_run": { "type": "integer", "minimum": 0 },
+            "posts_submitted_in_run": { "type": "integer", "minimum": 0 },
+            "elapsed_s": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "x_session_state": { "type": "string", "enum": ["ok", "challenge", "expired", "unknown"] }
+      }
+    },
+
+    "heartbeat_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lease_valid", "directive"],
+      "properties": {
+        "lease_valid": { "type": "boolean" },
+        "lease_expires_at": { "$ref": "#/$defs/timestamp_utc_ms", "description": "Hạn mới sau khi gia hạn. Vắng mặt khi `lease_valid = false`." },
+        "directive": {
+          "type": "string",
+          "enum": ["continue", "stop_cancelled", "stop_storage_unavailable", "stop_lease_revoked"],
+          "description": "`stop_cancelled`: Owner đã gọi `run.cancel` (contracts/state/run.yaml T-RUN-17b) — collector dừng ngay, không commit thêm. `stop_storage_unavailable`: xem contracts/state/storage.yaml."
+        },
+        "storage_health": { "type": "string", "enum": ["healthy", "write_blocked", "maintenance", "recovery_required"] }
+      }
+    },
+
+    "release_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "schema_version", "assignment_id", "lease_id", "lease_epoch", "release_reason"],
+      "properties": {
+        "request_id": { "$ref": "#/$defs/ulid" },
+        "schema_version": { "$ref": "#/$defs/semver" },
+        "assignment_id": { "$ref": "#/$defs/ulid", "description": "Idempotency key (contracts/ports.yaml: trả lại nhiều lần không đổi trạng thái sau lần đầu)." },
+        "lease_id": { "$ref": "#/$defs/ulid" },
+        "lease_epoch": { "type": "integer", "minimum": 1 },
+        "release_reason": { "type": "string", "enum": ["completed_phase", "worker_shutdown", "local_storage_unavailable"], "description": "Phần CHƯA ACK không được coi là đã lưu (contracts/ports.yaml worker.release_assignment, I02)." }
+      }
+    }
+  }
+}

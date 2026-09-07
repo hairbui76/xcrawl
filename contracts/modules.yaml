@@ -1,0 +1,1695 @@
+# Research Radar — Module registry, ownership và ranh giới giao tiếp
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa tiếng Anh (baseline §3).
+
+contract_id: CT-arch-modules
+version: 0.1.0
+status: draft
+owner_role: architecture owner
+source_refs:
+  - SRC-SPEC §6.1
+  - SRC-SPEC §6.2
+  - SRC-SPEC §6.4
+  - SRC-SPEC §7.3
+  - SRC-SPEC §10.1
+  - SRC-SPEC §11.2
+  - SRC-SPEC §11.3
+  - SRC-SPEC §11.4
+  - SRC-PLAN §6
+  - SRC-PLAN §6.1
+  - SRC-PLAN §7
+  - SRC-PLAN §8.4
+  - SRC-PLAN §11 PC01
+requirement_refs:
+  - REQ-D01
+  - REQ-D06
+  - REQ-D07
+  - REQ-D08
+  - REQ-D09
+  - REQ-D11
+  - REQ-D32
+  - REQ-D41
+  - REQ-D42
+  - REQ-D48
+  - REQ-D50
+  - REQ-D51
+  - REQ-P0-03
+  - REQ-P0-04
+  - REQ-P0-05
+  - REQ-P0-11
+  - REQ-AC16
+  - REQ-AC17
+  - REQ-AC18
+decision_refs: [B01, B04, B09, B10, B11, B12, B13, B17, ADR-0001]
+invariant_refs: [I01, I02, I05, I09, I10, I11, I12, I13, I15]
+producers: [MOD-backend-api]
+consumers: [MOD-web-ui, MOD-x-collector, MOD-analysis-worker, MOD-telegram-adapter, MOD-backup-cli]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/capabilities.yaml
+  - contracts/ops/deployment.md
+scope: >
+  Registry module của Research Radar: mỗi module có ID ổn định `MOD-<kebab>`, nơi chạy, hình thức triển khai,
+  dữ liệu sở hữu, operation vào/ra (trích từ contracts/ports.yaml), phạm vi secret, phạm vi network egress và
+  auth scope chấp nhận. Kèm `allowed_edges` (caller → callee → operation), `forbidden_edges` có lý do,
+  `denied_cases` (10 ca âm bắt buộc của PC01) và bảng `mutation_ownership`. Đây là **ranh giới quyền và ownership**,
+  không bắt buộc microservices: server có thể là modular monolith (SRC-PLAN §6). File này không định nghĩa schema,
+  state machine hay số timeout.
+verification: >
+  E0 self-validation: YAML parse + script kiểm chéo với contracts/ports.yaml (operation tồn tại hai chiều, module
+  tồn tại, không trùng operation_id, mọi forbidden edge có lý do, đủ 10 denied case). Không có evidence E1–E4.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+default_deny:
+  rule_vi: >
+    **Mọi edge không có trong `allowed_edges` đều bị cấm.** Danh sách `forbidden_edges` và `denied_cases` chỉ liệt
+    kê những trường hợp cần nêu tên vì dễ bị vi phạm; chúng **không** phải là danh sách đầy đủ các đường bị cấm.
+    Thêm một edge phải sửa file này, tăng version và qua review (SRC-PLAN §6).
+  enforcement_mechanisms:
+    - id: ENF-import-rule
+      description_vi: Quy tắc import/dependency giữa package trong cùng tiến trình server (kiểm bằng linter khi có code).
+    - id: ENF-api-auth-test
+      description_vi: Contract test gọi operation bằng auth scope sai và khẳng định UNAUTHORIZED + không đổi dữ liệu.
+    - id: ENF-process-capability
+      description_vi: Capability của tiến trình worker trên máy cá nhân (không driver DB, egress allowlist, tool bị khóa).
+    - id: ENF-network-egress-allowlist
+      description_vi: Danh sách host được phép gọi ra, khai trong `network_egress` của từng module.
+    - id: ENF-command-allowlist
+      description_vi: Allowlist lệnh Telegram (đúng ba lệnh D36) và allowlist callback target.
+    - id: ENF-storage-health-guard
+      description_vi: Guard theo `storage.health`; `recovery_required` khóa dispatcher và worker claim cho tới khi reconcile.
+  error_code_table_vi: >
+    Bảng R5-01 (ruling, ràng buộc): request HTTP bởi một **lớp principal không được phép** cho operation đó ⇒
+    `UNAUTHORIZED`; lời gọi/import **trong cùng tiến trình** qua một cạnh không có trong `allowed_edges` ⇒
+    `FORBIDDEN_EDGE`; thiếu **capability** tiến trình/mạng/filesystem/tool ⇒ `CAPABILITY_DENIED`; mutation của
+    owner session thiếu CSRF hợp lệ ⇒ `CSRF_REJECTED`. Mỗi `forbidden_edges[]` có đúng một `denied_cases[]` với
+    `expected_error_code` lấy từ bảng này, cơ chế thực thi và `scenario_refs: [SC49]`.
+  attempted_edge_operation_rule_vi: >
+    Quy tắc cho `denied_cases[].attempted_edge.operation` (F-A2R1-05, ruling FIX6):
+    (a) callee là một `MOD-*` ⇒ trường này **chỉ** được mang tên operation khi **chính callee đó sở hữu** nó trong
+    `contracts/ports.yaml`; nếu không thì phải là `null` kèm `event_type` và `operation_absent_reason_vi`. Ghi tên
+    một operation mà callee không phục vụ tạo ra một oracle không chạy được.
+    (b) callee là một `EXT-*` (hệ thống ngoài) ⇒ hệ thống ngoài không sở hữu operation nào của ta, nên trường này
+    mang tên **port nội bộ mà kẻ vi phạm đang cố tạo ra hiệu ứng của nó** — ví dụ `telegram.send_payload` cho
+    `EXT-telegram-api`, `research.fetch_work_metadata` cho `EXT-arxiv-api`, `ai.run_inference_task` cho
+    `EXT-ai-provider-api`. Đọc là "module này cố tự làm việc mà chỉ port kia được phép làm". Quy ước này trước
+    FIX10 **không được ghi ở đâu**; nay nó được ghi ở đây và được gate kiểm.
+    Sáu case theo dạng (b): NC-04, NC-07, NC-13, NC-17, NC-25, NC-29.
+  error_code_refinement_vi: >
+    Hai mã nằm NGOÀI bốn dòng của bảng R5-01 vẫn được dùng, mỗi cái cho một đường đi mà bảng không mô tả — ghi ở
+    đây để không ai tưởng là lệch ruling. `CR-PC01-09` **đã được Coordinator phê chuẩn** (ruling FIX6, A2-R1):
+    hai mã này là mã hợp lệ cho denied case nằm ngoài bảng bốn dòng R5-01 khi đặc tả gọi tên chúng.
+    (1) `UNAUTHORIZED_COMMAND` cho FE-30/FE-31/FE-33 — attempt đến qua **ingress Telegram**, nơi đặc tả bắt buộc
+    **bỏ im lặng** (REQ-S11.3-02, AC-18): trả `UNAUTHORIZED` cho chat là tự xác nhận bot tồn tại. Đây là dòng
+    "sai lớp principal" của bảng, được hiện thực bằng mã chuyên biệt mà `errors.yaml` đã đăng ký cho đúng đường
+    này. (2) `RESTORE_UNVERIFIED` cho FE-34/FE-35 — cạnh bị chặn bởi **guard trạng thái** (`storage.health =
+    recovery_required`), không phải bởi thiếu quyền: cùng một caller được phép sau khi đối soát xong. "Chưa được
+    phép lúc này" khác "đường đi không tồn tại", và I15 cần phân biệt được hai thứ đó.
+  evidence_note_vi: >
+    Chỉ có sơ đồ là chưa đủ bằng chứng (SRC-PLAN §6). Mỗi cơ chế trên phải có scenario âm ở PC09; ở PC01 chúng là
+    **NOT_RUN**.
+
+data_owner_of_conventions:
+  authority_vi: >
+    Tên entity trong `contracts/data/entities.yaml` (PC02) là **thẩm quyền đặt tên**; `data_owner_of` của PC01 dùng
+    đúng tên đó (ruling R-03, PKT-PC01-FIX2). Đổi tên đã áp dụng: `work_alias` → `identity_alias`;
+    `ingest_checkpoint` → `checkpoint`; `lease` → `assignment_lease`; `coverage_ledger` → `coverage_window`;
+    `vector` → `tag_vector`. Token `run_checkpoint_pointer` đã **bị gỡ** khỏi MOD-job-service (ruling R-01):
+    chỉ có một entity `checkpoint`, do MOD-ingest-service sở hữu.
+  entry_forms_vi: >
+    Một phần tử của `data_owner_of` là **chuỗi** (token entity, phải khớp một `entities[].name` của PC02) hoặc
+    **mapping** `{token: <tên>, kind: artifact}`. `kind: artifact` nghĩa là đối tượng vận hành, **không phải
+    entity**, và bị loại khỏi phép so khớp entity↔owner: `sqlite_database_file`, `wal` (MOD-data-store),
+    `readiness_snapshot_in_memory` (MOD-health-service).
+  pending_entity_contracts_vi: >
+    Ruling R-03 giữ nguyên 20 token (`session`, `provider_config`, `provider_test_result`, `rescan_ledger`,
+    `schedule_occurrence`, `assignment`, `worker_registration`, `source_fetch_log`, `analysis_task`,
+    `first_announced_ledger`, `delivery_attempt`, `delivery_receipt`, `telegram_link_code`, `telegram_update_log`,
+    `secret_ref`, `task_credential`, `secret_audit`, `backup_snapshot`, `backup_manifest`, `restore_record`) và
+    giao PC02 bổ sung entity contract cho từng cái.
+  measured_state_vi: >
+    Đo hai lần trong lúc PC02 còn đang ghi, với `contracts/data/entities.yaml` ở hai hash khác nhau —
+    `321fed5fad3961a5e7543c70776b903472da991526441e7cb034cca77f3cc101` (17:5xZ) rồi
+    `d91c433e749b8db00d5f6cc0e103e92983caaf9c9e62a6207ab8da2fb31bcc29` (17:59Z), cả hai đều 57 entity — và **cùng
+    một kết quả**: cả 20 token trên đã có entity contract; chiều entities → PC01 owner dư **0**; sai khác
+    owner_module **0**.
+    Phần dư duy nhất theo chiều PC01 → entities là hai token do chính PKT-PC01-FIX2 tạo ra:
+    `data_deletion_audit` và `purge_challenge` (MOD-data-admin-service) — CR-PC01-06 gửi PC02.
+    PC02 có thể còn đang ghi tiếp; con số trên gắn với đúng hash nêu ở đây, không phải một tuyên bố vĩnh viễn.
+  audit_refs: [F-A1R1-03, R-03]
+
+runtimes:
+  - id: RT-server
+    name_vi: Server ngoài mạng nhà
+    deployment_vi: Docker cho web + backend + queue + embedding; SQLite là file trên volume (SRC-SPEC §6.4).
+    inbound_network_vi: Chỉ HTTPS của app + endpoint ingress Telegram.
+  - id: RT-personal-machine
+    name_vi: Máy cá nhân của owner
+    deployment_vi: >
+      Collector và analysis worker chạy như tiến trình trên máy, **không** trong container, vì Chrome phải hiện cửa
+      sổ cho người dùng bấm (D09) và CLI/ACP cần phiên đăng nhập của người dùng (SRC-SPEC §6.4).
+    inbound_network_vi: >
+      **Không mở cổng vào**. Mọi kết nối là outbound tới backend API bằng token riêng (SRC-SPEC §6.4). Cổng debug
+      của Chrome chỉ bind loopback (SRC-SPEC §11.2).
+  - id: RT-browser
+    name_vi: Trình duyệt của owner
+    deployment_vi: Tải web app từ server; không giữ secret nào ngoài session.
+    inbound_network_vi: Không.
+
+modules:
+
+  - id: MOD-web-ui
+    name_vi: Web app
+    runs_on: browser
+    runtime: RT-browser
+    spec_row: "SRC-SPEC §6.1 — Web app"
+    purpose_vi: Giao diện Reports/Topics/Saved/Runs/Settings; đăng nhập một tài khoản duy nhất; mở được từ điện thoại (D04).
+    data_owner_of: []
+    inbound_operations: []
+    outbound_operations: [analysis.request_reanalysis, auth.get_session, auth.login, auth.logout, data.delete_target, data.purge_all, delivery.decide_unknown, delivery.get_status, health.get_liveness, health.get_readiness, identity.resolve_conflict, report.get, report.list, run.cancel, run.get, run.list, run.resume, run.run_now, save.create, save.export, save.list, save.remove, settings.get_config, settings.test_provider, settings.update_config, tag.create, tag.delete, tag.list, tag.preview_matches, tag.rescan_corpus, tag.update, telegram.issue_link_code, telegram.unlink, work.get_detail, worker.get_status]
+    auth_scope_used: [public_login, owner_session, public_minimal]
+    network_egress: [server_app_origin]
+    secret_access: none
+    secret_note_vi: >
+      Frontend **không bao giờ** nhận API key AI, token collector hay nội dung secret store (SRC-SPEC §11.2).
+      settings.get_config chỉ trả tham chiếu + trạng thái đã cấu hình.
+    notes_vi: Mọi lời gọi đi qua MOD-backend-api; không có đường tới SQLite, worker debug port hay Telegram/AI bằng secret.
+
+  - id: MOD-backend-api
+    name_vi: Backend + API (edge HTTP)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Backend + API"
+    role: http_edge
+    purpose_vi: >
+      Điểm vào HTTP duy nhất của server: TLS, xác thực actor, phân giải auth scope, correlation ID, redaction log,
+      rồi định tuyến tới module sở hữu operation. Là **transit**, không sở hữu dữ liệu nghiệp vụ nào.
+    data_owner_of: []
+    inbound_operations: []
+    outbound_operations: []
+    transit_for_transports: [http]
+    auth_scope_used: [public_login, owner_session, owner_session_or_linked_chat, collector_token, analysis_worker_token, collector_token_or_analysis_worker_token, backup_operator, telegram_ingress_secret, public_minimal]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Mọi operation `transport: http` trong contracts/ports.yaml đi qua module này; vì vậy nó không xuất hiện trong
+      `allowed_edges` như một hop riêng. Nó **không** được tự quyết định nghiệp vụ hay ghi bảng của module khác.
+
+  - id: MOD-auth-service
+    name_vi: Dịch vụ đăng nhập một tài khoản
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §11.1 — một tài khoản đăng nhập duy nhất"
+    purpose_vi: Xác thực owner, cấp/thu hồi session; không có signup, không có quên-mật-khẩu tự động (D05).
+    data_owner_of: [owner, session]
+    inbound_operations: [auth.get_session, auth.login, auth.logout]
+    outbound_operations: []
+    auth_scope_used: [public_login, owner_session]
+    network_egress: []
+    secret_access: owner
+    secret_note_vi: Sở hữu credential đăng nhập của owner (hash) và khóa ký session; PC08 chốt lifecycle.
+
+  - id: MOD-settings-service
+    name_vi: Dịch vụ cấu hình
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §4 — Settings"
+    purpose_vi: Lịch, timezone IANA, giới hạn đợt, N ngày với ngược, provider/model theo tác vụ, model embedding, key.
+    data_owner_of: [settings, provider_config, provider_test_result, source_connection]
+    inbound_operations: [settings.get_config, settings.test_provider, settings.update_config]
+    outbound_operations: [embedding.start_generation_rebuild, secret.store_provider_key]
+    auth_scope_used: [owner_session, internal_only]
+    network_egress: [ai_provider_endpoints_configured]
+    secret_access: scoped
+    secret_note_vi: >
+      Nhận key từ owner một lần và chuyển ngay cho MOD-secret-service; **không** đọc lại giá trị key sau khi lưu và
+      không trả về frontend.
+
+  - id: MOD-tag-service
+    name_vi: Dịch vụ tag / subscription
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §8.1 lớp Subscription"
+    purpose_vi: Tag, từ đồng nghĩa, tag loại trừ, phiên bản cấu hình tag, xem nhãn đang khớp, quét lại kho.
+    data_owner_of: [tag, tag_alias, tag_exclusion, tag_config_version, rescan_ledger]
+    inbound_operations: [tag.create, tag.delete, tag.freeze_config_version, tag.get_active_config_version, tag.list, tag.preview_matches, tag.rescan_corpus, tag.update]
+    outbound_operations: [embedding.generate_vectors, embedding.get_active_generation]
+    auth_scope_used: [owner_session, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Chỉ module này ghi tag và tag_config_version. Collector và analysis worker **không** có đường sửa tag
+      (denied case NC-02); collector chỉ nhận tag như tham số **tìm kiếm** trong assignment (D24).
+
+  - id: MOD-scheduler
+    name_vi: Scheduler
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §6 — Scheduler"
+    purpose_vi: Tính mốc lịch tới hạn theo timezone IANA của owner; giờ lịch là "sớm nhất được chạy" (D13).
+    data_owner_of: [schedule_occurrence]
+    inbound_operations: [scheduler.evaluate_due]
+    outbound_operations: [job.coalesce_overdue, job.enqueue_scheduled_run, scheduler.evaluate_due]
+    auth_scope_used: [internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Scheduler **chỉ** nói chuyện với job service. Không gọi Chrome, không gửi digest, không đánh dấu report đã
+      giao (SRC-PLAN §6, denied case NC-09).
+
+  - id: MOD-job-service
+    name_vi: Job queue + vòng đời run + lease của worker
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Job queue"
+    purpose_vi: >
+      Xếp hàng run theo lịch và lệnh tay, gộp đợt quá hạn, cấp assignment/lease cho collector, giữ trạng thái run
+      (`phase/status/outcome/stop_reason` theo B02) và trạng thái readiness của worker.
+    data_owner_of: [run, assignment, assignment_lease, worker_registration]
+    inbound_operations: [job.coalesce_overdue, job.enqueue_scheduled_run, run.cancel, run.get, run.list, run.resume, run.run_now, worker.claim_assignment, worker.get_status, worker.heartbeat, worker.register_capabilities, worker.release_assignment, worker.report_stop]
+    outbound_operations: [delivery.create_intent, ingest.get_checkpoint, report.build, storage.get_health]
+    auth_scope_used: [owner_session, owner_session_or_linked_chat, collector_token, analysis_worker_token, collector_token_or_analysis_worker_token, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Là owner duy nhất của mutation trạng thái run. `run.resume` chỉ đến từ app (B10); lệnh Telegram không có
+      đường tới nó.
+
+  - id: MOD-ingest-service
+    name_vi: Dịch vụ nhận dữ liệu từ collector
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Backend + API (nhận dữ liệu từ collector)"
+    purpose_vi: Nhận lô post, dedup theo `x_post_id`, cấp `discovered_at` phía server + ingest sequence, ghi receipt và checkpoint.
+    data_owner_of: [post, post_work, ingest_receipt, checkpoint]
+    inbound_operations: [ingest.commit_checkpoint, ingest.get_checkpoint, ingest.get_receipt, ingest.submit_batch]
+    outbound_operations: [analysis.enqueue_tasks, embedding.generate_vectors, identity.merge_works, identity.quarantine_conflict, identity.record_alias, identity.resolve_target, research.fetch_work_metadata]
+    outbound_note_vi: >
+      Gọi identity.merge_works khi đường làm giàu metadata (ingest → research.fetch_work_metadata → nguồn) phát
+      hiện một liên kết DOI↔arXiv chứng minh hai `work` đã tồn tại là cùng công trình. MOD-research-connector
+      **không** phải caller: nó là connector chỉ-đọc, trả metadata về cho ingest và không ghi dữ liệu authoritative
+      (xem `denied_capabilities` DC-RC-03 trong contracts/capabilities.yaml).
+    auth_scope_used: [collector_token, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      ACK chỉ sau commit (I02). Đây là **điểm duy nhất** dữ liệu thu thập đi vào hệ thống; analysis nhận task từ
+      server **sau ingest commit**, không nhận dữ liệu trực tiếp từ collector (B12 — edge COL→AW của SRC-SPEC §6.2 bị gỡ).
+
+  - id: MOD-identity-service
+    name_vi: Dịch vụ canonical identity
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §6.1 — backend domain sở hữu post/work identity"
+    purpose_vi: Chuẩn hóa DOI/arXiv, phân giải target `work|post`, alias, cách ly xung đột, merge do owner quyết.
+    data_owner_of: [work, identity_alias, identity_conflict, identity_merge_audit, work_version]
+    inbound_operations: [identity.merge_works, identity.quarantine_conflict, identity.record_alias, identity.resolve_conflict, identity.resolve_target, work.get_detail]
+    outbound_operations: [identity.merge_works]
+    outbound_note_vi: >
+      identity.merge_works là port nội bộ do chính module này gọi khi identity.resolve_conflict được owner quyết
+      định `merge`; đó là đường merge duy nhất.
+    auth_scope_used: [owner_session, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: "\"0 trùng\" chỉ có nghĩa trên canonical identity đã biết; xung đột đi vào `identity_conflict`, không merge đoán (B15)."
+
+  - id: MOD-research-connector
+    name_vi: Research sources connector (arXiv/OpenAlex)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Research sources"
+    purpose_vi: Lấy metadata/abstract/provenance qua API chính thức từ server (D32); tôn trọng nhịp gọi và yêu cầu định danh (A6).
+    data_owner_of: [source_fetch_log]
+    inbound_operations: [research.fetch_work_metadata, research.get_connector_health]
+    outbound_operations: []
+    auth_scope_used: [internal_only]
+    network_egress: [arxiv_api, openalex_api]
+    secret_access: scoped
+    secret_note_vi: Chỉ email liên hệ/định danh mà OpenAlex yêu cầu (A6); không có key AI.
+    notes_vi: >
+      **Không** điều khiển Chrome và **không** nhận chỉ dẫn fetch URL tùy ý từ model (SRC-PLAN §6, denied case NC-08).
+      Chỉ nhận DOI/arXiv ID đã chuẩn hóa.
+
+  - id: MOD-embedding-service
+    name_vi: Embedding service (model local, server)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Embedding service"
+    purpose_vi: Sinh vector cho nhãn và tag bằng model local; quản lý generation (model, phiên bản, dimension).
+    data_owner_of: [tag_vector, embedding_generation]
+    inbound_operations: [embedding.activate_generation, embedding.generate_vectors, embedding.get_active_generation, embedding.start_generation_rebuild]
+    outbound_operations: [embedding.activate_generation]
+    auth_scope_used: [internal_only]
+    network_egress: []
+    network_note_vi: >
+      Không gọi provider API và không gọi CLI (SRC-SPEC §10.1: embedding **chỉ local**). Nhờ vậy luồng không có API
+      key nào vẫn hoàn tất (AC-16). Model được nạp từ artifact cục bộ trên server, không tải về lúc chạy.
+    secret_access: none
+
+  - id: MOD-analysis-service
+    name_vi: Dịch vụ phân tích phía server (task authority)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §6 — Local analysis worker → Analysis API"
+    purpose_vi: >
+      Tạo task phân tích từ dữ liệu **đã commit**, cấp task/lease cho analysis worker, nhận kết quả đúng schema,
+      giữ generation và `analysis_key` (B07).
+    data_owner_of: [analysis_task, analysis, analysis_generation, analysis_attempt, work_label]
+    inbound_operations: [analysis.claim_task, analysis.enqueue_tasks, analysis.get_task_input, analysis.heartbeat, analysis.report_attempt_unknown, analysis.request_reanalysis, analysis.submit_result]
+    outbound_operations: [secret.revoke_task_credential]
+    auth_scope_used: [owner_session, analysis_worker_token, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Analysis worker chỉ **đề xuất** kết quả qua port; nó không được tự quyết "work này đã báo cáo"
+      (SRC-PLAN §6.1). Kết quả sai schema không được commit thành `valid`.
+
+  - id: MOD-report-service
+    name_vi: Report builder / report service
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Report builder"
+    purpose_vi: >
+      Chọn mục theo tag hiện tại (truy vấn embedding), tính khối "hướng đang nổi", dựng kỳ nối liền, publish bằng
+      transaction CAS và tạo delivery intent.
+    data_owner_of: [report, report_item, emerging_direction, coverage_window, first_announced_ledger, backfill_ledger, pending_item_ledger]
+    inbound_operations: [report.build, report.get, report.list, report.publish]
+    outbound_operations: [analysis.enqueue_tasks, delivery.create_intent, embedding.generate_vectors, embedding.get_active_generation, identity.resolve_target, report.publish, tag.freeze_config_version, tag.get_active_config_version]
+    auth_scope_used: [owner_session, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      Sở hữu `first_announced` và coverage (SRC-PLAN §6.1). **Không** gửi Telegram trực tiếp và **không** sửa
+      analysis đã commit; delivery không đổi nội dung report đã publish (B01).
+
+  - id: MOD-saved-service
+    name_vi: Dịch vụ Saved
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §4 — Saved"
+    purpose_vi: Save/bỏ lưu/danh sách/export; snapshot bất biến lúc lưu (D55).
+    data_owner_of: [saved_item, saved_snapshot]
+    inbound_operations: [save.create, save.export, save.list, save.remove]
+    outbound_operations: []
+    auth_scope_used: [owner_session, owner_session_or_linked_chat]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      UNIQUE(owner, target) chống trùng khi Save đồng thời từ app và Telegram (D38/AC-13). Bỏ tag không xóa
+      snapshot (I08). Collector **không** có đường tới đây (denied case NC-01).
+
+  - id: MOD-delivery-service
+    name_vi: Delivery / outbox
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §8.3 — delivery lifecycle"
+    purpose_vi: Giữ intent đã commit, dispatch theo part, ghi receipt, đánh dấu `unknown`, nhận quyết định operator.
+    data_owner_of: [delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent]
+    inbound_operations: [delivery.create_intent, delivery.decide_unknown, delivery.dispatch_next, delivery.get_status, delivery.mark_unknown, delivery.record_receipt]
+    outbound_operations: [delivery.dispatch_next, delivery.mark_unknown, delivery.record_receipt, telegram.send_payload]
+    auth_scope_used: [owner_session, internal_only]
+    network_egress: []
+    network_note_vi: Không tự gọi mạng ngoài; hành vi mạng Telegram thuộc MOD-telegram-adapter.
+    secret_access: none
+    notes_vi: >
+      Telegram lỗi **không** làm report biến mất hay run đổi thành thất bại thu thập (I09). Part `unknown` không
+      được retry tự động (B03).
+
+  - id: MOD-telegram-adapter
+    name_vi: Telegram adapter
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Telegram adapter"
+    purpose_vi: >
+      Xác thực update ingress, thực thi đúng ba lệnh được phép, quản lý liên kết bằng mã một lần, gửi payload đã
+      đóng tới recipient đã liên kết.
+    data_owner_of: [telegram_link, telegram_link_code, telegram_link_attempt, telegram_update_log]
+    data_owner_of_note_vi: >
+      `telegram_link_attempt` là nguồn đếm cho rate-limit của ngoại lệ liên kết hẹp B09: một chuỗi đúng định dạng
+      mã liên kết từ chat CHƯA liên kết được đối chiếu với mã chưa hết hạn/chưa dùng, và số lần thử phải bị giới
+      hạn — nếu không, ngoại lệ hẹp đó thành một oracle dò mã miễn phí. Chủ sở hữu là MOD-telegram-adapter vì
+      chính nó xử lý ingress và biết chat nào đã thử (ruling CR-PC02-16). Việc bị từ chối vẫn **bỏ im lặng** phía
+      chat (REQ-S11.3-02): đếm để chặn, không để trả lời.
+    inbound_operations: [telegram.consume_link_code, telegram.execute_command, telegram.issue_link_code, telegram.receive_update, telegram.send_payload, telegram.unlink]
+    outbound_operations: [run.list, run.run_now, save.create, telegram.consume_link_code, telegram.execute_command]
+    auth_scope_used: [owner_session, telegram_ingress_secret, internal_only]
+    network_egress: [telegram_bot_api]
+    secret_access: scoped
+    secret_note_vi: Chỉ bot token của Telegram; **không** có quyền đọc key AI (denied case NC-06 liên quan).
+    notes_vi: >
+      Sở hữu hành vi mạng Telegram nhưng chỉ được gửi một intent hợp lệ tới linked owner; **nội dung nguồn không
+      định nghĩa recipient** (SRC-PLAN §6.1, I11). Không sửa SQLite trực tiếp, không sửa tag/cấu hình.
+
+  - id: MOD-secret-service
+    name_vi: Secret service
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §11.2 — secret store phía server"
+    purpose_vi: Lưu API key AI, cấp credential ngắn hạn theo từng task cho analysis worker, thu hồi khi task kết thúc.
+    data_owner_of: [secret_ref, task_credential, secret_audit]
+    inbound_operations: [secret.issue_task_credential, secret.revoke_task_credential, secret.store_provider_key]
+    outbound_operations: []
+    auth_scope_used: [analysis_worker_token, internal_only]
+    network_egress: []
+    secret_access: owner
+    secret_note_vi: >
+      Module duy nhất đọc được giá trị key ở server. Worker chỉ nhận credential **của provider gắn với task được
+      giao**, ngắn hạn (B13). Phiên X và phiên CLI ở lại máy cá nhân, không đồng bộ lên server.
+
+  - id: MOD-data-admin-service
+    name_vi: Dịch vụ vòng đời dữ liệu (xóa có chủ đích)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §7.3 — ba thao tác riêng: bỏ lưu / xóa dữ liệu gốc / xóa toàn bộ"
+    purpose_vi: >
+      Sở hữu hai mutation phá hủy của REQ-S7.3-05: `data.delete_target` (xóa dữ liệu gốc của một target) và
+      `data.purge_all` (xóa toàn bộ dữ liệu, đòi xác nhận gõ tay). Tách thành module riêng để mutation phá hủy có
+      **đúng một** owner và không nằm lẫn trong module nghiệp vụ thường ngày.
+    data_owner_of: [data_deletion_audit, purge_challenge]
+    inbound_operations: [data.delete_target, data.purge_all]
+    outbound_operations: []
+    auth_scope_used: [owner_session]
+    network_egress: []
+    secret_access: none
+    cross_scope_note_vi: >
+      Đây là **ngoại lệ duy nhất** với quy tắc repository port theo phạm vi bảng (DC-SRV-01): hai operation này
+      xóa dữ liệu do nhiều module khác sở hữu, trong một transaction. Ngoại lệ được giới hạn bằng ba điều kiện:
+      (1) chỉ hai operation này, (2) chỉ thao tác **xóa** — không sửa, không tạo, (3) phạm vi giữ lại được liệt kê
+      tường minh trong contracts/ports.yaml (`preserved_vi`). Danh sách bảng cascade cuối cùng do PC02 chốt
+      (CR-PC01-05); quy trình vận hành `maintenance` do PC08 chốt.
+    status: PROVISIONAL
+    audit_refs: [F-A1R1-04, R-04]
+
+  - id: MOD-data-store
+    name_vi: Data store (SQLite)
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-SPEC §6.1 — Data store (SQLite)"
+    purpose_vi: Nguồn dữ liệu chuẩn duy nhất (D07); file trên volume của server.
+    data_owner_of:
+      - {token: sqlite_database_file, kind: artifact}
+      - {token: wal, kind: artifact}
+      - schema_migration
+    inbound_operations: [storage.get_health]
+    outbound_operations: []
+    auth_scope_used: [internal_only]
+    network_egress: []
+    secret_access: none
+    repository_ports_vi: >
+      Các module domain truy cập DB qua **repository port theo phạm vi bảng** của chính chúng (`data_owner_of` ở
+      trên là danh sách phạm vi đó). Không module nào được chọn bảng/path/query tùy ý ngoài phạm vi của mình
+      (SRC-PLAN §6). Danh sách bảng/cột chuẩn do PC02 chốt trong contracts/data/entities.yaml; PC01 chỉ chốt
+      **ai sở hữu mutation của phạm vi nào**.
+    notes_vi: >
+      Không có tiến trình nào ngoài server mở được file này; máy cá nhân **không có** driver/đường mạng tới DB
+      (denied case NC-05). WAL là một phần trạng thái bền (SRC-PLAN §3.1).
+
+  - id: MOD-backup-service
+    name_vi: Backup/restore service
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §6 — Backup operator → Backup/restore port có maintenance guard"
+    purpose_vi: Snapshot nhất quán (Online Backup API hoặc VACUUM INTO) + manifest; restore có khóa side effect; reconcile.
+    data_owner_of: [backup_snapshot, backup_manifest, restore_record]
+    inbound_operations: [backup.create_snapshot, backup.reconcile_after_restore, backup.restore_snapshot, backup.verify_snapshot]
+    outbound_operations: []
+    auth_scope_used: [backup_operator]
+    network_egress: [backup_destination_configured]
+    secret_access: scoped
+    secret_note_vi: Chỉ credential của đích lưu backup; kế hoạch khôi phục secret do PC08 chốt.
+    notes_vi: Sau restore, dispatcher và worker claim bị khóa cho tới khi reconcile xong (I15, denied case NC-10).
+
+  - id: MOD-backup-cli
+    name_vi: Công cụ vận hành backup (do backup operator chạy trên server)
+    runs_on: server
+    runtime: RT-server
+    deployment_vi: Tiến trình CLI trên server, gọi các operation backup.* qua loopback với auth scope riêng.
+    purpose_vi: Giao diện thao tác của actor "backup operator"; tách khỏi session owner của web app.
+    data_owner_of: []
+    inbound_operations: []
+    outbound_operations: [backup.create_snapshot, backup.reconcile_after_restore, backup.restore_snapshot, backup.verify_snapshot]
+    auth_scope_used: [backup_operator]
+    network_egress: [server_loopback]
+    secret_access: scoped
+    secret_note_vi: Giữ credential `backup_operator`, không phải session owner và không phải key AI.
+
+  - id: MOD-health-service
+    name_vi: Health/readiness service
+    runs_on: server
+    runtime: RT-server
+    spec_row: "SRC-PLAN §8.4 — readiness/health channel độc lập"
+    purpose_vi: Kênh liveness/readiness **độc lập DB** để báo được cả khi không ghi được vào SQLite.
+    data_owner_of:
+      - {token: readiness_snapshot_in_memory, kind: artifact}
+    inbound_operations: [health.get_liveness, health.get_readiness]
+    outbound_operations: [research.get_connector_health, storage.get_health]
+    auth_scope_used: [public_minimal, owner_session, internal_only]
+    network_egress: []
+    secret_access: none
+    notes_vi: >
+      `health.get_liveness` chỉ trả `up` + schema version; mọi chi tiết cần `owner_session`. Không tuyên bố đã
+      persist lỗi khi DB không ghi được (SRC-PLAN §8.4).
+
+  - id: MOD-x-collector
+    name_vi: X collector
+    runs_on: personal_machine
+    runtime: RT-personal-machine
+    spec_row: "SRC-SPEC §6.1 — X collector"
+    deployment_vi: Tiến trình trên máy, không container; điều khiển Chrome thật với **profile riêng của dự án** (D09).
+    purpose_vi: Kéo việc khi online, đọc X trong phiên của owner, phát hiện điểm dừng và bị chặn, nộp lô post về server.
+    data_owner_of: []
+    data_ownership_note_vi: >
+      Collector **không sở hữu** dữ liệu authoritative nào. Nó chỉ đề xuất dữ liệu qua ingest.submit_batch; server
+      quyết định `discovered_at`, dedup và commit (I02).
+    inbound_operations: []
+    inbound_note_vi: Không có operation vào; máy cá nhân **không mở cổng** (SRC-SPEC §6.4).
+    outbound_operations: [health.get_liveness, ingest.commit_checkpoint, ingest.get_receipt, ingest.submit_batch, worker.claim_assignment, worker.heartbeat, worker.register_capabilities, worker.release_assignment, worker.report_stop]
+    auth_scope_used: [collector_token, public_minimal]
+    network_egress: [server_api_origin, x_web]
+    secret_access: scoped
+    secret_note_vi: >
+      Chỉ token collector→backend (file cấu hình quyền hạn chế trên máy cá nhân) và phiên X nằm trong profile
+      Chrome riêng. **Không** có key AI, **không** có token Telegram (SRC-SPEC §11.2).
+    filesystem_scope_vi: Thư mục profile Chrome riêng của dự án + file cấu hình token; không đụng profile mặc định của người dùng.
+    forbidden_summary_vi: >
+      Không ghi SQLite, không gọi Telegram, không lấy secret AI, không xếp hàng analysis trực tiếp, không gọi Save
+      (SRC-PLAN §6).
+
+  - id: MOD-analysis-worker
+    name_vi: Analysis worker
+    runs_on: personal_machine
+    runtime: RT-personal-machine
+    spec_row: "SRC-SPEC §6.1 — Analysis worker"
+    deployment_vi: Tiến trình trên máy, không container; cùng máy với collector vì đường CLI/ACP chỉ tồn tại nơi có phiên đăng nhập (D42).
+    purpose_vi: Nhận task từ server, gọi AI adapter, nộp kết quả đúng schema, báo attempt không rõ.
+    data_owner_of: []
+    data_ownership_note_vi: Worker chỉ đề xuất kết quả qua port; owner của `analysis` là MOD-analysis-service (SRC-PLAN §6.1).
+    inbound_operations: []
+    inbound_note_vi: Không có operation vào; kết nối chỉ đi ra.
+    outbound_operations: [ai.probe_provider_capability, ai.run_inference_task, analysis.claim_task, analysis.get_task_input, analysis.heartbeat, analysis.report_attempt_unknown, analysis.submit_result, health.get_liveness, secret.issue_task_credential, worker.register_capabilities]
+    auth_scope_used: [analysis_worker_token, public_minimal]
+    network_egress: [server_api_origin]
+    secret_access: scoped
+    secret_note_vi: >
+      Chỉ token analysis worker→backend và **credential ngắn hạn của đúng provider cho task đang giữ lease** (B13).
+      Không nhận toàn bộ secret store.
+    forbidden_summary_vi: Không sửa tag/report/Saved, không tự publish, không lấy toàn bộ secrets (SRC-PLAN §6).
+
+  - id: MOD-ai-adapter
+    name_vi: AI adapter (API key và CLI/ACP)
+    runs_on: personal_machine
+    runtime: RT-personal-machine
+    spec_row: "SRC-SPEC §6.1 — AI adapter"
+    purpose_vi: "Giao ước duy nhất: prompt + schema → JSON đúng schema (SRC-SPEC §10.2); hai họ provider API key và CLI/ACP."
+    data_owner_of: []
+    inbound_operations: [ai.probe_provider_capability, ai.run_inference_task]
+    outbound_operations: []
+    auth_scope_used: [internal_only]
+    network_egress: [ai_provider_endpoints_configured]
+    network_note_vi: >
+      Chỉ endpoint của provider được cấu hình cho task đang chạy. **Không** fetch URL tùy ý, không đọc file ngoài
+      phạm vi, không gọi tool (denied case NC-07). Đường CLI/ACP chạy với tool/file/network bị khóa ngoài phần
+      inference; provider nào không kiểm chứng được cô lập thì adapter **giữ nguyên trạng thái disabled** (B13).
+    secret_access: scoped
+    secret_note_vi: Nhận credential theo từng task từ worker; không lưu lâu dài, không ghi vào log.
+    filesystem_scope_vi: Chỉ thư mục làm việc của worker; không truy cập profile Chrome, không truy cập file cấu hình token của collector.
+
+external_systems:
+  - id: EXT-telegram-api
+    name_vi: Telegram Bot API
+    direction: [inbound_webhook_to_server, outbound_from_telegram_adapter]
+    notes_vi: >
+      Không có idempotency key do client cung cấp cho `sendMessage` (SRC-PLAN §3.1); vì vậy UNIQUE ở DB **không**
+      chứng minh exactly-once. Là caller của telegram.receive_update.
+  - id: EXT-x-web
+    name_vi: Giao diện web X trong Chrome profile riêng
+    direction: [outbound_from_collector]
+    notes_vi: >
+      Chỉ MOD-x-collector chạm tới. Không có cơ chế né CAPTCHA, giả fingerprint, luân chuyển account hay proxy
+      (SRC-SPEC §2.3, §13.2). Bị chặn thì dừng và báo.
+  - id: EXT-arxiv-api
+    name_vi: arXiv API
+    direction: [outbound_from_research_connector]
+    notes_vi: Nhịp gọi và yêu cầu định danh đọc từ tài liệu chính thức khi triển khai (A6/D34).
+  - id: EXT-openalex-api
+    name_vi: OpenAlex API
+    direction: [outbound_from_research_connector]
+    notes_vi: Yêu cầu email liên hệ theo tài liệu chính thức (A6/D34).
+  - id: EXT-ai-provider-api
+    name_vi: Provider AI đường API key
+    direction: [outbound_from_ai_adapter, outbound_from_settings_service_test]
+    notes_vi: Chỉ provider đã cấu hình cho task; usage đếm token thật.
+  - id: EXT-ai-cli-acp
+    name_vi: CLI/ACP local của provider
+    direction: [outbound_from_ai_adapter]
+    notes_vi: >
+      Dùng phiên đăng nhập trên máy cá nhân; song song = 1; usage được phép `unknown` (D43/D44). Điều khoản từng
+      nhà phải đọc trước khi bật (A5).
+  - id: EXT-chrome-profile
+    name_vi: Profile Chrome riêng của dự án (tài nguyên trên máy cá nhân)
+    direction: [local_resource_of_collector]
+    notes_vi: Cổng debug chỉ bind loopback, không mở ra LAN hay reverse proxy (SRC-SPEC §11.2).
+
+# ---------------------------------------------------------------------------
+# allowed_edges: sinh từ contracts/ports.yaml (caller_modules × owner_module).
+# Mọi edge khác đều bị cấm theo default_deny ở trên.
+# ---------------------------------------------------------------------------
+allowed_edges:
+  - {caller: MOD-web-ui, callee: MOD-auth-service, operation: auth.login, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-auth-service, operation: auth.logout, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-auth-service, operation: auth.get_session, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-settings-service, operation: settings.get_config, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-settings-service, operation: settings.update_config, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-settings-service, operation: settings.test_provider, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.list, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.create, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.update, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.delete, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.preview_matches, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-tag-service, operation: tag.rescan_corpus, transport: http}
+  - {caller: MOD-report-service, callee: MOD-tag-service, operation: tag.get_active_config_version, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-tag-service, operation: tag.freeze_config_version, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: run.list, transport: http}
+  - {caller: MOD-telegram-adapter, callee: MOD-job-service, operation: run.list, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: run.get, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: run.run_now, transport: http}
+  - {caller: MOD-telegram-adapter, callee: MOD-job-service, operation: run.run_now, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: run.resume, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: run.cancel, transport: http}
+  - {caller: MOD-scheduler, callee: MOD-scheduler, operation: scheduler.evaluate_due, transport: internal}
+  - {caller: MOD-scheduler, callee: MOD-job-service, operation: job.enqueue_scheduled_run, transport: internal}
+  - {caller: MOD-scheduler, callee: MOD-job-service, operation: job.coalesce_overdue, transport: internal}
+  - {caller: MOD-x-collector, callee: MOD-job-service, operation: worker.register_capabilities, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-job-service, operation: worker.register_capabilities, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-job-service, operation: worker.claim_assignment, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-job-service, operation: worker.heartbeat, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-job-service, operation: worker.report_stop, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-job-service, operation: worker.release_assignment, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-job-service, operation: worker.get_status, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-ingest-service, operation: ingest.submit_batch, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-ingest-service, operation: ingest.commit_checkpoint, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-ingest-service, operation: ingest.get_receipt, transport: http}
+  - {caller: MOD-job-service, callee: MOD-ingest-service, operation: ingest.get_checkpoint, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-research-connector, operation: research.fetch_work_metadata, transport: internal}
+  - {caller: MOD-health-service, callee: MOD-research-connector, operation: research.get_connector_health, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-identity-service, operation: identity.resolve_target, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-identity-service, operation: identity.resolve_target, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-identity-service, operation: identity.record_alias, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-identity-service, operation: identity.quarantine_conflict, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-identity-service, operation: identity.merge_works, transport: internal}
+  - {caller: MOD-identity-service, callee: MOD-identity-service, operation: identity.merge_works, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-identity-service, operation: identity.resolve_conflict, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-identity-service, operation: work.get_detail, transport: http}
+  - {caller: MOD-ingest-service, callee: MOD-analysis-service, operation: analysis.enqueue_tasks, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-analysis-service, operation: analysis.enqueue_tasks, transport: internal}
+  - {caller: MOD-analysis-worker, callee: MOD-analysis-service, operation: analysis.claim_task, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-analysis-service, operation: analysis.get_task_input, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-analysis-service, operation: analysis.heartbeat, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-analysis-service, operation: analysis.submit_result, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-analysis-service, operation: analysis.report_attempt_unknown, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-analysis-service, operation: analysis.request_reanalysis, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-ai-adapter, operation: ai.run_inference_task, transport: internal}
+  - {caller: MOD-analysis-worker, callee: MOD-ai-adapter, operation: ai.probe_provider_capability, transport: internal}
+  - {caller: MOD-settings-service, callee: MOD-secret-service, operation: secret.store_provider_key, transport: internal}
+  - {caller: MOD-analysis-worker, callee: MOD-secret-service, operation: secret.issue_task_credential, transport: http}
+  - {caller: MOD-analysis-service, callee: MOD-secret-service, operation: secret.revoke_task_credential, transport: internal}
+  - {caller: MOD-ingest-service, callee: MOD-embedding-service, operation: embedding.generate_vectors, transport: internal}
+  - {caller: MOD-tag-service, callee: MOD-embedding-service, operation: embedding.generate_vectors, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-embedding-service, operation: embedding.generate_vectors, transport: internal}
+  - {caller: MOD-tag-service, callee: MOD-embedding-service, operation: embedding.get_active_generation, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-embedding-service, operation: embedding.get_active_generation, transport: internal}
+  - {caller: MOD-settings-service, callee: MOD-embedding-service, operation: embedding.start_generation_rebuild, transport: internal}
+  - {caller: MOD-embedding-service, callee: MOD-embedding-service, operation: embedding.activate_generation, transport: internal}
+  - {caller: MOD-job-service, callee: MOD-report-service, operation: report.build, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-report-service, operation: report.publish, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-report-service, operation: report.list, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-report-service, operation: report.get, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-saved-service, operation: save.create, transport: http}
+  - {caller: MOD-telegram-adapter, callee: MOD-saved-service, operation: save.create, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-saved-service, operation: save.remove, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-saved-service, operation: save.list, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-saved-service, operation: save.export, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-data-admin-service, operation: data.delete_target, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-data-admin-service, operation: data.purge_all, transport: http}
+  - {caller: EXT-telegram-api, callee: MOD-telegram-adapter, operation: telegram.receive_update, transport: http}
+  - {caller: MOD-telegram-adapter, callee: MOD-telegram-adapter, operation: telegram.execute_command, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-telegram-adapter, operation: telegram.issue_link_code, transport: http}
+  - {caller: MOD-telegram-adapter, callee: MOD-telegram-adapter, operation: telegram.consume_link_code, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-telegram-adapter, operation: telegram.unlink, transport: http}
+  - {caller: MOD-delivery-service, callee: MOD-telegram-adapter, operation: telegram.send_payload, transport: internal}
+  - {caller: MOD-report-service, callee: MOD-delivery-service, operation: delivery.create_intent, transport: internal}
+  - {caller: MOD-job-service, callee: MOD-delivery-service, operation: delivery.create_intent, transport: internal}
+  - {caller: MOD-delivery-service, callee: MOD-delivery-service, operation: delivery.dispatch_next, transport: internal}
+  - {caller: MOD-delivery-service, callee: MOD-delivery-service, operation: delivery.record_receipt, transport: internal}
+  - {caller: MOD-delivery-service, callee: MOD-delivery-service, operation: delivery.mark_unknown, transport: internal}
+  - {caller: MOD-web-ui, callee: MOD-delivery-service, operation: delivery.get_status, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-delivery-service, operation: delivery.decide_unknown, transport: http}
+  - {caller: MOD-backup-cli, callee: MOD-backup-service, operation: backup.create_snapshot, transport: http}
+  - {caller: MOD-backup-cli, callee: MOD-backup-service, operation: backup.verify_snapshot, transport: http}
+  - {caller: MOD-backup-cli, callee: MOD-backup-service, operation: backup.restore_snapshot, transport: http}
+  - {caller: MOD-backup-cli, callee: MOD-backup-service, operation: backup.reconcile_after_restore, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-health-service, operation: health.get_liveness, transport: http}
+  - {caller: MOD-x-collector, callee: MOD-health-service, operation: health.get_liveness, transport: http}
+  - {caller: MOD-analysis-worker, callee: MOD-health-service, operation: health.get_liveness, transport: http}
+  - {caller: MOD-web-ui, callee: MOD-health-service, operation: health.get_readiness, transport: http}
+  - {caller: MOD-health-service, callee: MOD-data-store, operation: storage.get_health, transport: internal}
+  - {caller: MOD-job-service, callee: MOD-data-store, operation: storage.get_health, transport: internal}
+
+# ---------------------------------------------------------------------------
+# forbidden_edges: các đường bị cấm cần nêu tên (không đầy đủ — default deny vẫn áp dụng).
+# ---------------------------------------------------------------------------
+forbidden_edges:
+  - id: FE-01
+    caller: MOD-web-ui
+    callee: MOD-data-store
+    reason_vi: Frontend không truy cập SQLite trực tiếp; mọi mutation đi qua domain port đã xác thực (I01, SRC-PLAN §6).
+    enforcement: [ENF-network-egress-allowlist, ENF-api-auth-test]
+  - id: FE-02
+    caller: MOD-web-ui
+    callee: MOD-secret-service
+    reason_vi: Frontend không có đường đọc secret; không operation HTTP nào trả giá trị key (SRC-SPEC §11.2).
+    enforcement: [ENF-api-auth-test, ENF-import-rule]
+  - id: FE-03
+    caller: MOD-web-ui
+    callee: EXT-ai-provider-api
+    reason_vi: Frontend không gọi provider AI bằng secret; test provider chạy ở server (SRC-PLAN §6).
+    enforcement: [ENF-network-egress-allowlist]
+  - id: FE-04
+    caller: MOD-web-ui
+    callee: EXT-telegram-api
+    reason_vi: Frontend không gọi Telegram trực tiếp; recipient do hệ thống quyết định (I11).
+    enforcement: [ENF-network-egress-allowlist]
+  - id: FE-05
+    caller: MOD-x-collector
+    callee: MOD-data-store
+    reason_vi: Collector không ghi trực tiếp SQLite; đẩy qua API có xác thực (D08, B12).
+    enforcement: [ENF-process-capability, ENF-network-egress-allowlist]
+  - id: FE-06
+    caller: MOD-x-collector
+    callee: MOD-saved-service
+    reason_vi: Save là hành động của người dùng, không phải của collector (SRC-PLAN §6, denied case NC-01).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-07
+    caller: MOD-x-collector
+    callee: MOD-analysis-service
+    reason_vi: >
+      Analysis nhận task từ server **sau ingest commit**; collector không đẩy dữ liệu chưa commit sang analysis
+      (B12; edge COL→AW của SRC-SPEC §6.2 bị gỡ).
+    enforcement: [ENF-api-auth-test, ENF-import-rule]
+  - id: FE-08
+    caller: MOD-x-collector
+    callee: MOD-analysis-worker
+    reason_vi: Như FE-07, kể cả khi hai tiến trình nằm trên cùng máy cá nhân.
+    enforcement: [ENF-process-capability]
+  - id: FE-09
+    caller: MOD-x-collector
+    callee: MOD-secret-service
+    reason_vi: Collector không có nhu cầu và không có quyền lấy secret AI (SRC-SPEC §11.2).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-10
+    caller: MOD-x-collector
+    callee: EXT-telegram-api
+    reason_vi: Collector không gửi Telegram; cảnh báo CAPTCHA đi qua delivery intent của server (SRC-PLAN §8.1).
+    enforcement: [ENF-network-egress-allowlist]
+  - id: FE-11
+    caller: MOD-x-collector
+    callee: MOD-tag-service
+    reason_vi: Worker/collector không đổi tag; tag chỉ là tham số tìm kiếm trong assignment (D24, denied case NC-02).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-12
+    caller: MOD-analysis-worker
+    callee: MOD-tag-service
+    reason_vi: Analysis worker không sửa subscription của owner (SRC-PLAN §6, denied case NC-02).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-13
+    caller: MOD-analysis-worker
+    callee: MOD-report-service
+    reason_vi: Worker không tự publish và không tự quyết "work này đã báo cáo" (SRC-PLAN §6.1).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-14
+    caller: MOD-analysis-worker
+    callee: MOD-saved-service
+    reason_vi: Worker không sửa Saved của owner (SRC-PLAN §6).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-15
+    caller: MOD-analysis-worker
+    callee: MOD-data-store
+    reason_vi: Máy cá nhân không có đường tới SQLite của server (D08).
+    enforcement: [ENF-process-capability, ENF-network-egress-allowlist]
+  - id: FE-16
+    caller: MOD-ai-adapter
+    callee: EXT-telegram-api
+    reason_vi: Adapter AI không gửi Telegram; nội dung nguồn không được đổi recipient (I11, denied case NC-04).
+    enforcement: [ENF-network-egress-allowlist, ENF-process-capability]
+  - id: FE-17
+    caller: MOD-ai-adapter
+    callee: EXT-x-web
+    reason_vi: Adapter AI không điều khiển browser X (SRC-PLAN §6).
+    enforcement: [ENF-process-capability]
+  - id: FE-18
+    caller: MOD-ai-adapter
+    callee: MOD-data-store
+    reason_vi: Adapter AI không chạm SQLite (SRC-PLAN §6).
+    enforcement: [ENF-process-capability]
+  - id: FE-19
+    caller: MOD-ai-adapter
+    callee: EXT-arxiv-api
+    reason_vi: >
+      Adapter không fetch URL tùy ý, kể cả nguồn nghiên cứu hợp lệ; mọi metadata đi qua MOD-research-connector với
+      ID đã chuẩn hóa (denied case NC-07).
+    enforcement: [ENF-network-egress-allowlist]
+  - id: FE-20
+    caller: MOD-research-connector
+    callee: EXT-x-web
+    reason_vi: Research connector không điều khiển Chrome/X (SRC-PLAN §6, denied case NC-08).
+    enforcement: [ENF-import-rule, ENF-network-egress-allowlist]
+  - id: FE-21
+    caller: MOD-research-connector
+    callee: EXT-chrome-profile
+    reason_vi: Profile Chrome là tài nguyên trên máy cá nhân, server không truy cập được (SRC-SPEC §11.2).
+    enforcement: [ENF-process-capability]
+  - id: FE-22
+    caller: MOD-embedding-service
+    callee: EXT-ai-provider-api
+    reason_vi: Embedding **chỉ local**, không dùng API, không dùng CLI (SRC-SPEC §10.1); nếu không sẽ phá AC-16.
+    enforcement: [ENF-network-egress-allowlist, ENF-import-rule]
+  - id: FE-23
+    caller: MOD-embedding-service
+    callee: MOD-tag-service
+    reason_vi: Embedding service không thay đổi subscription; nó chỉ sinh vector (SRC-PLAN §6).
+    enforcement: [ENF-import-rule]
+  - id: FE-24
+    caller: MOD-scheduler
+    callee: MOD-delivery-service
+    reason_vi: Scheduler không gửi digest và không đánh dấu report đã giao (SRC-PLAN §6, denied case NC-09).
+    enforcement: [ENF-import-rule]
+  - id: FE-25
+    caller: MOD-scheduler
+    callee: MOD-telegram-adapter
+    reason_vi: Như FE-24; scheduler chỉ nói chuyện với job service.
+    enforcement: [ENF-import-rule]
+  - id: FE-26
+    caller: MOD-scheduler
+    callee: MOD-x-collector
+    reason_vi: Không ai gọi vào máy cá nhân; collector **kéo** việc (D11, SRC-SPEC §6.4).
+    enforcement: [ENF-network-egress-allowlist]
+  - id: FE-27
+    caller: MOD-report-service
+    callee: EXT-telegram-api
+    reason_vi: Report service tạo intent, không gửi trực tiếp (SRC-PLAN §6, outbox).
+    enforcement: [ENF-import-rule]
+  - id: FE-28
+    caller: MOD-report-service
+    callee: MOD-analysis-service
+    operation_scope: "sửa analysis đã commit"
+    reason_vi: >
+      Report service chỉ được **xếp hàng** task (analysis.enqueue_tasks); nó không sửa phân tích đã commit
+      (SRC-PLAN §6).
+    enforcement: [ENF-import-rule, ENF-api-auth-test]
+  - id: FE-29
+    caller: MOD-telegram-adapter
+    callee: MOD-data-store
+    reason_vi: Adapter không sửa SQLite trực tiếp; đi qua domain port (SRC-PLAN §6).
+    enforcement: [ENF-import-rule]
+  - id: FE-30
+    caller: MOD-telegram-adapter
+    callee: MOD-tag-service
+    reason_vi: Không có lệnh nào sửa tag qua chat (SRC-SPEC §2.3, §11.3, denied case NC-06).
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+  - id: FE-31
+    caller: MOD-telegram-adapter
+    callee: MOD-settings-service
+    reason_vi: Không có lệnh nào sửa cấu hình qua chat (SRC-SPEC §2.3, denied case NC-06).
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+  - id: FE-32
+    caller: MOD-telegram-adapter
+    callee: MOD-secret-service
+    reason_vi: Adapter Telegram không lấy key AI (SRC-PLAN §6).
+    enforcement: [ENF-api-auth-test]
+  - id: FE-33
+    caller: MOD-telegram-adapter
+    callee: MOD-job-service
+    operation_scope: run.resume
+    reason_vi: >
+      Không có lệnh Telegram thứ tư và không có đường resume qua chat; resume là hành động riêng trong app
+      (B10, AMD-B10).
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+  - id: FE-34
+    caller: MOD-backup-cli
+    callee: MOD-delivery-service
+    reason_vi: >
+      Backup operator không tự mở lại dispatcher sau restore; phải qua backup.reconcile_after_restore
+      (I15, denied case NC-10).
+    enforcement: [ENF-storage-health-guard, ENF-api-auth-test]
+  - id: FE-35
+    caller: MOD-backup-cli
+    callee: MOD-job-service
+    reason_vi: Backup operator không cấp lease hay đổi trạng thái run trực tiếp; reconcile mới là đường hợp lệ (I15).
+    enforcement: [ENF-storage-health-guard, ENF-api-auth-test]
+  - id: FE-36
+    caller: EXT-telegram-api
+    callee: MOD-saved-service
+    reason_vi: >
+      Update từ Telegram chỉ đi vào qua telegram.receive_update và được adapter xác thực; không có đường trực tiếp
+      từ mạng ngoài tới domain service (AC-18).
+    enforcement: [ENF-api-auth-test, ENF-command-allowlist]
+
+# ---------------------------------------------------------------------------
+# denied_cases: 10 ca âm bắt buộc của PC01 (checklist mục 5).
+# ---------------------------------------------------------------------------
+denied_cases:
+  - id: NC-01
+    case_vi: Collector gọi Save
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-saved-service, operation: save.create}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: Không tạo saved_item; không đổi bất kỳ hàng nào; ghi audit từ chối đã che secrets.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `collector_token` không nằm trong auth_scope của save.create (`owner_session_or_linked_chat`). Contract test
+      gọi save.create bằng collector token và khẳng định UNAUTHORIZED + số hàng saved_item không đổi.
+    forbidden_edge_ref: FE-06
+    invariant_refs: [I01, I08]
+    scenario_refs: [SC13, SC49]
+
+  - id: NC-02
+    case_vi: Worker (collector hoặc analysis) đổi tag
+    attempted_edge: {caller: MOD-analysis-worker, callee: MOD-tag-service, operation: tag.update}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: tag_config_version không tăng; bộ tag không đổi; report đang build không bị ảnh hưởng.
+    enforcement: [ENF-api-auth-test, ENF-import-rule]
+    enforcement_detail_vi: >
+      tag.* chỉ nhận `owner_session`. Thêm import rule: package worker không được phụ thuộc package tag.
+    forbidden_edge_ref: FE-12
+    invariant_refs: [I01, I05]
+    scenario_refs: [SC05, SC49]
+
+  - id: NC-03
+    case_vi: Frontend đọc secret
+    attempted_edge: {caller: MOD-web-ui, callee: MOD-secret-service, operation: secret.issue_task_credential}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Không cấp credential; không log giá trị key. Ngoài ra **không tồn tại** operation HTTP nào trả giá trị key cho
+      `owner_session`; settings.get_config chỉ trả tham chiếu.
+    enforcement: [ENF-api-auth-test, ENF-import-rule]
+    enforcement_detail_vi: >
+      secret.issue_task_credential chỉ nhận `analysis_worker_token`. Test bổ sung: quét response schema của mọi
+      operation `owner_session` để khẳng định không có trường chứa key material.
+    forbidden_edge_ref: FE-02
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC17, SC49]
+
+  - id: NC-04
+    case_vi: AI adapter gửi Telegram
+    attempted_edge: {caller: MOD-ai-adapter, callee: EXT-telegram-api, operation: telegram.send_payload}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Không có kết nối ra api.telegram.org từ tiến trình worker; không có delivery_attempt nào được tạo; quyền gửi
+      Telegram không đổi dù nội dung nguồn yêu cầu (AC-17).
+    enforcement: [ENF-network-egress-allowlist, ENF-process-capability]
+    enforcement_detail_vi: >
+      `network_egress` của MOD-ai-adapter chỉ có endpoint provider đã cấu hình. Audit đếm outbound call = 0 tới
+      Telegram trong fixture prompt injection.
+    forbidden_edge_ref: FE-16
+    invariant_refs: [I11]
+    scenario_refs: [SC17, SC49]
+    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+
+  - id: NC-05
+    case_vi: Collector ghi SQLite
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-data-store, operation: storage.get_health}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: Không có kết nối; file DB không đổi hash; mọi dữ liệu vào hệ thống chỉ qua ingest.submit_batch.
+    enforcement: [ENF-process-capability, ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      Tiến trình collector không có driver SQLite trỏ tới DB server và không có đường mạng tới volume; `storage.*`
+      là port `internal` chỉ tồn tại trong tiến trình server.
+    forbidden_edge_ref: FE-05
+    invariant_refs: [I01, I02]
+    scenario_refs: [SC21, SC49]
+    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+
+  - id: NC-06
+    case_vi: Telegram adapter đổi cấu hình
+    attempted_edge: {caller: MOD-telegram-adapter, callee: MOD-settings-service, operation: settings.update_config}
+    expected_error_code: UNAUTHORIZED_COMMAND
+    expected_state_vi: >
+      Cấu hình không đổi; bot không thực hiện hành động nào. Allowlist lệnh chỉ có ba lệnh D36, không có lệnh sửa
+      tag/cấu hình (SRC-SPEC §2.3, §11.3).
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Fixture gửi một update có văn bản giống lệnh cấu hình; oracle: 0 thay đổi cấu hình, phản hồi theo chính sách
+      im lặng/không hành động.
+    forbidden_edge_ref: FE-31
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC18, SC49]
+
+  - id: NC-07
+    case_vi: AI adapter fetch URL
+    attempted_edge: {caller: MOD-ai-adapter, callee: EXT-arxiv-api, operation: research.fetch_work_metadata}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Không có request ra ngoài allowlist provider; nội dung nguồn yêu cầu fetch bị coi là dữ liệu, không phải lệnh
+      (SRC-SPEC §11.4). Metadata chỉ đến từ MOD-research-connector với ID đã chuẩn hóa.
+    enforcement: [ENF-network-egress-allowlist, ENF-process-capability]
+    enforcement_detail_vi: >
+      Đường CLI/ACP chạy với tool/file/network bị khóa ngoài inference; provider không kiểm chứng được cô lập thì
+      adapter giữ trạng thái disabled (B13).
+    forbidden_edge_ref: FE-19
+    invariant_refs: [I11]
+    scenario_refs: [SC17, SC49]
+    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+
+  - id: NC-08
+    case_vi: Research connector điều khiển Chrome
+    attempted_edge: {caller: MOD-research-connector, callee: EXT-chrome-profile, operation: null}
+    operation_absent_reason_vi: >
+      Profile Chrome là tài nguyên trên **máy cá nhân**; server không có đường tới nó và image server không cài Chrome. Không operation nào của ports.yaml mô tả việc mở một profile browser.
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Không tiến trình browser nào được khởi động từ server; Chrome chỉ tồn tại trên máy cá nhân và cổng debug chỉ
+      bind loopback ở đó (SRC-SPEC §11.2).
+    enforcement: [ENF-import-rule, ENF-process-capability]
+    enforcement_detail_vi: >
+      Import rule: package research-connector không được phụ thuộc thư viện điều khiển browser. Image server không
+      cài Chrome.
+    forbidden_edge_ref: FE-21
+    event_type: local_observation
+    event_type_reason_vi: >
+      Attempt chạm tài nguyên hoặc mở kết nối, không tương ứng operation nào; oracle là đếm kết nối và process capability. Giá trị này khớp đúng event tương ứng trong
+      acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json (ruling F-A2R2-04, nhánh (a) của
+      default_deny.attempted_edge_operation_rule_vi).
+    forbidden_edge_ref_corrected_vi: >
+      Trước FIX9 trỏ `FE-20`, nhưng `attempted_edge.callee` của nó luôn là `EXT-chrome-profile` — tức nó luôn mô tả
+      **FE-21**. `FE-20` (connector → `EXT-x-web`) do đó không có case nào mô tả đúng cạnh của mình, dù `E0-10b`
+      vẫn PASS vì check đó chỉ hỏi "có một case được pin hay không". Sửa theo `CR-PC01-10`; `NC-24` được chuyển
+      sang phục vụ `FE-20`.
+    invariant_refs: [I11]
+    scenario_refs: [SC11, SC49]
+    note_vi: "CAPABILITY_DENIED là mã PROVISIONAL, cần PC03 đăng ký (CR-PC01-01)."
+
+  - id: NC-09
+    case_vi: Scheduler gửi digest
+    attempted_edge: {caller: MOD-scheduler, callee: MOD-delivery-service, operation: delivery.dispatch_next}
+    expected_error_code: FORBIDDEN_EDGE
+    error_code_changed_vi: >
+      Trước FIX7 ghi `UNAUTHORIZED`. Bảng R5-01 nêu đích danh "scheduler → Telegram" là ví dụ của
+      `FORBIDDEN_EDGE`: đây là lời gọi **trong cùng tiến trình** qua một cạnh không có trong `allowed_edges`,
+      không phải một request HTTP sai lớp principal. Đổi theo ruling.
+    expected_state_vi: >
+      Không delivery_attempt nào được tạo bởi scheduler; scheduler chỉ tạo run. Digest chỉ phát sinh từ delivery
+      intent do report.publish commit.
+    enforcement: [ENF-import-rule, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      delivery.dispatch_next là port `internal` chỉ MOD-delivery-service gọi; import rule chặn package scheduler
+      phụ thuộc package delivery.
+    forbidden_edge_ref: FE-24
+    invariant_refs: [I09]
+    scenario_refs: [SC14, SC49]
+
+  - id: NC-10
+    case_vi: Backup operator tự động resume dispatcher sau restore
+    attempted_edge: {caller: MOD-backup-cli, callee: MOD-delivery-service, operation: delivery.dispatch_next}
+    expected_error_code: RESTORE_UNVERIFIED
+    expected_state_vi: >
+      `storage.health = recovery_required`; dispatcher không chạy, worker claim bị chặn, outbox cũ **không** replay,
+      `first_announced` không bị reset. Chỉ backup.reconcile_after_restore mới mở khóa (I15).
+    enforcement: [ENF-storage-health-guard, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Guard đọc storage.get_health trước mỗi lần dispatch và mỗi lần cấp assignment. Fixture: restore vào môi
+      trường sạch, oracle = 0 outbound send trước khi verify/reconcile.
+    forbidden_edge_ref: FE-34
+    invariant_refs: [I15]
+    scenario_refs: [SC27, SC49]
+
+
+  # --- NC-11 … NC-36: một denied case cho MỖI forbidden edge còn lại (ruling R5-01) ---
+  # Mã lỗi lấy theo bảng R5-01: request HTTP sai lớp principal ⇒ UNAUTHORIZED; lời gọi/import
+  # trong tiến trình qua cạnh không có trong allowed_edges ⇒ FORBIDDEN_EDGE; thiếu capability
+  # tiến trình/mạng/filesystem/tool ⇒ CAPABILITY_DENIED; mutation owner-session thiếu CSRF ⇒ CSRF_REJECTED.
+  - id: NC-11
+    case_vi: Frontend mở kết nối trực tiếp tới SQLite
+    attempted_edge: {caller: MOD-web-ui, callee: MOD-data-store, operation: storage.get_health}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist, ENF-process-capability]
+    enforcement_detail_vi: >
+      Trình duyệt không có driver SQLite và không có tuyến mạng tới volume; file DB không có cổng.
+    forbidden_edge_ref: FE-01
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-12
+    case_vi: Frontend gọi thẳng provider AI bằng key
+    attempted_edge: {caller: MOD-web-ui, callee: EXT-ai-provider-api, operation: null}
+    operation_absent_reason_vi: >
+      Cạnh này **không** tương ứng một operation của ports.yaml: `settings.test_provider` là operation **hợp lệ**
+      của MOD-web-ui → MOD-settings-service (server thử provider hộ). Cái bị cấm ở đây là trang web tự mở socket
+      tới endpoint provider. Oracle là đếm kết nối từ trình duyệt, không phải một response.
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      CSP + egress của trang chỉ cho origin của app; frontend không giữ key nào để gọi.
+    forbidden_edge_ref: FE-03
+    event_type: local_observation
+    event_type_reason_vi: >
+      Attempt chạm tài nguyên hoặc mở kết nối, không tương ứng operation nào; oracle là đếm kết nối và process capability. Giá trị này khớp đúng event tương ứng trong
+      acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json (ruling F-A2R2-04, nhánh (a) của
+      default_deny.attempted_edge_operation_rule_vi).
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-13
+    case_vi: Frontend gọi thẳng Telegram Bot API
+    attempted_edge: {caller: MOD-web-ui, callee: EXT-telegram-api, operation: telegram.send_payload}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      Recipient do hệ thống quyết định; trang không có token và không có egress tới api.telegram.org.
+    forbidden_edge_ref: FE-04
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-14
+    case_vi: Collector xếp hàng task phân tích trực tiếp
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-analysis-service, operation: analysis.enqueue_tasks}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `collector_token` không mở `analysis.*`; analysis chỉ nhận task từ server SAU ingest commit (B12).
+    forbidden_edge_ref: FE-07
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-15
+    case_vi: Collector đẩy dữ liệu chưa commit thẳng sang analysis worker trên cùng máy
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-analysis-worker, operation: null}
+    operation_absent_reason_vi: >
+      Đây là đường mã/IPC cục bộ giữa hai tiến trình trên cùng máy, không đi qua API server, nên không tương ứng operation nào trong ports.yaml.
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-process-capability, ENF-import-rule]
+    enforcement_detail_vi: >
+      Cạnh COL→AW của SRC-SPEC §6.2 đã bị AMD-B12 gỡ. Đây là lời gọi liên tiến trình cục bộ, không qua API server, nên là vi phạm CẠNH chứ không phải vi phạm xác thực — phân tích chạy trên dữ liệu chưa commit phá I02.
+    forbidden_edge_ref: FE-08
+    event_type: in_process_call
+    event_type_reason_vi: >
+      Lời gọi mã/IPC cục bộ qua một cạnh không có trong allowed_edges; oracle là import/dependency rule và phân tích tĩnh. Giá trị này khớp đúng event tương ứng trong
+      acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json (ruling F-A2R2-04, nhánh (a) của
+      default_deny.attempted_edge_operation_rule_vi).
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-16
+    case_vi: Collector xin credential provider
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-secret-service, operation: secret.issue_task_credential}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `secret.issue_task_credential` chỉ nhận `analysis_worker_token`; collector không chạy tác vụ AI nào.
+    forbidden_edge_ref: FE-09
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-17
+    case_vi: Collector gửi cảnh báo Telegram trực tiếp
+    attempted_edge: {caller: MOD-x-collector, callee: EXT-telegram-api, operation: telegram.send_payload}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      `network_egress` của collector chỉ có server API và X; cảnh báo CAPTCHA đi qua delivery intent của server.
+    forbidden_edge_ref: FE-10
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-18
+    case_vi: Collector sửa tag
+    attempted_edge: {caller: MOD-x-collector, callee: MOD-tag-service, operation: tag.update}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Collector chỉ NHẬN tag như tham số tìm kiếm trong assignment (D24); không có đường ghi.
+    forbidden_edge_ref: FE-11
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-19
+    case_vi: Analysis worker tự publish report
+    attempted_edge: {caller: MOD-analysis-worker, callee: MOD-report-service, operation: report.publish}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `report.publish` là port nội bộ của server; `analysis_worker_token` không mở nó. Worker không tự quyết "work này đã báo cáo".
+    forbidden_edge_ref: FE-13
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-20
+    case_vi: Analysis worker sửa Saved
+    attempted_edge: {caller: MOD-analysis-worker, callee: MOD-saved-service, operation: save.create}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `analysis_worker_token` chỉ mở `analysis.*` và `secret.issue_task_credential`.
+    forbidden_edge_ref: FE-14
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-21
+    case_vi: Analysis worker mở SQLite của server
+    attempted_edge: {caller: MOD-analysis-worker, callee: MOD-data-store, operation: storage.get_health}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-process-capability, ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      Máy cá nhân không có driver/tuyến tới file DB; `storage.*` là port nội bộ chỉ tồn tại trong tiến trình server.
+    forbidden_edge_ref: FE-15
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-22
+    case_vi: AI adapter điều khiển trình duyệt X
+    attempted_edge: {caller: MOD-ai-adapter, callee: EXT-x-web, operation: null}
+    operation_absent_reason_vi: >
+      Điều khiển một trình duyệt không phải là operation của ports.yaml; oracle là process capability và đếm kết nối.
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-process-capability]
+    enforcement_detail_vi: >
+      Adapter chạy với tool/file/network bị khóa ngoài inference; không có thư viện điều khiển browser trong tiến trình worker.
+    forbidden_edge_ref: FE-17
+    event_type: local_observation
+    event_type_reason_vi: >
+      Attempt chạm tài nguyên hoặc mở kết nối, không tương ứng operation nào; oracle là đếm kết nối và process capability. Giá trị này khớp đúng event tương ứng trong
+      acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json (ruling F-A2R2-04, nhánh (a) của
+      default_deny.attempted_edge_operation_rule_vi).
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-23
+    case_vi: AI adapter chạm SQLite
+    attempted_edge: {caller: MOD-ai-adapter, callee: MOD-data-store, operation: storage.get_health}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-process-capability]
+    enforcement_detail_vi: >
+      Như FE-15; adapter nằm trong tiến trình worker trên máy cá nhân.
+    forbidden_edge_ref: FE-18
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-24
+    case_vi: Research connector chạm thẳng nguồn X
+    attempted_edge: {caller: MOD-research-connector, callee: EXT-x-web, operation: null}
+    operation_absent_reason_vi: >
+      Lấy nội dung X trực tiếp không tương ứng operation nào: nội dung X chỉ vào hệ thống qua collector (D32). Oracle là đếm kết nối tới host của X từ container server.
+    expected_error_code: CAPABILITY_DENIED
+    repurposed_vi: >
+      Trước FIX9, case này trỏ `FE-21` và trùng nội dung với `NC-08`, để `FE-20` không có case nào đúng cạnh.
+      Nay nó phục vụ `FE-20`: connector chạy trên **server** cố lấy nội dung từ X. Khác `FE-21` ở chỗ đối tượng là
+      **nguồn X trên mạng**, không phải profile Chrome trên máy cá nhân — hai cách thất bại khác nhau nên cần hai
+      case (`CR-PC01-10`).
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-process-capability]
+    enforcement_detail_vi: >
+      `network_egress` của MOD-research-connector chỉ có `arxiv_api` và `openalex_api`; X không nằm trong đó.
+      Nội dung X chỉ vào hệ thống qua collector trên máy cá nhân (D32: Chrome collector chỉ lo X, metadata paper
+      qua API từ server). Oracle: đếm kết nối tới host của X từ container server = 0.
+    forbidden_edge_ref: FE-20
+    event_type: local_observation
+    event_type_reason_vi: >
+      Attempt chạm tài nguyên hoặc mở kết nối, không tương ứng operation nào; oracle là đếm kết nối và process capability. Giá trị này khớp đúng event tương ứng trong
+      acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json (ruling F-A2R2-04, nhánh (a) của
+      default_deny.attempted_edge_operation_rule_vi).
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-25
+    case_vi: Embedding service gọi provider AI
+    attempted_edge: {caller: MOD-embedding-service, callee: EXT-ai-provider-api, operation: ai.run_inference_task}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist, ENF-import-rule]
+    enforcement_detail_vi: >
+      `network_egress` của container embedding RỖNG. Đây là điều làm AC-16 (không cần API key nào) đứng vững — nới nó là phá chính tiêu chí đó.
+    forbidden_edge_ref: FE-22
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-26
+    case_vi: Embedding service sửa tag
+    attempted_edge: {caller: MOD-embedding-service, callee: MOD-tag-service, operation: tag.update}
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-import-rule]
+    enforcement_detail_vi: >
+      Cùng tiến trình server; package embedding không được phụ thuộc package tag. Embedding chỉ sinh vector.
+    forbidden_edge_ref: FE-23
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-27
+    case_vi: Scheduler gửi tin Telegram
+    attempted_edge: {caller: MOD-scheduler, callee: MOD-telegram-adapter, operation: telegram.send_payload}
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-import-rule]
+    enforcement_detail_vi: >
+      Cùng tiến trình; scheduler chỉ được phụ thuộc job service. Ví dụ được nêu đích danh trong bảng R5-01.
+    forbidden_edge_ref: FE-25
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-28
+    case_vi: Scheduler đẩy việc xuống máy cá nhân
+    attempted_edge: {caller: MOD-scheduler, callee: MOD-x-collector, operation: null}
+    attempted_action_vi: >
+      Scheduler **đẩy** một assignment xuống collector — mở kết nối vào máy cá nhân để giao việc.
+    event_type: in_process_call
+    operation_absent_reason_vi: >
+      Không có operation nào để đặt vào đây, và đó chính là điểm của cạnh này: `worker.claim_assignment` do
+      **MOD-job-service** sở hữu và caller duy nhất của nó là **MOD-x-collector** — nó chạy theo chiều **ngược
+      lại**. Collector không sở hữu và không phơi ra operation nào; máy cá nhân không lắng nghe cổng nào. Ghi tên
+      một operation ở đây sẽ tạo một oracle không chạy được ("gọi nó rồi khẳng định lỗi") cho một endpoint không
+      tồn tại. Sửa theo F-A2R1-05.
+    expected_error_code: FORBIDDEN_EDGE
+    expected_error_code_changed_vi: >
+      Trước FIX10 ghi `CAPABILITY_DENIED`. Cái vắng mặt ở đây là **cạnh** (không có đường đẩy việc trong
+      `allowed_edges`; collector **kéo** việc theo D11), không phải một capability của scheduler. Theo bảng R5-01,
+      lời gọi trong tiến trình qua cạnh không có trong registry là `FORBIDDEN_EDGE`.
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      Máy cá nhân KHÔNG lắng nghe cổng nào; collector KÉO việc (D11). Không có đích để gọi tới.
+    forbidden_edge_ref: FE-26
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-29
+    case_vi: Report service gửi Telegram trực tiếp
+    attempted_edge: {caller: MOD-report-service, callee: EXT-telegram-api, operation: telegram.send_payload}
+    expected_error_code: CAPABILITY_DENIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-network-egress-allowlist]
+    enforcement_detail_vi: >
+      `network_egress` của report service rỗng; chỉ `ACT-delivery-dispatcher` có `telegram_bot_api`. Report tạo intent, không gửi.
+    forbidden_edge_ref: FE-27
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-30
+    case_vi: Report service sửa analysis đã commit
+    attempted_edge: {caller: MOD-report-service, callee: MOD-analysis-service, operation: analysis.submit_result}
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-import-rule, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Report service CHỈ được gọi `analysis.enqueue_tasks`. Kết quả phân tích bất biến theo generation (I04).
+    forbidden_edge_ref: FE-28
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-31
+    case_vi: Telegram adapter ghi thẳng SQLite
+    attempted_edge: {caller: MOD-telegram-adapter, callee: MOD-data-store, operation: storage.get_health}
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-import-rule]
+    enforcement_detail_vi: >
+      Cùng tiến trình server nên đây là vi phạm import/repository-scope, KHÁC FE-05/FE-15 (máy cá nhân, không có đường vật lý ⇒ CAPABILITY_DENIED).
+    forbidden_edge_ref: FE-29
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-32
+    case_vi: Sửa tag qua chat Telegram
+    attempted_edge: {caller: MOD-telegram-adapter, callee: MOD-tag-service, operation: tag.update}
+    expected_error_code: UNAUTHORIZED_COMMAND
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Allowlist chỉ có ba lệnh D36. Xem ghi chú `error_code_refinement_vi` bên dưới về vì sao đường ingress dùng UNAUTHORIZED_COMMAND thay cho UNAUTHORIZED.
+    forbidden_edge_ref: FE-30
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-33
+    case_vi: Telegram adapter lấy key AI
+    attempted_edge: {caller: MOD-telegram-adapter, callee: MOD-secret-service, operation: secret.issue_task_credential}
+    expected_error_code: FORBIDDEN_EDGE
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-import-rule]
+    enforcement_detail_vi: >
+      Cùng tiến trình; adapter chỉ giữ bot token của chính nó. Không package nào ngoài secret service đọc giá trị key.
+    forbidden_edge_ref: FE-32
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-34
+    case_vi: Resume một run qua lệnh Telegram
+    attempted_edge: {caller: MOD-telegram-adapter, callee: MOD-job-service, operation: run.resume}
+    expected_error_code: UNAUTHORIZED_COMMAND
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-command-allowlist, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      Không có lệnh Telegram thứ tư (B10/AMD-B10); resume là hành động riêng trong app.
+    forbidden_edge_ref: FE-33
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-35
+    case_vi: Backup operator cấp lease / đổi trạng thái run trực tiếp sau restore
+    attempted_edge: {caller: MOD-backup-cli, callee: MOD-job-service, operation: worker.claim_assignment}
+    expected_error_code: RESTORE_UNVERIFIED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-storage-health-guard, ENF-api-auth-test]
+    enforcement_detail_vi: >
+      `storage.health = recovery_required` chặn claim; đường hợp lệ duy nhất là `backup.reconcile_after_restore`.
+    forbidden_edge_ref: FE-35
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+  - id: NC-36
+    case_vi: Mạng ngoài gọi thẳng domain service, bỏ qua adapter
+    attempted_edge: {caller: EXT-telegram-api, callee: MOD-saved-service, operation: save.create}
+    expected_error_code: UNAUTHORIZED
+    expected_state_vi: >
+      Lời gọi bị từ chối; **không hàng nào ở bất kỳ bảng nào đổi**; một hàng audit từ chối đã che secrets được ghi;
+      số outbound call phát sinh từ lời gọi này = 0.
+    enforcement: [ENF-api-auth-test, ENF-command-allowlist]
+    enforcement_detail_vi: >
+      Update từ Telegram chỉ vào qua `telegram.receive_update` và phải được adapter xác thực; không có tuyến trực tiếp từ Internet tới domain service.
+    forbidden_edge_ref: FE-36
+    invariant_refs: [I01, I11]
+    scenario_refs: [SC49]
+    ruling_ref: R5-01
+
+# ---------------------------------------------------------------------------
+# mutation_ownership: một owner cho một mutation (SRC-PLAN §5, §6.1).
+# ---------------------------------------------------------------------------
+mutation_ownership:
+  rule_vi: >
+    Mỗi phạm vi dữ liệu authoritative có **đúng một** module sở hữu mutation. Module khác chỉ đọc qua port hoặc
+    đề xuất qua operation của owner. Không actor nào giữ hai vai owner cho cùng một mutation.
+  table:
+    - scope: session / owner credential
+      owner_module: MOD-auth-service
+      mutating_operations: [auth.login, auth.logout]
+    - scope: settings / provider config
+      owner_module: MOD-settings-service
+      mutating_operations: [settings.update_config, settings.test_provider]
+    - scope: tag / alias / exclusion / tag_config_version / rescan ledger
+      owner_module: MOD-tag-service
+      mutating_operations: [tag.create, tag.update, tag.delete, tag.rescan_corpus, tag.freeze_config_version]
+    - scope: run / assignment / assignment_lease / worker registration
+      owner_module: MOD-job-service
+      mutating_operations: [run.run_now, run.resume, run.cancel, job.enqueue_scheduled_run, job.coalesce_overdue, worker.register_capabilities, worker.claim_assignment, worker.heartbeat, worker.report_stop, worker.release_assignment]
+    - scope: post / post_work / ingest receipt / checkpoint
+      owner_module: MOD-ingest-service
+      mutating_operations: [ingest.submit_batch, ingest.commit_checkpoint]
+    - scope: work / alias / identity conflict / merge audit
+      owner_module: MOD-identity-service
+      mutating_operations: [identity.record_alias, identity.quarantine_conflict, identity.resolve_conflict, identity.merge_works]
+    - scope: analysis task / analysis / generation / work_label
+      owner_module: MOD-analysis-service
+      mutating_operations: [analysis.enqueue_tasks, analysis.claim_task, analysis.heartbeat, analysis.submit_result, analysis.report_attempt_unknown, analysis.request_reanalysis]
+    - scope: vector / embedding generation
+      owner_module: MOD-embedding-service
+      mutating_operations: [embedding.generate_vectors, embedding.start_generation_rebuild, embedding.activate_generation]
+    - scope: report / report_item / coverage / first_announced / backfill / pending ledger
+      owner_module: MOD-report-service
+      mutating_operations: [report.build, report.publish]
+    - scope: saved_item / snapshot
+      owner_module: MOD-saved-service
+      mutating_operations: [save.create, save.remove]
+    - scope: delivery / part / attempt / receipt
+      owner_module: MOD-delivery-service
+      mutating_operations: [delivery.create_intent, delivery.dispatch_next, delivery.record_receipt, delivery.mark_unknown, delivery.decide_unknown]
+    - scope: telegram link / link code / update log / gửi payload
+      owner_module: MOD-telegram-adapter
+      mutating_operations: [telegram.receive_update, telegram.execute_command, telegram.issue_link_code, telegram.consume_link_code, telegram.unlink, telegram.send_payload]
+    - scope: vòng đời dữ liệu phá hủy (xóa target, xóa toàn bộ) / audit xóa / purge challenge
+      owner_module: MOD-data-admin-service
+      mutating_operations: [data.delete_target, data.purge_all]
+    - scope: secret ref / task credential
+      owner_module: MOD-secret-service
+      mutating_operations: [secret.store_provider_key, secret.issue_task_credential, secret.revoke_task_credential]
+    - scope: backup snapshot / restore record
+      owner_module: MOD-backup-service
+      mutating_operations: [backup.create_snapshot, backup.verify_snapshot, backup.restore_snapshot, backup.reconcile_after_restore]
+  no_owner_modules_vi: >
+    MOD-web-ui, MOD-backend-api, MOD-x-collector, MOD-analysis-worker, MOD-ai-adapter, MOD-scheduler,
+    MOD-backup-cli, MOD-health-service và MOD-data-store **không sở hữu mutation nghiệp vụ nào**: hai module đầu là
+    giao diện/transit, ba module tiếp theo chạy trên máy cá nhân và chỉ đề xuất qua port, scheduler chỉ kích hoạt
+    job service, backup-cli chỉ là giao diện của actor, health chỉ đọc, data-store chỉ là nơi lưu.
+  entity_without_operation_vi: >
+    `schema_migration` (MOD-data-store) có owner nhưng **không** có operation nào trong inventory ghi nó: migration
+    là hoạt động triển khai, chạy lúc khởi động/nâng cấp, không phải một operation của ứng dụng. Ghi rõ ở đây để
+    phép kiểm "mọi mutation có owner" không bị hiểu nhầm thành "mọi entity có mutation operation". PC08 mô tả quy
+    trình migration trong runbook.
+
+topology_decisions:
+  - id: TD-01
+    decision_vi: "D08 — Collector không ghi trực tiếp SQLite; đẩy qua API có xác thực."
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B12, ADR-0001]
+    realized_by: [ingest.submit_batch, ingest.commit_checkpoint, FE-05, NC-05]
+  - id: TD-02
+    decision_vi: "D42 — Analysis worker (bước LLM) chạy trên máy cá nhân, cùng chỗ với collector."
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B12, ADR-0001]
+    realized_by: [MOD-analysis-worker, MOD-ai-adapter, analysis.claim_task]
+  - id: TD-03
+    decision_vi: "D50 — Model embedding chạy ở server, chỉ local, không API/CLI."
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B12, ADR-0001]
+    realized_by: [MOD-embedding-service, embedding.generate_vectors, FE-22]
+  - id: TD-04
+    decision_vi: "D09 — Chrome profile riêng của dự án, không dùng profile mặc định."
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B12, ADR-0001]
+    blocking_note_vi: "REQ-OQ01 chặn M0; PC01 chỉ ghi nhận topology, không tự promote D09 sang XN."
+    realized_by: [EXT-chrome-profile, MOD-x-collector]
+  - id: TD-05
+    decision_vi: >
+      Đường vào của analysis là **task từ server sau ingest commit**; edge collector → analysis worker của
+      SRC-SPEC §6.2 bị gỡ.
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B12, ADR-0001]
+    realized_by: [analysis.enqueue_tasks, analysis.get_task_input, FE-07, FE-08]
+  - id: TD-06
+    decision_vi: >
+      Secret theo từng task: worker chỉ nhận credential ngắn hạn của provider gắn với task đang giữ lease; adapter
+      CLI/ACP chạy với tool/file/network bị khóa ngoài inference; provider không kiểm chứng được cô lập thì adapter
+      giữ trạng thái disabled.
+    status: PROVISIONAL
+    decision_owner: Owner
+    decision_refs: [B13]
+    realized_by: [secret.issue_task_credential, secret.revoke_task_credential, ai.run_inference_task, NC-04, NC-07]
+
+unresolved_refs:
+  - id: PROV-PC01-01
+    topic_vi: Mã lỗi CAPABILITY_DENIED cho từ chối ở mức capability tiến trình/mạng/tool.
+    status: PROVISIONAL
+    change_request: CR-PC01-01
+    target_package: PC03 (contracts/errors.yaml)
+  - id: PROV-PC01-02
+    topic_vi: >
+      Hủy liên kết Telegram đặt là **hành động trong app** (telegram.unlink), không phải lệnh chat thứ tư — dung hòa
+      D37 (ĐX) với D36 (XN, đúng ba lệnh) và B10.
+    status: PROVISIONAL
+    change_request: CR-PC01-02
+    target_package: PC07 (contracts/telegram/commands.yaml)
+  - id: PROV-PC01-03
+    topic_vi: >
+      Ba thao tác riêng biệt của SRC-SPEC §7.3 (REQ-S7.3-05, trạng thái **XN**) nay đều có mặt trong inventory, mỗi
+      thao tác được nêu tên riêng vì bán kính ảnh hưởng khác nhau:
+      (1) **bỏ lưu** = `save.remove` — chỉ gỡ `saved_item`, đã có từ bản đầu;
+      (2) **xóa dữ liệu gốc của một target** = `data.delete_target` — trước FIX2 thiếu hoàn toàn và không nằm trong
+      bất kỳ danh sách unresolved nào (phát hiện F-A1R1-04); nay có auth scope `owner_session`, cờ xác nhận bắt
+      buộc, transaction, error map, phạm vi giữ lại (snapshot D55 + ledger) và scenario SC32;
+      (3) **xóa toàn bộ dữ liệu** = `data.purge_all` — hai phase với cụm từ xác nhận gõ tay do server phát, chỉ chạy
+      khi `storage.health = maintenance`, thu hồi lease trước khi xóa, không tự resume dispatcher.
+      Phần còn **chưa** giải: `data.purge_all.exclusions_vi` — "toàn bộ" loại trừ những gì (settings, secrets,
+      credential đăng nhập, telegram_link, schema_migration). PC01 đề xuất danh sách đó nhưng **không** tự quyết.
+    status: OWNER_DECISION_REQUIRED
+    owner_decision_scope_vi: "Chỉ danh sách loại trừ của data.purge_all; hai operation còn lại không bị chặn."
+    target_package: PC02 (cascade/referential integrity) · PC08 (quy trình maintenance) · PC09 (scenario)
+    audit_refs: [F-A1R1-04, R-04]
+
+  - id: PROV-PC01-06
+    topic_vi: >
+      `MOD-data-admin-service` là module mới do FIX2 tạo ra để hai mutation phá hủy có đúng một owner. Nó mang
+      **ngoại lệ duy nhất** với quy tắc repository port theo phạm vi bảng (DC-SRV-01), giới hạn ở thao tác xóa.
+      Nếu Owner/Coordinator muốn đặt hai operation này vào một module đã có (ví dụ MOD-data-store) thì cần packet
+      sửa, vì điều đó thay đổi câu "data-store chỉ là nơi lưu".
+    status: PROVISIONAL
+    target_package: PC08
+    audit_refs: [F-A1R1-04, R-04]
+  - id: PROV-PC01-04
+    topic_vi: >
+      MOD-backup-cli được đặt ra để tách actor "backup operator" khỏi session owner; spec không mô tả giao diện
+      backup. Nếu Owner muốn thao tác backup trong app thì phải thêm edge và auth scope mới.
+    status: PROVISIONAL
+    target_package: PC08

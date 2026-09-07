@@ -1,0 +1,139 @@
+{
+  "fixture_id": "FX-RP-K",
+  "title": "Builder crash giữa chừng → không report một phần, không tiêu thụ backfill, coverage không tiến",
+  "purpose": "Khóa SRC-PLAN §9.2: 'Không tiêu thụ backfill chỉ vì builder bị crash hoặc model lỗi'. Điểm tiêu thụ là commit publish, không phải lúc bắt đầu build.",
+  "scenario_refs": [
+    "SC38",
+    "SC08"
+  ],
+  "invariant_refs": [
+    "I05",
+    "I06"
+  ],
+  "decision_refs": [
+    "B04",
+    "AMD-B04"
+  ],
+  "requirement_refs": [
+    "REQ-D28",
+    "REQ-D27",
+    "REQ-AC08"
+  ],
+  "source_refs": [
+    "SRC-PLAN §9.2",
+    "SRC-PLAN §8.2 (report aborted)",
+    "SRC-PLAN §10 STORAGE_WRITE_FAILED"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWNK0000000000000000000",
+          "sequence": 50,
+          "window_from": "2026-09-10T01:00:00.000Z",
+          "window_to": "2026-09-10T13:00:00.000Z",
+          "ingest_sequence_from": 5000,
+          "ingest_sequence_to": 5100,
+          "predecessor_window_id": null
+        }
+      ],
+      "backfill_ledger": [
+        {
+          "id": "01JBFDK1000000000000000000",
+          "tag_id": "01JTAGGNN00000000000000000",
+          "subscription_identity_hash": "sha256:41708a93517dccef39791bd9e6af219d3e7fa4c759d85826ea7af37f315ee0fd",
+          "activation_sequence": 1,
+          "backfill_days": 7,
+          "entitlement": "granted",
+          "entitlement_reason": "first_activation",
+          "consumed_in_report_id": null
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-11T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Build bắt đầu; entitlement backfill được ÁP vào truy vấn nhưng CHƯA ghi tiêu thụ."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-11T13:00:03.000Z",
+      "actor": "MOD-report-service",
+      "event_type": "process_crash",
+      "description": "Tiến trình builder chết TRƯỚC COMMIT của transaction publish."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-11T13:05:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Job được xếp lại; build lại từ đầu với cùng con trỏ predecessor."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-11T13:05:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Lần này commit thành công → entitlement được tiêu thụ ĐÚNG MỘT LẦN."
+    }
+  ],
+  "expected": {
+    "after_event_2": {
+      "counts": {
+        "report[status='published'] added": 0,
+        "report_item added": 0,
+        "coverage_window added": 0,
+        "outbox_intent added": 0,
+        "backfill_ledger[id=KBL AND consumed_in_report_id IS NOT NULL]": 0
+      },
+      "row_oracles": [
+        "backfill_ledger[KBL].consumed_in_report_id vẫn NULL sau crash.",
+        "Con trỏ coverage vẫn là KP; không có cửa sổ mới.",
+        "Không có report một phần nào tồn tại: transaction rollback là all-or-nothing."
+      ]
+    },
+    "after_event_4": {
+      "counts": {
+        "coverage_window added": 1,
+        "backfill_ledger[id=KBL AND consumed_in_report_id IS NOT NULL]": 1,
+        "report[status='published'] added": 1
+      }
+    },
+    "variant_model_failure": {
+      "description": "Biến thể: publish COMMIT được nhưng không mục nào có summary (provider chết). Khi đó report.quality='partial', mọi ứng viên nằm ở pending_item_ledger, và entitlement ĐƯỢC tiêu thụ — vì phần nới đã thật sự được quét và không mục nào bị mất (time-and-tags.md §6.4).",
+      "counts": {
+        "report[quality='partial']": 1,
+        "pending_item_ledger[state='pending']": 3,
+        "backfill_ledger[consumed_in_report_id IS NOT NULL]": 1
+      }
+    },
+    "variant_empty_extension": {
+      "description": "Biến thể: phần nới không tìm được ứng viên nào. Điều kiện 3 của §6.4 sai → entitlement Ở LẠI chưa tiêu thụ; quét lại một khoảng rỗng là truy vấn dữ liệu thuần túy.",
+      "counts": {
+        "backfill_ledger[consumed_in_report_id IS NOT NULL]": 0
+      }
+    }
+  },
+  "forbidden_effects": [
+    "Ghi consumed_in_report_id khi bắt đầu build thay vì tại commit publish.",
+    "Để lại report_item mồ côi sau crash.",
+    "Tiến coverage_window sau một build bị abort.",
+    "Đốt entitlement backfill vì một lần crash hoặc vì provider AI lỗi toàn bộ."
+  ]
+}

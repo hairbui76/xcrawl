@@ -1,0 +1,184 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-h-metadata-unavailable-post-only",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-D33",
+      "REQ-D32",
+      "REQ-AC11",
+      "REQ-A6"
+    ],
+    "decision_refs": [
+      "B06",
+      "B15",
+      "ADR-0009"
+    ],
+    "invariant_refs": [
+      "I03",
+      "I11",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "SOURCE_METADATA_UNAVAILABLE. Điểm khóa: metadata thiếu KHÔNG chặn đợt chạy; target tồn tại ở mức `post_only`; tuyệt đối không đoán DOI/arXiv id từ ảnh hay văn bản chưa chuẩn hóa.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "h-metadata-unavailable-post-only",
+  "title_vi": "Nguồn học thuật không trả metadata ⇒ 'chỉ có post', KHÔNG đoán ID",
+  "scenario_refs": [
+    "SC11"
+  ],
+  "invariant_refs": [
+    "I03",
+    "I11",
+    "I13"
+  ],
+  "preconditions_vi": {
+    "item": "một post chỉ có ẢNH CHỤP paper, không có link (REQ-D33); một post có link arXiv nhưng connector lỗi"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0040-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+          "request_id": "YEDFRWZN2T1BW8KH66N70M7DAJ",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:aee4848a8580f31102073d34012cb3700fee3e61f9fcfd725fcfe5fa4a220ec3",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 2,
+            "inserted": 2,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 2,
+            "max_ingest_sequence": 42
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000040",
+              "post_id": "NSWJZQY8S5GE33J4XH4A7F601X",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 41,
+              "target_ref": {
+                "kind": "post",
+                "key": "post:1900000000000000040"
+              }
+            },
+            {
+              "x_post_id": "1900000000000000041",
+              "post_id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 42,
+              "target_ref": {
+                "kind": "post",
+                "key": "post:1900000000000000041"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "R0QHJE9QWCBDPTXK0RZ9T6HF44",
+            "checkpoint_sequence": 6,
+            "cursor_token": "cursor-page-6",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 42,
+            "items_ingested_total": 42
+          },
+          "receipt_hash": "sha256:3b86df3ff95ad2fd72102e34f3a721f2bdc876e12e3bd1434af8ab4cabbd5547",
+          "storage_state": "healthy",
+          "warnings": [
+            {
+              "code": "SOURCE_METADATA_UNAVAILABLE",
+              "message_safe": "Chưa lấy được thông tin bài báo từ nguồn học thuật. Mục hiển thị ở mức “chỉ có post”.",
+              "x_post_id": "1900000000000000041"
+            }
+          ]
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Lô VẪN COMMIT. Cảnh báo nằm trong `warnings` của một response 2xx, KHÔNG phải một error envelope — vì không có gì hỏng."
+    }
+  ],
+  "expected_target_state": {
+    "1900000000000000040": {
+      "target_kind": "post",
+      "doi": null,
+      "arxiv_id": null,
+      "evidence_level": "post_only",
+      "reason_vi": "Post chỉ có ảnh chụp paper, không có link ⇒ KHÔNG đoán ID (REQ-D33)."
+    },
+    "1900000000000000041": {
+      "target_kind": "post",
+      "doi": null,
+      "arxiv_id": null,
+      "evidence_level": "post_only",
+      "reason_vi": "Có link nhưng connector không trả metadata trong ngân sách `research_connector_attempts` = 2; abstract cũ (nếu có) KHÔNG bị xóa."
+    }
+  },
+  "durable_rows_expected": [
+    "post: +2 hàng.",
+    "work: +0 hàng — không có work nào được tạo từ ID đoán.",
+    "identity_alias: +0 hàng.",
+    "run: status vẫn 'running'; metadata thiếu KHÔNG làm run thất bại (contracts/state/run.yaml T-RUN-03).",
+    "analysis task: VẪN được tạo, với evidence_level = 'post_only'."
+  ],
+  "forbidden_effects": [
+    "Đoán DOI hoặc arXiv id từ ảnh, từ tiêu đề, hay từ văn bản chưa chuẩn hóa (REQ-D33, I03).",
+    "Chạy OCR trên ảnh rồi coi kết quả là ID đã chuẩn hóa.",
+    "Xóa abstract đã có từ trước vì lần gọi này thất bại.",
+    "Nâng evidence_level lên 'abstract' hay 'full_text' khi nguồn tương ứng chưa tồn tại.",
+    "Cho collector tự gọi arXiv/OpenAlex (REQ-D32, denied case NC-08) — metadata đi qua MOD-ingest-service.",
+    "Nhận chỉ dẫn fetch URL từ model (I11, denied case NC-07)."
+  ],
+  "oracle_vi": "COUNT(work) không tăng. Cả hai target có kind='post' và evidence_level='post_only'. Trace mạng của tiến trình collector không có host arXiv/OpenAlex. Analysis task vẫn được tạo."
+}

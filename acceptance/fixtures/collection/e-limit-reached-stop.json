@@ -1,0 +1,195 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-e-limit-reached-stop",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-AC03",
+      "REQ-OQ05",
+      "REQ-A7"
+    ],
+    "decision_refs": [
+      "B02",
+      "AMD-B02"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "AC-03 đọc lại theo AMD-B02: 'run chuyển status=completed, stop_reason=limit_reached'. Chạm giới hạn KHÔNG phải thất bại và KHÔNG phải hoàn tất-trọn-vẹn.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "e-limit-reached-stop",
+  "title_vi": "Chạm giới hạn ⇒ dừng, giữ checkpoint, chuyển phase — KHÔNG phải lỗi",
+  "scenario_refs": [
+    "SC03"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I13"
+  ],
+  "preconditions_vi": {
+    "stop_conditions": "max_posts=200, max_duration_s=1800, evaluation=first_of_either"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0030-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "X14T7Z6G1DRPBBTC5SCJFQE895",
+          "request_id": "AASB4RBHEPD784ZDJ213CGK9PE",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:5344c4110f483793dc352c388e67776724c36b4bea3ffda6cab7c75b9c65aceb",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 40,
+            "inserted": 40,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 40,
+            "max_ingest_sequence": 200
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000200",
+              "post_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 200,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "4W3DYANK88Q92P9FCMB562XBG0",
+            "checkpoint_sequence": 5,
+            "cursor_token": "cursor-page-5",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 200,
+            "items_ingested_total": 200
+          },
+          "receipt_hash": "sha256:ba689abd93c9c6a7d08b5b5c04dd27f6d69755ebe9a87fb969e73dfc11660e38",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Lô cuối đưa tổng số lên đúng 200 = `max_posts`."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/stop"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "stop-2026-09-07-0030-aaaa"
+      },
+      "request_body": {
+        "request_id": "C4BN6JXVGGZHAYHQMWKDEA5KR8",
+        "schema_version": "0.1.0",
+        "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "stop_report_id": "SD063B2WXSM27QPR158YB3AM5H",
+        "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+        "lease_epoch": 1,
+        "stop_reason": "limit_reached",
+        "limit_kind": "posts",
+        "last_acked_ingest_sequence": 200,
+        "posts_observed_total": 200,
+        "x_coverage_note_vi": "Dừng ở 200 bài theo ngân sách; phần feed sau mốc đó KHÔNG được quét trong đợt này."
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 200,
+      "response_body": {
+        "run": {
+          "status": "running",
+          "phase": "enriching",
+          "outcome": null,
+          "stop_reason": "limit_reached",
+          "limit_hit": true,
+          "limit_kind": "posts"
+        },
+        "alert_intent_created": false
+      },
+      "note_vi": "Đóng collection segment, GIỮ checkpoint, chuyển sang phase `enriching` (contracts/state/run.yaml T-RUN-02). `stop_reason` được ghi ngay dù run chưa kết thúc."
+    }
+  ],
+  "final_state_expected": {
+    "comment_vi": "Khi run kết thúc sau phase reporting, bộ ba cuối cùng là:",
+    "status": "completed",
+    "outcome": "partial hoặc complete",
+    "stop_reason": "limit_reached",
+    "ac03_reread_vi": "AMD-B02: 'run chuyển status = completed, stop_reason = limit_reached, checkpoint và tiến độ được lưu'."
+  },
+  "durable_rows_expected": [
+    "post: tổng 200 hàng cho run này.",
+    "checkpoint.acked_through_ingest_sequence = 200; checkpoint KHÔNG bị xóa hay reset khi đổi phase.",
+    "run.limit_hit = true, run.limit_kind = 'posts', run.x_coverage_note_vi NOT NULL.",
+    "run.phase = 'enriching'; run.status vẫn 'running'."
+  ],
+  "forbidden_effects": [
+    "Đặt run.status = 'failed' vì chạm giới hạn (REQ-S8.3-02: dừng sớm ≠ thất bại).",
+    "Hiển thị run này là 'đợt hoàn tất' không kèm ghi chú giới hạn (REQ-S8.3-02).",
+    "Để x_coverage_note_vi trống khi limit_hit = true.",
+    "Thu thập tiếp sau khi đã báo limit_reached.",
+    "Tạo alert intent (chỉ needs_user mới tạo)."
+  ],
+  "oracle_vi": "COUNT(post WHERE run_id=RUN) = 200 và không tăng nữa. run.stop_reason='limit_reached' đi kèm run.status='running' rồi 'completed' — hai trường độc lập (AMD-B02). Số request thu thập sau sự kiện 2 = 0."
+}

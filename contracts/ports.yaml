@@ -1,0 +1,2276 @@
+# Research Radar — Operation inventory (ports)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa tiếng Anh (baseline §3).
+
+contract_id: CT-arch-ports
+version: 0.1.0
+status: draft
+owner_role: architecture owner
+source_refs:
+  - SRC-SPEC §4
+  - SRC-SPEC §5
+  - SRC-SPEC §6.1
+  - SRC-SPEC §6.2
+  - SRC-SPEC §9
+  - SRC-SPEC §10
+  - SRC-SPEC §11
+  - SRC-PLAN §5
+  - SRC-PLAN §5.1
+  - SRC-PLAN §6
+  - SRC-PLAN §6.1
+  - SRC-PLAN §8
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC01
+requirement_refs:
+  - REQ-P0-01
+  - REQ-P0-02
+  - REQ-P0-03
+  - REQ-P0-04
+  - REQ-P0-05
+  - REQ-P0-06
+  - REQ-P0-07
+  - REQ-P0-08
+  - REQ-P0-09
+  - REQ-P0-10
+  - REQ-P0-11
+  - REQ-P0-12
+  - REQ-D04
+  - REQ-D05
+  - REQ-D06
+  - REQ-D08
+  - REQ-D09
+  - REQ-D11
+  - REQ-D35
+  - REQ-D36
+  - REQ-D37
+  - REQ-D41
+  - REQ-D42
+  - REQ-D48
+  - REQ-D50
+  - REQ-D51
+  - REQ-D58
+decision_refs: [B01, B02, B03, B04, B05, B09, B10, B11, B12, B13, B17, AMD-B02, AMD-B03, AMD-B05, AMD-B10, ADR-0001]
+invariant_refs: [I01, I02, I04, I05, I09, I10, I11, I13, I14, I15]
+producers: [MOD-backend-api]
+consumers:
+  - MOD-web-ui
+  - MOD-x-collector
+  - MOD-analysis-worker
+  - MOD-telegram-adapter
+  - MOD-backup-cli
+  - MOD-scheduler
+dependencies:
+  - contracts/modules.yaml
+  - contracts/capabilities.yaml
+  - contracts/http/openapi.yaml (PC05, chưa tồn tại)
+  - contracts/schemas/ (PC02/PC04/PC06/PC07, chưa tồn tại)
+  - contracts/state/ (PC03, chưa tồn tại)
+  - contracts/errors.yaml (PC03, chưa tồn tại)
+scope: >
+  File này là **danh mục operation duy nhất** của Research Radar ở giai đoạn Pre-code. Mỗi operation có
+  operation_id ổn định theo baseline §3 (`<domain>.<verb_noun>`), transport, module sở hữu, danh sách caller,
+  auth scope, tính mutation, yêu cầu idempotency, tóm tắt request/response, ảnh hưởng trạng thái, mã lỗi có thể
+  trả và scenario tham chiếu. Các gói PC03–PC08 trích dẫn nguyên văn `operation_id` ở đây; PC05 định nghĩa wire
+  HTTP trong `contracts/http/openapi.yaml`, PC02/PC04/PC06/PC07 định nghĩa payload schema trong
+  `contracts/schemas/`, PC03 định nghĩa transition/timeout/retry. File này **không** định nghĩa schema, số
+  timeout hay bảng transition; các trường `*_schema_planned` chỉ trỏ tới file sẽ được tạo.
+verification: >
+  E0 self-validation: (a) YAML parse bằng python3 yaml.safe_load; (b) script kiểm chéo với contracts/modules.yaml —
+  không trùng operation_id, mọi module tham chiếu tồn tại, mọi operation thuộc đúng inbound của owner và outbound
+  của từng caller. Không có evidence E1–E4; mọi thứ chưa chạy ghi NOT_RUN.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+conventions:
+  operation_id_form: "<domain>.<verb_noun> snake_case, duy nhất toàn hệ thống (baseline §3)"
+  transport_values: [http, internal]
+  transport_meaning_vi: >
+    `http` = qua ranh giới tiến trình/máy, đi qua MOD-backend-api (TLS + xác thực actor) hoặc qua endpoint ingress
+    của MOD-telegram-adapter. `internal` = port trong tiến trình server (modular monolith được phép, SRC-PLAN §6)
+    hoặc trong tiến trình worker trên máy cá nhân; không mở cổng mạng.
+  mutation_meaning_vi: >
+    `true` khi operation ghi dữ liệu authoritative (SQLite server) hoặc tạo side effect ngoài (network send).
+    Mỗi mutation có đúng một owner module (SRC-PLAN §5, §6.1).
+  idempotency_meaning_vi: >
+    Theo SRC-PLAN §5.1: mutation từ worker mang `request_id`, `schema_version`, `idempotency_key`, `payload_hash`;
+    mutation đang giữ job mang thêm `job_id`, `lease_id`, `lease_epoch`. Cùng key + cùng payload trả receipt đã
+    commit; cùng key + payload khác trả IDEMPOTENCY_CONFLICT. Lease cũ trả STALE_LEASE.
+  error_envelope_vi: >
+    Mọi lỗi dùng envelope SRC-PLAN §5.1: `code`, `scope`, `retry_class`, `message_safe`, `correlation_id`,
+    `details_safe`, `retry_after` (nếu có). Không lộ transcript, key, cookie hay nội dung nguồn chưa che.
+  prose_token_rule_vi: >
+    Quy ước đọc token trong prose (E0-04b/E0-04c, ruling FIX7): một token dạng `<a>.<b>` trong văn bản phải phân
+    giải được thành **một operation của file này** hoặc **một cặp `<entity>` + `<column>` của contracts/data/entities.yaml**.
+    Ngoài hai loại đó, chỉ bốn dạng sau được phép xuất hiện và **không** phải là tham chiếu hợp đồng:
+    (1) đường dẫn file (`contracts/schemas/target.schema.json`), (2) khóa YAML trong chính bộ hợp đồng
+    (`conventions.schema_reference_rule_vi`, `attempted_edge.callee`, `capabilities.ai_providers`),
+    (3) tên host hoặc hàm thư viện (`api.telegram.org`, `yaml.safe_load`), (4) trường của **payload request**
+    được định nghĩa ngay trong cùng operation (`confirmation.acknowledged`).
+    Ngoại lệ có tên: **`storage.health`** là tên kênh trạng thái do `contracts/state/storage.yaml` định nghĩa
+    (không phải cột entity, không phải operation); mọi lần nhắc trong bộ PC01 đều trỏ tới nó. Mã lỗi trong prose
+    phải nằm trong 28 mã của `contracts/errors.yaml`; tên id đã bị bác bỏ **không** được để lại trong prose hợp
+    đồng — lịch sử nằm ở handoff (ruling FIX7).
+  schema_reference_rule_vi: >
+    Phân biệt **JSON Schema** với **hợp đồng mô tả hình dạng** (ruling CR-PC05-05):
+    `request_schema_planned` / `response_schema_planned` chỉ được mang một đường dẫn khi đó là **file JSON Schema
+    thật** dưới `contracts/schemas/*.schema.json` — thứ mà một `$ref` của OpenAPI dereference được.
+    Khi hình dạng payload được mô tả bằng một hợp đồng khác (`contracts/state/*.yaml`, `contracts/data/*.md`,
+    `contracts/ops/*.md`, `contracts/ai/*.yaml`, `contracts/telegram/*`, `contracts/reporting/*`,
+    `contracts/http/openapi.yaml`), trường đó là **`null`** và hợp đồng được nêu ở
+    `x-schema-source-request` / `x-schema-source-response`. Trước FIX4, các trường này trỏ thẳng tới YAML/Markdown
+    khiến PC05 không `$ref` được (PC05 phải dùng `GenericObject` + `x-schema-source`); nay hai file nói cùng một
+    thứ. `null` **không** có nghĩa "không có hợp đồng" — nó có nghĩa "hợp đồng không ở dạng JSON Schema".
+  auth_scope_to_wire_scheme_vi: >
+    Ánh xạ tới `components.securitySchemes` của contracts/http/openapi.yaml (PC05 sở hữu tên; PC01 ghi lại để
+    đối chiếu được — ruling CR-PC08-02):
+    `owner_session` và `owner_session_or_linked_chat` (đường browser) ⇒ **`ownerSessionCookie` + `ownerCsrfToken`**,
+    cả hai bắt buộc cho **mọi** operation `mutation: true`;
+    `owner_session_or_linked_chat` (đường Telegram) ⇒ update đã xác thực bằng `telegramIngressSecret`, không có CSRF
+    vì không có cookie;
+    `collector_token` ⇒ `collectorToken`; `analysis_worker_token` ⇒ `analysisWorkerToken`;
+    `collector_token_or_analysis_worker_token` ⇒ một trong hai;
+    `telegram_ingress_secret` ⇒ `telegramIngressSecret`;
+    **`backup_operator` ⇒ `backupOperatorToken`** (áp cho cả bốn operation `backup.*`);
+    `public_login` và `public_minimal` ⇒ không scheme; `internal_only` ⇒ không đi qua HTTP.
+  csrf_rule_vi: >
+    Mọi operation `transport: http`, `mutation: true`, auth scope của owner session mang `CSRF_REJECTED` trong
+    `error_codes`: thiếu hoặc lệch CSRF double-submit ⇒ HTTP 403, **không đổi trạng thái**. `CSRF_REJECTED` khác
+    `UNAUTHORIZED` (danh tính chưa được xác lập hoặc sai lớp principal) và khác `FORBIDDEN_EDGE` (cạnh không có
+    trong registry) — ruling FIX3, giải quyết CR-PC08-03. PC03 đăng ký mã này trong contracts/errors.yaml.
+  timeout_note_vi: >
+    Giá trị timeout/lease TTL/retry budget **không** được chốt ở file này; PC03 đóng chúng trong
+    contracts/retry-policy.yaml và contracts/state/*.yaml. Số duy nhất PC01 chốt là ngưỡng readiness
+    "collector online" trong contracts/ops/deployment.md (PROVISIONAL).
+
+error_code_registry_note:
+  owner_file: contracts/errors.yaml (PC03)
+  codes_from_plan_10:
+    - X_CHALLENGE_REQUIRED
+    - X_ACCESS_BLOCKED
+    - WORKER_LEASE_EXPIRED
+    - INGEST_ACK_LOST
+    - SOURCE_METADATA_UNAVAILABLE
+    - IDENTITY_CONFLICT
+    - AI_OUTPUT_INVALID
+    - AI_PROVIDER_UNAVAILABLE
+    - AI_ATTEMPT_UNCERTAIN
+    - EMBEDDING_GENERATION_MISMATCH
+    - TAG_VERSION_STALE
+    - TELEGRAM_SEND_UNCERTAIN
+    - TELEGRAM_PERMANENT_FAILURE
+    - UNAUTHORIZED_COMMAND
+    - STORAGE_WRITE_FAILED
+    - RESTORE_UNVERIFIED
+  codes_added_by_packet:
+    - UNAUTHORIZED
+    - IDEMPOTENCY_CONFLICT
+    - STALE_LEASE
+    - VALIDATION_ERROR
+    - NOT_FOUND
+  codes_from_fix3_ruling:
+    - code: CSRF_REJECTED
+      registered_by: PC03 (contracts/errors.yaml)
+      status: PROVISIONAL
+      http_status: 403
+      scope: request
+      retry_class: none
+      state_change: none
+      used_by_vi: >
+        Mọi operation http mutation của owner session (19 operation trong danh mục này). Thiếu hoặc lệch CSRF
+        double-submit. Ruling FIX3 tách nó khỏi `FORBIDDEN_EDGE` (vẫn là "cạnh không có trong registry") và khỏi
+        `UNAUTHORIZED` (vẫn là "danh tính chưa xác lập / sai lớp principal"). Giải quyết CR-PC08-03.
+  codes_requested_provisional:
+    - code: CAPABILITY_DENIED
+      status: PROVISIONAL
+      change_request: CR-PC01-01
+      reason_vi: >
+        Cần một mã cho trường hợp capability tiến trình/mạng/tool bị từ chối (egress allowlist, tool bị khóa,
+        module không có driver DB) — khác với UNAUTHORIZED vốn là lỗi xác thực/ủy quyền ở API. PC03 phải đăng ký
+        mã này trong contracts/errors.yaml; PC01 không được ghi file đó.
+    - code: CONFLICT
+      status: PROVISIONAL
+      change_request: CR-PC01-03
+      introduced_by: PKT-PC01-FIX1 (ruling của Coordinator)
+      used_by: [identity.merge_works]
+      reason_vi: >
+        Xung đột trạng thái nghiệp vụ khi cùng một cặp work được yêu cầu merge với bằng chứng khác nhau — khác
+        IDEMPOTENCY_CONFLICT (cùng key, payload khác ở tầng wire) và khác IDENTITY_CONFLICT (hai identity mâu
+        thuẫn chưa giải, đi vào cách ly). PC03 phải đăng ký trong contracts/errors.yaml; PC01 không được ghi file đó.
+
+operations:
+
+  # ---------------------------------------------------------------- auth
+  - operation_id: auth.login
+    title_vi: Đăng nhập tài khoản duy nhất
+    transport: http
+    owner_module: MOD-auth-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: public_login
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Không idempotent; mỗi lần tạo một session mới, session cũ vẫn hiệu lực trừ khi bị thu hồi."}
+    request_summary_vi: Thông tin đăng nhập của owner; không có trang signup (D05).
+    response_summary_vi: Session token/cookie có hạn; không trả bất kỳ secret nào của provider.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Tạo một session của owner; ghi audit đăng nhập đã che secrets.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC17]
+    requirement_refs: [REQ-D05, REQ-P0-01]
+    decision_refs: []
+    invariant_refs: [I01]
+
+  - operation_id: auth.logout
+    title_vi: Kết thúc session hiện tại
+    transport: http
+    owner_module: MOD-auth-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Gọi lại trên session đã hủy trả kết quả thành công idempotent."}
+    request_summary_vi: Không có body; định danh lấy từ session.
+    response_summary_vi: Xác nhận session đã bị thu hồi.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Thu hồi session; không đụng dữ liệu nghiệp vụ.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED]
+    scenario_refs: [SC40, SC51]
+    scenario_note_vi: >
+      Vòng đời phiên: SC51 (thiết lập lần đầu — đăng nhập) và SC40 (request không xác thực / thiếu CSRF bị từ chối). Sau `auth.logout`, mọi request mang session đã thu hồi phải rơi vào đúng nhánh của SC40.
+    requirement_refs: [REQ-D05]
+    decision_refs: []
+    invariant_refs: [I01]
+
+  - operation_id: auth.get_session
+    title_vi: Đọc trạng thái session
+    transport: http
+    owner_module: MOD-auth-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: Trạng thái đăng nhập, thời điểm hết hạn; không có secret.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC40, SC51]
+    scenario_note_vi: >
+      Như auth.logout: SC40 kiểm mặt âm (không có phiên hợp lệ ⇒ UNAUTHORIZED), SC51 kiểm mặt dương trong luồng thiết lập.
+    requirement_refs: [REQ-D05]
+    decision_refs: []
+    invariant_refs: [I01]
+
+  # ------------------------------------------------------------ settings
+  - operation_id: settings.get_config
+    title_vi: Đọc cấu hình (lịch, giới hạn, provider/model theo tác vụ, embedding, liên kết Telegram)
+    transport: http
+    owner_module: MOD-settings-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: >
+      Cấu hình đầy đủ với secret ở dạng **tham chiếu + trạng thái đã cấu hình**, không bao giờ là giá trị key
+      (SRC-SPEC §11.2). Kèm timezone IANA đang dùng (B08).
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC17]
+    requirement_refs: [REQ-D39, REQ-D56, REQ-P0-11]
+    decision_refs: [B08, B13]
+    invariant_refs: [I01, I11]
+
+  - operation_id: settings.update_config
+    title_vi: Sửa cấu hình
+    transport: http
+    owner_module: MOD-settings-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id + cùng payload_hash trả bản ghi đã commit; payload khác trả IDEMPOTENCY_CONFLICT."}
+    request_summary_vi: >
+      Delta cấu hình: lịch, timezone IANA, giới hạn mỗi đợt, N ngày với ngược, provider/model theo tác vụ,
+      key mới (chỉ ghi vào secret service), model embedding.
+    response_summary_vi: Cấu hình sau khi ghi, secret vẫn ở dạng tham chiếu.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: >
+      Ghi bản cấu hình mới; đổi model embedding kích hoạt embedding.start_generation_rebuild (không tự chuyển
+      active generation); key mới đi qua secret.store_provider_key.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-D39, REQ-D40, REQ-D48, REQ-P0-11]
+    decision_refs: [B08, B13, B14]
+    invariant_refs: [I01, I12, I14]
+
+  - operation_id: settings.test_provider
+    title_vi: Thử một provider AI đã cấu hình (đường API key, phía server)
+    transport: http
+    owner_module: MOD-settings-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Mỗi lần thử ghi một bản ghi kết quả mới; không dùng lại kết quả cũ."}
+    request_summary_vi: Provider ID cần thử; không nhận key trực tiếp từ frontend.
+    response_summary_vi: >
+      Kết quả `usable | unusable | unknown` kèm lý do đã che secrets. Đường CLI/ACP **không** thử được từ server;
+      trạng thái của nó chỉ đến từ worker.register_capabilities trên máy cá nhân.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/providers.yaml
+    state_effects_vi: Ghi provider_test_result mới nhất; không đổi cấu hình.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, AI_PROVIDER_UNAVAILABLE, NOT_FOUND]
+    scenario_refs: [SC16]
+    requirement_refs: [REQ-D41, REQ-D51]
+    decision_refs: [B13]
+    invariant_refs: [I11, I14]
+
+  # ----------------------------------------------------------------- tag
+  - operation_id: tag.list
+    title_vi: Danh sách tag, từ đồng nghĩa, tag loại trừ
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: Tag + alias + exclusion + phiên bản cấu hình tag đang hoạt động.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC05]
+    requirement_refs: [REQ-P0-02, REQ-D46]
+    decision_refs: []
+    invariant_refs: [I01]
+
+  - operation_id: tag.create
+    title_vi: Thêm tag (kèm alias và exclusion)
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id + payload trả tag đã tạo; payload khác trả IDEMPOTENCY_CONFLICT."}
+    request_summary_vi: Chữ người dùng gõ, alias, exclusion, ngưỡng riêng nếu có.
+    response_summary_vi: Tag đã tạo + tag_config_version mới.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: >
+      Tạo tag, sinh vector qua embedding.generate_vectors, tạo tag_config_version mới, mở một backfill
+      activation N ngày dùng đúng một lần (D28; ledger do PC04 định nghĩa).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, IDEMPOTENCY_CONFLICT, EMBEDDING_GENERATION_MISMATCH, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC05, SC22]
+    requirement_refs: [REQ-P0-02, REQ-D28, REQ-D46]
+    decision_refs: [B04]
+    invariant_refs: [I01, I06, I12]
+
+  - operation_id: tag.update
+    title_vi: Sửa tag/alias/exclusion
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Như tag.create."}
+    request_summary_vi: Delta của một tag.
+    response_summary_vi: Tag sau khi sửa + tag_config_version mới.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Tạo tag_config_version mới; không sửa report đã publish (I05).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC05, SC19]
+    requirement_refs: [REQ-P0-02, REQ-D46]
+    decision_refs: [B01]
+    invariant_refs: [I01, I05]
+
+  - operation_id: tag.delete
+    title_vi: Xóa tag
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Xóa lại tag đã xóa trả kết quả idempotent, không lỗi."}
+    request_summary_vi: Tag ID.
+    response_summary_vi: tag_config_version mới.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: >
+      Tạo tag_config_version mới. **Không** xóa post/work/analysis/Saved đã có (SRC-SPEC §7.3, §8.2 ví dụ 2 và 7).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC05, SC06]
+    requirement_refs: [REQ-AC05, REQ-AC06, REQ-D46]
+    decision_refs: [B01]
+    invariant_refs: [I01, I05, I08]
+
+  - operation_id: tag.preview_matches
+    title_vi: Xem nhãn chủ đề đang khớp một tag (Topics)
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Tag ID hoặc chữ nháp; tùy chọn ngưỡng thử.
+    response_summary_vi: Danh sách nhãn khớp + điểm tương đồng + embedding generation đã dùng.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: Không ghi dữ liệu authoritative; có thể sinh vector tạm cho chữ nháp.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, EMBEDDING_GENERATION_MISMATCH]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-P0-02, REQ-P0-05, REQ-D46]
+    decision_refs: [B14]
+    invariant_refs: [I12]
+
+  - operation_id: tag.rescan_corpus
+    title_vi: Quét lại kho theo tag ("quét lại kho", D28)
+    transport: http
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id không tạo hai lệnh quét."}
+    request_summary_vi: Tag ID và phạm vi thời gian yêu cầu.
+    response_summary_vi: ID lệnh quét lại + trạng thái.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/http/openapi.yaml
+    state_effects_vi: >
+      Tạo bản ghi rescan có ledger **riêng**; không reset first-announcement, không tiêu thụ backfill activation,
+      không đẩy con trỏ coverage chính (SRC-PLAN §9.2).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC22]
+    requirement_refs: [REQ-D28]
+    decision_refs: [B04]
+    invariant_refs: [I06, I07]
+
+  - operation_id: tag.get_active_config_version
+    title_vi: Đọc phiên bản cấu hình tag đang hoạt động (nội bộ)
+    transport: internal
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-report-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có tham số ngoài thời điểm đọc.
+    response_summary_vi: tag_config_version_id + hash bộ tag.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: Không.
+    error_codes: [NOT_FOUND]
+    scenario_refs: [SC05, SC19]
+    requirement_refs: [REQ-D23, REQ-CTAG]
+    decision_refs: [B01]
+    invariant_refs: [I05]
+
+  - operation_id: tag.freeze_config_version
+    title_vi: Đóng băng phiên bản tag vào transaction publish report (B01)
+    transport: internal
+    owner_module: MOD-tag-service
+    caller_modules: [MOD-report-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "report_build_id", rule_vi: "Gọi lại trong cùng build trả cùng tag_config_version_id."}
+    request_summary_vi: report_build_id + tag_config_version_id kỳ vọng.
+    response_summary_vi: tag_config_version_id bất biến đã gắn vào report.
+    request_schema_planned: null
+    x-schema-source-request: contracts/reporting/time-and-tags.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/reporting/time-and-tags.md
+    state_effects_vi: >
+      Gắn tag_config_version bất biến cho report trong **transaction publish**; nếu phiên bản đã đổi so với lúc
+      build thì trả TAG_VERSION_STALE để builder rebuild hoặc abort (không sửa report đã publish).
+    error_codes: [TAG_VERSION_STALE, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC05, SC19]
+    requirement_refs: [REQ-D23, REQ-CTAG, REQ-AC05]
+    decision_refs: [B01, AMD-B01]
+    invariant_refs: [I05]
+
+  # ----------------------------------------------------------------- run
+  - operation_id: run.list
+    title_vi: Danh sách run + trạng thái collector online/offline
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui, MOD-telegram-adapter]
+    auth_scope: owner_session_or_linked_chat
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only. Lệnh Telegram `status` là read-only theo B10."}
+    request_summary_vi: Bộ lọc phân trang; với caller Telegram chỉ lấy N run gần nhất.
+    response_summary_vi: >
+      Mỗi run: phase, status, outcome, stop_reason, trigger_type, tiến độ. Ba trạng thái `empty`,
+      `stopped/limit`, `failed` hiển thị khác nhau (SRC-SPEC §8.3, I13).
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Không. Lệnh status **không** mutation (B10).
+    error_codes: [UNAUTHORIZED, UNAUTHORIZED_COMMAND]
+    scenario_refs: [SC15]
+    requirement_refs: [REQ-P0-12, REQ-D11, REQ-D36, REQ-AC15]
+    decision_refs: [B02, B10, AMD-B02]
+    invariant_refs: [I01, I13]
+
+  - operation_id: run.get
+    title_vi: Chi tiết một run (Run detail)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: run_id.
+    response_summary_vi: >
+      trigger_type, cấu hình đã áp, số bài lấy, số bài mới, checkpoint đã ACK, lỗi, log **đã che secrets**.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND]
+    scenario_refs: [SC03, SC15]
+    requirement_refs: [REQ-P0-12, REQ-D14]
+    decision_refs: [B02]
+    invariant_refs: [I01, I11, I13]
+
+  - operation_id: run.run_now
+    title_vi: Chạy ngay (thủ công)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui, MOD-telegram-adapter]
+    auth_scope: owner_session_or_linked_chat
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id không tạo hai run; bấm lặp trả run đang có."}
+    request_summary_vi: Không có tham số nghiệp vụ ngoài request_id.
+    response_summary_vi: run_id đã xếp hàng hoặc run đang chạy hiện có.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: >
+      Tạo run `trigger_type = manual` ở `queued`. **Không** vượt qua run đang `needs_user` hay `blocked`
+      (B10): trả run hiện tại kèm lý do, không tự resume.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, UNAUTHORIZED_COMMAND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC04, SC15]
+    requirement_refs: [REQ-P0-10, REQ-D10, REQ-D14, REQ-D36]
+    decision_refs: [B10, AMD-B10]
+    invariant_refs: [I01, I10, I13]
+
+  - operation_id: run.resume
+    title_vi: Tiếp tục run đang `needs_user` (hành động riêng trong app, B10)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id không cấp hai lease mới."}
+    request_summary_vi: >
+      `run_id`, `request_id`, và tùy trạng thái nguồn: từ `needs_user` cần xác nhận owner đã xử lý challenge;
+      từ `blocked` cần `unblock_reason` (bắt buộc, chuỗi tự do đã che secrets) — owner tuyên bố điều kiện chặn
+      đã hết.
+    response_summary_vi: Trạng thái run sau khi chuyển về `queued`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    allowed_from_states_vi: >
+      **Đúng hai** trạng thái nguồn (ruling CR-PC03-02; PC03 FIX1 thêm hàng transition tương ứng):
+      (1) `needs_user` — guard: phiên X được kiểm là KHÔNG còn challenge; nếu hạn chế vẫn còn thì **không**
+      chuyển trạng thái (run.yaml `T-RUN-10`, REQ-S5.4-05).
+      (2) `blocked` — guard: owner cung cấp `unblock_reason`; hệ thống **không** tự phán đoán điều kiện chặn đã
+      hết và **không** thử lại để dò (REQ-S13.2-04: không né chặn, bị chặn thì dừng và báo).
+      Gọi từ **bất kỳ** trạng thái nào khác (`queued`, `running`, `waiting_retry`, `completed`, `failed`,
+      `cancelled`) ⇒ `CONFLICT`, không đổi trạng thái.
+    state_effects_vi: >
+      → `queued`, giữ checkpoint đã ACK, **cấp lease mới khi claim**, không tiếp tục bằng lease cũ
+      (SRC-PLAN §8.1). Không có lệnh Telegram tương ứng (B10): resume chỉ là hành động trong app.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, CONFLICT, STALE_LEASE, X_CHALLENGE_REQUIRED, X_ACCESS_BLOCKED, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC04, SC20]
+    requirement_refs: [REQ-AC04, REQ-P0-12]
+    decision_refs: [B10, AMD-B10]
+    invariant_refs: [I10]
+
+  - operation_id: run.cancel
+    title_vi: Hủy một run chưa kết thúc
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Hủy lại run đã cancelled trả kết quả idempotent."}
+    request_summary_vi: run_id.
+    response_summary_vi: Trạng thái run sau khi hủy.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Thu hồi lease, chặn publish mới; dữ liệu đã commit không bị xóa (SRC-PLAN §8.1).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC20]
+    requirement_refs: [REQ-P0-12]
+    decision_refs: [B02]
+    invariant_refs: [I10]
+
+  - operation_id: scheduler.evaluate_due
+    title_vi: Quét lịch tới hạn (tick nội bộ)
+    transport: internal
+    owner_module: MOD-scheduler
+    caller_modules: [MOD-scheduler]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only; kết quả được đưa sang job.enqueue_scheduled_run."}
+    request_summary_vi: Thời điểm hiện tại (UTC) + timezone IANA của owner.
+    response_summary_vi: Danh sách mốc lịch đã tới hạn, có thể gồm nhiều mốc quá hạn.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/run.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Không ghi; chỉ tính toán. Giờ lịch là "sớm nhất được chạy" (D13).
+    error_codes: [VALIDATION_ERROR]
+    scenario_refs: [SC01, SC02]
+    requirement_refs: [REQ-D13, REQ-AC01, REQ-AC02]
+    decision_refs: [B08]
+    invariant_refs: []
+
+  - operation_id: job.enqueue_scheduled_run
+    title_vi: Tạo run theo lịch
+    transport: internal
+    owner_module: MOD-job-service
+    caller_modules: [MOD-scheduler]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "schedule_occurrence_id", rule_vi: "Một occurrence chỉ sinh một run; gọi lại trả run đã tạo."}
+    request_summary_vi: Danh sách occurrence tới hạn + trigger_type = scheduled.
+    response_summary_vi: run_id.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/run.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Tạo run `queued`. Scheduler **không** được gọi Chrome, gửi digest hay đánh dấu report đã giao.
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC01, SC02]
+    requirement_refs: [REQ-D10, REQ-D14, REQ-AC01]
+    decision_refs: [B08]
+    invariant_refs: [I01]
+
+  - operation_id: job.coalesce_overdue
+    title_vi: Gộp nhiều đợt quá hạn thành một (D15)
+    transport: internal
+    owner_module: MOD-job-service
+    caller_modules: [MOD-scheduler]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "coalesce_window_id", rule_vi: "Cùng cửa sổ gộp không tạo hai run."}
+    request_summary_vi: Tập occurrence quá hạn + cửa sổ bao trùm.
+    response_summary_vi: run_id duy nhất + khoảng thời gian bao trùm để hiển thị/nhắn tin.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/run.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Một run duy nhất cho nhiều occurrence; không gửi bù báo cáo cũ (D16).
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC02]
+    requirement_refs: [REQ-D15, REQ-D16, REQ-AC02]
+    decision_refs: [B08]
+    invariant_refs: [I01]
+
+  # -------------------------------------------------------------- worker
+  - operation_id: worker.register_capabilities
+    title_vi: Đăng ký readiness/capability của worker trên máy cá nhân
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-x-collector, MOD-analysis-worker]
+    auth_scope: collector_token_or_analysis_worker_token
+    mutation: true
+    idempotency: {required: true, key: "worker_instance_id + registration_seq", rule_vi: "Bản đăng ký mới ghi đè bản cũ của cùng worker_instance_id; seq lùi bị bỏ qua."}
+    request_summary_vi: >
+      worker_instance_id, worker_kind (`collector` | `analysis`), phiên bản, danh sách capability:
+      `collector_online`, `chrome_profile_ready`, `x_session_state` (`ok|challenge|expired|unknown`),
+      `ai_providers[]` với `usable | unusable | unknown` + `reason_code`, `embedding_supported: false`.
+    response_summary_vi: Xác nhận đăng ký + thời điểm server ghi nhận + chu kỳ heartbeat yêu cầu.
+    request_schema_planned: null
+    x-schema-source-request: contracts/capabilities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/capabilities.yaml
+    state_effects_vi: >
+      Cập nhật bản ghi readiness của worker; server chỉ giao assignment mà worker khai đủ capability.
+      Worker **không bao giờ** khai `embedding` (D50/B12).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC01, SC16]
+    requirement_refs: [REQ-D11, REQ-D51, REQ-P0-12]
+    decision_refs: [B12, B13, ADR-0001]
+    invariant_refs: [I01, I13, I14]
+
+  - operation_id: worker.claim_assignment
+    title_vi: Collector kéo việc khi online (D11)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    idempotency: {required: true, key: "claim_request_id", rule_vi: "Cùng claim_request_id trả cùng assignment; không cấp hai lease."}
+    request_summary_vi: worker_instance_id, capability đang có, số việc muốn nhận.
+    response_summary_vi: >
+      assignment gồm run_id, phase, cấu hình đã áp (tag dùng để **tìm kiếm**, giới hạn đợt), checkpoint đã ACK,
+      lease_id, lease_epoch, hạn lease.
+    request_schema_planned: contracts/schemas/worker-assignment.schema.json
+    response_schema_planned: contracts/schemas/worker-assignment.schema.json
+    state_effects_vi: >
+      run `queued` → `running/collecting`; cấp lease/epoch; ghi owner của assignment. Phần checkpoint trong payload
+      được **đọc** từ MOD-ingest-service qua ingest.get_checkpoint; MOD-job-service không sở hữu entity `checkpoint`
+      (ruling R-01).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STALE_LEASE, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC01, SC20]
+    requirement_refs: [REQ-D11, REQ-AC01, REQ-P0-03]
+    decision_refs: [B05, B12, ADR-0001]
+    invariant_refs: [I01, I10]
+
+  - operation_id: worker.heartbeat
+    title_vi: Gia hạn lease và báo tiến độ
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Mỗi heartbeat mang lease_id + lease_epoch; epoch cũ trả STALE_LEASE và không đổi dữ liệu."}
+    request_summary_vi: lease_id, lease_epoch, tiến độ quan sát được, trạng thái phiên X.
+    response_summary_vi: Lease còn hiệu lực hay không, lệnh dừng nếu owner đã cancel.
+    request_schema_planned: contracts/schemas/worker-assignment.schema.json
+    response_schema_planned: contracts/schemas/worker-assignment.schema.json
+    state_effects_vi: Cập nhật hạn lease và mốc heartbeat (đầu vào cho "collector online"); không đổi dữ liệu nghiên cứu.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, WORKER_LEASE_EXPIRED, NOT_FOUND]
+    scenario_refs: [SC20]
+    requirement_refs: [REQ-D11]
+    decision_refs: [B05]
+    invariant_refs: [I10]
+
+  - operation_id: worker.report_stop
+    title_vi: Báo điểm dừng của đợt (challenge / limit / blocked / hết phiên)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    idempotency: {required: true, key: "assignment_id + stop_report_id", rule_vi: "Báo lại cùng stop_report_id không tạo alert thứ hai."}
+    request_summary_vi: >
+      lease_id/epoch + `stop_reason` ∈ {`challenge_required`, `limit_reached`, `session_expired`,
+      `source_blocked`, `source_layout_changed`, `rate_limited`, `worker_shutdown`, `local_storage_unavailable`}
+      + checkpoint đã ACK cuối cùng.
+    response_summary_vi: Trạng thái run sau khi ghi nhận + có tạo alert intent hay không.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/run.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: >
+      `challenge_required`/`session_expired` → run `needs_user`, tạo **tối đa một** alert intent cho mỗi run,
+      không tự thử lại. `limit_reached` → đóng collection segment, giữ checkpoint, chuyển phase tiếp theo.
+      `source_blocked` → run `blocked`, ghi điều kiện gỡ chặn, **không** luân chuyển account/proxy.
+      `rate_limited` → đóng collection segment với `RATE_LIMITED`, run kết thúc `outcome: partial`, **không** retry
+      trong cùng run; đợt theo lịch kế tiếp chạy bình thường. Đây **khác** `source_blocked`: rate limit nghĩa là X
+      **vẫn cho vào** nhưng bảo chờ, còn `source_blocked` nghĩa là X **không cho vào**. Ba cách hiểu gộp làm một sẽ
+      cho ba hành vi UI khác nhau ở AC-15 (SRC-SPEC §9.3 "dừng đợt, ghi lý do, không luân chuyển gì để lách";
+      ruling CR-PC10-02; PC03 thêm hàng transition trong run.yaml). Giữ checkpoint đã ACK; **không** luân chuyển
+      account/proxy và **không** dò lại để tìm giới hạn.
+      `source_layout_changed` → run `blocked` với `SOURCE_LAYOUT_CHANGED`: nguồn đổi bố cục nên parser không đọc
+      được, **khác hẳn** bị chặn — cách gỡ là sửa parser, không phải chờ hết hạn chế, và **không** được tự thử lại
+      để dò (ruling CR-PC05-01; PC03 đăng ký mã trong contracts/errors.yaml). Dữ liệu đã ACK giữ nguyên; không
+      đoán nội dung từ bố cục lạ.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, X_CHALLENGE_REQUIRED, X_ACCESS_BLOCKED, SOURCE_LAYOUT_CHANGED, RATE_LIMITED, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC03, SC04]
+    requirement_refs: [REQ-AC03, REQ-AC04, REQ-P0-12, REQ-P0-03]
+    decision_refs: [B02, B05, AMD-B02]
+    invariant_refs: [I10, I13]
+
+  - operation_id: worker.release_assignment
+    title_vi: Trả lại assignment (kết thúc bình thường hoặc worker tắt)
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    idempotency: {required: true, key: "assignment_id", rule_vi: "Trả lại nhiều lần không đổi trạng thái sau lần đầu."}
+    request_summary_vi: lease_id, lease_epoch, lý do trả.
+    response_summary_vi: Xác nhận lease đã thu hồi.
+    request_schema_planned: contracts/schemas/worker-assignment.schema.json
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/run.yaml
+    state_effects_vi: Thu hồi lease, tăng epoch; phần chưa ACK không được coi là đã lưu.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, NOT_FOUND]
+    scenario_refs: [SC20]
+    requirement_refs: [REQ-D11]
+    decision_refs: [B05]
+    invariant_refs: [I02, I10]
+
+  - operation_id: worker.get_status
+    title_vi: Đọc trạng thái worker (online/offline, last run) cho màn hình Runs
+    transport: http
+    owner_module: MOD-job-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: >
+      Với từng worker: kind, online/offline theo ngưỡng heartbeat (xem contracts/ops/deployment.md),
+      last_seen_at, capability đã khai, `x_session_state`, danh sách provider `usable|unusable|unknown`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/capabilities.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC15, SC16]
+    requirement_refs: [REQ-D11, REQ-D12, REQ-P0-12]
+    decision_refs: [B12]
+    invariant_refs: [I13, I14]
+
+  # -------------------------------------------------------------- ingest
+  - operation_id: ingest.submit_batch
+    title_vi: Nộp một lô post đã thu thập (collector → server, D08)
+    transport: http
+    owner_module: MOD-ingest-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    idempotency: {required: true, key: "assignment_id + batch_idempotency_key", rule_vi: "Cùng key + cùng payload_hash trả receipt đã commit; payload khác trả IDEMPOTENCY_CONFLICT; không ghi đè."}
+    request_summary_vi: >
+      request_id, schema_version, idempotency_key, payload_hash, job_id, lease_id, lease_epoch, danh sách post
+      (x_post_id, tác giả, nội dung, URL, published_at, provenance), link paper phát hiện được.
+      Quan sát "nguồn đã bị xóa trên X" là **một trường của item** trong lô — `source_deleted_observed_at`
+      (RFC 3339 UTC, nullable) — chứ **không** phải một operation riêng: collector chỉ báo cáo cái nó quan sát
+      được ở thời điểm thu thập, còn việc diễn giải và ghi nhận là của server (ruling của Coordinator trong
+      PKT-PC01-FIX1). Trường này không xóa dữ liệu và không đụng tới Saved: snapshot đã lưu vẫn đọc được kể cả khi
+      bài gốc bị xóa trên X (D55, AC-12).
+    response_summary_vi: >
+      Receipt gồm số hàng đã commit, số hàng trùng bị bỏ, danh sách target đã resolve, mốc `discovered_at` do
+      **server** cấp + ingest sequence.
+    request_schema_planned: contracts/schemas/ingest-batch.schema.json
+    response_schema_planned: contracts/schemas/ingest-receipt.schema.json
+    state_effects_vi: >
+      **Đường chính để checkpoint trở nên bền.** Commit post + receipt dedup + `client_checkpoint_proposal` của lô
+      trong **cùng một** transaction (PC02 `TXN-ingest-batch`, I02). Dedup theo `x_post_id`; cam kết là **không
+      ingest trùng**, không phải "không bao giờ đọc lại" (B05/AMD-B05). ACK chỉ sau commit. Không có đường nào ghi
+      checkpoint ở transaction riêng **trước** commit của lô (ruling R-01); ingest.commit_checkpoint chỉ dùng khi
+      lô rỗng.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, WORKER_LEASE_EXPIRED, IDEMPOTENCY_CONFLICT, INGEST_ACK_LOST, IDENTITY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC07, SC21, SC23]
+    requirement_refs: [REQ-D08, REQ-D17, REQ-AC04, REQ-AC07, REQ-P0-03]
+    decision_refs: [B05, B06, B12, B15, AMD-B05, ADR-0001]
+    invariant_refs: [I01, I02, I03]
+
+  - operation_id: ingest.commit_checkpoint
+    title_vi: Đẩy con trỏ checkpoint khi **không có** item mới (cursor-only advance)
+    transport: http
+    owner_module: MOD-ingest-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: true
+    scope_restriction_vi: >
+      **Đường phụ, chỉ dùng khi lô rỗng.** Đường chính để checkpoint trở nên bền là ingest.submit_batch:
+      `client_checkpoint_proposal` được commit **cùng transaction** với post + receipt (PC02 `TXN-ingest-batch`).
+      Operation này chỉ tồn tại cho ba tình huống không có item mới: trang rỗng, hết feed, và đóng
+      collection segment. Nó **không bao giờ** được dùng để ghi checkpoint cho dữ liệu vừa thu được — dữ liệu đó
+      phải đi qua ingest.submit_batch. Ruling R-01 (PKT-PC01-FIX2), phương án (b).
+    idempotency: {required: true, key: "assignment_id + checkpoint_seq", rule_vi: "Checkpoint seq lùi bị từ chối; cùng seq + cùng payload trả bản đã ghi; cùng seq + payload khác trả IDEMPOTENCY_CONFLICT."}
+    request_summary_vi: >
+      lease_id/epoch, `proposed_cursor`, `proposed_acked_through_ingest_sequence`, `reason` ∈
+      {`empty_page`, `end_of_feed`, `segment_close`}, và `item_count: 0` (bắt buộc bằng 0).
+    response_summary_vi: Trạng thái `checkpoint` sau khi ghi (cursor, `acked_through_ingest_sequence`) + hash.
+    request_schema_planned: contracts/schemas/ingest-receipt.schema.json
+    response_schema_planned: contracts/schemas/ingest-receipt.schema.json
+    guard_vi: >
+      `proposed_acked_through_ingest_sequence` chỉ được trỏ tới `ingest_sequence` **đã commit** cho chính run đó:
+      hợp lệ khi `proposed ≤ MAX(ingest_receipt.max_ingest_sequence đã commit của run)`. Đề xuất vượt quá mốc đó trả
+      `VALIDATION_ERROR` và **không ghi một phần nào** (no partial write). `item_count ≠ 0` cũng trả
+      `VALIDATION_ERROR`: lô có item phải đi qua ingest.submit_batch.
+    transaction_vi: >
+      `TXN-checkpoint-only` (PC02 bổ sung vào transaction map): **một** transaction ghi đúng hai thứ — cập nhật một
+      hàng `checkpoint` của run và ghi receipt của lần commit này. Không có hàng `post` nào được ghi trong
+      transaction này. Không gọi mạng ngoài trong transaction (SRC-PLAN §5.1).
+    commit_point_vi: >
+      Commit point là commit của `TXN-checkpoint-only`. ACK chỉ được trả **sau** commit; trước điểm đó collector
+      phải coi kết quả là chưa biết.
+    failure_timeline_vi: >
+      (1) Lỗi trước commit → không có gì thay đổi; collector gọi lại cùng `checkpoint_seq`, nhận bản đã ghi hoặc
+      ghi mới. (2) Crash **sau** commit, **trước** ACK → server đã có checkpoint mới; collector không biết, gọi lại
+      cùng seq và nhận đúng bản đã commit (không tăng thêm). (3) Lease hết hạn giữa chừng → `STALE_LEASE`, không
+      ghi; checkpoint giữ nguyên giá trị đã commit trước đó. (4) `storage.health = write_blocked` →
+      `STORAGE_WRITE_FAILED`, con trỏ **không** tiến và không tuyên bố đã persist lỗi (SRC-PLAN §8.4).
+    oracle_vi: >
+      Sau **bất kỳ** dãy lời gọi ingest.commit_checkpoint và ingest.submit_batch nào (kể cả xen kẽ, replay và crash),
+      bất biến sau phải đúng:
+      `checkpoint.acked_through_ingest_sequence ≤ MAX(ingest_receipt.max_ingest_sequence đã commit)` cho cùng run.
+      Nói cách khác checkpoint **không bao giờ** trỏ vượt qua post đã bền. Đây là oracle kiểm được bằng đếm hàng,
+      không phải bằng đọc log.
+    state_effects_vi: >
+      Checkpoint **không đi trước dữ liệu bền** (I02). Dữ liệu đã tải nhưng chưa ingest không được coi là
+      checkpoint bền (SRC-PLAN §8.1). Entity là `checkpoint`, **do MOD-ingest-service sở hữu duy nhất**;
+      MOD-job-service chỉ **đọc** trạng thái này qua ingest.get_checkpoint hoặc qua payload của
+      worker.claim_assignment, không sở hữu và không ghi (ruling R-01; token `run_checkpoint_pointer` đã bị gỡ).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC03, SC04, SC21]
+    requirement_refs: [REQ-AC03, REQ-AC04, REQ-P0-12]
+    decision_refs: [B05, AMD-B05]
+    invariant_refs: [I02, I10]
+    audit_refs: [F-A1R1-01, R-01]
+
+  - operation_id: ingest.get_checkpoint
+    title_vi: Đọc trạng thái checkpoint của một run (port nội bộ, chỉ đọc)
+    transport: internal
+    owner_module: MOD-ingest-service
+    caller_modules: [MOD-job-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: run_id.
+    response_summary_vi: cursor hiện tại, `acked_through_ingest_sequence`, thời điểm commit gần nhất.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: >
+      Không ghi. Tồn tại để MOD-job-service dựng payload của worker.claim_assignment (tiếp từ checkpoint) mà
+      **không** cần sở hữu hay chạm bảng `checkpoint` — giữ đúng repository port theo phạm vi bảng (DC-SRV-01).
+    error_codes: [NOT_FOUND]
+    scenario_refs: [SC03, SC04, SC21]
+    requirement_refs: [REQ-AC04]
+    decision_refs: [B05]
+    invariant_refs: [I02]
+    audit_refs: [F-A1R1-01, R-01]
+
+  - operation_id: ingest.get_receipt
+    title_vi: Tra receipt sau khi mất ACK (trước khi retry mutation)
+    transport: http
+    owner_module: MOD-ingest-service
+    caller_modules: [MOD-x-collector]
+    auth_scope: collector_token
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only; đây là đường tra cứu bắt buộc trước retry (SRC-PLAN §5.1)."}
+    request_summary_vi: assignment_id + batch_idempotency_key.
+    response_summary_vi: Receipt đã commit, hoặc `not_committed` nếu server chưa từng commit key đó.
+    request_schema_planned: contracts/schemas/ingest-receipt.schema.json
+    response_schema_planned: contracts/schemas/ingest-receipt.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND, VALIDATION_ERROR]
+    scenario_refs: [SC21]
+    requirement_refs: [REQ-AC04]
+    decision_refs: [B05]
+    invariant_refs: [I02]
+
+  # ------------------------------------------------------------ research
+  - operation_id: research.fetch_work_metadata
+    title_vi: Lấy metadata/abstract paper qua API arXiv/OpenAlex (từ server, D32)
+    transport: internal
+    owner_module: MOD-research-connector
+    caller_modules: [MOD-ingest-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only với nguồn ngoài; kết quả được caller ghi vào work."}
+    request_summary_vi: DOI hoặc arXiv ID đã chuẩn hóa + phiên bản nếu có; **không** nhận URL tùy ý từ model.
+    response_summary_vi: Tiêu đề, phiên bản, abstract nếu có, link paper/code, provenance (nguồn + thời điểm gọi).
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: >
+      Không ghi. Nếu nguồn lỗi → SOURCE_METADATA_UNAVAILABLE; work vẫn tồn tại ở mức "chỉ có post", không đoán
+      DOI và không xóa abstract cũ đã có.
+    error_codes: [SOURCE_METADATA_UNAVAILABLE, VALIDATION_ERROR, NOT_FOUND]
+    scenario_refs: [SC11, SC23]
+    requirement_refs: [REQ-P0-04, REQ-D32, REQ-D33, REQ-D34, REQ-A6]
+    decision_refs: [B12, ADR-0001]
+    invariant_refs: [I11]
+
+  - operation_id: research.get_connector_health
+    title_vi: Trạng thái connector nguồn nghiên cứu (nhịp gọi, lỗi gần đây)
+    transport: internal
+    owner_module: MOD-research-connector
+    caller_modules: [MOD-health-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có tham số.
+    response_summary_vi: Trạng thái từng nguồn (`ok|degraded|unavailable`) + lý do đã che secrets.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/deployment.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/deployment.md
+    state_effects_vi: Không.
+    error_codes: [INTERNAL]
+    error_note_vi: >
+      Chỉ `INTERNAL`. `UNAUTHORIZED` không áp dụng: đây là port `internal_only`, không có principal ngoài nào tới được. `VALIDATION_ERROR` không áp dụng: operation không nhận tham số. Trạng thái nguồn suy giảm **không** phải lỗi của lời gọi — nó là **giá trị trả về** (`ok|degraded|unavailable`), nên không sinh mã lỗi. Ruling FIX6 F-A2R1-09.
+    scenario_refs: [SC11]
+    requirement_refs: [REQ-A6]
+    decision_refs: []
+    invariant_refs: [I13]
+
+  # ------------------------------------------------------------ identity
+  - operation_id: identity.resolve_target
+    title_vi: Phân giải target (`work` | `post`) theo canonical identity
+    transport: internal
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-ingest-service, MOD-report-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: DOI/arXiv ID đã chuẩn hóa hoặc x_post_id.
+    response_summary_vi: Tagged union target (`work` hoặc `post`) + canonical_id + alias đã biết.
+    request_schema_planned: contracts/schemas/target.schema.json
+    response_schema_planned: contracts/schemas/target.schema.json
+    state_effects_vi: Không.
+    error_codes: [NOT_FOUND, IDENTITY_CONFLICT, VALIDATION_ERROR]
+    scenario_refs: [SC07, SC23]
+    requirement_refs: [REQ-D17, REQ-D33, REQ-AC07]
+    decision_refs: [B06, B15]
+    invariant_refs: [I03]
+
+  - operation_id: identity.record_alias
+    title_vi: Ghi alias identity (không merge đoán)
+    transport: internal
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-ingest-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "alias_pair_hash", rule_vi: "Ghi lại cùng cặp alias không tạo bản ghi thứ hai."}
+    request_summary_vi: Cặp identity + bằng chứng nguồn.
+    response_summary_vi: alias_id + audit trail.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/identity.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/identity.md
+    state_effects_vi: Thêm alias + audit trail; giữ nguyên nguồn của cả hai phía.
+    error_codes: [VALIDATION_ERROR, IDENTITY_CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC07, SC09, SC23]
+    requirement_refs: [REQ-D17]
+    decision_refs: [B06, B15]
+    invariant_refs: [I03, I07]
+
+  - operation_id: identity.quarantine_conflict
+    title_vi: Đưa xung đột identity vào cách ly
+    transport: internal
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-ingest-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "conflict_fingerprint", rule_vi: "Cùng fingerprint không tạo hai bản ghi cách ly."}
+    request_summary_vi: Hai identity mâu thuẫn + bằng chứng.
+    response_summary_vi: conflict_id + trạng thái `quarantined`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/identity.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/identity.md
+    state_effects_vi: >
+      Giữ đủ nguồn của cả hai phía, không merge đoán; report **không** tính hai alias nghi trùng là hai hướng
+      chắc chắn (B15).
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC23]
+    requirement_refs: [REQ-S1.4-01]
+    decision_refs: [B15]
+    invariant_refs: [I03]
+
+  - operation_id: identity.merge_works
+    title_vi: Gộp hai work đã tồn tại khi phát hiện chúng là cùng một công trình
+    transport: internal
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-ingest-service, MOD-identity-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "loser_work_id + winner_work_id + alias_evidence_hash", rule_vi: "Gọi lại cùng khóa trả kết quả merge đã commit; cùng cặp work với bằng chứng khác trả CONFLICT và **không** merge lại."}
+    request_summary_vi: >
+      `winner_work_id` (canonical giữ lại), `loser_work_id` (bị gộp vào), `alias_evidence` (nguồn chứng minh
+      DOI↔arXiv là cùng công trình) và lý do merge (`metadata_link_discovered` | `owner_decision`).
+    response_summary_vi: >
+      `merge_id`, canonical_id sau merge, số reference đã chuyển theo từng loại (post_work, saved_item, analysis),
+      và `first_announced_resolution` do policy PC04 quyết định.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/identity.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/identity.md
+    state_effects_vi: >
+      Chuyển tham chiếu `post_work`, `saved_item` và `analysis` từ loser sang winner theo quy tắc trong
+      contracts/data/identity.md (PC02), ghi `identity_merge_audit` giữ nguyên audit trail hai phía. Snapshot lịch
+      sử của Saved **không** bị sửa (I08). Xử lý `first_announced` sau merge **không** do PC01/PC02 quyết định: nó
+      theo policy của PC04 (CR-PC02-06) — một canonical work chỉ có một first-announcement (I07). Merge không phải
+      là đường "đoán": bằng chứng không đủ thì đi qua identity.quarantine_conflict, không gọi operation này (B15).
+    error_codes: [VALIDATION_ERROR, NOT_FOUND, IDENTITY_CONFLICT, CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    error_note_vi: >
+      `STALE_LEASE` **không áp dụng**: đây là port nội bộ trong transaction của server, không do worker giữ lease
+      gọi tới.
+    scenario_refs: [SC07, SC09, SC23]
+    requirement_refs: [REQ-D17, REQ-D29, REQ-AC07, REQ-AC09]
+    decision_refs: [B06, B15]
+    invariant_refs: [I03, I07, I08]
+
+  - operation_id: identity.resolve_conflict
+    title_vi: Owner giải quyết một xung đột identity đang cách ly
+    transport: http
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id không merge hai lần."}
+    request_summary_vi: conflict_id + quyết định (`merge` | `keep_separate`) + lý do.
+    response_summary_vi: Kết quả merge, danh sách reference/first-announcement/Saved đã chuyển.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/identity.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/identity.md
+    state_effects_vi: >
+      Quyết định `merge` thực thi bằng cách gọi identity.merge_works (port nội bộ) — đó là đường merge **duy nhất**;
+      quyết định `keep_separate` đóng conflict và giữ hai canonical id. Giữ audit trail; snapshot lịch sử **không**
+      bị sửa (PC02 chốt chi tiết).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDENTITY_CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC09, SC23]
+    requirement_refs: [REQ-D29, REQ-AC09]
+    decision_refs: [B06, B15]
+    invariant_refs: [I03, I07, I08]
+
+  - operation_id: work.get_detail
+    title_vi: Work detail (summary, nhãn, tag khớp, post dẫn, lịch sử phân tích, mục liên quan)
+    transport: http
+    owner_module: MOD-identity-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: target reference (`work` hoặc `post`).
+    response_summary_vi: >
+      Summary + nhãn mức độ đọc + nhãn chủ đề + tag khớp + danh sách post dẫn + paper/DOI + lịch sử phân tích
+      (mọi generation) + mục liên quan đã báo cáo kèm ngày.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/target.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND]
+    scenario_refs: [SC09, SC10, SC11]
+    requirement_refs: [REQ-D19, REQ-D21, REQ-D26, REQ-D29, REQ-D30, REQ-AC10]
+    decision_refs: [B06, B07]
+    invariant_refs: [I04, I07]
+
+  # ------------------------------------------------------------ analysis
+  - operation_id: analysis.enqueue_tasks
+    title_vi: Xếp hàng task phân tích cho các target đã commit
+    transport: internal
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-ingest-service, MOD-report-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "analysis_key (target canonical id + source fingerprint + task type + prompt/schema version + generation)", rule_vi: "Cùng analysis_key không tạo task trùng; kết quả hợp lệ đã có thì không xếp hàng lại (B07/D25)."}
+    request_summary_vi: >
+      Danh sách target + `task_type` (`label` | `summary` | `direction_phrasing` — chính tả lấy từ
+      contracts/data/entities.yaml, ruling CR-PC03-05) + generation.
+      Task chỉ được tạo cho dữ liệu **đã commit ở server** (B12), không nhận dữ liệu trực tiếp từ collector.
+    response_summary_vi: Danh sách task_id đã tạo và task bị bỏ qua vì đã có kết quả hợp lệ.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/tasks.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/tasks.yaml
+    state_effects_vi: >
+      Ingest commit → xếp hàng labeling. Report builder xếp hàng summary cho các target **đã chọn** tại thời điểm
+      build (B17); target thiếu summary được ghi pending và report mang `quality: partial`.
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC06, SC22]
+    requirement_refs: [REQ-D25, REQ-D26, REQ-P0-05, REQ-P0-06, REQ-AC06]
+    decision_refs: [B07, B12, B17, ADR-0001]
+    invariant_refs: [I04]
+
+  - operation_id: analysis.claim_task
+    title_vi: Analysis worker nhận task từ server
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: true
+    idempotency: {required: true, key: "claim_request_id", rule_vi: "Cùng claim_request_id trả cùng task; không cấp hai lease cho một task."}
+    request_summary_vi: worker_instance_id, capability provider hiện có, số task muốn nhận.
+    response_summary_vi: task_id, task type, analysis_key, lease_id, lease_epoch, tham chiếu input.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/tasks.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/tasks.yaml
+    state_effects_vi: analysis `pending` → `running`; cấp lease/epoch.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STALE_LEASE, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC28]
+    requirement_refs: [REQ-D42, REQ-P0-11]
+    decision_refs: [B07, B12, B13, ADR-0001]
+    invariant_refs: [I01, I04]
+
+  - operation_id: analysis.get_task_input
+    title_vi: Lấy input đã commit của task (đường dữ liệu duy nhất cho worker)
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: task_id + lease_id/epoch.
+    response_summary_vi: >
+      Nội dung nguồn kèm source ID/hash/evidence level, ranh giới dữ liệu rõ ràng; nội dung này là **dữ liệu**,
+      không phải lệnh (SRC-SPEC §11.4).
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/tasks.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/tasks.yaml
+    state_effects_vi: Không. Worker **không** nhận dữ liệu chưa commit trực tiếp từ collector (B12).
+    error_codes: [UNAUTHORIZED, NOT_FOUND, STALE_LEASE, VALIDATION_ERROR]
+    scenario_refs: [SC17, SC28]
+    requirement_refs: [REQ-S11.4-01, REQ-AC17]
+    decision_refs: [B12, B16, ADR-0001]
+    invariant_refs: [I11]
+
+  - operation_id: analysis.heartbeat
+    title_vi: Gia hạn lease của task phân tích
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Mang lease_id + lease_epoch; epoch cũ trả STALE_LEASE."}
+    request_summary_vi: lease_id, lease_epoch, tiến độ.
+    response_summary_vi: Lease còn hiệu lực hay không; lệnh hủy nếu có.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/tasks.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/tasks.yaml
+    state_effects_vi: Cập nhật hạn lease; không ghi kết quả.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, WORKER_LEASE_EXPIRED, NOT_FOUND]
+    scenario_refs: [SC20, SC28]
+    requirement_refs: [REQ-D42]
+    decision_refs: [B07]
+    invariant_refs: [I10]
+
+  - operation_id: analysis.submit_result
+    title_vi: Nộp kết quả phân tích đúng schema
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: true
+    idempotency: {required: true, key: "analysis_key + attempt_id", rule_vi: "Một analysis_key chỉ có **một** kết quả hợp lệ đã commit; nộp lại cùng key + payload khác trả IDEMPOTENCY_CONFLICT."}
+    request_summary_vi: >
+      task_id, lease_id/epoch, JSON đúng schema với `author_claim` / `source_verified` / `ai_inference` tách
+      riêng, citation target, evidence level, usage (`unknown` được phép).
+    response_summary_vi: Trạng thái commit + generation của kết quả.
+    request_schema_planned: contracts/schemas/analysis-result.schema.json
+    response_schema_planned: contracts/schemas/analysis-result.schema.json
+    state_effects_vi: >
+      analysis `running` → `valid` khi schema hợp lệ; sai schema → AI_OUTPUT_INVALID, không commit. Usage không
+      biết ghi `unknown`, **không** ghi 0 (I14). Comparator thiếu ghi `comparator: unknown` (B16).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, WORKER_LEASE_EXPIRED, IDEMPOTENCY_CONFLICT, AI_OUTPUT_INVALID, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC10, SC11, SC17, SC28]
+    requirement_refs: [REQ-D20, REQ-D43, REQ-D44, REQ-AC10, REQ-AC11]
+    decision_refs: [B07, B16]
+    invariant_refs: [I04, I11, I14]
+
+  - operation_id: analysis.report_attempt_unknown
+    title_vi: Báo lần thử không rõ kết quả (worker chết sau khi model đã chạy)
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: true
+    idempotency: {required: true, key: "attempt_id", rule_vi: "Cùng attempt_id chỉ ghi một bản ghi unknown."}
+    request_summary_vi: task_id, attempt_id, thời điểm, lý do mất kết quả.
+    response_summary_vi: Trạng thái task sau khi ghi nhận.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/tasks.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/analysis.yaml
+    state_effects_vi: >
+      analysis → `unknown_attempt`. **Không** cam kết chưa phát sinh chi phí; chạy lại ghi attempt mới
+      (SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, AI_ATTEMPT_UNCERTAIN, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC28]
+    requirement_refs: [REQ-D44]
+    decision_refs: [B07]
+    invariant_refs: [I04, I14]
+
+  - operation_id: analysis.request_reanalysis
+    title_vi: Owner bấm phân tích lại một mục (D26)
+    transport: http
+    owner_module: MOD-analysis-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id không tạo hai generation."}
+    request_summary_vi: target reference + lý do (`manual` | `new_paper_version`).
+    response_summary_vi: generation mới + task đã xếp hàng.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/ai/tasks.yaml
+    state_effects_vi: >
+      Tạo generation mới, **giữ bản cũ** (D26). Đổi tag không kích hoạt operation này (AC-06: 0 lần gọi AI).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC06]
+    requirement_refs: [REQ-D25, REQ-D26, REQ-AC06]
+    decision_refs: [B07]
+    invariant_refs: [I04]
+
+  # ------------------------------------------------------------------ ai
+  - operation_id: ai.run_inference_task
+    title_vi: Chạy inference cho một task qua adapter (trên máy cá nhân)
+    transport: internal
+    owner_module: MOD-ai-adapter
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Không bảo đảm exactly-once với dịch vụ ngoài; worker ghi attempt và dùng analysis_key để chống hai kết quả hợp lệ."}
+    request_summary_vi: >
+      prompt + schema của task + credential **chỉ của provider được giao** (B13). Đường CLI/ACP chạy với
+      tool/file/network bị khóa ngoài phần inference.
+    response_summary_vi: JSON đúng schema hoặc lỗi phân loại; usage thật hoặc `unknown` cho đường CLI (D44).
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/providers.yaml
+    response_schema_planned: contracts/schemas/analysis-result.schema.json
+    state_effects_vi: >
+      Không ghi dữ liệu authoritative. Adapter **không** được gọi tool, đọc file ngoài phạm vi, fetch URL hay gửi
+      Telegram; nếu không kiểm chứng được cô lập cho một provider thì adapter đó **không được bật** (B13).
+    error_codes: [AI_OUTPUT_INVALID, AI_PROVIDER_UNAVAILABLE, AI_ATTEMPT_UNCERTAIN, VALIDATION_ERROR, CAPABILITY_DENIED]
+    scenario_refs: [SC16, SC17, SC28]
+    requirement_refs: [REQ-D41, REQ-D43, REQ-D51, REQ-A5, REQ-AC16, REQ-AC17]
+    decision_refs: [B13, B16]
+    invariant_refs: [I11, I14]
+
+  - operation_id: ai.probe_provider_capability
+    title_vi: Dò khả năng dùng được của provider trên máy cá nhân (đặc biệt CLI/ACP)
+    transport: internal
+    owner_module: MOD-ai-adapter
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only; kết quả đưa vào worker.register_capabilities."}
+    request_summary_vi: Danh sách provider đã cấu hình cho các task.
+    response_summary_vi: >
+      Với từng provider: `usable | unusable | unknown` + `reason_code`
+      (`binary_missing`, `not_logged_in`, `policy_unverified`, `isolation_unverified`, `probe_timeout`, …).
+    request_schema_planned: null
+    x-schema-source-request: contracts/ai/providers.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/capabilities.yaml
+    state_effects_vi: Không ghi ở server; chỉ báo cáo trạng thái. `unknown` không được quy đổi thành `usable`.
+    error_codes: [AI_PROVIDER_UNAVAILABLE, CAPABILITY_DENIED, VALIDATION_ERROR]
+    scenario_refs: [SC16]
+    requirement_refs: [REQ-D41, REQ-D51, REQ-A5]
+    decision_refs: [B13]
+    invariant_refs: [I13, I14]
+
+  # -------------------------------------------------------------- secret
+  - operation_id: secret.store_provider_key
+    title_vi: Lưu API key vào secret store phía server
+    transport: internal
+    owner_module: MOD-secret-service
+    caller_modules: [MOD-settings-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "provider_id + key_version", rule_vi: "Ghi cùng version không tạo bản ghi thứ hai."}
+    request_summary_vi: provider_id + giá trị key (chỉ đi từ backend, không từ frontend sau khi đã lưu).
+    response_summary_vi: Tham chiếu secret + trạng thái; **không bao giờ** trả lại giá trị key.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/secrets.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/secrets.md
+    state_effects_vi: Lưu key ở secret store server (SRC-SPEC §11.2); log che secrets.
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC17]
+    requirement_refs: [REQ-S11.2-01]
+    decision_refs: [B13]
+    invariant_refs: [I01, I11]
+
+  - operation_id: secret.issue_task_credential
+    title_vi: Cấp credential ngắn hạn theo từng task cho analysis worker (B13)
+    transport: http
+    owner_module: MOD-secret-service
+    caller_modules: [MOD-analysis-worker]
+    auth_scope: analysis_worker_token
+    mutation: true
+    idempotency: {required: true, key: "task_id + attempt_id", rule_vi: "Cùng attempt trả cùng credential còn hạn; không cấp credential cho task worker không giữ lease."}
+    request_summary_vi: task_id + lease_id/epoch.
+    response_summary_vi: >
+      Credential **chỉ của provider gắn với task đó**, có hạn ngắn. Không trả toàn bộ key store, không trả key
+      của provider khác.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/secrets.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/secrets.md
+    state_effects_vi: Ghi audit cấp phát đã che secrets; hạn dùng do PC08 chốt.
+    error_codes: [UNAUTHORIZED, NOT_FOUND, STALE_LEASE, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC16, SC17]
+    requirement_refs: [REQ-S11.2-01, REQ-D51]
+    decision_refs: [B13]
+    invariant_refs: [I01, I11]
+
+  - operation_id: secret.revoke_task_credential
+    title_vi: Thu hồi credential của task khi task kết thúc hoặc lease mất
+    transport: internal
+    owner_module: MOD-secret-service
+    caller_modules: [MOD-analysis-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "task_id + attempt_id", rule_vi: "Thu hồi lại không đổi trạng thái."}
+    request_summary_vi: task_id + attempt_id + lý do.
+    response_summary_vi: Xác nhận thu hồi.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/secrets.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/secrets.md
+    state_effects_vi: Vô hiệu credential đã cấp; ghi audit.
+    error_codes: [NOT_FOUND, VALIDATION_ERROR, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC20, SC28]
+    requirement_refs: [REQ-S11.2-01]
+    decision_refs: [B13]
+    invariant_refs: [I11]
+
+  # ----------------------------------------------------------- embedding
+  - operation_id: embedding.generate_vectors
+    title_vi: Sinh vector cho nhãn và tag bằng model local ở server (D50)
+    transport: internal
+    owner_module: MOD-embedding-service
+    caller_modules: [MOD-ingest-service, MOD-tag-service, MOD-report-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "text_hash + model_name + model_version + generation", rule_vi: "Cùng khóa trả vector đã lưu; không sinh bản thứ hai."}
+    request_summary_vi: Danh sách chuỗi cần vector hóa + generation mục tiêu.
+    response_summary_vi: Vector + tên/phiên bản model + dimension + generation.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: >
+      Ghi vector kèm tên + phiên bản model (D48). Chạy **chỉ local**, không dùng API key và không dùng CLI
+      (SRC-SPEC §10.1); nhờ vậy luồng không-API-key vẫn hoàn tất (AC-16).
+    error_codes: [VALIDATION_ERROR, EMBEDDING_GENERATION_MISMATCH, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC16, SC24]
+    requirement_refs: [REQ-D48, REQ-D50, REQ-D59, REQ-AC16, REQ-P0-05]
+    decision_refs: [B12, ADR-0001]
+    invariant_refs: [I12]
+
+  - operation_id: embedding.get_active_generation
+    title_vi: Đọc embedding generation đang active
+    transport: internal
+    owner_module: MOD-embedding-service
+    caller_modules: [MOD-tag-service, MOD-report-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có tham số.
+    response_summary_vi: generation_id, model_name, model_version, dimension, trạng thái rebuild.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: Không.
+    error_codes: [NOT_FOUND]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-D48]
+    decision_refs: []
+    invariant_refs: [I12]
+
+  - operation_id: embedding.start_generation_rebuild
+    title_vi: Bắt đầu dựng generation mới khi đổi model embedding
+    transport: internal
+    owner_module: MOD-embedding-service
+    caller_modules: [MOD-settings-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "target_model_name + target_model_version", rule_vi: "Cùng model mục tiêu không dựng hai generation song song."}
+    request_summary_vi: Model mới + phạm vi cần tính lại (toàn kho, D48).
+    response_summary_vi: generation_id mới ở trạng thái `building` + tiến độ.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: >
+      Trong lúc rebuild, selection dùng generation cũ hoặc bị chặn có lý do; **không trộn** vector cũ/mới
+      (SRC-PLAN §9.3).
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, EMBEDDING_GENERATION_MISMATCH, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-D48]
+    decision_refs: []
+    invariant_refs: [I12]
+
+  - operation_id: embedding.activate_generation
+    title_vi: Chuyển active generation một cách nguyên tử sau khi kiểm đủ vector
+    transport: internal
+    owner_module: MOD-embedding-service
+    caller_modules: [MOD-embedding-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "generation_id", rule_vi: "Kích hoạt lại generation đã active không đổi trạng thái."}
+    request_summary_vi: generation_id + bằng chứng đã đủ vector và đạt kiểm tra chất lượng.
+    response_summary_vi: generation active mới.
+    request_schema_planned: null
+    x-schema-source-request: contracts/data/entities.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    state_effects_vi: Chuyển active nguyên tử; selection sau đó chỉ so sánh trong cùng generation.
+    error_codes: [VALIDATION_ERROR, EMBEDDING_GENERATION_MISMATCH, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-D48]
+    decision_refs: []
+    invariant_refs: [I12]
+
+  # -------------------------------------------------------------- report
+  - operation_id: report.build
+    title_vi: Dựng một kỳ báo cáo (chọn mục, tính hướng đang nổi)
+    transport: internal
+    owner_module: MOD-report-service
+    caller_modules: [MOD-job-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "report_build_id", rule_vi: "Cùng build_id không tạo hai bản dựng."}
+    request_summary_vi: run_id, coverage predecessor kỳ vọng, tag_config_version, embedding generation.
+    response_summary_vi: report_build_id, danh sách item được chọn, khối "hướng đang nổi" đã tính, pending list.
+    request_schema_planned: null
+    x-schema-source-request: contracts/reporting/selection.md
+    response_schema_planned: contracts/schemas/report.schema.json
+    state_effects_vi: >
+      Chọn mục là **truy vấn dữ liệu**, không phải việc của AI (SRC-SPEC §10.1). Target được chọn mà thiếu summary
+      được xếp hàng qua analysis.enqueue_tasks và ghi pending (B17).
+    error_codes: [VALIDATION_ERROR, TAG_VERSION_STALE, EMBEDDING_GENERATION_MISMATCH, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC05, SC08, SC22, SC24]
+    requirement_refs: [REQ-D27, REQ-D53, REQ-D54, REQ-P0-07, REQ-AC05, REQ-AC08]
+    decision_refs: [B01, B04, B14, B17]
+    invariant_refs: [I05, I06, I12]
+
+  - operation_id: report.publish
+    title_vi: Publish một kỳ báo cáo (transaction CAS, điểm đóng băng tag theo B01)
+    transport: internal
+    owner_module: MOD-report-service
+    caller_modules: [MOD-report-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "report_build_id", rule_vi: "Publish lại cùng build_id trả report đã publish; publisher thua CAS phải đọc lại, không publish kỳ chồng."}
+    request_summary_vi: report_build_id + coverage predecessor kỳ vọng + tag/model version kỳ vọng.
+    response_summary_vi: report_id, coverage `[from, to)`, quality (`complete` | `partial`), delivery intent đã tạo.
+    request_schema_planned: contracts/schemas/report.schema.json
+    response_schema_planned: contracts/schemas/report.schema.json
+    state_effects_vi: >
+      Một transaction ghi: report + report_item + first-announcement ledger + coverage ledger + backfill
+      consumption + tag_config_version bất biến + delivery intent. Kỳ rỗng vẫn ghi coverage nhưng **không** tạo
+      digest (D57). Sau publish, nội dung report **không đổi** (I05); delivery không sửa nội dung đã publish (B01).
+    error_codes: [TAG_VERSION_STALE, EMBEDDING_GENERATION_MISMATCH, IDEMPOTENCY_CONFLICT, CONFLICT, VALIDATION_ERROR, STORAGE_WRITE_FAILED]
+    error_note_vi: >
+      `CONFLICT` khi publisher thua CAS trên coverage predecessor: đọc lại và dựng lại, KHÔNG publish kỳ chồng
+      (ruling CR-PC04-04; contracts/state/report.yaml `publish_cas`).
+    scenario_refs: [SC08, SC09, SC19]
+    requirement_refs: [REQ-D23, REQ-D27, REQ-D29, REQ-D57, REQ-CTAG, REQ-AC08, REQ-AC09]
+    decision_refs: [B01, B04, B17, AMD-B01]
+    invariant_refs: [I05, I06, I07]
+
+  - operation_id: report.list
+    title_vi: Danh sách báo cáo theo kỳ (màn hình mặc định)
+    transport: http
+    owner_module: MOD-report-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Phân trang.
+    response_summary_vi: Ngày, coverage `[from, to)`, số mục, số hướng nổi, quality.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/report.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC08, SC15]
+    requirement_refs: [REQ-D45, REQ-P0-07]
+    decision_refs: [B04]
+    invariant_refs: [I06]
+
+  - operation_id: report.get
+    title_vi: Chi tiết một kỳ báo cáo
+    transport: http
+    owner_module: MOD-report-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: report_id.
+    response_summary_vi: >
+      Khối "hướng đang nổi" (nhãn "ứng viên để đọc sâu"), danh sách mục + summary, tag_config_version đã dùng,
+      coverage, quality + danh sách pending, ghi chú đợt dừng sớm nếu có.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/report.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND]
+    scenario_refs: [SC09, SC10, SC15]
+    requirement_refs: [REQ-D19, REQ-D53, REQ-D54, REQ-AC10, REQ-P0-07]
+    decision_refs: [B14, B17]
+    invariant_refs: [I05, I13]
+
+  # ---------------------------------------------------------------- save
+  - operation_id: save.create
+    title_vi: Save một mục (app hoặc Telegram) kèm snapshot
+    transport: http
+    owner_module: MOD-saved-service
+    caller_modules: [MOD-web-ui, MOD-telegram-adapter]
+    auth_scope: owner_session_or_linked_chat
+    mutation: true
+    idempotency: {required: true, key: "owner_id + target_ref", rule_vi: "UNIQUE(owner, target); bấm 5 lần vẫn một bản ghi, mỗi lần vẫn có phản hồi trạng thái (D38/AC-13)."}
+    request_summary_vi: target reference + nguồn Save (`app` | `telegram`) + analysis revision đang đọc.
+    response_summary_vi: saved_item_id + trạng thái (`created` | `already_saved`) + ngày lưu.
+    request_schema_planned: contracts/schemas/saved-snapshot.schema.json
+    response_schema_planned: contracts/schemas/saved-snapshot.schema.json
+    state_effects_vi: >
+      Ghi snapshot bất biến lấy từ **revision đang đọc**, không lấy bản analysis mới hơn vừa xuất hiện (PC07).
+      Bỏ tag hay xóa bài gốc trên X không làm mất snapshot (D55/AC-12).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, UNAUTHORIZED_COMMAND, NOT_FOUND, CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    error_note_vi: >
+      `CONFLICT` là mã cho va chạm Save đồng thời từ hai kênh (app và Telegram): transaction thua trả `CONFLICT`
+      **và** hàng đã tồn tại, không tạo bản thứ hai (`UNIQUE(owner, target)`; AC-13/SC13/I08). Đây là mã duy nhất
+      cho tình huống này và nó đã có trong `contracts/errors.yaml` (ruling FIX6 F-A2R1-06).
+    scenario_refs: [SC12, SC13]
+    requirement_refs: [REQ-D38, REQ-D55, REQ-P0-08, REQ-AC12, REQ-AC13]
+    decision_refs: [B09]
+    invariant_refs: [I08]
+
+  - operation_id: save.remove
+    title_vi: Bỏ lưu (khác xóa dữ liệu gốc)
+    transport: http
+    owner_module: MOD-saved-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "owner_id + target_ref", rule_vi: "Bỏ lưu lại trả kết quả idempotent."}
+    request_summary_vi: saved_item_id hoặc target reference.
+    response_summary_vi: Xác nhận đã bỏ lưu.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/saved-snapshot.schema.json
+    state_effects_vi: >
+      Đây là **thao tác thứ nhất** trong ba thao tác riêng biệt của SRC-SPEC §7.3 (REQ-S7.3-05):
+      bỏ lưu ≠ xóa dữ liệu gốc (`data.delete_target`) ≠ xóa toàn bộ dữ liệu (`data.purge_all`).
+      Bỏ lưu chỉ gỡ `saved_item`; **không** xóa post/work gốc và **không** xóa snapshot của các bản Saved khác.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC12]
+    requirement_refs: [REQ-S7.3-05, REQ-P0-08]
+    decision_refs: []
+    invariant_refs: [I08]
+    audit_refs: [F-A1R1-04, R-04]
+
+  # ------------------------------------------------- data lifecycle (§7.3)
+  - operation_id: data.delete_target
+    title_vi: Xóa dữ liệu gốc của **một** target (thao tác thứ hai của SRC-SPEC §7.3)
+    transport: http
+    owner_module: MOD-data-admin-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id trả bản ghi xóa đã commit; xóa lại target đã xóa trả kết quả idempotent, không lỗi."}
+    request_summary_vi: >
+      `target_ref` (tagged union `work` | `post`), `confirmation.acknowledged: true` (cờ xác nhận **bắt buộc**;
+      thiếu hoặc `false` ⇒ `VALIDATION_ERROR`), và lý do tùy chọn.
+    response_summary_vi: >
+      `deletion_id`, số hàng đã xóa theo từng loại, và danh sách những gì **được giữ lại** (snapshot, ledger) để
+      người dùng thấy rõ phạm vi.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    transaction_vi: >
+      Một transaction xóa dữ liệu gốc của target: `post` / `work` và các liên kết `post_work`, `work_label`,
+      `analysis` (mọi generation), `tag_vector` của nhãn thuộc target. Ghi một hàng `data_deletion_audit` trong
+      **cùng** transaction. Không gọi mạng ngoài trong transaction.
+    preserved_vi: >
+      **Giữ lại, không được xóa:** `saved_snapshot` của các bản Saved đã có (D55/AC-12 — bài gốc bị xóa vẫn đọc được
+      trong Saved); `coverage_window`, `first_announced_ledger`, `backfill_ledger`, `pending_item_ledger`;
+      nội dung `report`/`report_item` đã publish (I05, I07 — một canonical work chỉ có một first-announcement, xóa
+      dữ liệu gốc không được biến nó thành phát hiện mới ở kỳ sau).
+    forbidden_effects_vi: >
+      Không sửa report đã publish; không reset `first_announced`; không xóa `saved_snapshot`; không đẩy hay lùi con
+      trỏ coverage; không thu hồi lease của run đang chạy (dùng run.cancel cho việc đó).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    error_map_vi: >
+      Thiếu cờ xác nhận hoặc `target_ref` sai dạng → `VALIDATION_ERROR` (không xóa gì). Không phải session owner →
+      `UNAUTHORIZED`. Target không tồn tại → `NOT_FOUND`. Target đang bị một run/analysis giữ lease, hoặc đang là
+      thành phần của một report đang `building` → `CONFLICT` (không xóa một phần). DB không ghi được →
+      `STORAGE_WRITE_FAILED`, không xóa một phần.
+    state_effects_vi: >
+      Quy tắc cascade và referential integrity chi tiết thuộc PC02 (`contracts/data/entities.yaml`,
+      `contracts/data/invariants.md`) — PC01 chốt **ai sở hữu mutation, phạm vi giữ lại và cờ xác nhận**, không
+      chốt danh sách bảng cuối cùng (CR-PC01-05).
+    scenario_refs: [SC32]
+    requirement_refs: [REQ-S7.3-05]
+    decision_refs: []
+    invariant_refs: [I05, I07, I08]
+    audit_refs: [F-A1R1-04, R-04]
+
+  - operation_id: data.purge_all
+    title_vi: Xóa toàn bộ dữ liệu (thao tác thứ ba của SRC-SPEC §7.3, đòi xác nhận gõ tay)
+    transport: http
+    owner_module: MOD-data-admin-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "purge_challenge_id", rule_vi: "Một challenge dùng đúng một lần; gọi lại sau khi đã thực thi trả bản ghi đã commit, không xóa lần hai."}
+    two_phase_vi: >
+      Một operation_id, hai `phase` để giữ đúng ngữ nghĩa "xác nhận gõ tay" mà không thêm operation thứ ba:
+      (1) `phase: request_challenge` — server sinh và lưu một `purge_challenge` có hạn, trả về **cụm từ xác nhận**
+      để người dùng gõ lại; không xóa gì. (2) `phase: execute` — yêu cầu `purge_challenge_id` +
+      `confirmation_phrase` **khớp chính xác** cụm từ server đã phát; sai hoặc hết hạn → `VALIDATION_ERROR`,
+      challenge bị hủy và phải xin lại.
+    request_summary_vi: "`phase`, `purge_challenge_id` (phase execute), `confirmation_phrase` (phase execute)."
+    response_summary_vi: >
+      Phase 1: `purge_challenge_id`, cụm từ phải gõ, thời điểm hết hạn. Phase 2: `purge_id`, số hàng đã xóa theo
+      bảng, danh sách phạm vi **được loại trừ**.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/data/entities.yaml
+    precondition_vi: >
+      Chỉ chạy được khi `storage.health = maintenance`. Ở `healthy`, `write_blocked` hay `recovery_required` →
+      `CONFLICT`. Trước khi xóa: thu hồi mọi `assignment_lease` đang hoạt động, dừng scheduler và delivery
+      dispatcher; worker cũ mang epoch cũ bị từ chối (I10).
+    transaction_vi: >
+      Thu hồi lease và dừng dispatcher **trước**, rồi xóa trong một transaction; ghi `data_deletion_audit` với
+      `kind: purge_all`. Sau khi xong, `storage.health` vẫn ở `maintenance` cho tới khi owner mở lại — **không** tự
+      động resume dispatcher (cùng nguyên tắc với NC-10).
+    exclusions_vi: >
+      PROVISIONAL: "toàn bộ dữ liệu" được hiểu là **dữ liệu nghiên cứu và dữ liệu người dùng** (post, work,
+      analysis, vector, report, Saved, delivery, ledger, run). Loại trừ đề xuất: `settings`, `secret_ref` /
+      `task_credential` / `secret_audit`, `owner` + credential đăng nhập, `telegram_link`, `schema_migration` —
+      vì xóa chúng biến thao tác này thành "gỡ cài đặt" chứ không phải "xóa dữ liệu", và người dùng sẽ mất đường
+      đăng nhập vào chính app của mình.
+    exclusions_status: OWNER_DECISION_REQUIRED
+    exclusions_note_vi: >
+      **Chỉ danh sách loại trừ** là `OWNER_DECISION_REQUIRED` (ruling R-04); bản thân operation không bị chặn.
+      Owner phải xác nhận từng mục trước khi operation này được coi là đủ điều kiện implementation.
+    forbidden_effects_vi: >
+      Không chạy khi `storage.health ≠ maintenance`; không tự resume dispatcher/scheduler sau khi xóa; không replay
+      outbox cũ; không xóa khi challenge sai hoặc hết hạn; không xóa một phần rồi báo thành công.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    error_map_vi: >
+      `confirmation_phrase` sai/hết hạn → `VALIDATION_ERROR` (challenge bị hủy, không xóa gì). Không phải owner →
+      `UNAUTHORIZED`. `storage.health ≠ maintenance` → `CONFLICT`. Challenge không tồn tại → `NOT_FOUND`.
+      Lỗi ghi giữa chừng → `STORAGE_WRITE_FAILED`; transaction rollback, không có trạng thái "xóa một nửa".
+    state_effects_vi: Xem transaction_vi và exclusions_vi. Danh sách bảng cuối cùng do PC02/PC08 chốt (CR-PC01-05).
+    scenario_refs: [SC44]
+    scenario_note_vi: >
+      `SC44` (đăng ký theo ruling FIX3, F-A1R2-06) phải phủ: hai phase xác nhận (`request_challenge` rồi
+      `execute`), điều kiện tiên quyết `storage.health = maintenance`, thu hồi lease trước khi xóa, và các ca âm —
+      cụm từ xác nhận sai, challenge hết hạn, challenge dùng lại, và gọi khi storage ở trạng thái khác
+      `maintenance`. CR-PC01-07 khép lại nhờ ruling này.
+    requirement_refs: [REQ-S7.3-05]
+    decision_refs: []
+    invariant_refs: [I05, I08, I10, I15]
+    audit_refs: [F-A1R1-04, R-04]
+
+  - operation_id: save.list
+    title_vi: Kho đã lưu (Saved)
+    transport: http
+    owner_module: MOD-saved-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Phân trang + từ khóa tìm kiếm.
+    response_summary_vi: Bài đã Save, ngày lưu, snapshot, nguồn Save.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/saved-snapshot.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC12, SC13]
+    requirement_refs: [REQ-D55, REQ-P0-08]
+    decision_refs: []
+    invariant_refs: [I08]
+
+  - operation_id: save.export
+    title_vi: Export Saved
+    transport: http
+    owner_module: MOD-saved-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    lifecycle_status: deferred_p1
+    lifecycle_note_vi: >
+      PROVISIONAL — hoãn sang P1 theo baseline §5 (OQ defaults, REQ-OQ10). Operation được đặt tên sẵn để PC07/PC09
+      trích dẫn, **không** nằm trong phạm vi P0 và không có nghĩa vụ implementation ở MVP.
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Định dạng export mong muốn.
+    response_summary_vi: Tệp export chứa snapshot đã lưu.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: contracts/schemas/saved-snapshot.schema.json
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND]
+    scenario_refs: [SC12]
+    scenario_note_vi: >
+      SC12 (Save bền qua khởi động lại và qua việc bài gốc bị xóa) là scenario gần nhất vì export đọc chính `saved_snapshot` mà SC12 khẳng định bất biến. **Không** có scenario riêng cho export: operation này `deferred_p1` theo REQ-OQ10, nên PC09 không cấp SC cho nó và điều đó là có chủ đích, không phải thiếu sót.
+    requirement_refs: [REQ-OQ10]
+    decision_refs: []
+    invariant_refs: [I08]
+
+  # ------------------------------------------------------------ telegram
+  - operation_id: telegram.receive_update
+    title_vi: Nhận update từ Telegram (ingress webhook)
+    transport: http
+    owner_module: MOD-telegram-adapter
+    caller_modules: [EXT-telegram-api]
+    auth_scope: telegram_ingress_secret
+    mutation: true
+    idempotency: {required: true, key: "telegram_update_id", rule_vi: "Update lặp lại (replay) không thực hiện hành động hai lần."}
+    request_summary_vi: Update của Telegram (message hoặc callback query).
+    response_summary_vi: >
+      Phản hồi tối thiểu cho Telegram. Tin từ chat ID **chưa liên kết** bị bỏ im lặng — không trả lời, không hành
+      động (D35, §11.3, AC-18); ngoại lệ hẹp duy nhất là chuỗi đúng định dạng mã liên kết (B09).
+    request_schema_planned: null
+    x-schema-source-request: contracts/telegram/commands.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/commands.yaml
+    state_effects_vi: >
+      Không đổi domain state khi update không hợp lệ. Chỉ update từ chat đã liên kết (hoặc mã liên kết hợp lệ)
+      mới đi tiếp sang telegram.execute_command.
+    error_codes: [UNAUTHORIZED, UNAUTHORIZED_COMMAND, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC18, SC25]
+    requirement_refs: [REQ-D35, REQ-P0-09, REQ-AC18, REQ-S11.3-01]
+    decision_refs: [B09]
+    invariant_refs: [I01, I11]
+
+  - operation_id: telegram.execute_command
+    title_vi: Thực thi một trong ba lệnh được phép (Save / chạy ngay / xem trạng thái)
+    transport: internal
+    owner_module: MOD-telegram-adapter
+    caller_modules: [MOD-telegram-adapter]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "telegram_update_id", rule_vi: "Callback lặp không tạo hai bản Saved và không tạo hai run."}
+    request_summary_vi: >
+      Lệnh đã xác thực + chat ID đã liên kết. Allowlist đúng ba lệnh của D36; **không** có lệnh sửa tag/cấu hình,
+      **không** có lệnh resume (B10).
+    response_summary_vi: Phản hồi trạng thái cho người dùng.
+    request_schema_planned: null
+    x-schema-source-request: contracts/telegram/commands.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/commands.yaml
+    state_effects_vi: Gọi tiếp save.create hoặc run.run_now hoặc run.list; không tự ghi SQLite.
+    error_codes: [UNAUTHORIZED_COMMAND, VALIDATION_ERROR, NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC13, SC18]
+    requirement_refs: [REQ-D36, REQ-P0-09, REQ-AC13]
+    decision_refs: [B09, B10, AMD-B10]
+    invariant_refs: [I01, I11]
+
+  - operation_id: telegram.issue_link_code
+    title_vi: Sinh mã liên kết một lần có hạn (trong app)
+    transport: http
+    owner_module: MOD-telegram-adapter
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Cùng request_id trả cùng mã còn hạn."}
+    request_summary_vi: Không có tham số nghiệp vụ ngoài request_id.
+    response_summary_vi: Mã một lần + thời điểm hết hạn.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/commands.yaml
+    state_effects_vi: Tạo mã chưa dùng, có hạn (SRC-SPEC §11.2). Mã không được tái sử dụng.
+    error_codes: [UNAUTHORIZED, CSRF_REJECTED, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC18, SC25]
+    requirement_refs: [REQ-D35, REQ-P0-09]
+    decision_refs: [B09]
+    invariant_refs: [I01]
+
+  - operation_id: telegram.consume_link_code
+    title_vi: Dùng mã liên kết (ngoại lệ hẹp cho chat chưa liên kết, B09)
+    transport: internal
+    owner_module: MOD-telegram-adapter
+    caller_modules: [MOD-telegram-adapter]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "link_code", rule_vi: "Mã dùng một lần; dùng lại trả UNAUTHORIZED_COMMAND và bỏ im lặng phía chat."}
+    request_summary_vi: Chuỗi đúng **định dạng** mã + chat ID gửi.
+    response_summary_vi: Liên kết mới hoặc từ chối im lặng.
+    request_schema_planned: null
+    x-schema-source-request: contracts/telegram/commands.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/commands.yaml
+    state_effects_vi: >
+      Chỉ chuỗi đúng định dạng mã mới được đối chiếu với mã chưa hết hạn/chưa dùng; mọi nội dung khác từ chat lạ bị
+      bỏ im lặng (B09). Liên kết mới **vô hiệu hóa liên kết cũ** (D37) và tăng link generation.
+    error_codes: [UNAUTHORIZED_COMMAND, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC18, SC25]
+    requirement_refs: [REQ-D35, REQ-D37, REQ-AC18]
+    decision_refs: [B09]
+    invariant_refs: [I01]
+
+  - operation_id: telegram.unlink
+    title_vi: Hủy liên kết Telegram (hành động trong app)
+    transport: http
+    owner_module: MOD-telegram-adapter
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "request_id", rule_vi: "Hủy lại khi đã hủy trả kết quả idempotent."}
+    request_summary_vi: Xác nhận của owner.
+    response_summary_vi: Trạng thái liên kết sau khi hủy.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/commands.yaml
+    state_effects_vi: >
+      Tăng link generation; delivery đang `pending`/`retry_wait` cho recipient cũ chuyển `cancelled`, **không**
+      chuyển payload cũ sang recipient mới (SRC-PLAN §8.3).
+    provisional_note_vi: >
+      PROVISIONAL: D37 nói "có lệnh hủy liên kết" nhưng D36 (XN) chốt đúng ba lệnh Telegram và B10 cấm thêm lệnh
+      Telegram thứ tư; PC01 đặt hủy liên kết là **hành động trong app**, không phải lệnh chat. Cần Owner phê duyệt
+      (unresolved ref PROV-PC01-02, CR-PC01-02 tới PC07).
+    error_codes: [UNAUTHORIZED, CSRF_REJECTED, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC25]
+    requirement_refs: [REQ-D37, REQ-P0-09]
+    decision_refs: [B09, B10]
+    invariant_refs: [I01]
+
+  - operation_id: telegram.send_payload
+    title_vi: Gửi một payload đã đóng tới recipient đã liên kết
+    transport: internal
+    owner_module: MOD-telegram-adapter
+    caller_modules: [MOD-delivery-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Telegram không nhận idempotency key do client cấp (SRC-PLAN §3.1); UNIQUE ở DB **không** chứng minh exactly-once ngoài hệ thống."}
+    request_summary_vi: delivery_part_id, payload đã đóng, recipient = chat đã liên kết + link generation.
+    response_summary_vi: Message ID khi thành công, hoặc phân loại lỗi/không rõ.
+    request_schema_planned: null
+    x-schema-source-request: contracts/telegram/delivery.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/telegram/delivery.md
+    state_effects_vi: >
+      Đây là side effect ngoài, nằm **ngoài** transaction SQLite (SRC-PLAN §5.1). Recipient do hệ thống quyết
+      định, nội dung nguồn không được đổi recipient (I11).
+    error_codes: [TELEGRAM_SEND_UNCERTAIN, TELEGRAM_PERMANENT_FAILURE, VALIDATION_ERROR, CAPABILITY_DENIED]
+    scenario_refs: [SC14, SC17, SC25]
+    requirement_refs: [REQ-P0-09, REQ-AC14, REQ-AC17]
+    decision_refs: [B03, AMD-B03]
+    invariant_refs: [I09, I11]
+
+  # ------------------------------------------------------------ delivery
+  - operation_id: delivery.create_intent
+    title_vi: Tạo delivery intent trong transaction đã commit (outbox)
+    transport: internal
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-report-service, MOD-job-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "logical_delivery_key (report_id | run_alert_id + channel)", rule_vi: "Một report/kênh có một logical delivery; một run có **tối đa một** alert intent."}
+    request_summary_vi: Loại intent (`report_digest` | `run_alert`), tham chiếu nội dung, kênh.
+    response_summary_vi: delivery_id + trạng thái `pending`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/telegram/delivery.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: >
+      Ghi intent cùng transaction publish (SRC-PLAN §5.1 outbox). Kỳ rỗng **không** tạo digest intent (D57).
+      Delivery không đổi nội dung report đã publish (B01).
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC04, SC14, SC19]
+    requirement_refs: [REQ-D57, REQ-P0-09, REQ-AC04, REQ-AC14]
+    decision_refs: [B01, B03]
+    invariant_refs: [I05, I09]
+
+  - operation_id: delivery.dispatch_next
+    title_vi: Dispatcher lấy intent kế tiếp và gửi (outbox dispatch)
+    transport: internal
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-delivery-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "delivery_part_id + attempt_seq", rule_vi: "Ghi attempt **trước** network call; part ở trạng thái `unknown` không được gửi lại tự động."}
+    request_summary_vi: Không có tham số ngoài sender lease.
+    response_summary_vi: delivery_part đã thử + kết quả phân loại.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/delivery.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: >
+      `pending` → `sending`, ghi attempt trước khi gọi telegram.send_payload. Digest nhiều message lưu
+      `delivery_part` có index + payload hash + receipt riêng. Dispatcher bị khóa khi
+      `storage.health = recovery_required` cho tới khi backup.reconcile_after_restore xong (I15).
+    error_codes: [TELEGRAM_SEND_UNCERTAIN, TELEGRAM_PERMANENT_FAILURE, RESTORE_UNVERIFIED, STALE_LEASE, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC14, SC27]
+    requirement_refs: [REQ-AC14, REQ-P0-09]
+    decision_refs: [B03, B11, AMD-B03]
+    invariant_refs: [I09, I15]
+
+  - operation_id: delivery.record_receipt
+    title_vi: Ghi receipt sau khi gửi thành công
+    transport: internal
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-delivery-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "delivery_part_id", rule_vi: "Ghi receipt lại trả receipt cũ; retry sau đó **chỉ** trả receipt, không gửi lần hai."}
+    request_summary_vi: delivery_part_id + message ID nhận được + thời điểm.
+    response_summary_vi: Trạng thái part = `sent`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/delivery.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: Persist receipt; aggregate delivery chỉ `sent` khi mọi part có receipt.
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC14]
+    requirement_refs: [REQ-AC14]
+    decision_refs: [B03]
+    invariant_refs: [I09]
+
+  - operation_id: delivery.mark_unknown
+    title_vi: Đánh dấu part không rõ đã gửi hay chưa (B03)
+    transport: internal
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-delivery-service]
+    auth_scope: internal_only
+    mutation: true
+    idempotency: {required: true, key: "delivery_part_id + attempt_seq", rule_vi: "Cùng attempt chỉ ghi một bản ghi unknown."}
+    request_summary_vi: delivery_part_id, attempt_seq, phân loại (timeout | mất kết nối | crash sau điểm có thể đã gửi).
+    response_summary_vi: Trạng thái part = `unknown`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/delivery.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: >
+      **Không** retry tự động. App nêu rõ "chưa xác định"; không hiển thị thành `sent` hay `failed` (I13).
+      Part `unknown` không được gửi lại chỉ vì aggregate chưa `sent`.
+    error_codes: [TELEGRAM_SEND_UNCERTAIN, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC14]
+    requirement_refs: [REQ-AC14]
+    decision_refs: [B03, AMD-B03]
+    invariant_refs: [I09, I13]
+
+  - operation_id: delivery.get_status
+    title_vi: Đọc trạng thái gửi của một report/alert
+    transport: http
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: report_id hoặc delivery_id.
+    response_summary_vi: >
+      Trạng thái aggregate + từng part: `pending | sending | sent | retry_wait | unknown | failed | cancelled`,
+      số attempt, thời điểm. Bốn trạng thái incomplete/empty/failed/unknown hiển thị riêng (I13).
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED, NOT_FOUND]
+    scenario_refs: [SC14, SC15]
+    requirement_refs: [REQ-AC14, REQ-AC15]
+    decision_refs: [B03]
+    invariant_refs: [I09, I13]
+
+  - operation_id: delivery.decide_unknown
+    title_vi: Owner quyết định với một part `unknown` (B03)
+    transport: http
+    owner_module: MOD-delivery-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: true
+    idempotency: {required: true, key: "delivery_part_id + decision_request_id", rule_vi: "Cùng quyết định không gửi hai lần."}
+    request_summary_vi: >
+      delivery_part_id + quyết định ∈ {`resend_accepting_duplicate_risk`, `mark_not_delivered`, `abandon`} + xác nhận
+      rằng nguy cơ trùng đã được chấp nhận.
+    response_summary_vi: Trạng thái part sau quyết định.
+    request_schema_planned: null
+    x-schema-source-request: contracts/http/openapi.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/delivery.yaml
+    state_effects_vi: >
+      Chỉ **operator** mới đưa part `unknown` ra khỏi trạng thái đó; hệ thống không tự quyết định (AMD-B03).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, IDEMPOTENCY_CONFLICT, TELEGRAM_SEND_UNCERTAIN, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC14]
+    requirement_refs: [REQ-AC14]
+    decision_refs: [B03, AMD-B03]
+    invariant_refs: [I09, I13]
+
+  # -------------------------------------------------------------- backup
+  - operation_id: backup.create_snapshot
+    title_vi: Tạo snapshot nhất quán của SQLite (Online Backup API hoặc VACUUM INTO)
+    transport: http
+    owner_module: MOD-backup-service
+    caller_modules: [MOD-backup-cli]
+    auth_scope: backup_operator
+    mutation: true
+    idempotency: {required: true, key: "snapshot_request_id", rule_vi: "Cùng request_id không tạo hai snapshot."}
+    request_summary_vi: Nhãn snapshot + đích lưu.
+    response_summary_vi: snapshot_id, manifest (DB + schema version + hash + embedding artifacts/config), thời điểm.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/backup-restore.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/backup-restore.md
+    state_effects_vi: >
+      **Không** copy file DB đang hoạt động làm bằng chứng đủ; WAL là một phần trạng thái bền (SRC-PLAN §3.1).
+      Profile Chrome trên máy cá nhân **không** nằm trong backup của server (SRC-SPEC §11.2).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STORAGE_WRITE_FAILED, IDEMPOTENCY_CONFLICT]
+    scenario_refs: [SC26, SC27]
+    requirement_refs: [REQ-D58, REQ-S7.3-02]
+    decision_refs: [B11, AMD-B11]
+    invariant_refs: [I15]
+
+  - operation_id: backup.verify_snapshot
+    title_vi: Kiểm tra tính toàn vẹn của một snapshot
+    transport: http
+    owner_module: MOD-backup-service
+    caller_modules: [MOD-backup-cli]
+    auth_scope: backup_operator
+    mutation: true
+    idempotency: {required: false, key: null, rule_vi: "Chạy lại tạo bản ghi kiểm tra mới."}
+    request_summary_vi: snapshot_id.
+    response_summary_vi: Kết quả integrity check + count/hash của Saved/report/ledger.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/backup-restore.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/backup-restore.md
+    state_effects_vi: Ghi kết quả verify; không đổi dữ liệu sản xuất.
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, RESTORE_UNVERIFIED]
+    scenario_refs: [SC27]
+    requirement_refs: [REQ-D58]
+    decision_refs: [B11]
+    invariant_refs: [I15]
+
+  - operation_id: backup.restore_snapshot
+    title_vi: Khôi phục từ snapshot vào môi trường có khóa side effect
+    transport: http
+    owner_module: MOD-backup-service
+    caller_modules: [MOD-backup-cli]
+    auth_scope: backup_operator
+    mutation: true
+    idempotency: {required: true, key: "restore_request_id", rule_vi: "Cùng request_id không chạy hai lần restore."}
+    request_summary_vi: snapshot_id + môi trường đích + xác nhận gõ tay.
+    response_summary_vi: restore_id + trạng thái `recovery_required`.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/backup-restore.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/backup-restore.md
+    state_effects_vi: >
+      Sau restore, `storage.health = recovery_required`: dispatcher và worker claim **bị dừng**, outbox **không**
+      replay, `first_announced` **không** bị reset cho tới khi reconcile xong (I15).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, RESTORE_UNVERIFIED, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC27]
+    requirement_refs: [REQ-D58]
+    decision_refs: [B11, AMD-B11]
+    invariant_refs: [I15]
+
+  - operation_id: backup.reconcile_after_restore
+    title_vi: Đối soát sau restore rồi mới mở lại side effect
+    transport: http
+    owner_module: MOD-backup-service
+    caller_modules: [MOD-backup-cli]
+    auth_scope: backup_operator
+    mutation: true
+    idempotency: {required: true, key: "restore_id", rule_vi: "Cùng restore_id chỉ reconcile một lần."}
+    request_summary_vi: restore_id + quyết định với outbox cũ và lease cũ.
+    response_summary_vi: Kết quả đối soát; danh sách delivery cũ bị hủy/giữ; lease bị thu hồi.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/backup-restore.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/backup-restore.md
+    state_effects_vi: >
+      Thu hồi stale lease, quyết định outbox cũ **có chủ đích**, rồi mới chuyển `storage.health` về `healthy`.
+      Không có đường tự động resume dispatcher (negative case NC-10).
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, RESTORE_UNVERIFIED, STORAGE_WRITE_FAILED]
+    scenario_refs: [SC27]
+    requirement_refs: [REQ-D58]
+    decision_refs: [B11]
+    invariant_refs: [I15]
+
+  # ------------------------------------------------------ health/storage
+  - operation_id: health.get_liveness
+    title_vi: Liveness tối thiểu (kênh độc lập DB)
+    transport: http
+    owner_module: MOD-health-service
+    caller_modules: [MOD-web-ui, MOD-x-collector, MOD-analysis-worker]
+    auth_scope: public_minimal
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: >
+      Chỉ `up` + phiên bản schema; **không** lộ cấu hình, tên provider, chat ID hay bất kỳ dữ liệu nghiệp vụ nào.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/deployment.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/deployment.md
+    state_effects_vi: Không. Kênh này phải trả lời được **kể cả khi DB không ghi được** (SRC-PLAN §8.4).
+    error_codes: [INTERNAL]
+    error_note_vi: >
+      Chỉ `INTERNAL`. `UNAUTHORIZED` không áp dụng: scope là `public_minimal` theo thiết kế. `VALIDATION_ERROR` không áp dụng: không có body, không có tham số. Endpoint này phải trả lời được **kể cả khi DB không ghi được** (SRC-PLAN §8.4), nên `STORAGE_WRITE_FAILED` cũng **không** phải mã của nó — đó chính là điểm của một kênh health độc lập DB. Ruling FIX6 F-A2R1-09.
+    scenario_refs: [SC26]
+    requirement_refs: [REQ-S9.3-08, REQ-S8.3-03]
+    decision_refs: []
+    invariant_refs: [I13]
+    audit_refs: [CR-PC03-01]
+
+  - operation_id: health.get_readiness
+    title_vi: Readiness chi tiết theo module
+    transport: http
+    owner_module: MOD-health-service
+    caller_modules: [MOD-web-ui]
+    auth_scope: owner_session
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có body.
+    response_summary_vi: >
+      Trạng thái từng module theo định nghĩa readiness ở contracts/ops/deployment.md: storage health, scheduler,
+      dispatcher (có bị khóa vì recovery không), embedding generation, connector nguồn, worker online/offline.
+    request_schema_planned: null
+    x-schema-source-request: contracts/ops/deployment.md
+    response_schema_planned: null
+    x-schema-source-response: contracts/ops/deployment.md
+    state_effects_vi: Không.
+    error_codes: [UNAUTHORIZED]
+    scenario_refs: [SC15, SC26, SC27]
+    requirement_refs: [REQ-S9.3-08, REQ-S8.3-01, REQ-S8.3-02, REQ-S8.3-03, REQ-AC15, REQ-P0-12]
+    decision_refs: [B11]
+    invariant_refs: [I13, I15]
+
+  - operation_id: storage.get_health
+    title_vi: Trạng thái ghi được của data store
+    transport: internal
+    owner_module: MOD-data-store
+    caller_modules: [MOD-health-service, MOD-job-service]
+    auth_scope: internal_only
+    mutation: false
+    idempotency: {required: false, key: null, rule_vi: "Read-only."}
+    request_summary_vi: Không có tham số.
+    response_summary_vi: "`healthy | write_blocked | maintenance | recovery_required` + thời điểm quan sát."
+    request_schema_planned: null
+    x-schema-source-request: contracts/state/storage.yaml
+    response_schema_planned: null
+    x-schema-source-response: contracts/state/storage.yaml
+    state_effects_vi: >
+      Không ghi. Khi `write_blocked`, hệ thống ngừng nhận job mới và **không ACK** mutation; nếu không ghi được
+      lỗi vào DB thì không tuyên bố đã persist lỗi (SRC-PLAN §8.4).
+    error_codes: [STORAGE_WRITE_FAILED]
+    scenario_refs: [SC26]
+    requirement_refs: [REQ-S9.3-08]
+    decision_refs: []
+    invariant_refs: [I13]
+    audit_refs: [CR-PC03-01]

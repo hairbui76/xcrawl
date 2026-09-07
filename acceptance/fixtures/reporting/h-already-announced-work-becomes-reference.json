@@ -1,0 +1,246 @@
+{
+  "fixture_id": "FX-RP-H",
+  "title": "Work đã công bố ở kỳ trước → kỳ sau hiện dạng THAM CHIẾU CÓ NGÀY, không phải phát hiện mới",
+  "purpose": "Khóa REQ-D29 / REQ-AC09 / I07 bằng sổ first_announced_ledger và UNIQUE trên target_key.",
+  "scenario_refs": [
+    "SC09"
+  ],
+  "invariant_refs": [
+    "I07",
+    "I05"
+  ],
+  "decision_refs": [
+    "B04",
+    "B15"
+  ],
+  "requirement_refs": [
+    "REQ-D29",
+    "REQ-D30",
+    "REQ-AC09",
+    "REQ-S8.2-05"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.5 D29",
+    "SRC-SPEC §8.2 hàng 5",
+    "SRC-SPEC §12 AC-09",
+    "SRC-PLAN §7 I07"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "report": [
+        {
+          "id": "01JRPTH1000000000000000000",
+          "status": "published",
+          "published_at": "2026-03-12T13:00:00.000Z",
+          "quality": "complete",
+          "content_hash": "sha256:628a201e29b4299056fdbbaf83b498b4837d3832cec997ee1abbd3e22076c855"
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWNH1000000000000000000",
+          "sequence": 20,
+          "window_from": "2026-03-11T13:00:00.000Z",
+          "window_to": "2026-03-12T12:50:00.000Z",
+          "ingest_sequence_from": 2000,
+          "ingest_sequence_to": 2100,
+          "predecessor_window_id": null,
+          "report_id": "01JRPTH1000000000000000000"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JRTEMH000000000000000000",
+          "report_id": "01JRPTH1000000000000000000",
+          "target_key": "work:01JWRKH1000000000000000000",
+          "item_type": "new_discovery"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "01JFANNH100000000000000000",
+          "canonical_work_id": "01JWRKH1000000000000000000",
+          "first_report_id": "01JRPTH1000000000000000000",
+          "first_announced_at": "2026-03-12T13:00:00.000Z",
+          "merge_audit_id": null,
+          "superseded_by_merge_id": null
+        }
+      ],
+      "tag": [
+        {
+          "id": "01JTAGPFD00000000000000000",
+          "text": "protein folding",
+          "state": "active"
+        }
+      ]
+    },
+    "note": "Kỳ 19/03 vẫn chọn work H1 vì nó khớp tag và vẫn liên quan (REQ-D30: tag chung + paper cùng được dẫn)."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-03-19T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Selection chọn H1. Tra first_announced_ledger → đã có hàng active → item_type bị ép 'prior_reference'."
+    },
+    {
+      "seq": 2,
+      "at": "2026-03-19T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Commit. KHÔNG ghi hàng first_announced_ledger thứ hai."
+    }
+  ],
+  "expected": {
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTH2000000000000000000",
+      "report_build_id": "e3d50998-9139-47cc-be74-c42aba0e42f3",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNH2000000000000000000",
+        "sequence": 21,
+        "coverage_from": "2026-03-12T12:50:00.000Z",
+        "coverage_to": "2026-03-19T12:50:00.000Z",
+        "ingest_sequence_from": 2100,
+        "ingest_sequence_to": 2400,
+        "predecessor_window_id": "01JCWNH1000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVH0000000000000000000",
+        "sequence": 22,
+        "content_hash": "sha256:469a86f67168250cdcc6a52782eb81a409d35a3586a8018136f4c10a2cc92b88",
+        "frozen_at": "2026-03-19T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMH100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKH1000000000000000000",
+            "target_key": "work:01JWRKH1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKH1000000000000000000",
+          "item_type": "prior_reference",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.8907,
+              "threshold_applied": 0.8
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAH1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:4b8d54bbcdd83ff637e080354c13760fd90773f33c2cc9317aa364b05a26d44d",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-03-12T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "first_announced": {
+            "first_announced_report_id": "01JRPTH1000000000000000000",
+            "first_announced_at": "2026-03-12T13:00:00.000Z",
+            "first_announced_window_sequence": 20,
+            "target_key_at_announcement": "work:01JWRKH1000000000000000000",
+            "merge_audit_id": null
+          },
+          "reference_reason": "already_announced",
+          "discovered_at": "2026-03-11T20:00:00.000Z",
+          "ingest_sequence": 2050
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCH1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "below_min_sample",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null
+      },
+      "built_at": "2026-03-19T13:00:00.000Z",
+      "published_at": "2026-03-19T13:00:05.000Z",
+      "content_hash": "sha256:4a79a555cd91ef33a113d896fcd8d77683e4099628b5d9f53e9be77fccc6978e",
+      "evidence_refs": []
+    },
+    "counts": {
+      "first_announced_ledger[superseded_by_merge_id IS NULL AND canonical_work_id=w_h1]": 1,
+      "first_announced_ledger": 1,
+      "report_item[report_id=HRP2 AND item_type='new_discovery']": 0
+    },
+    "display_oracles": [
+      "Mục hiển thị 'đã báo cáo 12/03' — ngày lấy từ first_announced_at, render theo owner.timezone_iana (time-and-tags.md §2). Đổi timezone chỉ đổi chuỗi hiển thị, KHÔNG đổi content_hash."
+    ],
+    "row_oracles": [
+      "report_item[HRP2].item_type = 'prior_reference' và first_announced_report_id = HRP1 (REQ-AC09).",
+      "Không có hàng first_announced_ledger nào được ghi ở event 2 (UNIQUE(owner_id, canonical_work_id) là hàng rào cuối).",
+      "Việc liên kết mục cùng hướng dựa trên tag chung và paper cùng được dẫn, KHÔNG dùng AI (REQ-D30)."
+    ]
+  },
+  "forbidden_effects": [
+    "Ghi hàng first_announced_ledger thứ hai cho work:H1 (vi phạm I07).",
+    "Đặt item_type='new_discovery' cho work đã có hàng ledger active.",
+    "Gọi AI để quyết định hai mục có cùng hướng hay không (REQ-D30).",
+    "Sửa report kỳ 12/03 (I05)."
+  ]
+}

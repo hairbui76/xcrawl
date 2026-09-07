@@ -1,0 +1,144 @@
+{
+  "fixture_id": "FX-TG-L",
+  "title": "`/run_now` khi run đang needs_user → KHÔNG resume, trả lời trỏ vào app",
+  "purpose": "AMD-B10: run_now không vượt needs_user; status read-only; resume là hành động app; không có lệnh Telegram thứ tư.",
+  "scenario_refs": [
+    "SC04",
+    "SC45"
+  ],
+  "invariant_refs": [
+    "I13"
+  ],
+  "decision_refs": [
+    "B10",
+    "AMD-B10"
+  ],
+  "requirement_refs": [
+    "REQ-D36",
+    "REQ-S5.4-04",
+    "REQ-AC04"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.4",
+    "SRC-PLAN §3 B10",
+    "contracts/telegram/commands.yaml §CMD-run-now RN-01"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "run": [
+        {
+          "id": "01JRVN10000000000000000000",
+          "status": "needs_user",
+          "phase": "collecting",
+          "stop_reason": "captcha",
+          "outcome": null
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 1,
+          "chat_id": "111111111"
+        }
+      ],
+      "outbox_intent": [
+        {
+          "intent_type": "telegram_alert",
+          "subject_ref": {
+            "run_id": "01JRVN10000000000000000000"
+          },
+          "dispatch_state": "done",
+          "_note": "Đúng MỘT alert intent cho run này (REQ-AC04)."
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T01:00:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "message_text": "/run_now",
+      "description": "Chat ĐÃ liên kết gửi lệnh chạy ngay trong khi run đang chờ xác minh."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T01:00:00.300Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.run_now",
+      "performed_by": "MOD-job-service",
+      "description": "Guard RN-01: run hiện tại needs_user ⇒ KHÔNG resume, KHÔNG tạo run mới."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T01:05:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "run.resume",
+      "performed_by": "MOD-job-service",
+      "description": "Người dùng xử lý CAPTCHA rồi bấm 'Tiếp tục' TRONG APP (Runs hoặc Run detail) — nơi duy nhất có hành động này."
+    }
+  ],
+  "expected": {
+    "after_event_2": {
+      "rows": {
+        "run": [
+          {
+            "id": "01JRVN10000000000000000000",
+            "status": "needs_user",
+            "_note": "KHÔNG đổi."
+          }
+        ]
+      },
+      "counts": {
+        "run__total": 1,
+        "run__status_changes": 0,
+        "assignment_lease__new": 0
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 1,
+        "telegram.answerCallbackQuery": 0,
+        "note": "Đúng 1 tin trả lời; KHÔNG phải alert thứ hai."
+      },
+      "reply_vi": "Đợt đang chờ xác minh trên máy cá nhân. Mở ứng dụng, vào Runs và bấm Tiếp tục sau khi xử lý xong.",
+      "alert_intent_count": 1
+    },
+    "after_event_3": {
+      "rows": {
+        "run": [
+          {
+            "id": "01JRVN10000000000000000000",
+            "status": "queued",
+            "_note": "Resume hợp lệ từ app; lease mới được cấp khi claim."
+          }
+        ]
+      },
+      "counts": {
+        "run__total": 1
+      }
+    },
+    "ui_note_vi": "Hành động resume CHỈ có ở SCR-runs và SCR-run-detail (screens.yaml NC-UI-04)."
+  },
+  "forbidden_effects": [
+    "Resume run từ lệnh Telegram.",
+    "Tạo run thứ hai song song.",
+    "Gửi alert thứ hai cho cùng run (REQ-AC04).",
+    "Thêm lệnh Telegram thứ tư để resume (AMD-B10).",
+    "Im lặng với chat đã liên kết (người dùng cần biết vì sao không chạy)."
+  ]
+}

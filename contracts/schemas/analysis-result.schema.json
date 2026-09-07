@@ -1,0 +1,688 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/analysis-result.schema.json",
+  "title": "Analysis result (label | summary | direction_phrasing)",
+  "description": "Kết quả MỘT lần phân tích đã được chấp nhận, nộp qua analysis.submit_result và lưu vào analysis.payload. Envelope chung + `oneOf` phân biệt bằng `task_type`. Đây KHÔNG phải hàng analysis_attempt: attempt không bao giờ là kết quả (I16).",
+  "x-contract": {
+    "contract_id": "CT-schema-analysis-result",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "AI contract owner",
+    "source_refs": [
+      "SRC-SPEC §3.5 D19, D20, D21, D25, D26",
+      "SRC-SPEC §3.7 D39, D41, D43, D44, D51",
+      "SRC-SPEC §10.1, §10.2, §10.3, §10.4",
+      "SRC-SPEC §11.4",
+      "SRC-SPEC §12 AC-10, AC-11, AC-16, AC-17",
+      "SRC-PLAN §3 B07, B13, B16, B17",
+      "SRC-PLAN §5.1 (wire rules)",
+      "SRC-PLAN §7 I04, I11, I14",
+      "SRC-PLAN §8.2",
+      "SRC-PLAN §9.3",
+      "SRC-PLAN §10 AI_OUTPUT_INVALID, AI_PROVIDER_UNAVAILABLE, AI_ATTEMPT_UNCERTAIN",
+      "SRC-PLAN §11 PC06"
+    ],
+    "requirement_refs": [
+      "REQ-D19",
+      "REQ-D20",
+      "REQ-D21",
+      "REQ-D22",
+      "REQ-D25",
+      "REQ-D26",
+      "REQ-D43",
+      "REQ-D44",
+      "REQ-D54",
+      "REQ-AC06",
+      "REQ-AC10",
+      "REQ-AC11",
+      "REQ-AC16",
+      "REQ-AC17"
+    ],
+    "decision_refs": [
+      "B07",
+      "B13",
+      "B16",
+      "B17",
+      "AMD-B07",
+      "AMD-B16",
+      "AMD-B17",
+      "ADR-0008",
+      "ADR-0010"
+    ],
+    "invariant_refs": [
+      "I04",
+      "I11",
+      "I14",
+      "I16"
+    ],
+    "producers": [
+      "MOD-analysis-worker",
+      "MOD-ai-adapter"
+    ],
+    "consumers": [
+      "MOD-analysis-service",
+      "MOD-report-service",
+      "MOD-web-ui",
+      "MOD-telegram-adapter",
+      "MOD-saved-service"
+    ],
+    "dependencies": [
+      "contracts/ai/tasks.yaml",
+      "contracts/ai/providers.yaml",
+      "contracts/ai/grounding.md",
+      "contracts/data/entities.yaml",
+      "contracts/schemas/target.schema.json",
+      "contracts/state/analysis.yaml"
+    ],
+    "scope": "Hình dạng wire của một kết quả phân tích hợp lệ. Không mô tả bảng vật lý (entities.yaml ENT-analysis), không mô tả prompt (tasks.yaml), không mô tả adapter (providers.yaml). Kiểm tra ngữ nghĩa (citation trỏ đúng source đã cấp, evidence level không vượt nguồn đã đọc) KHÔNG diễn đạt được bằng JSON Schema và nằm ở tasks.yaml §validation.",
+    "verification": "EV-PC06-01: metaschema Draft 2020-12; fixture dương validate; fixture âm FAIL đúng đường dẫn kiểm tra đã ghi.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "naming_authority": "task_type ∈ {label, summary, direction_phrasing} theo contracts/data/entities.yaml (ruling R-03). contracts/ports.yaml analysis.enqueue_tasks hiện viết open_labeling / emerging_direction_phrasing — sẽ được PC01 đổi (CR-PC03-05); schema này dùng tên của entities.yaml.",
+    "deviations": [
+      {
+        "id": "DEV-PC06-01",
+        "finding_ref": "F-A1R3-05",
+        "ruling_ref": "R4-04 (FIX4, 2026-09-06T19:25Z)",
+        "convention_deviated_from": [
+          "TASK_PACKET PKT-PC06 write target: 'output schema ref (analysis-result.schema.json with task-specific `oneOf`)'",
+          "agent_profile/protocol.md §10: 'Schema Draft 2020-12 dùng oneOf discriminated `type`'"
+        ],
+        "what_this_schema_does_instead": "Phân biệt theo task bằng `allOf` gồm ba nhánh `if/then` trên `task_type`, mỗi nhánh `$ref` một `$defs.result_*`, thay vì `oneOf` ba biến thể toàn envelope.",
+        "reason_vi": "Ba task dùng CHUNG một envelope (analysis_key, provider, evidence_level, usage, attempt_id, produced_at, input_source_ids) và chỉ khác nhau ở `result`. Với `oneOf` toàn envelope, mỗi biến thể phải lặp lại toàn bộ danh sách `required` của envelope — ba lần, và mọi lần sửa envelope phải sửa ba chỗ. Tệ hơn: khi một payload sai ở envelope, `oneOf` báo lỗi ở CẢ BA nhánh và validator không nói được nhánh nào đáng lẽ áp dụng, nên thông điệp lỗi mất giá trị chẩn đoán. `allOf` + `if/then` trên một discriminator giữ envelope ở đúng MỘT chỗ và cho lỗi trỏ thẳng vào trường sai.",
+        "equivalence_argument_vi": "Đóng kín tương đương `oneOf` vì bốn điều kiện cùng đúng: (1) `task_type` là enum ba giá trị, nên đúng một nhánh `if` khớp với mọi payload hợp lệ — các nhánh loại trừ lẫn nhau theo cấu trúc, không theo quy ước; (2) `additionalProperties: false` ở cấp gốc; (3) mọi `$defs.result_*` và mọi object con (`analysis_key`, `provider_ref`, `usage`, `statement`, `comparator`) đều `additionalProperties: false`; (4) `result` là `required` ở cấp gốc. Vì vậy không trường nào lọt vào `result` và không payload nào thỏa hai nhánh cùng lúc.",
+        "negative_fixtures_proving_exclusivity": [
+          {
+            "fixture": "acceptance/fixtures/ai/d-schema-valid-but-uncited.json",
+            "proves_vi": "Nhánh `summary` thực sự được áp: payload `task_type='summary'` bị TỪ CHỐI ở `$defs.statement.allOf[0]` (`/result/statements/0/citation_refs`). Nếu `if/then` không kích hoạt thì `result` sẽ không bị ràng buộc gì và payload này sẽ PASS.",
+            "expected_validation": "reject_schema"
+          },
+          {
+            "fixture": "acceptance/fixtures/ai/c-citation-to-unknown-source.json",
+            "proves_vi": "Nhánh `summary` chấp nhận đúng hình dạng D20 và để phần còn lại cho tầng ngữ nghĩa (SV-02) — biên giới schema/ngữ nghĩa nằm đúng chỗ đã khai.",
+            "expected_validation": "reject_semantic"
+          },
+          {
+            "fixture": "acceptance/fixtures/ai/k-zero-api-key-all-tasks-via-cli.json",
+            "proves_vi": "Ba payload cho ba `task_type` khác nhau cùng validate trong một fixture — mỗi payload chỉ thỏa nhánh của chính nó; đổi `task_type` mà giữ `result` sẽ fail.",
+            "expected_validation": "accept"
+          }
+        ],
+        "authority_note_vi": "Việc protocol §10 có chấp nhận `allOf`+`if/then` hay không là quyết định của authority sở hữu protocol §10, không phải của PC06. Ruling R4-04 đã chấp nhận: 'functionally equivalent to `oneOf`; no structural change required'. Khai báo này tồn tại để PC09 và mọi validator tĩnh về sau không vấp phải một sai lệch không được ghi.",
+        "status": "DECLARED_ACCEPTED_R4-04"
+      }
+    ]
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_type",
+    "analysis_key",
+    "provider",
+    "evidence_level",
+    "usage",
+    "attempt_id",
+    "produced_at",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1.0",
+      "description": "Semver của chính schema này. PHẢI bằng analysis_key.schema_version (kiểm ngữ nghĩa SV-07)."
+    },
+    "task_type": {
+      "$ref": "#/$defs/task_type",
+      "description": "Discriminator của `oneOf` bên dưới."
+    },
+    "analysis_key": {
+      "$ref": "#/$defs/analysis_key"
+    },
+    "provider": {
+      "$ref": "#/$defs/provider_ref"
+    },
+    "evidence_level": {
+      "$ref": "#/$defs/evidence_level",
+      "description": "Mức độ đọc THỰC TẾ của nguồn đã cấp cho lần chạy này (REQ-D21). Cấm nâng mức khi nguồn tương ứng không tồn tại — kiểm ngữ nghĩa SV-04."
+    },
+    "usage": {
+      "$ref": "#/$defs/usage"
+    },
+    "attempt_id": {
+      "$ref": "#/$defs/ulid",
+      "description": "FK → analysis_attempt.id. Kết quả luôn truy được về đúng attempt đã tạo ra nó (entities.yaml `accepted_from_attempt_id`)."
+    },
+    "produced_at": {
+      "$ref": "#/$defs/timestamp_utc_ms"
+    },
+    "input_source_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source_id"
+      },
+      "uniqueItems": true,
+      "description": "Tập source id đã được CẤP cho lần chạy này. Mọi citation_refs / evidence_refs phải là tập con của tập này (kiểm ngữ nghĩa SV-02)."
+    },
+    "result": {
+      "description": "Nội dung theo từng task. Được chọn bằng `task_type` ở khối allOf/if-then bên dưới.",
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "task_type": {
+            "const": "label"
+          }
+        },
+        "required": [
+          "task_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "$ref": "#/$defs/result_label"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "task_type": {
+            "const": "summary"
+          }
+        },
+        "required": [
+          "task_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "$ref": "#/$defs/result_summary"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "task_type": {
+            "const": "direction_phrasing"
+          }
+        },
+        "required": [
+          "task_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "$ref": "#/$defs/result_direction_phrasing"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "ULID 26 ký tự Crockford base32 chữ hoa; ID luôn là string (SRC-PLAN §5.1)."
+    },
+    "target_key": {
+      "type": "string",
+      "pattern": "^(work|post):[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Khóa union của target (contracts/schemas/target.schema.json)."
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^(post|work_version):[0-9A-HJKMNP-TV-Z]{26}$",
+      "description": "Định danh của MỘT nguồn cụ thể đã được cấp trong input: một hàng `post` hoặc một hàng `work_version`. Citation chỉ được trỏ tới đây — không trỏ tới URL tự do, không trỏ tới tên tác giả, không trỏ tới văn bản tự do."
+    },
+    "timestamp_utc_ms": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "RFC 3339 UTC, hậu tố Z, đúng ba chữ số mili giây (AMD-B08)."
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "label",
+        "summary",
+        "direction_phrasing"
+      ],
+      "description": "Nguyên văn contracts/data/entities.yaml ENT-analysis.task_type (ruling R-03). `embedding` KHÔNG có ở đây: embedding chạy local ở server, không qua AI adapter (REQ-D48, SRC-SPEC §10.1)."
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": [
+        "post_only",
+        "abstract",
+        "full_text"
+      ],
+      "description": "REQ-D21 / REQ-AC11. Thứ tự tăng dần: post_only < abstract < full_text."
+    },
+    "analysis_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Bảy thành phần của analysis key, nguyên văn entities.yaml ENT-analysis.analysis_key.components và ADR-0008. KHÔNG chứa tag/tag_config_version (đổi tag không gọi AI lại — REQ-AC06, I04) và KHÔNG chứa provider/model (đổi provider không tự invalidate — ADR-0008 §6).",
+      "required": [
+        "owner_id",
+        "target_key",
+        "task_type",
+        "source_fingerprint",
+        "prompt_version",
+        "schema_version",
+        "generation_number"
+      ],
+      "properties": {
+        "owner_id": {
+          "$ref": "#/$defs/ulid"
+        },
+        "target_key": {
+          "$ref": "#/$defs/target_key"
+        },
+        "task_type": {
+          "$ref": "#/$defs/task_type"
+        },
+        "source_fingerprint": {
+          "$ref": "#/$defs/sha256",
+          "description": "sha256 của JCS đầu vào đã dùng: {work_version.content_fingerprint?, post.source_snapshot_hash[]} (entities.yaml). Đổi nội dung nguồn ⇒ đổi key."
+        },
+        "prompt_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/semver"
+        },
+        "generation_number": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "provider_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Metadata truy vết. KHÔNG thuộc analysis key (ADR-0008 §6): đổi provider/model không tự invalidate kết quả cũ.",
+      "required": [
+        "auth_family",
+        "provider_name",
+        "model_name"
+      ],
+      "properties": {
+        "auth_family": {
+          "type": "string",
+          "enum": [
+            "api_key",
+            "cli_acp"
+          ],
+          "description": "Hai họ provider của REQ-D41. Nguyên văn entities.yaml ENT-provider-config.auth_family."
+        },
+        "provider_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "model_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Không dùng `latest` (entities.yaml)."
+        },
+        "provider_config_id": {
+          "$ref": "#/$defs/ulid"
+        }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "REQ-D44 + I14: 'không rõ' là giá trị hợp lệ và CẤM ghi thành 0. Cấu trúc ép điều đó ở mức schema.",
+      "required": [
+        "unknown",
+        "tokens_in",
+        "tokens_out",
+        "cost_micro_usd"
+      ],
+      "properties": {
+        "unknown": {
+          "type": "boolean",
+          "description": "true = adapter không báo được usage (điển hình đường CLI/ACP, REQ-D44)."
+        },
+        "tokens_in": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "tokens_out": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cost_micro_usd": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "Micro-USD nguyên để tránh số thực. null khi không biết."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "unknown": {
+                "const": true
+              }
+            },
+            "required": [
+              "unknown"
+            ]
+          },
+          "then": {
+            "description": "unknown = true ⇒ CẢ BA phải là null. Đây là cách schema chặn 'ghi 0 thay cho unknown' (I14).",
+            "properties": {
+              "tokens_in": {
+                "type": "null"
+              },
+              "tokens_out": {
+                "type": "null"
+              },
+              "cost_micro_usd": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "unknown": {
+                "const": false
+              }
+            },
+            "required": [
+              "unknown"
+            ]
+          },
+          "then": {
+            "description": "unknown = false ⇒ token count phải là số thật. cost vẫn có thể null nếu provider không báo giá.",
+            "properties": {
+              "tokens_in": {
+                "type": "integer"
+              },
+              "tokens_out": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "statement_kind": {
+      "type": "string",
+      "enum": [
+        "author_claim",
+        "source_verified",
+        "ai_inference"
+      ],
+      "description": "B16 / AMD-B16 / SRC-SPEC §10.3: tách ba loại phát biểu. `source_verified` chỉ dùng khi nội dung kiểm được từ nguồn ĐÃ CẤP; mọi phát biểu về tính mới là `ai_inference` (REQ-AC11)."
+    },
+    "statement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "text",
+        "citation_refs"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/statement_kind"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "citation_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_id"
+          },
+          "uniqueItems": true,
+          "description": "Phải là tập con của input_source_ids (SV-02). `ai_inference` được phép rỗng — suy luận không cần nguồn, nhưng PHẢI mang nhãn ai_inference (SV-03)."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "author_claim",
+                  "source_verified"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "description": "Phát biểu quy cho tác giả hoặc kiểm được từ nguồn PHẢI có ít nhất một citation (SV-03).",
+            "properties": {
+              "citation_refs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "comparator": {
+      "description": "B16: thiếu nguồn so sánh thì ghi thiếu, KHÔNG bịa baseline.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "source_ref"
+          ],
+          "properties": {
+            "kind": {
+              "const": "ref"
+            },
+            "source_ref": {
+              "$ref": "#/$defs/source_id"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "unknown"
+            },
+            "note": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "Vì sao không có comparator. KHÔNG được chứa một baseline được bịa ra."
+            }
+          }
+        }
+      ]
+    },
+    "result_label": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Task `label` — gắn nhãn chủ đề MỞ (REQ-D22): 'bài này thuộc chủ đề gì', KHÔNG hỏi 'có khớp tag hiện tại không'.",
+      "required": [
+        "labels"
+      ],
+      "properties": {
+        "labels": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "confidence",
+              "evidence_refs"
+            ],
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "description": "Khớp giới hạn của entities.yaml ENT-work-label.label_text (1..120)."
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "description": "Ba mức RỜI RẠC, không phải điểm xác suất — cùng lý do với identity.md §7: MVP không có cách hiệu chỉnh một thang liên tục, nên không giả vờ có."
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/source_id"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "result_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Task `summary` — hình dạng D20: nội dung + điểm khác với cái đã có + MỘT dòng hạn chế. Dòng 'khớp tag nào' KHÔNG nằm ở đây: nó là dữ liệu tra từ report_item.selection_reason (PC04), không phải do AI sinh (REQ-D20, SRC-SPEC §10.1).",
+      "required": [
+        "content",
+        "difference_from_existing",
+        "limitation_line",
+        "statements"
+      ],
+      "properties": {
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "difference_from_existing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "comparator"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "comparator": {
+              "$ref": "#/$defs/comparator"
+            }
+          }
+        },
+        "limitation_line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "MỘT dòng hạn chế (D20). Không được rỗng: 'không có hạn chế nào' là một phát biểu phải viết ra, không phải một trường bỏ trống."
+        },
+        "statements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/statement"
+          },
+          "description": "Mọi phát biểu đáng kể đã tách theo kind (B16)."
+        },
+        "peer_review_status": {
+          "type": "string",
+          "enum": [
+            "preprint_not_peer_reviewed",
+            "peer_reviewed",
+            "unknown"
+          ],
+          "description": "SRC-SPEC §10.3: nguồn chưa peer review phải có nhãn tương ứng. `unknown` hợp lệ; cấm đoán `peer_reviewed`."
+        }
+      }
+    },
+    "result_direction_phrasing": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Task `direction_phrasing` — AI CHỈ diễn đạt lại một kết quả ĐÃ TÍNH bởi contracts/reporting/selection.md §8. AI không chọn thành viên, không tính mật độ, không đổi nhãn (CR-PC04-05).",
+      "required": [
+        "text",
+        "direction_ref",
+        "member_refs"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "description": "Câu chữ mô tả. Kiểm ngữ nghĩa SV-06 cấm các cụm khẳng định tính mới khoa học."
+        },
+        "direction_ref": {
+          "$ref": "#/$defs/ulid",
+          "description": "FK → emerging_direction.id đã tính ở PC04."
+        },
+        "member_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/target_key"
+          },
+          "uniqueItems": true,
+          "description": "PHẢI bằng đúng emerging_direction.member_target_keys — không thêm, không bớt (SV-05). Đây là hàng rào chống việc AI 'chọn lại' thành viên."
+        },
+        "label": {
+          "type": "string",
+          "const": "ứng viên để đọc sâu",
+          "description": "Hằng số hợp đồng (REQ-D54), giống contracts/schemas/report.schema.json. 'phát hiện mới' bị cấm."
+        }
+      }
+    }
+  }
+}

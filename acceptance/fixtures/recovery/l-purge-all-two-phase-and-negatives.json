@@ -1,0 +1,257 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-l",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-SPEC §7.3",
+      "SRC-SPEC §12 AC-12",
+      "SRC-PLAN §7 I15",
+      "SRC-PLAN §11 PC08"
+    ],
+    "requirement_refs": [
+      "REQ-S7.3-05",
+      "REQ-D58",
+      "REQ-D05",
+      "REQ-S7.3-04"
+    ],
+    "decision_refs": [
+      "R5-02",
+      "PROV-PC01-03"
+    ],
+    "invariant_refs": [
+      "I01",
+      "I15",
+      "I13"
+    ],
+    "producers": [
+      "MOD-data-admin-service",
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-web-ui",
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/state/storage.yaml",
+      "contracts/ops/backup-restore.md",
+      "contracts/errors.yaml",
+      "acceptance/scenarios.yaml"
+    ],
+    "scope": "data.purge_all: xác nhận hai pha, chỉ trong maintenance, thu hồi lease, và bốn ca âm.",
+    "verification": "NOT_RUN — E0; chưa có code, chưa có DB, chưa có drill.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "l",
+  "scenario_refs": [
+    "SC44"
+  ],
+  "invariant_refs": [
+    "I01",
+    "I15",
+    "I13"
+  ],
+  "evidence_status": "NOT_RUN",
+  "title_vi": "SC44 — data.purge_all: hai pha, chỉ trong maintenance, thu hồi lease, bốn ca âm",
+  "given": {
+    "storage_health": "maintenance",
+    "_exclusions_vi": "Danh sách LOẠI TRỪ vẫn OWNER_DECISION_REQUIRED (PROV-PC01-03); fixture này KHÔNG khẳng định gì về settings/secret/credential đăng nhập.",
+    "rows": {
+      "purge_challenge": [],
+      "assignment_lease": [
+        {
+          "id": "AL-1",
+          "owner_id": "O-1",
+          "run_id": "RUN-1",
+          "job_id": "JOB-1",
+          "lease_epoch": 2,
+          "state": "held",
+          "_note": "phải bị thu hồi trước khi xóa"
+        }
+      ],
+      "work": [
+        {
+          "id": "W-1",
+          "owner_id": "O-1",
+          "_note": "trong phạm vi xóa"
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "SI-1",
+          "owner_id": "O-1",
+          "target_kind": "work",
+          "target_work_id": "W-1",
+          "state": "saved"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-web-ui",
+      "operation": "data.purge_all",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "phase": "request_challenge"
+      },
+      "_note_vi": "Pha 1: server phát cụm từ xác nhận."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-web-ui",
+      "operation": "data.purge_all",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "phase": "execute",
+        "purge_challenge_id": "PC-1",
+        "confirmation_phrase": "SAI-CUM-TU"
+      },
+      "_note_vi": "Ca âm A: cụm từ sai."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-web-ui",
+      "operation": "data.purge_all",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "phase": "execute",
+        "purge_challenge_id": "PC-2",
+        "confirmation_phrase": "<phrase>"
+      },
+      "_storage_health_at_call": "healthy",
+      "_note_vi": "Ca âm B: storage KHÔNG ở maintenance (challenge PC-2 xin lại sau khi PC-1 bị hủy)."
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-x-collector",
+      "operation": "data.purge_all",
+      "edge_assertion": "forbidden",
+      "principal": "ACT-collector",
+      "input": {
+        "phase": "execute",
+        "purge_challenge_id": "PC-2",
+        "confirmation_phrase": "<phrase>"
+      },
+      "_note_vi": "Ca âm D: principal không phải owner. MOD-x-collector không nằm trong caller_modules của data.purge_all."
+    },
+    {
+      "seq": 5,
+      "actor": "MOD-web-ui",
+      "operation": "data.purge_all",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "phase": "execute",
+        "purge_challenge_id": "PC-2",
+        "confirmation_phrase": "<phrase>"
+      },
+      "_storage_health_at_call": "maintenance",
+      "_note_vi": "Ca hợp lệ."
+    },
+    {
+      "seq": 6,
+      "actor": "MOD-web-ui",
+      "operation": "data.purge_all",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "phase": "execute",
+        "purge_challenge_id": "PC-2",
+        "confirmation_phrase": "<phrase>"
+      },
+      "_note_vi": "Ca âm C: dùng lại challenge đã consumed."
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "result": "challenge_issued",
+      "rows": {
+        "purge_challenge": [
+          {
+            "id": "PC-1",
+            "owner_id": "O-1",
+            "state": "active",
+            "phrase_hash": "<hash_phrase>",
+            "_note": "cụm từ KHÔNG lưu bản rõ"
+          }
+        ]
+      }
+    },
+    "seq2": {
+      "error_code": "VALIDATION_ERROR",
+      "rows_deleted": 0,
+      "_note_vi": "Challenge PC-1 bị hủy; phải xin lại."
+    },
+    "seq3": {
+      "error_code": "CONFLICT",
+      "rows_deleted": 0,
+      "_note_vi": "Guard maintenance chặn trước khi chạm dữ liệu."
+    },
+    "seq4": {
+      "error_code": "UNAUTHORIZED",
+      "rows_deleted": 0,
+      "_note_vi": "Sai lớp principal — bảng R5-01 dòng 1."
+    },
+    "seq5": {
+      "result": "committed"
+    },
+    "seq6": {
+      "error_code": "CONFLICT",
+      "rows_deleted": 0,
+      "_note_vi": "Challenge đã consumed; idempotency key là purge_challenge_id."
+    },
+    "rows": {
+      "assignment_lease": [
+        {
+          "id": "AL-1",
+          "owner_id": "O-1",
+          "state": "revoked",
+          "_note": "thu hồi TRƯỚC khi xóa, ở seq5"
+        }
+      ],
+      "purge_challenge": [
+        {
+          "id": "PC-2",
+          "owner_id": "O-1",
+          "state": "consumed",
+          "consumed_at": "<t5>"
+        }
+      ],
+      "data_deletion_audit": [
+        {
+          "id": "DA-2",
+          "owner_id": "O-1",
+          "scope": "all",
+          "target_key": "*",
+          "confirmation_evidence": {
+            "purge_challenge_id": "PC-2",
+            "phrase_matched": true
+          },
+          "_note": "deleted_counts/preserved_counts phụ thuộc danh sách loại trừ chưa chốt"
+        }
+      ]
+    },
+    "storage_health_after": "maintenance",
+    "_dispatcher_vi": "Sau purge, hệ thống Ở LẠI maintenance; dispatcher KHÔNG tự mở (cùng nguyên tắc NC-10)."
+  },
+  "forbidden_effects": [
+    "Xóa khi cụm từ xác nhận sai hoặc challenge hết hạn.",
+    "Xóa ngoài trạng thái maintenance.",
+    "Tái sử dụng một challenge đã consumed.",
+    "Xóa khi principal không phải owner session.",
+    "Tự mở lại dispatcher/scheduler sau khi xóa.",
+    "Lưu cụm từ xác nhận ở dạng bản rõ."
+  ],
+  "oracle_vi": "Ở mỗi ca âm (seq2, seq3, seq4, seq6): tổng COUNT(*) của MỌI bảng trước và sau BẰNG NHAU. Ở ca hợp lệ (seq5): COUNT(assignment_lease WHERE state='held') = 0 ngay sau commit; purge_challenge PC-2 chuyển 'consumed'; đúng một hàng data_deletion_audit scope='all'. storage.health vẫn 'maintenance' sau seq5.",
+  "blocked_scope_vi": "Phạm vi LOẠI TRỪ (settings, secret_ref/task_credential/secret_audit, credential đăng nhập, telegram_link, schema_migration) là OWNER_DECISION_REQUIRED — PROV-PC01-03 / PROV-PC00-01. Fixture này cố ý KHÔNG khẳng định deleted_counts cho các bảng đó; thêm khẳng định bây giờ là tự quyết thay Owner."
+}

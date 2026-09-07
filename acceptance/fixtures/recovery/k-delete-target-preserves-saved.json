@@ -1,0 +1,313 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-k",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-SPEC §7.3",
+      "SRC-SPEC §12 AC-12",
+      "SRC-PLAN §7 I15",
+      "SRC-PLAN §11 PC08"
+    ],
+    "requirement_refs": [
+      "REQ-S7.3-05",
+      "REQ-D55",
+      "REQ-S7.3-06",
+      "REQ-AC12"
+    ],
+    "decision_refs": [
+      "R5-02"
+    ],
+    "invariant_refs": [
+      "I08",
+      "I01",
+      "I05",
+      "I07"
+    ],
+    "producers": [
+      "MOD-data-admin-service",
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-web-ui",
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/state/storage.yaml",
+      "contracts/ops/backup-restore.md",
+      "contracts/errors.yaml",
+      "acceptance/scenarios.yaml"
+    ],
+    "scope": "data.delete_target: xóa dữ liệu gốc của MỘT target, giữ saved_snapshot và mọi ledger; ca âm thiếu cờ xác nhận.",
+    "verification": "NOT_RUN — E0; chưa có code, chưa có DB, chưa có drill.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "k",
+  "scenario_refs": [
+    "SC32"
+  ],
+  "invariant_refs": [
+    "I08",
+    "I01",
+    "I05",
+    "I07"
+  ],
+  "evidence_status": "NOT_RUN",
+  "title_vi": "SC32 — data.delete_target: xóa dữ liệu gốc một target, GIỮ Saved và ledger",
+  "given": {
+    "_setup_vi": "Work W đã được Save và đã là phát hiện ở một report đã publish.",
+    "storage_health": "healthy",
+    "rows": {
+      "work": [
+        {
+          "id": "W-1",
+          "owner_id": "O-1",
+          "canonical_arxiv_id": "2601.00001",
+          "title": "Protein folding via GNN",
+          "identity_state": "resolved",
+          "content_state": "enriched",
+          "_target": "đối tượng bị xóa"
+        }
+      ],
+      "post": [
+        {
+          "id": "P-1",
+          "owner_id": "O-1",
+          "_note": "post dẫn W-1"
+        },
+        {
+          "id": "P-2",
+          "owner_id": "O-1",
+          "_note": "post thứ hai dẫn W-1"
+        }
+      ],
+      "post_work": [
+        {
+          "post_id": "P-1",
+          "work_id": "W-1",
+          "owner_id": "O-1"
+        },
+        {
+          "post_id": "P-2",
+          "work_id": "W-1",
+          "owner_id": "O-1"
+        }
+      ],
+      "analysis": [
+        {
+          "id": "AN-1",
+          "owner_id": "O-1",
+          "task_type": "summary",
+          "_note": "generation 1",
+          "status": "valid",
+          "target_kind": "work",
+          "target_work_id": "W-1"
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "SI-1",
+          "owner_id": "O-1",
+          "target_kind": "work",
+          "target_work_id": "W-1",
+          "state": "saved",
+          "save_channel": "app",
+          "saved_snapshot_id": "SS-1",
+          "_note": "phải sống sót"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "SS-1",
+          "owner_id": "O-1",
+          "target_kind": "work",
+          "content_hash": "<h_ss1>",
+          "_note": "hash phải KHÔNG đổi"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "FA-1",
+          "owner_id": "O-1",
+          "canonical_work_id": "W-1",
+          "first_report_id": "R-9",
+          "_note": "phải sống sót (I07)"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "RI-1",
+          "owner_id": "O-1",
+          "_note": "mục lịch sử trong report R-9 đã publish"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-web-ui",
+      "operation": "data.delete_target",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "target_ref": {
+          "kind": "work",
+          "canonical_id": "W-1"
+        },
+        "confirmation": {
+          "acknowledged": false
+        },
+        "request_id": "RQ-1"
+      },
+      "_note_vi": "Ca âm: cờ xác nhận là false."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-web-ui",
+      "operation": "data.delete_target",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "target_ref": {
+          "kind": "work",
+          "canonical_id": "W-1"
+        },
+        "confirmation": {
+          "acknowledged": true
+        },
+        "request_id": "RQ-2"
+      }
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-web-ui",
+      "operation": "save.list",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session"
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-web-ui",
+      "operation": "report.get",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session",
+      "input": {
+        "report_id": "R-9"
+      }
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "VALIDATION_ERROR",
+      "rows_deleted": 0,
+      "_note_vi": "Thiếu cờ xác nhận ⇒ KHÔNG hàng nào bị xóa."
+    },
+    "seq2": {
+      "result": "committed"
+    },
+    "rows": {
+      "work": [
+        {
+          "id": "W-1",
+          "_absent": true,
+          "_note": "COUNT(work WHERE id='W-1') = 0"
+        }
+      ],
+      "post_work": [
+        {
+          "post_id": "P-1",
+          "work_id": "W-1",
+          "_absent": true
+        },
+        {
+          "post_id": "P-2",
+          "work_id": "W-1",
+          "_absent": true
+        }
+      ],
+      "analysis": [
+        {
+          "id": "AN-1",
+          "_absent": true
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "SI-1",
+          "owner_id": "O-1",
+          "state": "saved",
+          "saved_snapshot_id": "SS-1",
+          "_note": "GIỮ NGUYÊN"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "SS-1",
+          "owner_id": "O-1",
+          "content_hash": "<h_ss1>",
+          "_note": "hash KHÔNG đổi — D55/AC-12"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "FA-1",
+          "owner_id": "O-1",
+          "canonical_work_id": "W-1",
+          "first_report_id": "R-9",
+          "_note": "KHÔNG bị xóa, KHÔNG bị reset (I07)"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "RI-1",
+          "owner_id": "O-1",
+          "_note": "report đã publish không đổi (I05)"
+        }
+      ],
+      "data_deletion_audit": [
+        {
+          "id": "DA-1",
+          "owner_id": "O-1",
+          "scope": "target",
+          "target_key": "W-1",
+          "confirmation_evidence": {
+            "acknowledged": true,
+            "request_id": "RQ-2"
+          },
+          "deleted_counts": {
+            "work": 1,
+            "post_work": 2,
+            "analysis": 1
+          },
+          "preserved_counts": {
+            "saved_snapshot": 1,
+            "first_announced_ledger": 1,
+            "report_item": 1
+          }
+        }
+      ]
+    },
+    "seq3": {
+      "saved_count": 1,
+      "_note_vi": "Saved vẫn đọc được dù dữ liệu gốc đã bị xóa."
+    },
+    "seq4": {
+      "report_content_hash_unchanged": true,
+      "_note_vi": "Nội dung report đã publish bất biến (I05)."
+    }
+  },
+  "forbidden_effects": [
+    "Xóa `saved_snapshot` (bỏ lưu ≠ xóa dữ liệu gốc — REQ-S7.3-05).",
+    "Sửa report đã publish (I05).",
+    "Xóa hoặc reset `first_announced_ledger` (I07).",
+    "Thực hiện khi thiếu cờ xác nhận.",
+    "Cho caller nào ngoài MOD-web-ui trong session owner gọi được."
+  ],
+  "oracle_vi": "COUNT(work WHERE id='W-1') = 0; saved_snapshot.content_hash bằng đúng <h_ss1> trước và sau; COUNT(first_announced_ledger WHERE canonical_work_id='W-1') = 1 không đổi; content_hash của report R-9 không đổi; COUNT(data_deletion_audit WHERE target_key='W-1') = 1. Ở seq1, tổng COUNT(*) mọi bảng trước và sau BẰNG NHAU."
+}

@@ -1,0 +1,802 @@
+{
+  "fixture_id": "FX-RP-M",
+  "title": "Mật độ vector: ví dụ số tái lập được — một hướng đủ bằng chứng, và biến thể dưới cỡ mẫu",
+  "purpose": "Khóa B14: thuật toán, cửa sổ so sánh, cỡ mẫu tối thiểu, cold-start và tie-break đều tất định; dưới cỡ mẫu tối thiểu là insufficient_evidence, TUYỆT ĐỐI không gọi là 'đang nổi'.",
+  "scenario_refs": [
+    "SC08"
+  ],
+  "invariant_refs": [
+    "I12"
+  ],
+  "decision_refs": [
+    "B14"
+  ],
+  "requirement_refs": [
+    "REQ-D53",
+    "REQ-D54",
+    "REQ-A4",
+    "REQ-S10.1-04",
+    "REQ-S10.3-04",
+    "REQ-S1.4-01"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.5 D53, D54",
+    "SRC-SPEC §10.1",
+    "SRC-SPEC §10.3",
+    "SRC-PLAN §3 B14"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "key_mapping_note": "selection.md §8.7 viết tắt target_key là work:01JT1..work:01JT6 cho dễ đọc. Ánh xạ đầy đủ nằm ở given.target_key_map; các CON SỐ là phần được EV-PC04-02 tính lại.",
+  "parameters": {
+    "metric": "cosine",
+    "radius": 0.8,
+    "min_members": 3,
+    "comparison_window_k": 4,
+    "min_prior_windows": 2,
+    "min_delta": 2.0,
+    "prior_floor": 1.0,
+    "rounding_decimals": 4,
+    "parameters_status": "PROVISIONAL_BOOTSTRAP"
+  },
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "target_key_map": {
+      "work:01JT1": "work:01JWRKT1000000000000000000",
+      "work:01JT2": "work:01JWRKT2000000000000000000",
+      "work:01JT3": "work:01JWRKT3000000000000000000",
+      "work:01JT4": "work:01JWRKT4000000000000000000",
+      "work:01JT5": "work:01JWRKT5000000000000000000",
+      "work:01JT6": "work:01JWRKT6000000000000000000"
+    },
+    "selected_targets_period_t": [
+      {
+        "target_key": "work:01JWRKT1000000000000000000",
+        "angle_degrees": 0,
+        "vector": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t1",
+        "identity_state": "active"
+      },
+      {
+        "target_key": "work:01JWRKT2000000000000000000",
+        "angle_degrees": 20,
+        "vector": [
+          0.9397,
+          0.342,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t2",
+        "identity_state": "active"
+      },
+      {
+        "target_key": "work:01JWRKT3000000000000000000",
+        "angle_degrees": 30,
+        "vector": [
+          0.866,
+          0.5,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t3",
+        "identity_state": "active"
+      },
+      {
+        "target_key": "work:01JWRKT4000000000000000000",
+        "angle_degrees": 35,
+        "vector": [
+          0.8192,
+          0.5736,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t4",
+        "identity_state": "active"
+      },
+      {
+        "target_key": "work:01JWRKT5000000000000000000",
+        "angle_degrees": 90,
+        "vector": [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t5",
+        "identity_state": "active"
+      },
+      {
+        "target_key": "work:01JWRKT6000000000000000000",
+        "angle_degrees": 120,
+        "vector": [
+          -0.5,
+          0.866,
+          0.0,
+          0.0
+        ],
+        "label_text": "topic-t6",
+        "identity_state": "active"
+      }
+    ],
+    "prior_windows": [
+      {
+        "label": "t-1",
+        "coverage_window_sequence": 29,
+        "members": [
+          {
+            "target_key": "work:01JWRKP1000000000000000000",
+            "angle_degrees": 25,
+            "cosine_to_centroid": 0.998,
+            "within_radius": true
+          },
+          {
+            "target_key": "work:01JWRKP2000000000000000000",
+            "angle_degrees": 100,
+            "cosine_to_centroid": 0.1966,
+            "within_radius": false
+          }
+        ]
+      },
+      {
+        "label": "t-2",
+        "coverage_window_sequence": 28,
+        "members": [
+          {
+            "target_key": "work:01JWRKP3000000000000000000",
+            "angle_degrees": 40,
+            "cosine_to_centroid": 0.9474,
+            "within_radius": true
+          }
+        ]
+      },
+      {
+        "label": "t-3",
+        "coverage_window_sequence": 27,
+        "members": [
+          {
+            "target_key": "work:01JWRKP4000000000000000000",
+            "angle_degrees": 150,
+            "cosine_to_centroid": -0.6248,
+            "within_radius": false
+          }
+        ]
+      }
+    ],
+    "prior_windows_note": "Chỉ 3 kỳ trước tồn tại cùng embedding generation (kỳ t−4 chưa có). density_prior là trung bình trên các kỳ TỒN TẠI, KHÔNG đệm 0 cho kỳ không tồn tại."
+  },
+  "computation": {
+    "step_2_pairwise_cosine": {
+      "T1 x T2": 0.9397,
+      "T1 x T3": 0.866,
+      "T1 x T4": 0.8192,
+      "T1 x T5": 0.0,
+      "T1 x T6": -0.5,
+      "T2 x T3": 0.9848,
+      "T2 x T4": 0.9659,
+      "T2 x T5": 0.342,
+      "T2 x T6": -0.1737,
+      "T3 x T4": 0.9962,
+      "T3 x T5": 0.5,
+      "T3 x T6": 0.0,
+      "T4 x T5": 0.5736,
+      "T4 x T6": 0.0871,
+      "T5 x T6": 0.866
+    },
+    "step_2_neighborhood_sizes": {
+      "T1": 4,
+      "T2": 4,
+      "T3": 4,
+      "T4": 4,
+      "T5": 2,
+      "T6": 2
+    },
+    "step_3_seed_order": [
+      "work:01JWRKT1000000000000000000",
+      "work:01JWRKT2000000000000000000",
+      "work:01JWRKT3000000000000000000",
+      "work:01JWRKT4000000000000000000",
+      "work:01JWRKT5000000000000000000",
+      "work:01JWRKT6000000000000000000"
+    ],
+    "step_3_groups": [
+      {
+        "seed": "work:01JWRKT1000000000000000000",
+        "members": [
+          "work:01JWRKT1000000000000000000",
+          "work:01JWRKT2000000000000000000",
+          "work:01JWRKT3000000000000000000",
+          "work:01JWRKT4000000000000000000"
+        ],
+        "m_t": 4
+      },
+      {
+        "seed": "work:01JWRKT5000000000000000000",
+        "members": [
+          "work:01JWRKT5000000000000000000",
+          "work:01JWRKT6000000000000000000"
+        ],
+        "m_t": 2
+      }
+    ],
+    "step_5_groups_kept": [
+      {
+        "seed": "work:01JWRKT1000000000000000000",
+        "m_t": 4
+      }
+    ],
+    "step_5_groups_dropped": [
+      {
+        "seed": "work:01JWRKT5000000000000000000",
+        "m_t": 2,
+        "reason": "m_t < min_members (2 < 3)"
+      }
+    ],
+    "step_6_centroid_raw_mean": [
+      0.9062,
+      0.3539,
+      0.0,
+      0.0
+    ],
+    "step_6_centroid_l2_norm_of_mean": 0.9729,
+    "step_6_centroid": [
+      0.9315,
+      0.3638,
+      0.0,
+      0.0
+    ],
+    "step_7_prior_counts": [
+      {
+        "coverage_window_sequence": 29,
+        "members_in_radius": 1
+      },
+      {
+        "coverage_window_sequence": 28,
+        "members_in_radius": 1
+      },
+      {
+        "coverage_window_sequence": 27,
+        "members_in_radius": 0
+      }
+    ],
+    "step_8": {
+      "density_now": 4,
+      "density_prior": 0.6667,
+      "density_delta": 3.3333,
+      "density_ratio": 4.0
+    },
+    "step_9_gate": {
+      "m_t >= min_members": true,
+      "density_delta >= min_delta": true,
+      "prior_windows_present >= min_prior_windows": true
+    }
+  },
+  "expected": {
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTM1000000000000000000",
+      "report_build_id": "7fe697c9-d3ce-481a-b74d-04157b0d7938",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNM1000000000000000000",
+        "sequence": 30,
+        "coverage_from": "2026-09-13T13:00:00.000Z",
+        "coverage_to": "2026-09-14T12:50:00.000Z",
+        "ingest_sequence_from": 7000,
+        "ingest_sequence_to": 7200,
+        "predecessor_window_id": "01JCWNM0000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVM0000000000000000000",
+        "sequence": 31,
+        "content_hash": "sha256:73c9bec07c21db51c7b80f85a731d10ae5071369887f5afc423753ce655d5453",
+        "frozen_at": "2026-09-14T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMM100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT1000000000000000000",
+            "target_key": "work:01JWRKT1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t1"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:44da059603180a069e58135f7fbc75cc3f9ba39a4732ef80902c9883dd0d8c6c",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T01:00:00.000Z",
+          "ingest_sequence": 7100
+        },
+        {
+          "report_item_id": "01JRTEMM200000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT2000000000000000000",
+            "target_key": "work:01JWRKT2000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT2000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t2"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM2000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:aa46c13050facc83e4a790963bff30328c0277d1dbe339f13cdef877c6619012",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T02:00:00.000Z",
+          "ingest_sequence": 7101
+        },
+        {
+          "report_item_id": "01JRTEMM300000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT3000000000000000000",
+            "target_key": "work:01JWRKT3000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT3000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t3"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM3000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:9c8774a0ddafc1f612d53b7d2d0f85a45a324411bef8e4126bb9241ec63b1693",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T03:00:00.000Z",
+          "ingest_sequence": 7102
+        },
+        {
+          "report_item_id": "01JRTEMM400000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT4000000000000000000",
+            "target_key": "work:01JWRKT4000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT4000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t4"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM4000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:dd293cf1ecf264416140858a881cd7c21fa13e15b6d4999d348202c84a82c02b",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T04:00:00.000Z",
+          "ingest_sequence": 7103
+        },
+        {
+          "report_item_id": "01JRTEMM500000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT5000000000000000000",
+            "target_key": "work:01JWRKT5000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT5000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t5"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM5000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:8976a99f2b3887ebdd0df671c01c1c8bc3920c3c8f9623d0c9630521620eb59d",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T05:00:00.000Z",
+          "ingest_sequence": 7104
+        },
+        {
+          "report_item_id": "01JRTEMM600000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKT6000000000000000000",
+            "target_key": "work:01JWRKT6000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKT6000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.86,
+              "threshold_applied": 0.8,
+              "matched_label_text": "topic-t6"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAM6000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:2a34bb2474cd9892b6ff2d7f91490e46364aa2c5557dc207d411eabfc2b9c919",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-14T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-14T06:00:00.000Z",
+          "ingest_sequence": 7105
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCM1000000000000000000",
+          "evidence_state": "sufficient",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": null,
+          "member_target_keys": [
+            "work:01JWRKT1000000000000000000",
+            "work:01JWRKT2000000000000000000",
+            "work:01JWRKT3000000000000000000",
+            "work:01JWRKT4000000000000000000"
+          ],
+          "centroid": [
+            0.9315,
+            0.3638,
+            0.0,
+            0.0
+          ],
+          "density": {
+            "density_now": 4,
+            "density_prior": 0.6667,
+            "density_delta": 3.3333,
+            "density_ratio": 4.0,
+            "comparison_windows_used": [
+              {
+                "coverage_window_sequence": 29,
+                "members_in_radius": 1
+              },
+              {
+                "coverage_window_sequence": 28,
+                "members_in_radius": 1
+              },
+              {
+                "coverage_window_sequence": 27,
+                "members_in_radius": 0
+              }
+            ]
+          },
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null
+      },
+      "built_at": "2026-09-14T13:00:00.000Z",
+      "published_at": "2026-09-14T13:00:05.000Z",
+      "content_hash": "sha256:b08aa17fc34c3fc80b042838f3668ad889743368b49ff4a68de2a89649874f57",
+      "evidence_refs": []
+    },
+    "row_oracles": [
+      "member_target_keys bằng đúng ['work:01JWRKT1000000000000000000', 'work:01JWRKT2000000000000000000', 'work:01JWRKT3000000000000000000', 'work:01JWRKT4000000000000000000'] theo thứ tự target_key tăng dần.",
+      "Nhóm {T5, T6} bị loại vì m_t = 2 < min_members = 3; nó KHÔNG được xuất hiện dưới bất kỳ dạng nào.",
+      "phrasing_analysis_id = null hợp lệ: khối tồn tại được khi không có AI (selection.md §8.1).",
+      "Nhãn là hằng số hợp đồng 'ứng viên để đọc sâu' (REQ-D54)."
+    ],
+    "variant_below_min_sample": {
+      "description": "Chỉ T5 và T6 được chọn ở kỳ t. Nhóm duy nhất có m_t = 2 < 3.",
+      "report": {
+        "schema_version": "0.1.0",
+        "report_id": "01JRPTM2000000000000000000",
+        "report_build_id": "ad81f262-75f8-47bb-ac8f-50ec804dfb27",
+        "owner_id": "01JW0WNER00000000000000000",
+        "status": "published",
+        "quality": "complete",
+        "coverage": {
+          "coverage_window_id": "01JCWNM2000000000000000000",
+          "sequence": 31,
+          "coverage_from": "2026-09-14T12:50:00.000Z",
+          "coverage_to": "2026-09-15T12:50:00.000Z",
+          "ingest_sequence_from": 7200,
+          "ingest_sequence_to": 7260,
+          "predecessor_window_id": "01JCWNM1000000000000000000"
+        },
+        "tag_config_version": {
+          "tag_config_version_id": "01JTCVM0000000000000000000",
+          "sequence": 31,
+          "content_hash": "sha256:73c9bec07c21db51c7b80f85a731d10ae5071369887f5afc423753ce655d5453",
+          "frozen_at": "2026-09-15T13:00:05.000Z"
+        },
+        "selection_version": "0.1.0",
+        "embedding_generation": {
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "model_name": "multilingual-e5-small",
+          "model_version": "1.0.0",
+          "dimension": 4,
+          "normalization": "l2"
+        },
+        "items": [
+          {
+            "report_item_id": "01JRTEMN500000000000000000",
+            "target": {
+              "kind": "work",
+              "work_id": "01JWRKT5000000000000000000",
+              "target_key": "work:01JWRKT5000000000000000000",
+              "identity_state": "active"
+            },
+            "target_key": "work:01JWRKT5000000000000000000",
+            "item_type": "new_discovery",
+            "matched_tags": [
+              {
+                "tag_id": "01JTAGPFD00000000000000000",
+                "tag_text": "protein folding",
+                "matched_via": "tag",
+                "score": 0.83,
+                "threshold_applied": 0.8,
+                "matched_label_text": "topic-t5"
+              }
+            ],
+            "late_discovery": false,
+            "selected_via_backfill": false,
+            "identity_state": "active",
+            "summary_state": "present",
+            "analysis": {
+              "analysis_id": "01JANAN5000000000000000000",
+              "task_type": "summary",
+              "generation_number": 1,
+              "payload_hash": "sha256:c1ec7dc025cbd8f7ba8b39baa2ca78416cd6844b618a984b2189a5617391ce97",
+              "evidence_level": "abstract",
+              "analyzed_at": "2026-09-15T02:00:00.000Z",
+              "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+            },
+            "discovered_at": "2026-09-15T01:00:00.000Z",
+            "ingest_sequence": 7210
+          },
+          {
+            "report_item_id": "01JRTEMN600000000000000000",
+            "target": {
+              "kind": "work",
+              "work_id": "01JWRKT6000000000000000000",
+              "target_key": "work:01JWRKT6000000000000000000",
+              "identity_state": "active"
+            },
+            "target_key": "work:01JWRKT6000000000000000000",
+            "item_type": "new_discovery",
+            "matched_tags": [
+              {
+                "tag_id": "01JTAGPFD00000000000000000",
+                "tag_text": "protein folding",
+                "matched_via": "tag",
+                "score": 0.83,
+                "threshold_applied": 0.8,
+                "matched_label_text": "topic-t6"
+              }
+            ],
+            "late_discovery": false,
+            "selected_via_backfill": false,
+            "identity_state": "active",
+            "summary_state": "present",
+            "analysis": {
+              "analysis_id": "01JANAN6000000000000000000",
+              "task_type": "summary",
+              "generation_number": 1,
+              "payload_hash": "sha256:0c070f3f33630608d02067d2e1e5da4806f8a58488c1d95673068961ef79d98a",
+              "evidence_level": "abstract",
+              "analyzed_at": "2026-09-15T02:00:00.000Z",
+              "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+            },
+            "discovered_at": "2026-09-15T02:00:00.000Z",
+            "ingest_sequence": 7211
+          }
+        ],
+        "emerging_directions": [
+          {
+            "direction_id": "01JDRCM2000000000000000000",
+            "evidence_state": "insufficient_evidence",
+            "label": "ứng viên để đọc sâu",
+            "insufficient_reason": "below_min_sample",
+            "member_target_keys": [],
+            "parameters": {
+              "metric": "cosine",
+              "radius": 0.8,
+              "min_members": 3,
+              "comparison_window_k": 4,
+              "min_prior_windows": 2,
+              "min_delta": 2.0,
+              "prior_floor": 1.0,
+              "rounding_decimals": 4,
+              "parameters_status": "PROVISIONAL_BOOTSTRAP"
+            },
+            "embedding_generation_id": "01JEMBGEN10000000000000000",
+            "excluded_quarantined_target_keys": [],
+            "phrasing_analysis_id": null
+          }
+        ],
+        "pending_items": [],
+        "coverage_note": {
+          "observed_data_only": true,
+          "empty_period": false,
+          "threshold_calibration_state": "uncalibrated",
+          "run_stop_reason": null,
+          "source_coverage_limits_note": null
+        },
+        "built_at": "2026-09-15T13:00:00.000Z",
+        "published_at": "2026-09-15T13:00:05.000Z",
+        "content_hash": "sha256:27b83602915d594e5ede9a6ee54ea463cd57ddc84f5dfdc6007ef3966993b69e",
+        "evidence_refs": []
+      },
+      "counts": {
+        "emerging_direction[evidence_state='sufficient']": 0,
+        "emerging_direction[evidence_state='insufficient_evidence']": 1
+      },
+      "display_oracles": [
+        "Câu chữ hiển thị KHÔNG được chứa 'đang nổi', 'phát hiện mới' hay bất kỳ khẳng định tính mới khoa học nào.",
+        "Trạng thái này phải phân biệt được với 'không có nội dung phù hợp' và với 'đợt thất bại' (I13)."
+      ]
+    },
+    "variant_cold_start": {
+      "description": "Kỳ đầu tiên sau embedding.activate_generation: không có kỳ trước nào cùng generation.",
+      "expected_direction": {
+        "direction_id": "01JDRCM3000000000000000000",
+        "evidence_state": "insufficient_evidence",
+        "label": "ứng viên để đọc sâu",
+        "insufficient_reason": "generation_reset",
+        "member_target_keys": [],
+        "parameters": {
+          "metric": "cosine",
+          "radius": 0.8,
+          "min_members": 3,
+          "comparison_window_k": 4,
+          "min_prior_windows": 2,
+          "min_delta": 2.0,
+          "prior_floor": 1.0,
+          "rounding_decimals": 4,
+          "parameters_status": "PROVISIONAL_BOOTSTRAP"
+        },
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "excluded_quarantined_target_keys": [],
+        "phrasing_analysis_id": null
+      },
+      "note": "Kỳ đầu tiên của hệ thống dùng insufficient_reason='cold_start_insufficient_history'."
+    }
+  },
+  "forbidden_effects": [
+    "Gọi AI để chọn thành viên nhóm hoặc để tính mật độ (SRC-SPEC §10.1).",
+    "Đặt evidence_state='sufficient' khi m_t < min_members.",
+    "Đệm 0 cho các kỳ trước KHÔNG tồn tại khi tính density_prior (làm density_prior nhỏ giả tạo).",
+    "Chia cho density_prior = 0 (phải dùng prior_floor = 1.0).",
+    "Dùng thuật toán có khởi tạo ngẫu nhiên (k-means) khiến kết quả không tái lập.",
+    "So sánh với kỳ trước thuộc embedding generation khác (I12).",
+    "Đếm work đang identity_conflict vào m_t (B15).",
+    "Gọi khối này là 'hướng nghiên cứu mới' thay vì 'ứng viên để đọc sâu' (REQ-D54)."
+  ]
+}

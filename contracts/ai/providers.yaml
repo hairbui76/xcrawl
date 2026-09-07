@@ -1,0 +1,283 @@
+# =============================================================================
+# CT-ai-providers — Ma trận năng lực adapter cho hai họ provider
+# =============================================================================
+contract_id: CT-ai-providers
+version: 0.1.0
+status: draft
+owner_role: AI contract owner
+source_refs:
+  - "SRC-SPEC §3.7 D39, D40, D41, D43, D44, D51"
+  - "SRC-SPEC §3.8 A5"
+  - "SRC-SPEC §6.1 (AI adapter ở máy cá nhân), §6.4"
+  - "SRC-SPEC §10.1, §10.2"
+  - "SRC-SPEC §11.2 (secrets), §11.4"
+  - "SRC-SPEC §12 AC-16, AC-17"
+  - "SRC-SPEC §13.2 (điểm không được bỏ qua)"
+  - "SRC-PLAN §3 B13"
+  - "SRC-PLAN §6 (bảng edge), §6.1"
+  - "SRC-PLAN §7 I11, I14"
+  - "SRC-PLAN §10 AI_PROVIDER_UNAVAILABLE"
+  - "SRC-PLAN §11 PC06"
+requirement_refs:
+  [REQ-D39, REQ-D40, REQ-D41, REQ-D43, REQ-D44, REQ-D51, REQ-A5, REQ-AC16, REQ-AC17,
+   REQ-S10.2-02, REQ-S10.2-06, REQ-S11.2-01, REQ-S13.2-02, REQ-S13.2-03]
+decision_refs: [B13, ADR-0010]
+invariant_refs: [I11, I13, I14]
+producers: [MOD-ai-adapter]
+consumers: [MOD-analysis-worker, MOD-analysis-service, MOD-settings-service, MOD-web-ui]
+dependencies:
+  - contracts/ai/tasks.yaml
+  - contracts/ai/grounding.md
+  - contracts/ops/cli-acp-probe.md
+  - contracts/schemas/analysis-result.schema.json
+  - contracts/capabilities.yaml
+  - contracts/modules.yaml
+  - contracts/ports.yaml
+  - contracts/data/entities.yaml
+  - contracts/retry-policy.yaml
+scope: >-
+  Hợp đồng năng lực của adapter AI cho hai họ provider (`api_key`, `cli_acp`): trường bắt buộc
+  của một mục adapter, phạm vi secret theo task, cách bóc JSON, cách báo usage, yêu cầu cô lập
+  và **cách kiểm chứng** cô lập, allowlist fallback, và hình dạng cấu hình provider/model theo
+  tác vụ. File này KHÔNG khẳng định điều khoản của bất kỳ nhà cung cấp thật nào và KHÔNG liệt kê
+  provider thật nào là "đã được duyệt".
+verification: >-
+  E0 SELF_VALIDATION ở gói PC06: EV-PC06-01 (YAML parse), EV-PC06-02 (operation/entity/error code
+  được trích dẫn có tồn tại). Việc kiểm chứng cô lập THẬT là E3 và `NOT_RUN`
+  (contracts/ops/cli-acp-probe.md).
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# -----------------------------------------------------------------------------
+# 0. File này KHÔNG nói gì về nhà cung cấp thật
+# -----------------------------------------------------------------------------
+no_vendor_claims:
+  statement_vi: >-
+    Không mục nào trong file này khẳng định một nhà cung cấp cụ thể cho phép hay không cho phép
+    cách dùng nào, hỗ trợ hay không hỗ trợ tính năng nào. REQ-A5 là `KC` và cách kiểm chứng duy
+    nhất là **đọc tài liệu chính thức của chính nhà đó** trước khi bật (SRC-SPEC §13.2).
+  forbidden_vi:
+    - "Ghi tên một nhà cung cấp kèm kết luận về điều khoản của họ như một sự thật."
+    - "Suy ra một CLI tương thích ACP chỉ vì tên gọi có chữ ACP (SRC-PLAN §11 PC06 nói thẳng điều này)."
+    - "Giả định hai provider tương thích cùng một giao thức (SRC-SPEC §13.2)."
+  what_this_file_gives_vi: "Một TEMPLATE bắt buộc phải điền đủ trước khi một adapter được `enabled = true`."
+
+# -----------------------------------------------------------------------------
+# 1. Hai họ provider
+# -----------------------------------------------------------------------------
+families:
+  - id: api_key
+    source_refs: ["SRC-SPEC §10.2 cột 'Đường API key'", "SRC-SPEC §3.7 D41"]
+    auth_vi: "Key nằm trong secret store phía server; worker nhận credential theo TỪNG TASK (B13)."
+    concurrency_vi: "Nhiều; provider tự khai (REQ-D43). Giá trị thật điền vào `max_concurrency` của từng adapter."
+    output_vi: "JSON trực tiếp — không cần bước bóc khỏi transcript."
+    usage_reporting: exact
+    usage_note_vi: "Token count thật (SRC-SPEC §10.2). Nếu một provider vẫn không báo, adapter khai `unknown` chứ không ghi 0 (I14)."
+    zero_key_path_vi: "KHÔNG bắt buộc: REQ-D51 nói không API key nào là bắt buộc."
+
+  - id: cli_acp
+    source_refs: ["SRC-SPEC §10.2 cột 'Đường CLI/ACP'", "SRC-SPEC §3.7 D41, D43, D51"]
+    auth_vi: "Phiên đăng nhập của CLI trên máy cá nhân. Phiên này KHÔNG BAO GIỜ rời máy (ADR-0010 §7); server không nhận nó."
+    concurrency: 1
+    concurrency_note_vi: "SRC-SPEC §10.2 khai thẳng: đường CLI song song = 1. Đây là hằng số hợp đồng, không phải mặc định điều chỉnh được."
+    output_vi: "Bóc JSON khỏi transcript, kiểm schema, sai thì để tầng task thử lại theo ngân sách (REQ-D43)."
+    usage_reporting: unknown_allowed
+    usage_note_vi: "REQ-D44: bảng usage chấp nhận 'không rõ' cho đường CLI. `usage.unknown = true` ⇒ cả ba trường là null (I14)."
+    isolation_required: true
+    zero_key_path_vi: >-
+      Đây là con đường làm REQ-AC16 đúng: nếu `label`, `summary` VÀ `direction_phrasing` đều chạy
+      được qua CLI thì hệ thống hoàn tất một đợt mà không có API key nào, vì embedding là model
+      local ở server (REQ-D48/D50).
+
+# -----------------------------------------------------------------------------
+# 2. Template bắt buộc của một mục adapter
+# -----------------------------------------------------------------------------
+adapter_entry_template:
+  note_vi: >-
+    Mỗi adapter là một cặp (provider, version). Đổi version là một mục MỚI phải kiểm lại từ đầu
+    (ADR-0010 §5: "theo từng provider và từng version"). Thiếu bất kỳ trường `required` nào ⇒
+    `enabled` phải là `false`.
+  required_fields:
+    - {field: adapter_id, type: string, note_vi: "`<provider_slug>@<version>`. Version cụ thể, không dùng `latest`."}
+    - {field: auth_family, type: enum, values: [api_key, cli_acp], note_vi: "entities.yaml ENT-provider-config.auth_family."}
+    - {field: task_support, type: array, note_vi: "Tập con của [label, summary, direction_phrasing] (tên theo entities.yaml, ruling R-03)."}
+    - {field: max_concurrency, type: integer, note_vi: "CLI/ACP BẮT BUỘC = 1."}
+    - {field: request_timeout_seconds, type: integer, note_vi: "≤ `inference_timeout` của task trong tasks.yaml, và phải < `lease_ttl_analysis` (900 s)."}
+    - {field: cancellation_support, type: enum, values: [cooperative, kill_process, none], note_vi: "`none` ⇒ adapter KHÔNG được dùng cho task có timeout dài; ghi rõ hệ quả."}
+    - {field: json_extraction_method, type: enum, values: [native_json, fenced_block, delimited_envelope], note_vi: "§3."}
+    - {field: usage_reporting, type: enum, values: [exact, unknown], note_vi: "`unknown` hợp lệ (REQ-D44); CẤM ghi 0 (I14)."}
+    - {field: isolation, type: object, note_vi: "§4 — mọi trường con bắt buộc."}
+    - {field: terms_check, type: object, note_vi: "§5 — REQ-A5."}
+    - {field: enabled, type: boolean, note_vi: "Mặc định `false`. entities.yaml ENT-provider-config.enabled: 'Adapter không cô lập được thì để false (B13)'."}
+    - {field: disabled_reason, type: string, nullable: true, note_vi: "NOT NULL khi `enabled = false`. Lý do phải cụ thể, không phải 'chưa cấu hình'."}
+  example_entry_status: NONEXECUTABLE_EXAMPLE
+  example_entry:
+    adapter_id: "example-vendor-cli@0.0.0-placeholder"
+    auth_family: cli_acp
+    task_support: [label, summary, direction_phrasing]
+    max_concurrency: 1
+    request_timeout_seconds: 300
+    cancellation_support: kill_process
+    json_extraction_method: delimited_envelope
+    usage_reporting: unknown
+    isolation:
+      tools_disabled: unverified
+      filesystem_scope: unverified
+      network_egress: unverified
+      verification_method: null
+    terms_check: {read_official_docs: false, read_at: null, reviewer: null, outcome: not_read}
+    enabled: false
+    disabled_reason: "Placeholder. Chưa đọc tài liệu chính thức (REQ-A5) và chưa kiểm chứng cô lập (B13). Đây là ví dụ về HÌNH DẠNG, không phải một provider thật."
+
+# -----------------------------------------------------------------------------
+# 3. Bóc JSON
+# -----------------------------------------------------------------------------
+json_extraction:
+  applies_to_family: [cli_acp]
+  requirement_ref: REQ-D43
+  methods:
+    - id: native_json
+      rule_vi: "Adapter trả đúng một JSON document. Không có bước bóc."
+    - id: fenced_block
+      rule_vi: >-
+        Lấy nội dung của khối rào ```json … ``` trong transcript. Nếu có **nhiều hơn một** khối
+        ứng viên ⇒ TỪ CHỐI với `AI_OUTPUT_INVALID`, KHÔNG "lấy khối cuối".
+    - id: delimited_envelope
+      rule_vi: >-
+        Prompt yêu cầu model bọc JSON giữa một cặp dấu phân cách sinh ngẫu nhiên cho mỗi lần chạy
+        (nonce). Adapter lấy đúng nội dung giữa cặp đó. Nonce KHÔNG bao giờ xuất hiện trong nội
+        dung nguồn, nên nội dung nguồn không thể giả mạo một envelope.
+  hard_rules_vi:
+    - "Thuật toán bóc phải TẤT ĐỊNH: cùng transcript cho cùng kết quả."
+    - "Nhiều hơn một ứng viên JSON ⇒ từ chối. Đây là điểm mà 'lấy JSON đầu tiên tìm được' trở thành lỗ hổng: nội dung nguồn có thể chèn một JSON giả trước JSON thật."
+    - "Không sửa, không 'vá' JSON hỏng (thêm dấu ngoặc, bỏ dấu phẩy thừa) rồi coi là hợp lệ — đó là bịa dữ liệu."
+    - "Không bao giờ ghi transcript vào log hay vào error details (errors.yaml AI_OUTPUT_INVALID.redaction_vi)."
+  on_fail: {error_code: AI_OUTPUT_INVALID, attempt_outcome: schema_invalid}
+
+# -----------------------------------------------------------------------------
+# 4. Cô lập — và cách KIỂM CHỨNG nó
+# -----------------------------------------------------------------------------
+isolation:
+  decision_refs: [B13, ADR-0010]
+  invariant_refs: [I11]
+  source_refs: ["SRC-SPEC §11.4", "contracts/capabilities.yaml ACT-ai-adapter"]
+  principle_vi: >-
+    ADR-0010 §3: **không kiểm chứng được thì không bật.** Đây là mặc định, không phải hình phạt.
+    Một lời hứa trong tài liệu của nhà cung cấp KHÔNG phải bằng chứng cô lập.
+  required_properties:
+    - id: ISO-01
+      property_vi: "Tool bị tắt: adapter không có công cụ nào để gọi ngoài inference."
+      verification_method_vi: >-
+        Chạy probe với một prompt yêu cầu tường minh gọi tool (fixture (f)); đếm số lần gọi tool
+        quan sát được ở tiến trình. Oracle: 0. Nếu không quan sát được số này thì tính chất
+        KHÔNG được coi là đã kiểm chứng.
+      denied_case_ref: "capabilities.yaml ACT-ai-adapter DC-AI-03"
+    - id: ISO-02
+      property_vi: "Không đọc/ghi file ngoài thư mục làm việc của worker."
+      verification_method_vi: >-
+        Đặt một file canary ngoài phạm vi (ví dụ cạnh profile Chrome), chạy prompt yêu cầu đọc
+        nó, kiểm nội dung canary không xuất hiện trong output và không có syscall mở file đó.
+      note_vi: "modules.yaml MOD-ai-adapter: 'không truy cập profile Chrome, không truy cập file cấu hình token của collector'."
+    - id: ISO-03
+      property_vi: "Network egress chỉ tới endpoint của provider được cấu hình cho task đang chạy."
+      verification_method_vi: >-
+        Ghi lại danh sách kết nối ra trong một lần chạy; oracle: tập đích ⊆
+        `ai_provider_endpoints_configured`. Prompt chứa URL lạ (fixture (b)) không được sinh kết
+        nối nào tới URL đó.
+      denied_case_ref: "capabilities.yaml ACT-ai-adapter DC-AI-02"
+    - id: ISO-04
+      property_vi: "Không gửi Telegram, không đổi recipient."
+      verification_method_vi: "Đếm outbound call tới Telegram API trong một lần chạy adapter; oracle: 0."
+      denied_case_ref: "capabilities.yaml ACT-ai-adapter DC-AI-01"
+    - id: ISO-05
+      property_vi: "Chỉ nhận credential của ĐÚNG provider cho task đang giữ lease, thời hạn ngắn."
+      verification_method_vi: >-
+        Yêu cầu `secret.issue_task_credential` cho một task worker KHÔNG giữ lease ⇒ phải bị từ
+        chối (`UNAUTHORIZED` hoặc `STALE_LEASE`). Kiểm rằng credential trả về không chứa key của
+        provider khác.
+      operations: [secret.issue_task_credential, secret.revoke_task_credential]
+      denied_case_ref: "capabilities.yaml ACT-analysis-worker DC-AW-03"
+  status_values:
+    - {value: verified, meaning_vi: "Đã chạy probe và có bằng chứng lưu lại (contracts/ops/cli-acp-probe.md)."}
+    - {value: unverified, meaning_vi: "Chưa chạy hoặc chạy nhưng không quan sát được oracle. ⇒ `enabled = false`."}
+    - {value: not_applicable, meaning_vi: "Chỉ dùng cho họ `api_key` với các tính chất mà kiến trúc đã loại bỏ; phải ghi lý do."}
+  current_status_vi: >-
+    Ở giai đoạn Pre-code, **mọi** adapter có `isolation.* = unverified` và do đó
+    `enabled = false`. Không có ngoại lệ, vì chưa có probe nào chạy (E3 = `NOT_RUN`).
+  ac16_reporting_rule_vi: >-
+    ADR-0010 §Hệ quả: nếu MỌI adapter CLI bị disabled thì REQ-AC16 (chạy không API key) phải được
+    báo cáo là **`BLOCKED`**, KHÔNG phải `FAIL`. Đây là khác biệt quan trọng khi lập
+    `acceptance/traceability.csv` (chuyển PC09).
+
+# -----------------------------------------------------------------------------
+# 5. Điều khoản nhà cung cấp — REQ-A5, luôn là KC
+# -----------------------------------------------------------------------------
+terms_check:
+  requirement_ref: REQ-A5
+  status: KC
+  rule_vi: >-
+    Adapter của một nhà chỉ được `enabled = true` sau khi đã đọc tài liệu chính thức của **chính
+    nhà đó** cho **chính version đó** (ADR-0010 §4, SRC-SPEC §13.2).
+  fields:
+    - {field: read_official_docs, type: boolean}
+    - {field: read_at, type: timestamp_utc_ms, nullable: true}
+    - {field: source_urls, type: array, note_vi: "URL tài liệu chính thức đã đọc. Ghi lại để kiểm lại khi provider đổi version."}
+    - {field: reviewer, type: string, nullable: true, note_vi: "Ai đã đọc. Ở MVP một người dùng, đây là Owner."}
+    - {field: outcome, type: enum, values: [permitted_for_this_use, not_permitted, unclear, not_read]}
+  gate_vi: "`outcome ∈ {not_permitted, unclear, not_read}` ⇒ `enabled = false` với `disabled_reason` tương ứng."
+  what_pc06_must_not_do_vi: >-
+    PC06 KHÔNG đọc thay và KHÔNG đoán. Việc này là công việc tay, không tự động hóa được, và phải
+    làm LẠI khi provider đổi version (ADR-0010 §Hệ quả tiêu cực).
+
+# -----------------------------------------------------------------------------
+# 6. Fallback — allowlist, có thứ tự, do Owner bật
+# -----------------------------------------------------------------------------
+fallback:
+  source_refs: ["SRC-SPEC §9.3 hàng 'AI lỗi toàn bộ provider'", "SRC-PLAN §11 PC06", "contracts/errors.yaml AI_PROVIDER_UNAVAILABLE"]
+  invariant_refs: [I14]
+  default: off
+  rules_vi:
+    - "Fallback CHỈ chạy khi Owner đã cấu hình tường minh một allowlist CÓ THỨ TỰ cho từng task."
+    - "Thứ tự do Owner đặt, KHÔNG do model chọn và KHÔNG do adapter suy ra từ chất lượng."
+    - "Chỉ adapter có `enabled = true` mới được vào allowlist."
+    - "Fallback không hồi ngân sách: chuyển sang provider thứ hai vẫn tiêu thụ `provider_unavailable_waits` như cũ."
+    - "Kết quả ghi `provider_name` của provider ĐÃ TẠO RA nó, không phải provider được ưu tiên đầu tiên."
+  forbidden_vi:
+    - "Tự bật provider thứ hai khi Owner chưa cấu hình (errors.yaml AI_PROVIDER_UNAVAILABLE.forbidden_vi, REQ-S9.3-04)."
+    - "Rơi từ `cli_acp` sang `api_key` (hoặc ngược lại) mà không có mục allowlist tường minh — đổi họ provider có thể làm phát sinh chi phí API mà Owner không chờ đợi."
+  oracle_vi: >-
+    Provider chính lỗi, KHÔNG có fallback cấu hình: `COUNT(outbound call tới provider thứ hai) = 0`
+    và item vào `failed` sau khi hết `provider_unavailable_waits`. Fixture (h).
+
+# -----------------------------------------------------------------------------
+# 7. Cấu hình provider/model theo tác vụ (D39)
+# -----------------------------------------------------------------------------
+provider_config_shape:
+  storage: "contracts/data/entities.yaml → ENT-provider-config (một hàng cho mỗi (task_type, provider))"
+  fields_from_entities: [task_type, auth_family, provider_name, model_name, max_concurrency, secret_ref, enabled]
+  rules_vi:
+    - "REQ-D39: cấu hình model theo TỪNG tác vụ, sửa được trong Settings."
+    - "REQ-D40 là khuyến nghị mặc định (rẻ cho `label`, mạnh cho `summary`), không phải ràng buộc cứng: Owner được phép đặt khác."
+    - "`secret_ref` là NULL cho đường CLI — REQ-D51: không key nào là bắt buộc."
+    - "`model_name` không dùng `latest` (entities.yaml)."
+  test_operation: {operation_id: settings.test_provider, result_entity: provider_test_result}
+  test_outcome_rule_vi: >-
+    `provider_test_result.outcome ∈ {usable, unusable, unknown}`. `unknown` là giá trị HỢP LỆ và
+    KHÔNG được quy thành `unusable` (I14, entities.yaml). Màn hình Settings phải hiện rõ nhà nào
+    lỗi (SRC-SPEC §4 hàng Settings).
+
+# -----------------------------------------------------------------------------
+# 8. Đường không có API key nào (REQ-AC16)
+# -----------------------------------------------------------------------------
+zero_api_key_path:
+  requirement_refs: [REQ-D51, REQ-AC16]
+  coverage_required_vi: >-
+    Luồng zero-API-key phải phủ **cả ba** task, kể cả `direction_phrasing` nếu khối hướng nổi
+    được bật (SRC-PLAN §11 PC06 nói rõ điều này — không chỉ labels/summary).
+  components:
+    - {step_vi: "Gắn nhãn `label`", path_vi: "CLI/ACP", needs_api_key: false}
+    - {step_vi: "Embedding nhãn và tag", path_vi: "Model LOCAL ở server", needs_api_key: false, note_vi: "SRC-SPEC §10.1: 'Chỉ local — không dùng API, không dùng CLI'. Đây là lý do AC-16 khả thi."}
+    - {step_vi: "Summary `summary`", path_vi: "CLI/ACP", needs_api_key: false}
+    - {step_vi: "Diễn đạt `direction_phrasing`", path_vi: "CLI/ACP", needs_api_key: false, note_vi: "Nếu task này lỗi, khối vẫn hiển thị không có câu văn — nó KHÔNG chặn đợt chạy (tasks.yaml direction_phrasing.hard_constraints_vi)."}
+  pass_condition_vi: "Đợt hoàn tất, `COUNT(outbound call tới endpoint dùng API key) = 0`, và không có `secret_ref` nào được cấp."
+  blocked_condition_vi: "Nếu không adapter CLI nào qua được §4 thì AC-16 báo `BLOCKED`, không phải `FAIL` (ADR-0010)."
+  scenario_refs: [SC16]

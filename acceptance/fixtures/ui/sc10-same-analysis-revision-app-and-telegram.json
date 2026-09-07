@@ -1,0 +1,283 @@
+{
+  "fixture_id": "FX-UI-SC10",
+  "title": "Một analysis revision hiển thị giống nhau trên app và Telegram, đủ năm trường REQ-D20",
+  "purpose": "REQ-AC10: mỗi mục tự đủ để quyết định mà KHÔNG cần mở nguồn. Hai kênh đọc CÙNG một revision; không kênh nào lấy bản analysis mới hơn xuất hiện sau publish (I05).",
+  "scenario_refs": [
+    "SC10"
+  ],
+  "invariant_refs": [
+    "I05",
+    "I16"
+  ],
+  "decision_refs": [
+    "B01",
+    "AMD-B16"
+  ],
+  "requirement_refs": [
+    "REQ-AC10",
+    "REQ-D19",
+    "REQ-D20",
+    "REQ-D21",
+    "REQ-P0-06",
+    "REQ-S4-02",
+    "REQ-S4-03",
+    "REQ-S5.3-01",
+    "REQ-S5.3-02",
+    "REQ-S5.3-03",
+    "REQ-S10.1-03"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.3",
+    "SRC-SPEC §12 AC-10",
+    "acceptance/scenarios.yaml SC10",
+    "contracts/ui/screens.yaml SCR-report-detail"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/telegram/commands.yaml",
+    "contracts/schemas/report.schema.json",
+    "contracts/data/entities.yaml",
+    "contracts/ports.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "report": [
+        {
+          "id": "01JREP0RTV1000000000000000",
+          "status": "published",
+          "quality": "complete",
+          "published_at": "2026-09-06T20:00:00.000Z",
+          "content_hash": {
+            "symbolic": "H_RP",
+            "computed_by": "sha256(JCS(report_content))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Đóng băng tại publish (B01). Digest chỉ ĐỌC hàng này."
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEMV10000000000000000",
+          "report_id": "01JREP0RTV1000000000000000",
+          "target_kind": "work",
+          "target_work_id": "01JW0RKV100000000000000000",
+          "target_key": "work:01JW0RKV100000000000000000",
+          "item_type": "new_discovery",
+          "analysis_id": "01JANA1YV10000000000000000",
+          "_note": "analysis_id là revision ĐANG ĐỌC; cả hai kênh phải dùng đúng bản này."
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YV10000000000000000",
+          "target_kind": "work",
+          "target_work_id": "01JW0RKV100000000000000000",
+          "target_key": "work:01JW0RKV100000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T08:30:00.000Z",
+          "payload_hash": {
+            "symbolic": "H_AN1",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Bản được report đóng băng."
+        },
+        {
+          "id": "01JANA1YV20000000000000000",
+          "target_kind": "work",
+          "target_work_id": "01JW0RKV100000000000000000",
+          "target_key": "work:01JW0RKV100000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 2,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T20:05:00.000Z",
+          "payload_hash": {
+            "symbolic": "H_AN2",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Bản MỚI HƠN xuất hiện SAU publish. Không kênh nào được dùng bản này."
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NKV1000000000000000",
+          "state": "active",
+          "generation": 1,
+          "chat_id": "111111111"
+        }
+      ],
+      "delivery": [],
+      "delivery_part": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T20:10:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "report.get",
+      "performed_by": "MOD-report-service",
+      "description": "App đọc read model của kỳ (screens.yaml SCR-report-detail)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T20:10:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "delivery.create_intent",
+      "performed_by": "MOD-delivery-service",
+      "description": "Dựng payload digest từ CÙNG revision mà report đã đóng băng."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T20:12:00.000Z",
+      "event_type": "human_read",
+      "description": "Người đọc mở mục trên desktop, trên điện thoại và trong Telegram. Phán đoán 'không cần mở nguồn' là E4, không mock được."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "report": [
+        {
+          "id": "01JREP0RTV1000000000000000",
+          "content_hash": {
+            "symbolic": "H_RP",
+            "computed_by": "sha256(JCS(report_content))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "KHÔNG đổi sau khi digest được dựng (I05)."
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEMV10000000000000000",
+          "analysis_id": "01JANA1YV10000000000000000",
+          "_note": "Vẫn trỏ AN1, không nhảy sang AN2."
+        }
+      ],
+      "delivery": [
+        {
+          "id": "01JDE11VV10000000000000000",
+          "report_id": "01JREP0RTV1000000000000000",
+          "channel": "telegram",
+          "state": "pending",
+          "telegram_link_generation": 1
+        }
+      ],
+      "delivery_part": [
+        {
+          "id": "01JDPARTV00000000000000000",
+          "delivery_id": "01JDE11VV10000000000000000",
+          "part_index": 0,
+          "payload_hash": {
+            "symbolic": "H_PART0",
+            "computed_by": "sha256(JCS(part0_payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "state": "pending"
+        }
+      ]
+    },
+    "channel_payloads": {
+      "app_report_detail": {
+        "analysis_id": "01JANA1YV10000000000000000",
+        "generation_number": 1,
+        "fields_present": [
+          "content",
+          "difference_from_prior",
+          "limitation_vi",
+          "evidence_level",
+          "matched_tags"
+        ],
+        "content": "Nội dung công trình, diễn đạt lại từ abstract.",
+        "difference_from_prior": "Điểm khác so với cái đã có, kèm phân loại phát biểu.",
+        "limitation_vi": "Một dòng hạn chế.",
+        "evidence_level": "abstract",
+        "matched_tags": [
+          {
+            "tag_text": "protein folding",
+            "similarity": 0.81
+          }
+        ],
+        "claim_kinds": [
+          "author_claim",
+          "source_verified",
+          "ai_inference"
+        ],
+        "_note": "screens.yaml SCR-report-detail §ac10_completeness đòi đủ năm trường; thiếu một trường ⇒ hiện nhãn thiếu, KHÔNG hiện như đầy đủ."
+      },
+      "telegram_digest": {
+        "analysis_id": "01JANA1YV10000000000000000",
+        "generation_number": 1,
+        "fields_present": [
+          "content",
+          "difference_from_prior",
+          "limitation_vi",
+          "evidence_level",
+          "matched_tags"
+        ],
+        "content": "Nội dung công trình, diễn đạt lại từ abstract.",
+        "difference_from_prior": "Điểm khác so với cái đã có, kèm phân loại phát biểu.",
+        "limitation_vi": "Một dòng hạn chế.",
+        "evidence_level": "abstract",
+        "matched_tags": [
+          {
+            "tag_text": "protein folding",
+            "similarity": 0.81
+          }
+        ],
+        "deep_link": "https://<app_host>/reports/01JREP0RTV1000000000000000#item-01JR1TEMV10000000000000000",
+        "_note": "delivery.md §3.1: cùng năm trường; deep link mở được từ điện thoại (REQ-S5.3-03, REQ-D04)."
+      }
+    },
+    "counts": {
+      "analysis__status_valid": 2,
+      "channels_rendering_item": 2,
+      "distinct_analysis_id_across_channels": 1,
+      "delivery__total": 1
+    },
+    "oracles": [
+      {
+        "assert": "analysis_id ở kênh app bằng analysis_id ở kênh Telegram == 01JANA1YV10000000000000000",
+        "why_vi": "Hai kênh cùng một revision (SC10 oracle)."
+      },
+      {
+        "assert": "generation_number ở kênh app bằng generation_number ở kênh Telegram == 1"
+      },
+      {
+        "assert": "Cả hai payload chứa đủ năm trường: content, difference_from_prior, limitation_vi, evidence_level, matched_tags",
+        "why_vi": "Thiếu bất kỳ trường nào ⇒ scenario FAIL (REQ-D20, REQ-AC10)."
+      },
+      {
+        "assert": "report.content_hash sau sự kiện 2 == trước sự kiện 1",
+        "symbolic": "H_RP"
+      },
+      {
+        "assert": "Không payload nào tham chiếu 01JANA1YV20000000000000000",
+        "why_vi": "AN2 xuất hiện sau publish; dùng nó là vi phạm I05."
+      }
+    ],
+    "mobile": {
+      "screen": "SCR-report-detail",
+      "mobile_capability": "read_and_save",
+      "_note": "SRC-SPEC §4 cột cuối: Report detail trên điện thoại là Đọc + Save."
+    }
+  },
+  "forbidden_effects": [
+    "Dựng digest từ analysis 01JANA1YV20000000000000000 (bản mới hơn bản report đã đóng băng) — I05.",
+    "Bỏ dòng hạn chế hoặc nhãn mức độ đọc để tiết kiệm độ dài tin nhắn.",
+    "Trình bày phát biểu ai_inference như kết luận (AMD-B16).",
+    "Hiển thị mục thiếu trường như thể đầy đủ.",
+    "Đổi report.content_hash khi dựng digest."
+  ],
+  "evidence_note_vi": "E1 kiểm được: sự hiện diện của năm trường và sự bằng nhau của analysis_id. E4 vẫn cần: phán đoán 'không cần mở nguồn để quyết định' là của người đọc, theo rubric contracts/ai/grounding.md §6. Giới hạn định dạng Telegram vẫn KC (CR-PC07-04)."
+}

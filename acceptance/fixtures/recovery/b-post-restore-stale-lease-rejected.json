@@ -1,0 +1,129 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-b",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D11",
+      "REQ-AC04"
+    ],
+    "decision_refs": [
+      "B05",
+      "B11"
+    ],
+    "invariant_refs": [
+      "I15",
+      "I10",
+      "I02"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "b",
+  "title_vi": "Worker từ trước backup dùng lease cũ sau restore → bị từ chối",
+  "scenario_refs": [
+    "SC27",
+    "SC20"
+  ],
+  "invariant_refs": [
+    "I15",
+    "I10",
+    "I02"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "storage_health": "recovery_required",
+    "restore_record": {
+      "id": "RR-01",
+      "new_restore_generation": 5,
+      "leases_revoked": 1
+    },
+    "lease_in_snapshot": {
+      "id": "AL-01",
+      "run_id": "RUN-09",
+      "job_id": "JOB-09",
+      "lease_epoch": 3,
+      "state": "revoked_after_restore"
+    },
+    "worker_still_running_vi": "Một collector chạy từ trước lúc snapshot, vẫn giữ lease_id=AL-01, lease_epoch=3 trong bộ nhớ."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "worker.heartbeat",
+      "edge_assertion": "allowed",
+      "input": {
+        "lease_id": "AL-01",
+        "lease_epoch": 3
+      }
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "edge_assertion": "allowed",
+      "input": {
+        "lease_id": "AL-01",
+        "lease_epoch": 3,
+        "batch_idempotency_key": "BK-77",
+        "item_count": 25
+      }
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "edge_assertion": "allowed",
+      "input": {
+        "claim_request_id": "CR-77"
+      }
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "STALE_LEASE"
+    },
+    "seq2": {
+      "error_code": "STALE_LEASE",
+      "rows_committed": 0,
+      "ingest_receipt_created": false
+    },
+    "seq3": {
+      "error_code": "RESTORE_UNVERIFIED",
+      "reason_vi": "claim bị chặn ở recovery_required, độc lập với chuyện lease cũ."
+    },
+    "checkpoint_unchanged": true
+  },
+  "forbidden_effects": [
+    "Commit bất kỳ hàng post nào từ seq2",
+    "Tiến acked_through_ingest_sequence",
+    "Cấp lease mới trong khi storage.health = recovery_required",
+    "Coi seq2 là dữ liệu hợp lệ vì 'worker vẫn còn token hợp lệ' — token hợp lệ không phải lease hợp lệ"
+  ],
+  "oracle_vi": "COUNT(post) và COUNT(ingest_receipt) không đổi; checkpoint.acked_through_ingest_sequence không đổi; cả ba lời gọi trả mã lỗi đúng như trên."
+}

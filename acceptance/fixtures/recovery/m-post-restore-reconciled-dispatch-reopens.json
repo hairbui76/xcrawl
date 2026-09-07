@@ -1,0 +1,272 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-m",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-SPEC §7.3",
+      "SRC-SPEC §12 AC-12",
+      "SRC-PLAN §7 I15",
+      "SRC-PLAN §11 PC08"
+    ],
+    "requirement_refs": [
+      "REQ-D58",
+      "REQ-S7.3-04",
+      "REQ-AC12",
+      "REQ-AC14"
+    ],
+    "decision_refs": [
+      "B11",
+      "AMD-B11",
+      "ADR-0005",
+      "R5-02"
+    ],
+    "invariant_refs": [
+      "I15",
+      "I09",
+      "I13"
+    ],
+    "producers": [
+      "MOD-data-admin-service",
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-web-ui",
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/state/storage.yaml",
+      "contracts/ops/backup-restore.md",
+      "contracts/errors.yaml",
+      "acceptance/scenarios.yaml"
+    ],
+    "scope": "Đối soát sau restore HOÀN TẤT → dispatcher mở lại; outbox generation cũ vẫn không tự phát lại.",
+    "verification": "NOT_RUN — E0; chưa có code, chưa có DB, chưa có drill.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "m",
+  "scenario_refs": [
+    "SC53",
+    "SC27"
+  ],
+  "invariant_refs": [
+    "I15",
+    "I09",
+    "I13"
+  ],
+  "evidence_status": "NOT_RUN",
+  "title_vi": "SC53 — đối soát xong → dispatch mở lại, outbox cũ vẫn im",
+  "given": {
+    "storage_health": "recovery_required",
+    "_context_vi": "Tiếp nối SC27/SC42: restore đã chạy; lần này cả bảy mệnh đề của reconciliation_complete đều đạt.",
+    "rows": {
+      "restore_record": [
+        {
+          "id": "RR-9",
+          "owner_id": "O-1",
+          "backup_snapshot_id": "BS-9",
+          "new_restore_generation": 7,
+          "integrity_check_outcome": "ok",
+          "counts_observed": {
+            "saved_item": 40,
+            "report": 12,
+            "first_announced_ledger": 31
+          },
+          "leases_revoked": 2,
+          "dispatcher_unlocked_at": null,
+          "operator_ack_at": "<t_ack>",
+          "operator_ack_principal": "ACT-backup-operator",
+          "operator_ack_note": "đã đối chiếu count và hash với manifest BS-9"
+        }
+      ],
+      "backup_manifest": [
+        {
+          "id": "BM-9",
+          "owner_id": "O-1",
+          "backup_snapshot_id": "BS-9",
+          "manifest_sha256": "<h_manifest>",
+          "counts": {
+            "saved_item": 40,
+            "report": 12,
+            "first_announced_ledger": 31
+          },
+          "embedding_model_artifact_sha256": "<h_model>"
+        }
+      ],
+      "outbox_intent": [
+        {
+          "id": "OI-OLD",
+          "owner_id": "O-1",
+          "intent_type": "report_digest",
+          "dispatch_state": "pending",
+          "restore_generation": 6,
+          "_note": "generation CŨ — không bao giờ tự phát"
+        }
+      ],
+      "assignment_lease": [
+        {
+          "id": "AL-OLD",
+          "owner_id": "O-1",
+          "run_id": "RUN-5",
+          "job_id": "JOB-5",
+          "lease_epoch": 3,
+          "state": "revoked",
+          "_note": "thu hồi ở bước restore"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "SS-9",
+          "owner_id": "O-1",
+          "content_hash": "<h_ss9>"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "FA-9",
+          "owner_id": "O-1",
+          "canonical_work_id": "W-9",
+          "first_report_id": "R-3",
+          "first_announced_at": "<t_fa>"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.verify_snapshot",
+      "edge_assertion": "allowed",
+      "principal": "ACT-backup-operator",
+      "input": {
+        "backup_snapshot_id": "BS-9"
+      }
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.reconcile_after_restore",
+      "edge_assertion": "allowed",
+      "principal": "ACT-backup-operator",
+      "input": {
+        "restore_id": "RR-9"
+      }
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "edge_assertion": "allowed",
+      "input": {
+        "claim_request_id": "CR-9"
+      },
+      "_note_vi": "Sau khi mở khóa, claim phải chạy được."
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "edge_assertion": "allowed",
+      "_note_vi": "Dispatcher thức dậy: phải BỎ QUA OI-OLD."
+    },
+    {
+      "seq": 5,
+      "actor": "MOD-web-ui",
+      "operation": "save.list",
+      "edge_assertion": "allowed",
+      "principal": "ACT-owner-session"
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "integrity_check_outcome": "ok",
+      "counts_match_manifest": true
+    },
+    "seq2": {
+      "result": "reconciled",
+      "reconciliation_complete": true,
+      "_clauses_met": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "seq3": {
+      "result": "assignment_granted"
+    },
+    "seq4": {
+      "messages_sent_for_old_generation": 0,
+      "_note_vi": "OI-OLD mang restore_generation=6 < 7 ⇒ không đủ điều kiện."
+    },
+    "seq5": {
+      "saved_count": 40
+    },
+    "storage_health_after_seq2": "healthy",
+    "rows": {
+      "restore_record": [
+        {
+          "id": "RR-9",
+          "owner_id": "O-1",
+          "dispatcher_unlocked_at": "<t_unlock>",
+          "_note": "chỉ được ghi SAU khi cả 7 mệnh đề đạt"
+        }
+      ],
+      "assignment_lease": [
+        {
+          "id": "AL-NEW",
+          "owner_id": "O-1",
+          "run_id": "RUN-6",
+          "job_id": "JOB-6",
+          "lease_epoch": 1,
+          "state": "held",
+          "_note": "run MỚI, epoch mới"
+        }
+      ],
+      "outbox_intent": [
+        {
+          "id": "OI-OLD",
+          "owner_id": "O-1",
+          "dispatch_state": "pending",
+          "restore_generation": 6,
+          "_note": "KHÔNG đổi — mở dispatcher không có nghĩa phát lại lịch sử"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "FA-9",
+          "owner_id": "O-1",
+          "canonical_work_id": "W-9",
+          "first_report_id": "R-3",
+          "first_announced_at": "<t_fa>",
+          "_note": "giống hệt trước backup"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "SS-9",
+          "owner_id": "O-1",
+          "content_hash": "<h_ss9>",
+          "_note": "hash khớp manifest"
+        }
+      ]
+    }
+  },
+  "forbidden_effects": [
+    "Phát lại outbox generation cũ khi dispatcher mở (I15).",
+    "Mở dispatcher khi mệnh đề 7 (xác nhận của Operator) chưa có.",
+    "Reset first_announced sau khi đối soát xong.",
+    "Chấp nhận lease epoch cũ từ worker trước backup."
+  ],
+  "oracle_vi": "Sau seq2: storage.health = 'healthy' và restore_record.dispatcher_unlocked_at khác null. Sau seq3: COUNT(assignment_lease WHERE state='held') = 1. Sau seq4: số outbound call cho outbox_intent có restore_generation < 7 vẫn bằng **0**. first_announced_ledger sau restore giống hệt trước backup (so từng hàng). COUNT và content_hash của saved_snapshot khớp backup_manifest.counts. Đây là mặt DƯƠNG của I15: mở khóa đúng cách KHÔNG kéo theo phát lại lịch sử.",
+  "positive_face_note_vi": "Trước fixture này, I15 chỉ có mặt âm (a, b, j). SC53 là mặt dương: hệ thống phải mở lại được, nếu không thì 'an toàn' chỉ là 'không bao giờ chạy'."
+}

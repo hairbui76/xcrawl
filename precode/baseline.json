@@ -1,0 +1,2764 @@
+{
+  "baseline_id": "PC00-BASELINE",
+  "version": "0.1.0",
+  "status": "draft",
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "produced_by": {
+    "packet_id": "PKT-PC00",
+    "principal": "worker-W1",
+    "role": "Worker",
+    "authority_id": "AUTH-COORD-PC00",
+    "parent_authority_id": "AUTH-OWNER-20260906-01",
+    "lease_id": "LEASE-PC00-e1",
+    "created_at_utc": "2026-09-06T16:53Z"
+  },
+  "session": {
+    "mode": "DOCUMENTARY_DRAFT",
+    "enforcement": "NOT_IMPLEMENTED",
+    "product_status": "NOT_READY_FOR_PRODUCT_CODE",
+    "workspace_root": "/mnt/virtual/repo/xcrawl",
+    "coordination_baseline": "scratchpad/packets/00-coordination-baseline.md (ngoai repo, khong duoc ghi)",
+    "note_vi": "Phien nay chi soan tai lieu. Khong co product code, khong network, khong secret. Moi ket luan toi da o muc DRAFT_FOR_REVIEW."
+  },
+  "sources": [
+    {
+      "ref": "SRC-SPEC",
+      "title": "Dac ta - Research Radar",
+      "doc_version": "0.2",
+      "doc_date": "2026-09-05",
+      "canonical_path": "/mnt/virtual/repo/xcrawl/research-radar-spec.md",
+      "immutable_copy": "/mnt/virtual/repo/xcrawl/precode/source/spec-v0.2.md",
+      "registry_path": "/workspace/scratch/9cff39a6f330/upload/research-radar-spec(1).md",
+      "sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "bytes": 41770,
+      "line_count": 660,
+      "read_at_utc": "2026-09-06T16:53Z",
+      "read_scope": "toan bo file"
+    },
+    {
+      "ref": "SRC-PLAN",
+      "title": "Research Radar - Ke hoach Pre-code va bo hop dong kiem toan",
+      "doc_version": "0.1",
+      "doc_date": "2026-09-06",
+      "canonical_path": "/mnt/virtual/repo/xcrawl/research-radar-pre-code-plan.md",
+      "immutable_copy": "/mnt/virtual/repo/xcrawl/precode/source/pre-code-plan-v0.1.md",
+      "registry_path": "/workspace/scratch/9cff39a6f330/research-radar-pre-code-plan.md",
+      "sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "bytes": 64915,
+      "line_count": 606,
+      "read_at_utc": "2026-09-06T16:53Z",
+      "read_scope": "toan bo file"
+    }
+  ],
+  "historical_context_only": [
+    {
+      "path": "/mnt/virtual/repo/xcrawl/project-overview.md",
+      "rule_vi": "Chi la boi canh lich su. SRC-PLAN §1 cam dung overview cu de dao lai quyet dinh moi."
+    },
+    {
+      "path": "/mnt/virtual/repo/xcrawl/master-interview-prompt.md",
+      "rule_vi": "Chi la boi canh lich su cua buoi phong van sinh ra SRC-SPEC."
+    }
+  ],
+  "precedence_vi": [
+    "quyet dinh moi duoc Owner xac nhan",
+    "amendment / ADR da duoc chap nhan",
+    "dac ta v0.2 (SRC-SPEC)",
+    "hop dong da dong phien ban",
+    "task card"
+  ],
+  "id_conventions": {
+    "requirement_decision": {
+      "form": "REQ-D01..REQ-D59",
+      "note_vi": "Giu nguyen danh so cua spec ke ca cho trong; D03 khong ton tai. Hang 'C03/D-tag' co ID REQ-CTAG."
+    },
+    "acceptance_criterion": {
+      "form": "REQ-AC01..REQ-AC18"
+    },
+    "p0_scope": {
+      "form": "REQ-P0-01..REQ-P0-12",
+      "note_vi": "Theo dung thu tu hang cua SRC-SPEC §2.1."
+    },
+    "deferred": {
+      "form": "REQ-P1-01..REQ-P1-05"
+    },
+    "out_of_scope": {
+      "form": "REQ-OOS-01..REQ-OOS-06"
+    },
+    "assumption": {
+      "form": "REQ-A1..REQ-A7"
+    },
+    "open_question": {
+      "form": "REQ-OQ01..REQ-OQ10"
+    },
+    "prose_requirement": {
+      "form": "REQ-S<section>-<nn>",
+      "example": "REQ-S11.3-02"
+    },
+    "blocker": {
+      "form": "B01..B17",
+      "source": "SRC-PLAN §3"
+    },
+    "amendment": {
+      "form": "AMD-B<nn>"
+    },
+    "adr": {
+      "form": "ADR-0001..",
+      "note_vi": "Bon chu so."
+    },
+    "invariant": {
+      "form": "I01..I17",
+      "note_vi": "I01..I15 den tu SRC-PLAN §7. I16 va I17 la invariant phat sinh cua du an, duoc them theo dung dieu kien 'I16+ chi khi co decision record': decision record nam o precode/decision-register.md §8.8 (PROV-PC00-05, PROV-PC00-06). Anchor cua chung o source_anchors.PROJECT.invariants, KHONG o SRC-PLAN, vi chung khong co trong van ban SRC-PLAN. I18+ van chi duoc them khi co decision record moi.",
+      "added_by_ruling": "F-A2R1-07 / FIX6 F-07"
+    },
+    "error_code": {
+      "form": "SCREAMING_SNAKE",
+      "registry": "contracts/errors.yaml (PC03)"
+    },
+    "scenario": {
+      "form": "SC01..SC18 = AC-01..18; SC19..SC28 theo SRC-PLAN §13; SC29+ bo sung"
+    },
+    "gate": {
+      "form": "G0..G7, SP1"
+    },
+    "module": {
+      "form": "MOD-<kebab>",
+      "owner_package": "PC01"
+    },
+    "operation": {
+      "form": "<domain>.<verb_noun>",
+      "owner_package": "PC01"
+    },
+    "contract": {
+      "form": "CT-<area>-<name>"
+    },
+    "change_request": {
+      "form": "CR-<PC>-<nn>"
+    },
+    "evidence": {
+      "form": "EV-<PC>-<nn>"
+    },
+    "source_anchor": {
+      "form": "<REF>§<section>[#row-<nn>] hoac <REF>:<label>",
+      "example": [
+        "SRC-SPEC§9.3#row-04",
+        "SRC-SPEC:D27",
+        "SRC-PLAN:B12"
+      ]
+    }
+  },
+  "status_vocabulary": {
+    "requirement": [
+      "XN",
+      "UQ",
+      "ĐX",
+      "KC"
+    ],
+    "requirement_meaning_vi": {
+      "XN": "da xac nhan",
+      "UQ": "duoc uy quyen",
+      "ĐX": "de xuat, chua duoc nguoi dung chon",
+      "KC": "can kiem chung"
+    },
+    "decision": [
+      "OPEN",
+      "PROVISIONAL",
+      "OWNER_DECISION_REQUIRED"
+    ],
+    "decision_note_vi": "Trong phien nay khong duoc dung CLOSED/ACCEPTED/XN cho B01..B17.",
+    "contract": [
+      "draft"
+    ],
+    "evidence_result": [
+      "PASS",
+      "FAIL",
+      "BLOCKED",
+      "NOT_RUN",
+      "STALE",
+      "NOT_APPLICABLE"
+    ],
+    "claim_ceiling_ladder": [
+      "DRAFT_FOR_REVIEW",
+      "CONTRACT_READY",
+      "IMPLEMENTATION_VERIFIED",
+      "INTEGRATION_VERIFIED",
+      "LIVE_FEASIBILITY_VERIFIED",
+      "PRODUCT_ACCEPTED"
+    ]
+  },
+  "language_rule_vi": "Van xuoi tieng Viet theo nguon; identifier, khoa YAML/JSON, enum, operation ID, ma loi va ten file bang tieng Anh.",
+  "packages": [
+    "PC00",
+    "PC01",
+    "PC02",
+    "PC03",
+    "PC04",
+    "PC05",
+    "PC06",
+    "PC07",
+    "PC08",
+    "PC09",
+    "PC10"
+  ],
+  "scenario_id_allocation": {
+    "note_vi": "Dai ID scenario da cap, de cac goi song song khong dam nhau. SC01..SC28 den tu SRC-PLAN §13; SC29 tro di la scenario phat sinh, chi ton tai khi duoc mot ruling dang ky va co anchor rieng trong source_anchors.SRC-PLAN.scenarios.",
+    "SC01-SC18": "SRC-PLAN §13, bang truy vet AC-01..AC-18",
+    "SC19-SC28": "SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28' (dong 505)",
+    "SC29-SC31": "PC02 (identity, ingest)",
+    "SC32": "PC01 (data.delete_target) - ruling R-04",
+    "SC33-SC36": "PC03 (scheduler, run state, storage)",
+    "SC37-SC38": "PC04 (backfill)",
+    "SC39-SC43": "PC08 (secrets, internet boundary, backup/restore)",
+    "SC44": "PC01 (data.purge_all) - ruling FIX3",
+    "SC45-SC48": "PC07 (Telegram, Saved snapshot) - ruling R4-03",
+    "SC49-SC53": "PC09 (default-deny sweep, duong chay thanh cong dau-cuoi, thiet lap lan dau, embedding generation switch, doi soat sau restore) - ruling R5-06",
+    "SC54-SC56": "PC09 (lap cuc polarity con thieu cho I04, I14, I16) - FIX7 / finding F-A2R1-10",
+    "SC57+": "CHUA CAP. Trong tai: PC09. Khong goi nao duoc tu lay so tu day; PC09 cap phat, roi mot packet PC00 se dang ky anchor. Quy tac nay tra loi truc tiep remediation constraint cua F-A1R3-03 (phai co trong tai de cac goi song song khong the va cham, thay vi tinh co khong va cham).",
+    "removed_anchor_vi": "Nhan gop 'SC29+' (`SRC-PLAN:§13-extra`) da bi go theo F-A1R2-05; no khong phai mot scenario ID va khong duoc trich dan."
+  },
+  "artifacts_of_pc00": [
+    "precode/baseline.json",
+    "precode/source/spec-v0.2.md",
+    "precode/source/pre-code-plan-v0.1.md",
+    "precode/requirements.csv",
+    "precode/decision-register.md",
+    "precode/adr/README.md",
+    "precode/adr/ADR-0001-topology-and-placement.md",
+    "precode/adr/ADR-0002-run-state-model-split.md",
+    "precode/adr/ADR-0003-delivery-unknown-state.md",
+    "precode/adr/ADR-0004-tag-freeze-point.md",
+    "precode/adr/ADR-0005-backup-method.md",
+    "precode/adr/ADR-0006-stack-option-a.md",
+    "precode/adr/ADR-0007-timezone-handling.md",
+    "precode/adr/ADR-0008-analysis-key-and-generation.md",
+    "precode/adr/ADR-0009-identity-alias-target-union.md",
+    "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md",
+    "precode/owner-decision-request.md",
+    "evidence/handoffs/PC00-handoff.md"
+  ],
+  "requirements_csv_contract_header": {
+    "note_vi": "precode/requirements.csv khong the mang YAML front-matter vi TASK_PACKET quy dinh header row phai la dung 10 cot da cho. Cac truong bat buoc theo SRC-PLAN §5 duoc ghi o day thay the.",
+    "contract_id": "CT-precode-requirements",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "requirements owner (PC00)",
+    "source_refs": [
+      "SRC-SPEC §1.4",
+      "SRC-SPEC §2",
+      "SRC-SPEC §3",
+      "SRC-SPEC §4",
+      "SRC-SPEC §5",
+      "SRC-SPEC §6",
+      "SRC-SPEC §7.3",
+      "SRC-SPEC §8",
+      "SRC-SPEC §9",
+      "SRC-SPEC §10",
+      "SRC-SPEC §11",
+      "SRC-SPEC §12",
+      "SRC-SPEC §13"
+    ],
+    "requirement_refs": [
+      "REQ-D01..REQ-D59 (58 hang, D03 khong ton tai)",
+      "REQ-CTAG",
+      "REQ-AC01..REQ-AC18",
+      "REQ-P0-01..REQ-P0-12",
+      "REQ-P1-01..REQ-P1-05",
+      "REQ-OOS-01..REQ-OOS-06",
+      "REQ-A1..REQ-A7",
+      "REQ-OQ01..REQ-OQ10",
+      "REQ-S<section>-<nn> cho 28 muc van xuoi bat buoc"
+    ],
+    "requirement_refs_note_vi": "File nay LA registry yeu cau, nen requirement_refs tro toi chinh tap ID no dinh nghia; danh sach day du la cot req_id cua 246 dong. Bo sung theo finding F-A1R1-05/F-A1R1-06 va ruling R-06.",
+    "decision_refs": [
+      "B01..B17",
+      "AMD-B01..AMD-B17",
+      "ADR-0001..ADR-0010"
+    ],
+    "invariant_refs": [
+      "I01..I15"
+    ],
+    "producers": [
+      "PC00"
+    ],
+    "consumers": [
+      "PC01",
+      "PC02",
+      "PC03",
+      "PC04",
+      "PC05",
+      "PC06",
+      "PC07",
+      "PC08",
+      "PC09",
+      "PC10"
+    ],
+    "dependencies": [
+      "precode/baseline.json",
+      "precode/source/spec-v0.2.md",
+      "precode/source/pre-code-plan-v0.1.md"
+    ],
+    "columns": [
+      "req_id",
+      "source_anchor",
+      "text_vi",
+      "status",
+      "priority",
+      "scope",
+      "category",
+      "blocked_by",
+      "impacted_packages",
+      "notes"
+    ],
+    "list_separator": ";",
+    "encoding": "UTF-8, csv.QUOTE_ALL, LF line endings, khong co newline trong o",
+    "scope": "Registry nguyen tu cua moi yeu cau trong SRC-SPEC v0.2, mot dong mot yeu cau.",
+    "verification": "E0 - csv parse, unique req_id, enum check, coverage diff (EV-PC00-02, EV-PC00-03)",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "source_anchors": {
+    "convention_vi": "Moi muc duoi day la mot source anchor on dinh. Cot source_anchor cua requirements.csv chi duoc dung gia tri co trong bang nay (co the them hau to #row-nn).",
+    "SRC-SPEC": {
+      "sections": [
+        {
+          "anchor_id": "SRC-SPEC§0",
+          "title": "Đặc tả — Research Radar",
+          "level": 1,
+          "line_start": 1,
+          "line_end": 8
+        },
+        {
+          "anchor_id": "SRC-SPEC§1",
+          "title": "1. Mục tiêu, người dùng và tiêu chí thành công",
+          "level": 2,
+          "line_start": 9,
+          "line_end": 10
+        },
+        {
+          "anchor_id": "SRC-SPEC§1.1",
+          "title": "1.1 Vấn đề",
+          "level": 3,
+          "line_start": 11,
+          "line_end": 14
+        },
+        {
+          "anchor_id": "SRC-SPEC§1.2",
+          "title": "1.2 Người dùng",
+          "level": 3,
+          "line_start": 15,
+          "line_end": 18
+        },
+        {
+          "anchor_id": "SRC-SPEC§1.3",
+          "title": "1.3 Kết quả mong muốn",
+          "level": 3,
+          "line_start": 19,
+          "line_end": 22
+        },
+        {
+          "anchor_id": "SRC-SPEC§1.4",
+          "title": "1.4 Tiêu chí thành công",
+          "level": 3,
+          "line_start": 23,
+          "line_end": 35
+        },
+        {
+          "anchor_id": "SRC-SPEC§2",
+          "title": "2. Phạm vi",
+          "level": 2,
+          "line_start": 36,
+          "line_end": 37
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1",
+          "title": "2.1 MVP (P0)",
+          "level": 3,
+          "line_start": 38,
+          "line_end": 54
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.2",
+          "title": "2.2 Hoãn sau MVP (P1/P2)",
+          "level": 3,
+          "line_start": 55,
+          "line_end": 64
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3",
+          "title": "2.3 Ngoài phạm vi",
+          "level": 3,
+          "line_start": 65,
+          "line_end": 75
+        },
+        {
+          "anchor_id": "SRC-SPEC§3",
+          "title": "3. Decision log",
+          "level": 2,
+          "line_start": 76,
+          "line_end": 79
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.1",
+          "title": "3.1 Người dùng, triển khai, truy cập",
+          "level": 3,
+          "line_start": 80,
+          "line_end": 92
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.2",
+          "title": "3.2 Thu thập",
+          "level": 3,
+          "line_start": 93,
+          "line_end": 102
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.3",
+          "title": "3.3 Lịch chạy",
+          "level": 3,
+          "line_start": 103,
+          "line_end": 114
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.4",
+          "title": "3.4 Tag và thời gian",
+          "level": 3,
+          "line_start": 115,
+          "line_end": 128
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.5",
+          "title": "3.5 Báo cáo",
+          "level": 3,
+          "line_start": 129,
+          "line_end": 149
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.6",
+          "title": "3.6 Save, Telegram, dữ liệu",
+          "level": 3,
+          "line_start": 150,
+          "line_end": 162
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.7",
+          "title": "3.7 AI",
+          "level": 3,
+          "line_start": 163,
+          "line_end": 173
+        },
+        {
+          "anchor_id": "SRC-SPEC§3.8",
+          "title": "3.8 Giả định cần kiểm chứng",
+          "level": 3,
+          "line_start": 174,
+          "line_end": 187
+        },
+        {
+          "anchor_id": "SRC-SPEC§4",
+          "title": "4. Information architecture",
+          "level": 2,
+          "line_start": 188,
+          "line_end": 218
+        },
+        {
+          "anchor_id": "SRC-SPEC§5",
+          "title": "5. User flows",
+          "level": 2,
+          "line_start": 219,
+          "line_end": 220
+        },
+        {
+          "anchor_id": "SRC-SPEC§5.1",
+          "title": "5.1 Thiết lập lần đầu",
+          "level": 3,
+          "line_start": 221,
+          "line_end": 228
+        },
+        {
+          "anchor_id": "SRC-SPEC§5.2",
+          "title": "5.2 Đợt chạy thành công",
+          "level": 3,
+          "line_start": 229,
+          "line_end": 244
+        },
+        {
+          "anchor_id": "SRC-SPEC§5.3",
+          "title": "5.3 Đọc và Save",
+          "level": 3,
+          "line_start": 245,
+          "line_end": 250
+        },
+        {
+          "anchor_id": "SRC-SPEC§5.4",
+          "title": "5.4 Can thiệp xác minh",
+          "level": 3,
+          "line_start": 251,
+          "line_end": 258
+        },
+        {
+          "anchor_id": "SRC-SPEC§5.5",
+          "title": "5.5 Đổi tag",
+          "level": 3,
+          "line_start": 259,
+          "line_end": 265
+        },
+        {
+          "anchor_id": "SRC-SPEC§6",
+          "title": "6. Kiến trúc module và triển khai",
+          "level": 2,
+          "line_start": 266,
+          "line_end": 267
+        },
+        {
+          "anchor_id": "SRC-SPEC§6.1",
+          "title": "6.1 Phân vai theo nơi chạy",
+          "level": 3,
+          "line_start": 268,
+          "line_end": 285
+        },
+        {
+          "anchor_id": "SRC-SPEC§6.2",
+          "title": "6.2 Đường dữ liệu",
+          "level": 3,
+          "line_start": 286,
+          "line_end": 303
+        },
+        {
+          "anchor_id": "SRC-SPEC§6.3",
+          "title": "6.3 So sánh phương án stack — *Đề xuất, chưa chốt*",
+          "level": 3,
+          "line_start": 304,
+          "line_end": 315
+        },
+        {
+          "anchor_id": "SRC-SPEC§6.4",
+          "title": "6.4 Mô hình triển khai",
+          "level": 3,
+          "line_start": 316,
+          "line_end": 323
+        },
+        {
+          "anchor_id": "SRC-SPEC§7",
+          "title": "7. Data model",
+          "level": 2,
+          "line_start": 324,
+          "line_end": 325
+        },
+        {
+          "anchor_id": "SRC-SPEC§7.1",
+          "title": "7.1 Entity",
+          "level": 3,
+          "line_start": 326,
+          "line_end": 348
+        },
+        {
+          "anchor_id": "SRC-SPEC§7.2",
+          "title": "7.2 Quan hệ chính",
+          "level": 3,
+          "line_start": 349,
+          "line_end": 362
+        },
+        {
+          "anchor_id": "SRC-SPEC§7.3",
+          "title": "7.3 Ownership, phiên bản, retention",
+          "level": 3,
+          "line_start": 363,
+          "line_end": 373
+        },
+        {
+          "anchor_id": "SRC-SPEC§8",
+          "title": "8. Ma trận nghiệp vụ tag / Save / report",
+          "level": 2,
+          "line_start": 374,
+          "line_end": 375
+        },
+        {
+          "anchor_id": "SRC-SPEC§8.1",
+          "title": "8.1 Nguyên tắc",
+          "level": 3,
+          "line_start": 376,
+          "line_end": 387
+        },
+        {
+          "anchor_id": "SRC-SPEC§8.2",
+          "title": "8.2 Ví dụ thời gian cụ thể",
+          "level": 3,
+          "line_start": 388,
+          "line_end": 402
+        },
+        {
+          "anchor_id": "SRC-SPEC§8.3",
+          "title": "8.3 Ba trạng thái phải phân biệt được trên giao diện",
+          "level": 3,
+          "line_start": 403,
+          "line_end": 412
+        },
+        {
+          "anchor_id": "SRC-SPEC§9",
+          "title": "9. Job lifecycle và delivery lifecycle",
+          "level": 2,
+          "line_start": 413,
+          "line_end": 414
+        },
+        {
+          "anchor_id": "SRC-SPEC§9.1",
+          "title": "9.1 Tách hai vòng đời",
+          "level": 3,
+          "line_start": 415,
+          "line_end": 423
+        },
+        {
+          "anchor_id": "SRC-SPEC§9.2",
+          "title": "9.2 Checkpoint",
+          "level": 3,
+          "line_start": 424,
+          "line_end": 435
+        },
+        {
+          "anchor_id": "SRC-SPEC§9.3",
+          "title": "9.3 Retry và chống trùng",
+          "level": 3,
+          "line_start": 436,
+          "line_end": 451
+        },
+        {
+          "anchor_id": "SRC-SPEC§10",
+          "title": "10. AI pipeline",
+          "level": 2,
+          "line_start": 452,
+          "line_end": 453
+        },
+        {
+          "anchor_id": "SRC-SPEC§10.1",
+          "title": "10.1 Bốn tác vụ",
+          "level": 3,
+          "line_start": 454,
+          "line_end": 464
+        },
+        {
+          "anchor_id": "SRC-SPEC§10.2",
+          "title": "10.2 Adapter",
+          "level": 3,
+          "line_start": 465,
+          "line_end": 476
+        },
+        {
+          "anchor_id": "SRC-SPEC§10.3",
+          "title": "10.3 Grounding",
+          "level": 3,
+          "line_start": 477,
+          "line_end": 485
+        },
+        {
+          "anchor_id": "SRC-SPEC§10.4",
+          "title": "10.4 Chi phí",
+          "level": 3,
+          "line_start": 486,
+          "line_end": 493
+        },
+        {
+          "anchor_id": "SRC-SPEC§11",
+          "title": "11. Bảo mật",
+          "level": 2,
+          "line_start": 494,
+          "line_end": 495
+        },
+        {
+          "anchor_id": "SRC-SPEC§11.1",
+          "title": "11.1 Chu vi",
+          "level": 3,
+          "line_start": 496,
+          "line_end": 499
+        },
+        {
+          "anchor_id": "SRC-SPEC§11.2",
+          "title": "11.2 Secrets",
+          "level": 3,
+          "line_start": 500,
+          "line_end": 510
+        },
+        {
+          "anchor_id": "SRC-SPEC§11.3",
+          "title": "11.3 Liên kết Telegram",
+          "level": 3,
+          "line_start": 511,
+          "line_end": 518
+        },
+        {
+          "anchor_id": "SRC-SPEC§11.4",
+          "title": "11.4 Dữ liệu không đáng tin cậy",
+          "level": 3,
+          "line_start": 519,
+          "line_end": 528
+        },
+        {
+          "anchor_id": "SRC-SPEC§12",
+          "title": "12. Acceptance criteria",
+          "level": 2,
+          "line_start": 529,
+          "line_end": 622
+        },
+        {
+          "anchor_id": "SRC-SPEC§13",
+          "title": "13. Mốc triển khai",
+          "level": 2,
+          "line_start": 623,
+          "line_end": 638
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1",
+          "title": "13.1 Câu hỏi còn mở",
+          "level": 3,
+          "line_start": 639,
+          "line_end": 653
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.2",
+          "title": "13.2 Điểm không được bỏ qua khi triển khai",
+          "level": 3,
+          "line_start": 654,
+          "line_end": 660
+        }
+      ],
+      "decisions": [
+        {
+          "anchor_id": "SRC-SPEC:D01",
+          "label": "D01",
+          "line": 84,
+          "text": "D01 | MVP một người dùng. Không phân quyền, không tách dữ liệu theo user",
+          "req_id": "REQ-D01"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D02",
+          "label": "D02",
+          "line": 85,
+          "text": "D02 | Chia sẻ nằm ngoài sản phẩm: copy link post ra ngoài",
+          "req_id": "REQ-D02"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D04",
+          "label": "D04",
+          "line": 86,
+          "text": "D04 | App truy cập được từ ngoài mạng nhà, mở được trên điện thoại",
+          "req_id": "REQ-D04"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D05",
+          "label": "D05",
+          "line": 87,
+          "text": "D05 | Một tài khoản đăng nhập duy nhất, không có trang signup",
+          "req_id": "REQ-D05"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D06",
+          "label": "D06",
+          "line": 88,
+          "text": "D06 | Collector ở máy cá nhân; app + data store host ngoài",
+          "req_id": "REQ-D06"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D08",
+          "label": "D08",
+          "line": 89,
+          "text": "D08 | Collector không ghi trực tiếp SQLite; đẩy qua API có xác thực",
+          "req_id": "REQ-D08"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D42",
+          "label": "D42",
+          "line": 90,
+          "text": "D42 | Bước LLM chạy cùng máy với collector; server giữ queue, SQLite, web, Telegram",
+          "req_id": "REQ-D42"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D50",
+          "label": "D50",
+          "line": 91,
+          "text": "D50 | Model embedding chạy ở server",
+          "req_id": "REQ-D50"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D09",
+          "label": "D09",
+          "line": 97,
+          "text": "D09 | Chrome thật trên máy cá nhân với **profile riêng của dự án**, không phải profile mặc định",
+          "req_id": "REQ-D09"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D31",
+          "label": "D31",
+          "line": 98,
+          "text": "D31 | Mở link paper; mở thread chỉ khi là thread do chính tác giả viết; replies hoãn",
+          "req_id": "REQ-D31"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D32",
+          "label": "D32",
+          "line": 99,
+          "text": "D32 | Chrome collector chỉ lo X; metadata paper qua API từ server",
+          "req_id": "REQ-D32"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D33",
+          "label": "D33",
+          "line": 100,
+          "text": "D33 | Post chỉ có ảnh chụp paper, không có link → không đoán ID, thành mục \"chỉ có post\"",
+          "req_id": "REQ-D33"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D34",
+          "label": "D34",
+          "line": 101,
+          "text": "D34 | Nhịp gọi arXiv và yêu cầu email liên hệ của OpenAlex: đọc tài liệu chính thức khi triển khai",
+          "req_id": "REQ-D34"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D10",
+          "label": "D10",
+          "line": 107,
+          "text": "D10 | Có cả lịch tự động và chạy tay",
+          "req_id": "REQ-D10"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D11",
+          "label": "D11",
+          "line": 108,
+          "text": "D11 | Job xếp hàng ở server; collector kéo việc khi online; app hiện online/offline + last run",
+          "req_id": "REQ-D11"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D12",
+          "label": "D12",
+          "line": 109,
+          "text": "D12 | `last_run` chỉ để xem, không dùng làm mốc lọc dữ liệu",
+          "req_id": "REQ-D12"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D13",
+          "label": "D13",
+          "line": 110,
+          "text": "D13 | Giờ trong lịch là mốc \"sớm nhất được chạy\"; chạy bù khi máy thức",
+          "req_id": "REQ-D13"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D14",
+          "label": "D14",
+          "line": 111,
+          "text": "D14 | Bảng run có `trigger_type` (`scheduled` / `manual`)",
+          "req_id": "REQ-D14"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D15",
+          "label": "D15",
+          "line": 112,
+          "text": "D15 | Nhiều đợt quá hạn gộp thành một; tin Telegram ghi khoảng thời gian bao trùm",
+          "req_id": "REQ-D15"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D16",
+          "label": "D16",
+          "line": 113,
+          "text": "D16 | Chạy bù không gửi bù các báo cáo cũ",
+          "req_id": "REQ-D16"
+        },
+        {
+          "anchor_id": "SRC-SPEC:C03/D-tag",
+          "label": "C03/D-tag",
+          "line": 119,
+          "text": "C03/D-tag | Mốc hiệu lực tag theo **thời điểm gửi**: bộ tag lúc tạo báo cáo quyết định nội dung",
+          "req_id": "REQ-CTAG"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D22",
+          "label": "D22",
+          "line": 120,
+          "text": "D22 | AI gắn nhãn **mở** (bài này thuộc chủ đề gì), không hỏi \"có khớp tag hiện tại không\"",
+          "req_id": "REQ-D22"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D23",
+          "label": "D23",
+          "line": 121,
+          "text": "D23 | Mỗi báo cáo lưu phiên bản cấu hình tag đã dùng để tạo nó",
+          "req_id": "REQ-D23"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D24",
+          "label": "D24",
+          "line": 122,
+          "text": "D24 | Đổi tag giữa lúc job chạy không ảnh hưởng lọc; collector dùng tag chỉ để tìm kiếm",
+          "req_id": "REQ-D24"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D46",
+          "label": "D46",
+          "line": 123,
+          "text": "D46 | Khớp tag bằng embedding; app hiện tag đang khớp nhãn nào; có từ đồng nghĩa và tag loại trừ",
+          "req_id": "REQ-D46"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D47",
+          "label": "D47",
+          "line": 124,
+          "text": "D47 | Ngưỡng tương đồng hiệu chỉnh bằng dữ liệu thật",
+          "req_id": "REQ-D47"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D48",
+          "label": "D48",
+          "line": 125,
+          "text": "D48 | Embedding dùng model **local**, không cần API key; lưu tên + phiên bản model kèm vector",
+          "req_id": "REQ-D48"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D49",
+          "label": "D49",
+          "line": 126,
+          "text": "D49 | MVP tính tương đồng bằng SQLite thuần, quét tuyến tính",
+          "req_id": "REQ-D49"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D59",
+          "label": "D59",
+          "line": 127,
+          "text": "D59 | Model embedding đa ngôn ngữ (để gõ tag tiếng Việt khớp được nhãn tiếng Anh)",
+          "req_id": "REQ-D59"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D17",
+          "label": "D17",
+          "line": 133,
+          "text": "D17 | Mục báo cáo = một công trình, gộp bằng DOI/arXiv ID; post không dẫn paper → mục \"chỉ có post\"",
+          "req_id": "REQ-D17"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D18",
+          "label": "D18",
+          "line": 134,
+          "text": "D18 | `Idea cluster` là entity riêng, hoãn sau MVP",
+          "req_id": "REQ-D18"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D19",
+          "label": "D19",
+          "line": 135,
+          "text": "D19 | Mỗi mục có summary hiển thị ngay tại mục",
+          "req_id": "REQ-D19"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D20",
+          "label": "D20",
+          "line": 136,
+          "text": "D20 | Summary: nội dung + điểm khác với cái đã có + một dòng hạn chế; kèm dòng \"khớp tag nào\" tra từ dữ liệu",
+          "req_id": "REQ-D20"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D21",
+          "label": "D21",
+          "line": 137,
+          "text": "D21 | Mỗi summary mang nhãn mức độ đọc: chỉ có post / có abstract / đã đọc toàn văn",
+          "req_id": "REQ-D21"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D25",
+          "label": "D25",
+          "line": 138,
+          "text": "D25 | Phân tích và summary tạo **một lần** cho mỗi công trình rồi tái sử dụng",
+          "req_id": "REQ-D25"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D26",
+          "label": "D26",
+          "line": 139,
+          "text": "D26 | Phân tích lại chỉ khi người dùng bấm tay, hoặc paper có phiên bản mới; giữ bản cũ",
+          "req_id": "REQ-D26"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D27",
+          "label": "D27",
+          "line": 140,
+          "text": "D27 | Kỳ báo cáo nối liền: `coverage_from` = `coverage_to` của kỳ trước, tính theo ngày phát hiện",
+          "req_id": "REQ-D27"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D28",
+          "label": "D28",
+          "line": 141,
+          "text": "D28 | Tag mới được với ngược N ngày trước `coverage_from`, đúng một lần; kèm nút \"quét lại kho\"",
+          "req_id": "REQ-D28"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D29",
+          "label": "D29",
+          "line": 142,
+          "text": "D29 | Công trình đã báo cáo không quay lại như phát hiện mới; chỉ xuất hiện dạng tham chiếu có ghi ngày",
+          "req_id": "REQ-D29"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D30",
+          "label": "D30",
+          "line": 143,
+          "text": "D30 | Liên kết mục cùng hướng đã báo cáo trước, dựa trên tag chung và paper cùng được dẫn; không dùng AI",
+          "req_id": "REQ-D30"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D45",
+          "label": "D45",
+          "line": 144,
+          "text": "D45 | Màn hình mặc định: danh sách báo cáo theo kỳ",
+          "req_id": "REQ-D45"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D52",
+          "label": "D52",
+          "line": 145,
+          "text": "D52 | Tiêu chí thành công: chỉ ra hướng nghiên cứu mới, không chỉ liệt kê bài lẻ",
+          "req_id": "REQ-D52"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D53",
+          "label": "D53",
+          "line": 146,
+          "text": "D53 | Báo cáo có khối \"hướng đang nổi\" ở đầu, tính từ mật độ vector; vào MVP",
+          "req_id": "REQ-D53"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D54",
+          "label": "D54",
+          "line": 147,
+          "text": "D54 | \"Mới\" = mới với người dùng (truy vấn) + đang tụ lại (mật độ vector). **Không** dùng AI đánh giá tính mới khoa học. Nhãn là \"ứng viên để đọc sâu\"",
+          "req_id": "REQ-D54"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D57",
+          "label": "D57",
+          "line": 148,
+          "text": "D57 | Không gửi báo cáo rỗng; chỉ ghi vào trạng thái run",
+          "req_id": "REQ-D57"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D35",
+          "label": "D35",
+          "line": 154,
+          "text": "D35 | Liên kết Telegram bằng mã một lần có hạn; chat ID khác bị bỏ im lặng, không trả lời",
+          "req_id": "REQ-D35"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D36",
+          "label": "D36",
+          "line": 155,
+          "text": "D36 | Lệnh MVP: Save, chạy ngay, xem trạng thái",
+          "req_id": "REQ-D36"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D37",
+          "label": "D37",
+          "line": 156,
+          "text": "D37 | Có lệnh hủy liên kết; liên kết mới vô hiệu hóa liên kết cũ",
+          "req_id": "REQ-D37"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D38",
+          "label": "D38",
+          "line": 157,
+          "text": "D38 | Nút Save Telegram gắn ID mục; `UNIQUE` chống trùng; bot phản hồi trạng thái sau khi bấm",
+          "req_id": "REQ-D38"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D55",
+          "label": "D55",
+          "line": 158,
+          "text": "D55 | Saved là snapshot lúc lưu",
+          "req_id": "REQ-D55"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D56",
+          "label": "D56",
+          "line": 159,
+          "text": "D56 | Timezone lấy theo máy chạy app",
+          "req_id": "REQ-D56"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D58",
+          "label": "D58",
+          "line": 160,
+          "text": "D58 | Retention giữ vô thời hạn; backup là copy file SQLite",
+          "req_id": "REQ-D58"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D07",
+          "label": "D07",
+          "line": 161,
+          "text": "D07 | SQLite là data store chuẩn; report render ra Markdown/JSON",
+          "req_id": "REQ-D07"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D39",
+          "label": "D39",
+          "line": 167,
+          "text": "D39 | Adapter với cấu hình model theo từng tác vụ, sửa được trong Settings",
+          "req_id": "REQ-D39"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D40",
+          "label": "D40",
+          "line": 168,
+          "text": "D40 | Model rẻ cho gắn nhãn (số lượng lớn), model mạnh cho summary (số lượng ít)",
+          "req_id": "REQ-D40"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D41",
+          "label": "D41",
+          "line": 169,
+          "text": "D41 | Hỗ trợ hai họ provider: **API key** và **CLI local qua ACP**",
+          "req_id": "REQ-D41"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D43",
+          "label": "D43",
+          "line": 170,
+          "text": "D43 | Adapter hứa: prompt vào → JSON có schema ra. Đường CLI thêm bước bóc JSON khỏi transcript, kiểm schema, thử lại một lần rồi báo lỗi mục đó. Mỗi provider tự khai số job song song",
+          "req_id": "REQ-D43"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D44",
+          "label": "D44",
+          "line": 171,
+          "text": "D44 | Bảng usage chấp nhận giá trị \"không rõ\" cho đường CLI",
+          "req_id": "REQ-D44"
+        },
+        {
+          "anchor_id": "SRC-SPEC:D51",
+          "label": "D51",
+          "line": 172,
+          "text": "D51 | Không có API key nào là bắt buộc: nếu gắn nhãn và summary chạy hết qua CLI thì hệ thống chạy được với không key nào",
+          "req_id": "REQ-D51"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "anchor_id": "SRC-SPEC:AC-01",
+          "label": "AC-01",
+          "req_id": "REQ-AC01",
+          "line": 531,
+          "title": "Tự chạy không cần lướt X"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-02",
+          "label": "AC-02",
+          "req_id": "REQ-AC02",
+          "line": 536,
+          "title": "Chạy bù"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-03",
+          "label": "AC-03",
+          "req_id": "REQ-AC03",
+          "line": 541,
+          "title": "Điểm dừng"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-04",
+          "label": "AC-04",
+          "req_id": "REQ-AC04",
+          "line": 546,
+          "title": "CAPTCHA"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-05",
+          "label": "AC-05",
+          "req_id": "REQ-AC05",
+          "line": 551,
+          "title": "Mốc hiệu lực tag"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-06",
+          "label": "AC-06",
+          "req_id": "REQ-AC06",
+          "line": 556,
+          "title": "Không phân tích lại"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-07",
+          "label": "AC-07",
+          "req_id": "REQ-AC07",
+          "line": 561,
+          "title": "Gộp trùng"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-08",
+          "label": "AC-08",
+          "req_id": "REQ-AC08",
+          "line": 566,
+          "title": "Kỳ nối liền"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-09",
+          "label": "AC-09",
+          "req_id": "REQ-AC09",
+          "line": 571,
+          "title": "Không báo lại"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-10",
+          "label": "AC-10",
+          "req_id": "REQ-AC10",
+          "line": 576,
+          "title": "Summary tự đủ"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-11",
+          "label": "AC-11",
+          "req_id": "REQ-AC11",
+          "line": 581,
+          "title": "Grounding"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-12",
+          "label": "AC-12",
+          "req_id": "REQ-AC12",
+          "line": 586,
+          "title": "Save bền"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-13",
+          "label": "AC-13",
+          "req_id": "REQ-AC13",
+          "line": 591,
+          "title": "Save hai kênh"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-14",
+          "label": "AC-14",
+          "req_id": "REQ-AC14",
+          "line": 596,
+          "title": "Telegram lỗi"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-15",
+          "label": "AC-15",
+          "req_id": "REQ-AC15",
+          "line": 601,
+          "title": "Ba trạng thái phân biệt"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-16",
+          "label": "AC-16",
+          "req_id": "REQ-AC16",
+          "line": 606,
+          "title": "Không có API key"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-17",
+          "label": "AC-17",
+          "req_id": "REQ-AC17",
+          "line": 611,
+          "title": "Dữ liệu không đáng tin cậy"
+        },
+        {
+          "anchor_id": "SRC-SPEC:AC-18",
+          "label": "AC-18",
+          "req_id": "REQ-AC18",
+          "line": 616,
+          "title": "Chat ID lạ"
+        }
+      ],
+      "assumptions": [
+        {
+          "anchor_id": "SRC-SPEC:A1",
+          "label": "A1",
+          "line": 178,
+          "text": "A1 | Phiên Chrome đăng nhập X thu thập được đều đặn ở mức đủ dùng",
+          "req_id": "REQ-A1"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A2",
+          "label": "A2",
+          "line": 179,
+          "text": "A2 | Ngưỡng tương đồng embedding tách được bài khớp tag khỏi bài không khớp",
+          "req_id": "REQ-A2"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A3",
+          "label": "A3",
+          "line": 180,
+          "text": "A3 | Model embedding đa ngôn ngữ đủ tốt trên thuật ngữ khoa học",
+          "req_id": "REQ-A3"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A4",
+          "label": "A4",
+          "line": 181,
+          "text": "A4 | Mật độ vector phát hiện được \"hướng đang nổi\" thật, không phải nhiễu",
+          "req_id": "REQ-A4"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A5",
+          "label": "A5",
+          "line": 182,
+          "text": "A5 | Điều khoản từng nhà AI cho đường CLI/ACP",
+          "req_id": "REQ-A5"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A6",
+          "label": "A6",
+          "line": 183,
+          "text": "A6 | Nhịp gọi arXiv và yêu cầu của OpenAlex",
+          "req_id": "REQ-A6"
+        },
+        {
+          "anchor_id": "SRC-SPEC:A7",
+          "label": "A7",
+          "line": 184,
+          "text": "A7 | X có thể hạn chế tài khoản dù người dùng tự giải CAPTCHA",
+          "req_id": "REQ-A7"
+        }
+      ],
+      "p0_scope_rows": [
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-01",
+          "req_id": "REQ-P0-01",
+          "line": 42,
+          "text": "1 | Một tài khoản đăng nhập duy nhất cho app truy cập từ ngoài"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-02",
+          "req_id": "REQ-P0-02",
+          "line": 43,
+          "text": "2 | Quản lý tag: nhập tự do, từ đồng nghĩa, tag loại trừ, xem nhãn đang khớp"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-03",
+          "req_id": "REQ-P0-03",
+          "line": 44,
+          "text": "3 | Collector X chạy Chrome thật trên máy cá nhân, có điểm dừng"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-04",
+          "req_id": "REQ-P0-04",
+          "line": 45,
+          "text": "4 | Lấy metadata paper qua API arXiv/OpenAlex từ server"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-05",
+          "req_id": "REQ-P0-05",
+          "line": 46,
+          "text": "5 | Gắn nhãn chủ đề mở + embedding, khớp tag bằng độ tương đồng"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-06",
+          "req_id": "REQ-P0-06",
+          "line": 47,
+          "text": "6 | Summary theo hình dạng \"nội dung + điểm khác + hạn chế\" cho mọi mục"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-07",
+          "req_id": "REQ-P0-07",
+          "line": 48,
+          "text": "7 | Báo cáo theo kỳ nối liền, có khối \"hướng đang nổi\" ở đầu"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-08",
+          "req_id": "REQ-P0-08",
+          "line": 49,
+          "text": "8 | Save trong app và qua Telegram, snapshot lúc lưu"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-09",
+          "req_id": "REQ-P0-09",
+          "line": 50,
+          "text": "9 | Telegram: liên kết bằng mã một lần, gửi digest, 3 lệnh"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-10",
+          "req_id": "REQ-P0-10",
+          "line": 51,
+          "text": "10 | Lịch tự động + chạy tay, chạy bù khi máy thức"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-11",
+          "req_id": "REQ-P0-11",
+          "line": 52,
+          "text": "11 | Adapter AI hai họ provider: API key và CLI local qua ACP"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.1#row-12",
+          "req_id": "REQ-P0-12",
+          "line": 53,
+          "text": "12 | Trạng thái run, checkpoint, xử lý CAPTCHA có người can thiệp"
+        }
+      ],
+      "deferred_rows": [
+        {
+          "anchor_id": "SRC-SPEC§2.2#row-01",
+          "req_id": "REQ-P1-01",
+          "line": 59,
+          "text": "`Idea cluster` là entity có lịch sử riêng | Cần dữ liệu tích lũy mới có nghĩa; khối \"hướng đang nổi\" ở P0 đã phủ phần giá trị"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.2#row-02",
+          "req_id": "REQ-P1-02",
+          "line": 60,
+          "text": "Đọc replies của người ngoài | Tỷ lệ nhiễu cao, tốn nhiều lần tải trang"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.2#row-03",
+          "req_id": "REQ-P1-03",
+          "line": 61,
+          "text": "Ghi chú, collection, tag riêng trên Saved | Không phục vụ tiêu chí thành công ở tuần đầu"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.2#row-04",
+          "req_id": "REQ-P1-04",
+          "line": 62,
+          "text": "Vector index cho SQLite | Quét tuyến tính đủ ở quy mô một người dùng"
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.2#row-05",
+          "req_id": "REQ-P1-05",
+          "line": 63,
+          "text": "Nhiều người dùng, phân quyền | Trái D01; nếu cần thì là dự án khác"
+        }
+      ],
+      "out_of_scope_bullets": [
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-01",
+          "req_id": "REQ-OOS-01",
+          "line": 67,
+          "text": "X API trả phí."
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-02",
+          "req_id": "REQ-OOS-02",
+          "line": 68,
+          "text": "Mọi cơ chế né CAPTCHA, giả fingerprint, luân chuyển account hoặc proxy để vượt chặn."
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-03",
+          "req_id": "REQ-OOS-03",
+          "line": 69,
+          "text": "Extension hỗ trợ lướt X."
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-04",
+          "req_id": "REQ-OOS-04",
+          "line": 70,
+          "text": "Chia sẻ trong sản phẩm — chia sẻ là copy link ra ngoài."
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-05",
+          "req_id": "REQ-OOS-05",
+          "line": 71,
+          "text": "Sửa tag hoặc cấu hình qua chat Telegram."
+        },
+        {
+          "anchor_id": "SRC-SPEC§2.3#row-06",
+          "req_id": "REQ-OOS-06",
+          "line": 72,
+          "text": "AI đánh giá tính mới khoa học của công trình."
+        }
+      ],
+      "open_questions": [
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-01",
+          "req_id": "REQ-OQ01",
+          "line": 643,
+          "text": "1 | Xác nhận D09: Chrome profile riêng của dự án thay cho profile mặc định | Người dùng | **Chặn M0**"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-02",
+          "req_id": "REQ-OQ02",
+          "line": 644,
+          "text": "2 | Chọn stack (khuyến nghị A: Python toàn bộ) | Người dùng | **Chặn M1**"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-03",
+          "req_id": "REQ-OQ03",
+          "line": 645,
+          "text": "3 | Provider và model cụ thể cho gắn nhãn và cho summary | Người dùng | Chặn M3"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-04",
+          "req_id": "REQ-OQ04",
+          "line": 646,
+          "text": "4 | N ngày với ngược cho tag mới; mặc định đề xuất 7 | Người dùng | Không"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-05",
+          "req_id": "REQ-OQ05",
+          "line": 647,
+          "text": "5 | Giới hạn mỗi đợt: số bài và/hoặc thời gian, con số thật | Người dùng, sau M0 | Không"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-06",
+          "req_id": "REQ-OQ06",
+          "line": 648,
+          "text": "6 | Lịch cụ thể (mấy giờ, mấy lần một ngày) | Người dùng | Không, tới M7"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-07",
+          "req_id": "REQ-OQ07",
+          "line": 649,
+          "text": "7 | Giờ yên lặng cho Telegram | Người dùng | Không"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-08",
+          "req_id": "REQ-OQ08",
+          "line": 650,
+          "text": "8 | Ngưỡng tương đồng embedding | Dữ liệu, sau M3 | Không"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-09",
+          "req_id": "REQ-OQ09",
+          "line": 651,
+          "text": "9 | Model embedding cụ thể | Kỹ thuật, sau A3 | Không"
+        },
+        {
+          "anchor_id": "SRC-SPEC§13.1#row-10",
+          "req_id": "REQ-OQ10",
+          "line": 652,
+          "text": "10 | Có cần export Saved ở MVP hay hoãn | Người dùng | Không"
+        }
+      ]
+    },
+    "PROJECT": {
+      "note_vi": "Anchor cho cac ID phat sinh trong du an, khong co trong hai file nguon. Chung van phai co decision record thi moi duoc dung.",
+      "invariants": [
+        {
+          "anchor_id": "CT-data-invariants:I16",
+          "label": "I16",
+          "title_vi": "Attempt khong bao gio la ket qua",
+          "source_file": "contracts/data/invariants.md",
+          "heading": "## I16 (moi)",
+          "owner_contract": "contracts/data/entities.yaml -> entity analysis_attempt; transactions[TXN-analysis-accept]",
+          "decision_record": "precode/decision-register.md §8.8 PROV-PC00-05",
+          "positive_scenarios": [
+            "SC10",
+            "SC50"
+          ],
+          "negative_scenarios": [
+            "SC56"
+          ],
+          "mixed_scenarios": [
+            "SC28"
+          ],
+          "polarity_note_vi": "Cuc am tung thieu o ban FIX5 (chi co SC28 khai `mixed`); PC09 cap SC56 o FIX7 va khoang trong da duoc lap. decision-register §8.8 ghi day du lich su nay (CR-PC00-14 da giai o FIX8).",
+          "status": "PROVISIONAL",
+          "decision_owner": "Coordinator (provisional, technical)",
+          "owner_note_vi": "Data invariant ky thuat: khong doi cam ket nao Owner da chon, nen khong can mot muc rieng trong owner-decision-request.md tru khi Owner phan doi (CR-PC00-12).",
+          "registered_by_ruling": "F-A2R1-07; decision_owner dat theo CR-PC00-12"
+        },
+        {
+          "anchor_id": "CT-data-invariants:I17",
+          "label": "I17",
+          "title_vi": "Merge identity khong lam doi bat ky snapshot lich su nao",
+          "source_file": "contracts/data/invariants.md",
+          "heading": "## I17 (moi)",
+          "owner_contract": "contracts/data/entities.yaml -> transactions[TXN-identity-merge]; referential_integrity.historical_snapshot_rule; identity.md §6.4",
+          "decision_record": "precode/decision-register.md §8.8 PROV-PC00-06",
+          "positive_scenarios": [
+            "SC07",
+            "SC12"
+          ],
+          "negative_scenarios": [
+            "SC23"
+          ],
+          "mixed_scenarios": [
+            "SC09",
+            "SC13",
+            "SC32"
+          ],
+          "status": "PROVISIONAL",
+          "decision_owner": "Coordinator (provisional, technical)",
+          "owner_note_vi": "Data invariant ky thuat: co che thuc thi cua REQ-D29/REQ-D55/AMD-B15 sau merge, khong phai lua chon san pham moi; khong can muc rieng trong owner-decision-request.md tru khi Owner phan doi (CR-PC00-12).",
+          "registered_by_ruling": "F-A2R1-07; decision_owner dat theo CR-PC00-12"
+        }
+      ]
+    },
+    "SRC-PLAN": {
+      "sections": [
+        {
+          "anchor_id": "SRC-PLAN§0",
+          "title": "Research Radar — Kế hoạch Pre-code và bộ hợp đồng kiểm toán",
+          "level": 1,
+          "line_start": 1,
+          "line_end": 12
+        },
+        {
+          "anchor_id": "SRC-PLAN§1",
+          "title": "1. Baseline và thứ tự ưu tiên",
+          "level": 2,
+          "line_start": 13,
+          "line_end": 30
+        },
+        {
+          "anchor_id": "SRC-PLAN§2",
+          "title": "2. Hình dạng bộ hợp đồng cần đạt",
+          "level": 2,
+          "line_start": 31,
+          "line_end": 50
+        },
+        {
+          "anchor_id": "SRC-PLAN§3",
+          "title": "3. Audit đặc tả: các quyết định phải đóng trước khi đóng hợp đồng",
+          "level": 2,
+          "line_start": 51,
+          "line_end": 74
+        },
+        {
+          "anchor_id": "SRC-PLAN§3.1",
+          "title": "3.1 Hai amendment cần xử lý đặc biệt",
+          "level": 3,
+          "line_start": 75,
+          "line_end": 82
+        },
+        {
+          "anchor_id": "SRC-PLAN§4",
+          "title": "4. Danh mục file đầu ra của Pre-code",
+          "level": 2,
+          "line_start": 83,
+          "line_end": 107
+        },
+        {
+          "anchor_id": "SRC-PLAN§5",
+          "title": "5. Mẫu hợp đồng: những trường bắt buộc",
+          "level": 2,
+          "line_start": 108,
+          "line_end": 128
+        },
+        {
+          "anchor_id": "SRC-PLAN§5.1",
+          "title": "5.1 Quy tắc wire chung đề xuất",
+          "level": 3,
+          "line_start": 129,
+          "line_end": 138
+        },
+        {
+          "anchor_id": "SRC-PLAN§6",
+          "title": "6. Ranh giới module và giao tiếp được phép",
+          "level": 2,
+          "line_start": 139,
+          "line_end": 158
+        },
+        {
+          "anchor_id": "SRC-PLAN§6.1",
+          "title": "6.1 Owner của dữ liệu và side effect",
+          "level": 3,
+          "line_start": 159,
+          "line_end": 166
+        },
+        {
+          "anchor_id": "SRC-PLAN§7",
+          "title": "7. Invariant phải khóa trước coding",
+          "level": 2,
+          "line_start": 167,
+          "line_end": 190
+        },
+        {
+          "anchor_id": "SRC-PLAN§8",
+          "title": "8. Mô hình trạng thái chuẩn đề xuất",
+          "level": 2,
+          "line_start": 191,
+          "line_end": 194
+        },
+        {
+          "anchor_id": "SRC-PLAN§8.1",
+          "title": "8.1 Run: tách trạng thái thực thi và chất lượng kết quả",
+          "level": 3,
+          "line_start": 195,
+          "line_end": 221
+        },
+        {
+          "anchor_id": "SRC-PLAN§8.2",
+          "title": "8.2 Analysis item và report",
+          "level": 3,
+          "line_start": 222,
+          "line_end": 227
+        },
+        {
+          "anchor_id": "SRC-PLAN§8.3",
+          "title": "8.3 Delivery",
+          "level": 3,
+          "line_start": 228,
+          "line_end": 241
+        },
+        {
+          "anchor_id": "SRC-PLAN§8.4",
+          "title": "8.4 Storage và trạng thái không ghi được",
+          "level": 3,
+          "line_start": 242,
+          "line_end": 247
+        },
+        {
+          "anchor_id": "SRC-PLAN§9",
+          "title": "9. Các transaction và quy tắc thời gian cần viết thành hợp đồng",
+          "level": 2,
+          "line_start": 248,
+          "line_end": 249
+        },
+        {
+          "anchor_id": "SRC-PLAN§9.1",
+          "title": "9.1 Ingest và canonical identity",
+          "level": 3,
+          "line_start": 250,
+          "line_end": 256
+        },
+        {
+          "anchor_id": "SRC-PLAN§9.2",
+          "title": "9.2 Đóng kỳ báo cáo",
+          "level": 3,
+          "line_start": 257,
+          "line_end": 266
+        },
+        {
+          "anchor_id": "SRC-PLAN§9.3",
+          "title": "9.3 Cache AI và embedding generation",
+          "level": 3,
+          "line_start": 267,
+          "line_end": 272
+        },
+        {
+          "anchor_id": "SRC-PLAN§10",
+          "title": "10. Ma trận lỗi và bằng chứng bắt buộc",
+          "level": 2,
+          "line_start": 273,
+          "line_end": 295
+        },
+        {
+          "anchor_id": "SRC-PLAN§11",
+          "title": "11. Kế hoạch thực hiện theo gói",
+          "level": 2,
+          "line_start": 296,
+          "line_end": 299
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC00",
+          "title": "PC00 — Khóa nguồn, nguyên tử hóa yêu cầu và xử lý mâu thuẫn",
+          "level": 3,
+          "line_start": 300,
+          "line_end": 313
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC01",
+          "title": "PC01 — Khóa topology, ownership và capability",
+          "level": 3,
+          "line_start": 314,
+          "line_end": 327
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC02",
+          "title": "PC02 — Khóa identity, entity và transaction",
+          "level": 3,
+          "line_start": 328,
+          "line_end": 341
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC03",
+          "title": "PC03 — Khóa scheduler, lease, checkpoint và state machines",
+          "level": 3,
+          "line_start": 342,
+          "line_end": 355
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC04",
+          "title": "PC04 — Khóa thời gian, tag, coverage và chọn hướng nghiên cứu",
+          "level": 3,
+          "line_start": 356,
+          "line_end": 370
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC05",
+          "title": "PC05 — Khóa collector và paper connector; thiết kế probe khả thi",
+          "level": 3,
+          "line_start": 371,
+          "line_end": 384
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC06",
+          "title": "PC06 — Khóa AI API/CLI/ACP và grounding",
+          "level": 3,
+          "line_start": 385,
+          "line_end": 400
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC07",
+          "title": "PC07 — Khóa app, Save và Telegram delivery",
+          "level": 3,
+          "line_start": 401,
+          "line_end": 415
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC08",
+          "title": "PC08 — Khóa secrets, Internet boundary, backup và recovery",
+          "level": 3,
+          "line_start": 416,
+          "line_end": 430
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC09",
+          "title": "PC09 — Khóa oracle, traceability, evidence và readiness",
+          "level": 3,
+          "line_start": 431,
+          "line_end": 445
+        },
+        {
+          "anchor_id": "SRC-PLAN:PC10",
+          "title": "PC10 — Tạo task card cho coding và giao bộ hợp đồng",
+          "level": 3,
+          "line_start": 446,
+          "line_end": 459
+        },
+        {
+          "anchor_id": "SRC-PLAN§12",
+          "title": "12. Thứ tự và cổng chuyển giai đoạn",
+          "level": 2,
+          "line_start": 460,
+          "line_end": 479
+        },
+        {
+          "anchor_id": "SRC-PLAN§13",
+          "title": "13. Ma trận truy vết khởi đầu cho AC-01–AC-18",
+          "level": 2,
+          "line_start": 480,
+          "line_end": 506
+        },
+        {
+          "anchor_id": "SRC-PLAN§14",
+          "title": "14. Chuẩn bằng chứng và cách tuyên bố hoàn thành",
+          "level": 2,
+          "line_start": 507,
+          "line_end": 508
+        },
+        {
+          "anchor_id": "SRC-PLAN§14.1",
+          "title": "14.1 Evidence manifest",
+          "level": 3,
+          "line_start": 509,
+          "line_end": 525
+        },
+        {
+          "anchor_id": "SRC-PLAN§14.2",
+          "title": "14.2 Evidence theo cấp",
+          "level": 3,
+          "line_start": 526,
+          "line_end": 537
+        },
+        {
+          "anchor_id": "SRC-PLAN§14.3",
+          "title": "14.3 Mẫu completion claim",
+          "level": 3,
+          "line_start": 538,
+          "line_end": 552
+        },
+        {
+          "anchor_id": "SRC-PLAN§15",
+          "title": "15. Task card chuẩn cho agent",
+          "level": 2,
+          "line_start": 553,
+          "line_end": 571
+        },
+        {
+          "anchor_id": "SRC-PLAN§16",
+          "title": "16. Quản lý thay đổi và bằng chứng hết hiệu lực",
+          "level": 2,
+          "line_start": 572,
+          "line_end": 581
+        },
+        {
+          "anchor_id": "SRC-PLAN§17",
+          "title": "17. Definition of Ready của toàn bộ Pre-code",
+          "level": 2,
+          "line_start": 582,
+          "line_end": 596
+        },
+        {
+          "anchor_id": "SRC-PLAN§18",
+          "title": "18. Hành động tiếp theo cụ thể",
+          "level": 2,
+          "line_start": 597,
+          "line_end": 602
+        },
+        {
+          "anchor_id": "SRC-PLAN§18-Bàn-giao-hiện-tại",
+          "title": "Bàn giao hiện tại",
+          "level": 3,
+          "line_start": 603,
+          "line_end": 606
+        }
+      ],
+      "blockers": [
+        {
+          "anchor_id": "SRC-PLAN:B01",
+          "label": "B01",
+          "line": 57,
+          "text": "B01 | C03/D-tag dùng cả “thời điểm gửi” và “lúc tạo”; tag có thể đổi khi Telegram đang retry | Chọn một thời điểm chốt: khuyên dùng transaction publish report; ghi `tag_config_version` bất biến. Nếu thật sự theo lúc gửi, phải thiết kế revision và xử lý đã gửi một phần | PC04, PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B02",
+          "label": "B02",
+          "line": 58,
+          "text": "B02 | §5.2 dùng `delivered` trong run, §9 tách delivery; `stopped_limit` vừa là điểm dừng vừa có thể tạo report | Tách phase/status/outcome của run; delivery độc lập. Ánh xạ rõ tên cũ sang trạng thái chuẩn | PC03"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B03",
+          "label": "B03",
+          "line": 59,
+          "text": "B03 | AC-14 hứa retry không có tin trùng; một hàng delivery không giải quyết mất phản hồi sau khi phía Telegram đã nhận | Thêm `delivery.unknown`; dừng retry tự động khi không biết đã gửi chưa. Thay bảo đảm tuyệt đối bằng chính sách có thể kiểm chứng, cần người dùng duyệt amendment | PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B04",
+          "label": "B04",
+          "line": 60,
+          "text": "B04 | D27 kỳ nối liền; D57 không report rỗng; AI backlog nằm ngoài kỳ đã đóng | Dùng sổ coverage độc lập report hiển thị; pending item và backfill ledger độc lập con trỏ kỳ. Chốt khi nào coverage tiến | PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B05",
+          "label": "B05",
+          "line": 61,
+          "text": "B05 | §9 “không lấy lại bài” nhưng cursor của feed động chưa chứng minh ổn định | Cam kết ingest không trùng; việc đọc lại có thể cần thiết. Checkpoint chỉ chứa dữ liệu server đã ACK; ghi rõ giới hạn bao phủ X | PC03, PC05"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B06",
+          "label": "B06",
+          "line": 62,
+          "text": "B06 | `work` có DOI/arXiv unique nhưng hai bản ghi đã tồn tại rồi mới biết cùng công trình; post-only chưa có model analysis rõ | Chốt identity/alias merge, work version và target phân biệt work/post. Không coi hai UNIQUE là đủ giải mọi trùng lặp | PC02"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B07",
+          "label": "B07",
+          "line": 63,
+          "text": "B07 | D25 “một lần”, D26 có phân tích lại; summary theo work nhưng schema không đủ source fingerprint/task key | Định nghĩa một kết quả hợp lệ mỗi target/version/task/input/prompt contract; reanalysis có generation mới. Attempt lỗi không tính là kết quả hoàn thành | PC02, PC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B08",
+          "label": "B08",
+          "line": 64,
+          "text": "B08 | D56 “timezone máy chạy app” mơ hồ vì browser, server, máy collector khác nhau | Lưu một IANA timezone do owner xác nhận; timestamps chuẩn UTC; chốt quy tắc DST và gộp lịch | PC03, PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B09",
+          "label": "B09",
+          "line": 65,
+          "text": "B09 | §11.3 bỏ im lặng chat chưa liên kết nhưng §5.1 cần nhận mã từ chat chưa liên kết | Chốt ngoại lệ hẹp cho yêu cầu liên kết hợp lệ, kiểm mã trước; mọi lệnh khác từ chat lạ bỏ im lặng | PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B10",
+          "label": "B10",
+          "line": 66,
+          "text": "B10 | §5.4 nói status/run-now có thể tiếp tục; §9 nói chỉ resume sau xác minh | `status` không mutation; `run-now` không vượt `needs_user`. Khuyên nút resume riêng trong app; không tự thêm lệnh Telegram thứ tư | PC03, PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B11",
+          "label": "B11",
+          "line": 67,
+          "text": "B11 | Backup = copy SQLite; không nói DB đang ghi/WAL hoặc khôi phục queue/token | Chọn backup nhất quán và restore drill có khóa side effect. Không dùng copy file DB đang hoạt động làm bằng chứng đủ | PC08"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B12",
+          "label": "B12",
+          "line": 68,
+          "text": "B12 | D09 profile riêng, D08/D42/D50 bố trí module còn ĐX; sơ đồ cho collector đưa dữ liệu thẳng analysis | Chốt profile và topology. Khuyên analysis nhận task từ server sau ingest commit, không nhận dữ liệu chưa commit từ collector | PC01, PC05, PC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B13",
+          "label": "B13",
+          "line": 69,
+          "text": "B13 | Có API/CLI/ACP nhưng chưa chốt capability, phạm vi key được gửi worker, quyền tool của CLI | Chốt secret access theo task; CLI không tool/file/network action ngoài inference được phép; nếu adapter không cô lập được thì không bật | PC01, PC06, PC08"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B14",
+          "label": "B14",
+          "line": 70,
+          "text": "B14 | D53 vector density là ĐX trong P0; chưa có thuật toán, cửa sổ, ngưỡng, sample tối thiểu | Định nghĩa phép đo và tập đánh giá. Thiếu dữ liệu → insufficient evidence, không tự gọi là “hướng nổi” | PC04, PC09"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B15",
+          "label": "B15",
+          "line": 71,
+          "text": "B15 | D17/D29/AC-07 mong 0 trùng; metadata có thể thiếu hoặc mâu thuẫn | Chốt phạm vi invariant 0 trùng theo canonical identity đã biết; xung đột đưa `identity_conflict` và giữ nguồn, không merge đoán | PC02, PC09"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B16",
+          "label": "B16",
+          "line": 72,
+          "text": "B16 | D20 điểm khác với cái đã có; có thể chỉ có một post; AC-11 gộp mọi tính mới thành suy luận | Phân biệt tuyên bố tính mới của tác giả và suy luận AI; thiếu nguồn so sánh thì ghi thiếu, không bịa baseline | PC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:B17",
+          "label": "B17",
+          "line": 73,
+          "text": "B17 | Summary “mọi mục”, §10 chỉ summary mục vào report; tag có thể đổi và chọn thêm target chưa có summary | Chốt lúc enqueue summary và cách report partial/pending; không báo completed nếu các mục còn thiếu bị mất khỏi hàng đợi | PC04, PC06"
+        }
+      ],
+      "invariants": [
+        {
+          "anchor_id": "SRC-PLAN:I01",
+          "label": "I01",
+          "line": 173,
+          "text": "I01 | Dữ liệu authoritative chỉ được mutation qua domain port đã xác thực; một owner không có nghĩa bỏ auth | PC01/PC08"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I02",
+          "label": "I02",
+          "line": 174,
+          "text": "I02 | Receipt ingest chỉ ACK sau commit; checkpoint không đi trước dữ liệu bền | PC02/PC03"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I03",
+          "label": "I03",
+          "line": 175,
+          "text": "I03 | Một canonical identity đã xác định chỉ có một work; alias conflict không bị merge đoán | PC02"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I04",
+          "label": "I04",
+          "line": 176,
+          "text": "I04 | Analysis hợp lệ bất biến theo generation; đổi tag không làm gọi AI lại; retry không tạo hai kết quả hợp lệ cùng key | PC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I05",
+          "label": "I05",
+          "line": 177,
+          "text": "I05 | Report lưu tag version, selection version và evidence references; không thay nội dung âm thầm sau publish | PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I06",
+          "label": "I06",
+          "line": 178,
+          "text": "I06 | Các coverage window đóng nối liền, half-open; pending item không mất khi con trỏ tiến | PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I07",
+          "label": "I07",
+          "line": 179,
+          "text": "I07 | Một canonical work chỉ có một first-announcement; tham chiếu lịch sử có ngày và không tính là phát hiện mới | PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I08",
+          "label": "I08",
+          "line": 180,
+          "text": "I08 | Save là snapshot bất biến; cùng target có tối đa một Saved active; bỏ tag không xóa snapshot | PC02/PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I09",
+          "label": "I09",
+          "line": 181,
+          "text": "I09 | Telegram thất bại không làm report biến mất hoặc run đổi sang thất bại thu thập | PC03/PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I10",
+          "label": "I10",
+          "line": 182,
+          "text": "I10 | CAPTCHA không tự retry/resume; worker stale/cancelled không commit kết quả mới | PC03/PC05"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I11",
+          "label": "I11",
+          "line": 183,
+          "text": "I11 | Bài nguồn/AI output không có quyền đọc secrets, gọi tool hay đổi recipient | PC06/PC08"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I12",
+          "label": "I12",
+          "line": 184,
+          "text": "I12 | Vector khác model/generation/dimension không được so sánh trong cùng lần selection | PC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I13",
+          "label": "I13",
+          "line": 185,
+          "text": "I13 | Incomplete, empty, failed và unknown được hiển thị riêng; không gọi thiếu dữ liệu là không có nghiên cứu | PC03/PC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I14",
+          "label": "I14",
+          "line": 186,
+          "text": "I14 | Usage không biết là `unknown`, không ghi thành 0; fallback chỉ theo policy được owner cấu hình | PC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:I15",
+          "label": "I15",
+          "line": 187,
+          "text": "I15 | Restore không tự gửi lại outbox cũ, chạy lại job side effect hoặc reset `first_announced` mà không kiểm tra | PC08"
+        }
+      ],
+      "error_codes": [
+        {
+          "anchor_id": "SRC-PLAN:ERR:X_CHALLENGE_REQUIRED",
+          "label": "X_CHALLENGE_REQUIRED",
+          "line": 279,
+          "text": "X_CHALLENGE_REQUIRED | run.needs_user"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:X_ACCESS_BLOCKED",
+          "label": "X_ACCESS_BLOCKED",
+          "line": 280,
+          "text": "X_ACCESS_BLOCKED | run.blocked"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:WORKER_LEASE_EXPIRED",
+          "label": "WORKER_LEASE_EXPIRED",
+          "line": 281,
+          "text": "WORKER_LEASE_EXPIRED | assignment revoked; run queued theo guard"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:INGEST_ACK_LOST",
+          "label": "INGEST_ACK_LOST",
+          "line": 282,
+          "text": "INGEST_ACK_LOST | client uncertain, authoritative DB giữ receipt nếu đã commit"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:SOURCE_METADATA_UNAVAILABLE",
+          "label": "SOURCE_METADATA_UNAVAILABLE",
+          "line": 283,
+          "text": "SOURCE_METADATA_UNAVAILABLE | source degraded; item post-only nếu có post"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:IDENTITY_CONFLICT",
+          "label": "IDENTITY_CONFLICT",
+          "line": 284,
+          "text": "IDENTITY_CONFLICT | target unresolved/quarantined"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:AI_OUTPUT_INVALID",
+          "label": "AI_OUTPUT_INVALID",
+          "line": 285,
+          "text": "AI_OUTPUT_INVALID | item retry_wait rồi failed khi hết budget"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:AI_PROVIDER_UNAVAILABLE",
+          "label": "AI_PROVIDER_UNAVAILABLE",
+          "line": 286,
+          "text": "AI_PROVIDER_UNAVAILABLE | item retry/fallback theo policy, run partial/blocked"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:AI_ATTEMPT_UNCERTAIN",
+          "label": "AI_ATTEMPT_UNCERTAIN",
+          "line": 287,
+          "text": "AI_ATTEMPT_UNCERTAIN | item unknown_attempt"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:EMBEDDING_GENERATION_MISMATCH",
+          "label": "EMBEDDING_GENERATION_MISMATCH",
+          "line": 288,
+          "text": "EMBEDDING_GENERATION_MISMATCH | selection blocked"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:TAG_VERSION_STALE",
+          "label": "TAG_VERSION_STALE",
+          "line": 289,
+          "text": "TAG_VERSION_STALE | report build abort/rebuild"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:TELEGRAM_SEND_UNCERTAIN",
+          "label": "TELEGRAM_SEND_UNCERTAIN",
+          "line": 290,
+          "text": "TELEGRAM_SEND_UNCERTAIN | delivery.unknown"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:TELEGRAM_PERMANENT_FAILURE",
+          "label": "TELEGRAM_PERMANENT_FAILURE",
+          "line": 291,
+          "text": "TELEGRAM_PERMANENT_FAILURE | delivery.failed"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:UNAUTHORIZED_COMMAND",
+          "label": "UNAUTHORIZED_COMMAND",
+          "line": 292,
+          "text": "UNAUTHORIZED_COMMAND | Không đổi domain state"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:STORAGE_WRITE_FAILED",
+          "label": "STORAGE_WRITE_FAILED",
+          "line": 293,
+          "text": "STORAGE_WRITE_FAILED | storage.write_blocked; job không được ACK"
+        },
+        {
+          "anchor_id": "SRC-PLAN:ERR:RESTORE_UNVERIFIED",
+          "label": "RESTORE_UNVERIFIED",
+          "line": 294,
+          "text": "RESTORE_UNVERIFIED | storage.recovery_required"
+        }
+      ],
+      "scenarios": [
+        {
+          "anchor_id": "SRC-PLAN:SC01",
+          "label": "SC01",
+          "line": 486,
+          "maps_to_req": "REQ-AC01"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC02",
+          "label": "SC02",
+          "line": 487,
+          "maps_to_req": "REQ-AC02"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC03",
+          "label": "SC03",
+          "line": 488,
+          "maps_to_req": "REQ-AC03"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC04",
+          "label": "SC04",
+          "line": 489,
+          "maps_to_req": "REQ-AC04"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC05",
+          "label": "SC05",
+          "line": 490,
+          "maps_to_req": "REQ-AC05"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC06",
+          "label": "SC06",
+          "line": 491,
+          "maps_to_req": "REQ-AC06"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC07",
+          "label": "SC07",
+          "line": 492,
+          "maps_to_req": "REQ-AC07"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC08",
+          "label": "SC08",
+          "line": 493,
+          "maps_to_req": "REQ-AC08"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC09",
+          "label": "SC09",
+          "line": 494,
+          "maps_to_req": "REQ-AC09"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC10",
+          "label": "SC10",
+          "line": 495,
+          "maps_to_req": "REQ-AC10"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC11",
+          "label": "SC11",
+          "line": 496,
+          "maps_to_req": "REQ-AC11"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC12",
+          "label": "SC12",
+          "line": 497,
+          "maps_to_req": "REQ-AC12"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC13",
+          "label": "SC13",
+          "line": 498,
+          "maps_to_req": "REQ-AC13"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC14",
+          "label": "SC14",
+          "line": 499,
+          "maps_to_req": "REQ-AC14"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC15",
+          "label": "SC15",
+          "line": 500,
+          "maps_to_req": "REQ-AC15"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC16",
+          "label": "SC16",
+          "line": 501,
+          "maps_to_req": "REQ-AC16"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC17",
+          "label": "SC17",
+          "line": 502,
+          "maps_to_req": "REQ-AC17"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC18",
+          "label": "SC18",
+          "line": 503,
+          "maps_to_req": "REQ-AC18"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC19",
+          "label": "SC19",
+          "line": 505,
+          "list_position": 1,
+          "subject_vi": "tag doi sau publish truoc delivery",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC20",
+          "label": "SC20",
+          "line": 505,
+          "list_position": 2,
+          "subject_vi": "stale lease",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC21",
+          "label": "SC21",
+          "line": 505,
+          "list_position": 3,
+          "subject_vi": "ingest ACK mat",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC22",
+          "label": "SC22",
+          "line": 505,
+          "list_position": 4,
+          "subject_vi": "late analysis / backfill crash",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC23",
+          "label": "SC23",
+          "line": 505,
+          "list_position": 5,
+          "subject_vi": "identity conflict",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC24",
+          "label": "SC24",
+          "line": 505,
+          "list_position": 6,
+          "subject_vi": "embedding generation switch",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC25",
+          "label": "SC25",
+          "line": 505,
+          "list_position": 7,
+          "subject_vi": "Telegram relink",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC26",
+          "label": "SC26",
+          "line": 505,
+          "list_position": 8,
+          "subject_vi": "disk full",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC27",
+          "label": "SC27",
+          "line": 505,
+          "list_position": 9,
+          "subject_vi": "restore voi outbox cu",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC28",
+          "label": "SC28",
+          "line": 505,
+          "list_position": 10,
+          "subject_vi": "worker chet sau AI call",
+          "maps_to_req": null,
+          "source_form": "van xuoi trong SRC-PLAN §13, cau 'Bo sung toi thieu SC19-SC28'"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC29",
+          "label": "SC29",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "post-only target",
+          "origin_package": "PC02",
+          "maps_to_req": "REQ-D33",
+          "registered_by_ruling": "R-08",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC30",
+          "label": "SC30",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "arXiv phien ban moi",
+          "origin_package": "PC02",
+          "maps_to_req": "REQ-D26",
+          "registered_by_ruling": "R-08",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC31",
+          "label": "SC31",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "ingest-batch schema rejection",
+          "origin_package": "PC02",
+          "maps_to_req": "REQ-S9.2-01",
+          "registered_by_ruling": "R-08",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC32",
+          "label": "SC32",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "delete-target (data.delete_target)",
+          "origin_package": "PC01",
+          "maps_to_req": "REQ-S7.3-05",
+          "registered_by_ruling": "R-04",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC33",
+          "label": "SC33",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "run-now trong khi dang co run active",
+          "origin_package": "PC03",
+          "maps_to_req": "REQ-D10",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC34",
+          "label": "SC34",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "ranh gioi DST va occurrence lich",
+          "origin_package": "PC03",
+          "maps_to_req": "REQ-D13",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC35",
+          "label": "SC35",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "cancel tu moi trang thai non-terminal",
+          "origin_package": "PC03",
+          "maps_to_req": "REQ-S9.1-02",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC36",
+          "label": "SC36",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "storage write_blocked giua run roi hoi phuc",
+          "origin_package": "PC03",
+          "maps_to_req": "REQ-S9.3-08",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC37",
+          "label": "SC37",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "backfill add - remove - re-add",
+          "origin_package": "PC04",
+          "maps_to_req": "REQ-D28",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC38",
+          "label": "SC38",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "builder crash khong tieu thu backfill",
+          "origin_package": "PC04",
+          "maps_to_req": "REQ-D28",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC39",
+          "label": "SC39",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "SSRF redirect noi bo",
+          "origin_package": "PC08",
+          "maps_to_req": "REQ-S11.4-03",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC40",
+          "label": "SC40",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "request khong xac thuc hoac thieu CSRF",
+          "origin_package": "PC08",
+          "maps_to_req": "REQ-S11.1-01",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC41",
+          "label": "SC41",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "token hop le di sai canh",
+          "origin_package": "PC08",
+          "maps_to_req": "REQ-S11.2-02",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC42",
+          "label": "SC42",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "doi soat chua xong nen dispatch bi khoa",
+          "origin_package": "PC08",
+          "maps_to_req": "REQ-S7.3-04",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC43",
+          "label": "SC43",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "backup WAL-unsafe bi phat hien",
+          "origin_package": "PC08",
+          "maps_to_req": "REQ-D58",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC44",
+          "label": "SC44",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "data.purge_all: xac nhan hai pha, dieu kien maintenance, thu hoi lease, cac ca am",
+          "origin_package": "PC01",
+          "maps_to_req": "REQ-S7.3-05",
+          "registered_by_ruling": "FIX3",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC45",
+          "label": "SC45",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "run-now bi chan boi needs_user",
+          "origin_package": "PC07",
+          "maps_to_req": "REQ-AC04",
+          "registered_by_ruling": "R4-03",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC46",
+          "label": "SC46",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "callback Telegram cu (revision/generation)",
+          "origin_package": "PC07",
+          "maps_to_req": "REQ-D38",
+          "registered_by_ruling": "R4-03",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC47",
+          "label": "SC47",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "vong doi ma lien ket va ngoai le B09",
+          "origin_package": "PC07",
+          "maps_to_req": "REQ-S11.3-02",
+          "registered_by_ruling": "R4-03",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC48",
+          "label": "SC48",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "schema Saved tu choi payload sai",
+          "origin_package": "PC07",
+          "maps_to_req": "REQ-D55",
+          "registered_by_ruling": "R4-03",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC49",
+          "label": "SC49",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Quet default-deny: moi canh bi cam trong modules.yaml deu bi tu choi, khong doi trang thai nao",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D01",
+          "registered_by_ruling": "R5-06",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC50",
+          "label": "SC50",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Duong chay THANH CONG dau-cuoi: lich - thu thap - lam giau - phan tich - publish - gui",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-S5.2-01",
+          "registered_by_ruling": "R5-06",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC51",
+          "label": "SC51",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Thiet lap lan dau theo SRC-SPEC §5.1: dang nhap, nhap tag, cau hinh provider, lien ket Telegram, dang nhap X",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-S5.1-01",
+          "registered_by_ruling": "R5-06",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC52",
+          "label": "SC52",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Dung lai embedding generation roi chuyen active NGUYEN TU - selection dung dung mot generation",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D48",
+          "registered_by_ruling": "R5-06",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC53",
+          "label": "SC53",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Doi soat sau restore HOAN TAT - dispatcher mo lai, outbox cu van khong tu phat lai",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D58",
+          "registered_by_ruling": "R5-06",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC54",
+          "label": "SC54",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Hai ket qua hop le cho cung mot (analysis_key, generation) la KHONG THE - phan chung cua I04",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D25",
+          "registered_by_ruling": "FIX7",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC55",
+          "label": "SC55",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Usage khong biet duoc ghi la `unknown` voi ba truong NULL - mat duong cua I14",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D44",
+          "registered_by_ruling": "FIX7",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        },
+        {
+          "anchor_id": "SRC-PLAN:SC56",
+          "label": "SC56",
+          "line": null,
+          "allocation_group": "post-§13",
+          "subject_vi": "Ghi 0 cho usage khong biet, tu bat fallback, hoac dem attempt la ket qua - ba phan chung cua I14 va I16",
+          "origin_package": "PC09",
+          "maps_to_req": "REQ-D44",
+          "registered_by_ruling": "FIX7",
+          "note": "Khong co trong van ban SRC-PLAN §13; la scenario phat sinh, dang ky qua ruling cua Coordinator. `line: null` co nghia khong phai trich dan nguon."
+        }
+      ],
+      "gates": [
+        {
+          "anchor_id": "SRC-PLAN:G0",
+          "label": "G0",
+          "line": 464,
+          "title": "Baseline"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G1",
+          "label": "G1",
+          "line": 465,
+          "title": "Boundaries"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G2",
+          "label": "G2",
+          "line": 466,
+          "title": "Data/workflow"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G3",
+          "label": "G3",
+          "line": 467,
+          "title": "Domain contracts"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G4",
+          "label": "G4",
+          "line": 468,
+          "title": "Auditable baseline"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G5",
+          "label": "G5",
+          "line": 469,
+          "title": "Task ready"
+        },
+        {
+          "anchor_id": "SRC-PLAN:SP1",
+          "label": "SP1",
+          "line": 470,
+          "title": "Feasibility probe"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G6",
+          "label": "G6",
+          "line": 471,
+          "title": "Integration/live"
+        },
+        {
+          "anchor_id": "SRC-PLAN:G7",
+          "label": "G7",
+          "line": 472,
+          "title": "Product acceptance"
+        }
+      ]
+    },
+    "counts": {
+      "spec_sections": 57,
+      "spec_decisions": 59,
+      "spec_acceptance_criteria": 18,
+      "spec_assumptions": 7,
+      "spec_p0_rows": 12,
+      "spec_deferred_rows": 5,
+      "spec_out_of_scope_bullets": 6,
+      "spec_open_questions": 10,
+      "plan_sections": 44,
+      "plan_blockers": 17,
+      "plan_invariants": 15,
+      "plan_error_codes": 16,
+      "plan_scenarios": 56,
+      "plan_gates": 9
+    }
+  }
+}

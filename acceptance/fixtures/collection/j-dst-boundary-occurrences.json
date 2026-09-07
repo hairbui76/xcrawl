@@ -1,0 +1,179 @@
+{
+  "fixture_id": "j-dst-boundary-occurrences",
+  "title": "Ranh giới DST: giờ bị nhảy sinh đúng một occurrence, giờ lặp cũng sinh đúng một",
+  "purpose": "SC34. Hai quy tắc DST-01/DST-02 của `contracts/state/run.yaml` §7. `schedule_occurrence_id` suy ra từ GIỜ ĐỊA PHƯƠNG DANH NGHĨA nên DST không thể sinh hai occurrence cho một mốc.",
+  "scenario_refs": [
+    "SC34"
+  ],
+  "invariant_refs": [
+    "I06",
+    "I13"
+  ],
+  "decision_refs": [
+    "B08",
+    "AMD-B08",
+    "ADR-0007"
+  ],
+  "requirement_refs": [
+    "REQ-D13",
+    "REQ-D56",
+    "REQ-AC02",
+    "REQ-OQ06",
+    "REQ-S8.2-08"
+  ],
+  "source_refs": [
+    "SRC-PLAN §8.1",
+    "SRC-PLAN §11 PC05",
+    "SRC-SPEC §5.2",
+    "SRC-SPEC §9.2",
+    "SRC-SPEC §9.3"
+  ],
+  "fixture_format_version": "1.0.0",
+  "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+  "contract_refs": [
+    "contracts/state/run.yaml",
+    "precode/adr/ADR-0007-timezone-handling.md"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "x-contract": {
+    "contract_id": "CT-fixture-j-dst-boundary-occurrences",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §11 PC05"
+    ],
+    "requirement_refs": [
+      "REQ-D13",
+      "REQ-D56",
+      "REQ-AC02",
+      "REQ-OQ06",
+      "REQ-S8.2-08"
+    ],
+    "decision_refs": [
+      "B08",
+      "AMD-B08",
+      "ADR-0007"
+    ],
+    "invariant_refs": [
+      "I06",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-job-service",
+      "MOD-ingest-service"
+    ],
+    "dependencies": [
+      "contracts/state/run.yaml",
+      "precode/adr/ADR-0007-timezone-handling.md"
+    ],
+    "scope": "SC34. Hai quy tắc DST-01/DST-02 của `contracts/state/run.yaml` §7. `schedule_occurrence_id` suy ra từ GIỜ ĐỊA PHƯƠNG DANH NGHĨA nên DST không thể sinh hai occurrence cho một mốc.",
+    "verification": "EV-PC05-07 (SELF_VALIDATION) + evidence/tools/e0_check.py E0-14/E0-15 (đọc-only). Fixture TĨNH, chạy offline, `evidence_status: NOT_RUN`.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "annotation_rule": "R4-01: mọi khóa dưới `given.rows.<entity>[]` / `expected.rows.<entity>[]` hoặc là cột có thật trong contracts/data/entities.yaml, hoặc bắt đầu bằng `_`, hoặc mang `pending_cr`."
+  },
+  "given": {
+    "rows": {
+      "schedule_occurrence": []
+    },
+    "_timezone": "Một IANA timezone CÓ DST do Owner chọn (fake-clock). `Asia/Ho_Chi_Minh` mặc định KHÔNG có DST nên hai quy tắc này chưa kích hoạt với giá trị hiện tại — xem `needs_live_or_human_vi` của SC34.",
+    "_slots_local": [
+      "02:30",
+      "01:30"
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T00:00:00.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "scheduler.evaluate_due",
+      "description": "DST-01 — giờ địa phương danh nghĩa 02:30 KHÔNG TỒN TẠI (đồng hồ nhảy 02:00→03:00). Quy tắc: chạy tại INSTANT ĐẦU TIÊN >= giờ danh nghĩa; KHÔNG bỏ occurrence.",
+      "performed_by": "MOD-scheduler",
+      "_resolved_rule": "resolved_utc = min{t : local(t) >= nominal_local}"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T00:01:00.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "job.enqueue_scheduled_run",
+      "description": "Sinh ĐÚNG một run cho occurrence DST-01.",
+      "performed_by": "MOD-job-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T01:00:00.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "scheduler.evaluate_due",
+      "description": "DST-02 — giờ địa phương danh nghĩa 01:30 XẢY RA HAI LẦN. Quy tắc: lấy lần xuất hiện ĐẦU (instant UTC nhỏ hơn); lần thứ hai KHÔNG phải occurrence riêng.",
+      "performed_by": "MOD-scheduler",
+      "_resolved_rule": "resolved_utc = min{t : local(t) == nominal_local}"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T01:01:00.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "job.enqueue_scheduled_run",
+      "description": "Sinh ĐÚNG một run cho occurrence DST-02.",
+      "performed_by": "MOD-job-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "schedule_occurrence": [
+        {
+          "id": "8G712YS7CWVX6AD3G8FSAP1ZMM",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "due_at": "2026-09-07T00:30:00.000Z",
+          "state": "enqueued",
+          "coalesced_into_run_id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+          "_case": "DST-01 gap — chạy tại instant kết thúc khoảng nhảy"
+        },
+        {
+          "id": "NSWJZQY8S5GE33J4XH4A7F601X",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "due_at": "2026-09-07T01:30:00.000Z",
+          "state": "enqueued",
+          "coalesced_into_run_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "_case": "DST-02 fold — lần xuất hiện ĐẦU"
+        }
+      ],
+      "run": [
+        {
+          "id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "trigger_type": "scheduled",
+          "status": "queued",
+          "phase": "collecting",
+          "_case": "DST-01"
+        },
+        {
+          "id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "trigger_type": "scheduled",
+          "status": "queued",
+          "phase": "collecting",
+          "_case": "DST-02"
+        }
+      ]
+    },
+    "counts": {
+      "schedule_occurrence_total": 2,
+      "run_total": 2,
+      "occurrences_skipped": 0,
+      "runs_per_nominal_slot": 1
+    }
+  },
+  "forbidden_effects": [
+    "Bỏ occurrence khi giờ danh nghĩa không tồn tại (tạo lỗ hổng bao phủ trong ngày đó).",
+    "Sinh hai run cho giờ lặp.",
+    "Dùng đồng hồ của collector thay cho timezone đã lưu (AMD-B08).",
+    "Suy `schedule_occurrence_id` từ instant UTC đã giải thay vì từ giờ địa phương danh nghĩa — làm vậy thì giờ lặp sinh hai id."
+  ],
+  "oracle_vi": "`COUNT(schedule_occurrence) = 2` và `COUNT(run) = 2`; mỗi mốc danh nghĩa sinh ĐÚNG một run; `schedule_occurrence_id` duy nhất cho mỗi mốc; không occurrence nào có `state='skipped_stale'`."
+}

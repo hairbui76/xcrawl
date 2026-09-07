@@ -1,0 +1,415 @@
+{
+  "fixture_id": "FX-RP-B",
+  "title": "Bỏ tag rồi thêm lại → mục cũ tái xuất hiện, dùng lại analysis, provider call delta = 0",
+  "purpose": "Khóa REQ-AC06 / I04 ở phía report: đổi tag là lớp subscription, không đụng lớp nhãn; analysis key không chứa tag nên không có generation mới và không có attempt mới.",
+  "scenario_refs": [
+    "SC06"
+  ],
+  "invariant_refs": [
+    "I04",
+    "I05"
+  ],
+  "decision_refs": [
+    "B01",
+    "B07",
+    "AMD-B01"
+  ],
+  "requirement_refs": [
+    "REQ-AC06",
+    "REQ-D25",
+    "REQ-D26",
+    "REQ-S8.2-03"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.5",
+    "SRC-SPEC §8.2 hàng 3",
+    "SRC-SPEC §12 AC-06",
+    "SRC-PLAN §7 I04"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "note": "Tiếp nối trạng thái cuối của FX-RP-A: tag T đã bị bỏ, 4 work A1..A4 còn nguyên trong kho.",
+    "settings": {
+      "reporting.default_similarity_threshold": 0.8,
+      "reporting.max_items_per_period": 50
+    },
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "counters_before": {
+      "provider_call_counter[task_type='summary']": 5,
+      "analysis_generation": 5,
+      "analysis_attempt": 5
+    },
+    "rows": {
+      "tag": [
+        {
+          "id": "01JTAGGNN00000000000000000",
+          "text": "graph neural networks",
+          "state": "removed",
+          "removed_at": "2026-09-06T12:00:00.000Z"
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWN10000000000000000000",
+          "sequence": 1,
+          "window_from": "2026-09-05T00:00:00.000Z",
+          "window_to": "2026-09-06T00:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 900,
+          "predecessor_window_id": null
+        },
+        {
+          "id": "01JCWN20000000000000000000",
+          "sequence": 2,
+          "window_from": "2026-09-06T00:00:00.000Z",
+          "window_to": "2026-09-06T01:00:04.000Z",
+          "ingest_sequence_from": 900,
+          "ingest_sequence_to": 906,
+          "predecessor_window_id": "01JCWN10000000000000000000"
+        }
+      ],
+      "analysis": [
+        {
+          "target_key": "work:01JWRKA1000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "payload_hash": "sha256:28a9566a1451b1619d292e2770b585ae4309c108dc5389d48ad0e04e9f821fbe"
+        },
+        {
+          "target_key": "work:01JWRKA2000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "payload_hash": "sha256:d93979d1031a9c8aee14b694ca9440c08ecc640382e28b780533e9eb249d5105"
+        },
+        {
+          "target_key": "work:01JWRKA3000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "payload_hash": "sha256:e3ade8c636dc5258af9deabf977709b7410567608b0dd61402da4d0c411f5727"
+        },
+        {
+          "target_key": "work:01JWRKA4000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "payload_hash": "sha256:21161d080c34584bb16746cf2366ac11e318ffde008f739f61518b536376a5ac"
+        }
+      ],
+      "backfill_ledger": [
+        {
+          "tag_id": "01JTAGGNN00000000000000000",
+          "subscription_identity_hash": "sha256:2981554723c43055016f6ae53cfe2117efb80bdc47144811cb9886e517cf400b",
+          "activation_sequence": 1,
+          "backfill_days": 7,
+          "entitlement": "consumed",
+          "entitlement_reason": "first_activation",
+          "consumed_in_report_id": "01JRPT00000000000000000000",
+          "consumed_at": "2026-09-01T02:30:00.000Z"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-13T02:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.create",
+      "description": "Owner thêm LẠI tag 'graph neural networks'. Sinh tag.id mới nhưng cùng normalized_text.",
+      "produces": {
+        "tag": {
+          "id": "01JTAGGNN20000000000000000",
+          "text": "graph neural networks",
+          "state": "active"
+        },
+        "backfill_ledger": {
+          "activation_sequence": 2,
+          "entitlement": "denied_already_consumed",
+          "entitlement_reason": "Subscription identity này đã tiêu thụ backfill ở activation trước; muốn đào sâu thì dùng tag.rescan_corpus (SRC-SPEC §8.2 hàng 4)."
+        },
+        "tag_config_version": {
+          "id": "01JTCV30000000000000000000",
+          "sequence": 3,
+          "content_hash": "sha256:025ca8ac20259dfc3edd27ed7e200684a6ab339fd2f865f6082ef819d018f14e"
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-13T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Selection lại chọn A1..A4 vì chúng có hàng pending_item_ledger mở từ kỳ trước? KHÔNG — chúng được chọn vì nằm trong phần nới của kỳ này theo cửa sổ mới cộng pending; xem expected."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-13T13:00:02.000Z",
+      "actor": "MOD-report-service",
+      "operation": "analysis.enqueue_tasks",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Cùng analysis_key đã có kết quả valid → task bị BỎ QUA, không tạo task mới (B07/D25).",
+      "performed_by": "MOD-analysis-service"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-13T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Commit kỳ mới."
+    }
+  ],
+  "expected": {
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPT20000000000000000000",
+      "report_build_id": "4e46f891-9051-4c52-bb72-5955954bfebd",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWN30000000000000000000",
+        "sequence": 3,
+        "coverage_from": "2026-09-06T01:00:04.000Z",
+        "coverage_to": "2026-09-13T12:00:00.000Z",
+        "ingest_sequence_from": 906,
+        "ingest_sequence_to": 1400,
+        "predecessor_window_id": "01JCWN20000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCV30000000000000000000",
+        "sequence": 3,
+        "content_hash": "sha256:025ca8ac20259dfc3edd27ed7e200684a6ab339fd2f865f6082ef819d018f14e",
+        "frozen_at": "2026-09-13T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMB100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKA1000000000000000000",
+            "target_key": "work:01JWRKA1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKA1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGGNN20000000000000000",
+              "tag_text": "graph neural networks",
+              "matched_via": "tag",
+              "score": 0.9412,
+              "threshold_applied": 0.8,
+              "matched_label_text": "graph neural networks for molecules"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAA1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:28a9566a1451b1619d292e2770b585ae4309c108dc5389d48ad0e04e9f821fbe",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T01:30:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T01:00:00.000Z",
+          "ingest_sequence": 901
+        },
+        {
+          "report_item_id": "01JRTEMB200000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKA2000000000000000000",
+            "target_key": "work:01JWRKA2000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKA2000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGGNN20000000000000000",
+              "tag_text": "graph neural networks",
+              "matched_via": "tag",
+              "score": 0.931,
+              "threshold_applied": 0.8,
+              "matched_label_text": "graph neural networks for molecules"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAA2000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:d93979d1031a9c8aee14b694ca9440c08ecc640382e28b780533e9eb249d5105",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T01:30:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T01:00:01.000Z",
+          "ingest_sequence": 902
+        },
+        {
+          "report_item_id": "01JRTEMB300000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKA3000000000000000000",
+            "target_key": "work:01JWRKA3000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKA3000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGGNN20000000000000000",
+              "tag_text": "graph neural networks",
+              "matched_via": "tag",
+              "score": 0.9008,
+              "threshold_applied": 0.8,
+              "matched_label_text": "graph neural networks for molecules"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAA3000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:e3ade8c636dc5258af9deabf977709b7410567608b0dd61402da4d0c411f5727",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T01:30:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T01:00:02.000Z",
+          "ingest_sequence": 903
+        },
+        {
+          "report_item_id": "01JRTEMB400000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKA4000000000000000000",
+            "target_key": "work:01JWRKA4000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKA4000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGGNN20000000000000000",
+              "tag_text": "graph neural networks",
+              "matched_via": "tag",
+              "score": 0.8721,
+              "threshold_applied": 0.8,
+              "matched_label_text": "graph neural networks for molecules"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAA4000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:21161d080c34584bb16746cf2366ac11e318ffde008f739f61518b536376a5ac",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T01:30:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T01:00:03.000Z",
+          "ingest_sequence": 904
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCB1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "below_min_sample",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null,
+        "backfill_applied_tag_ids": []
+      },
+      "built_at": "2026-09-13T13:00:00.000Z",
+      "published_at": "2026-09-13T13:00:05.000Z",
+      "content_hash": "sha256:2ff4bf1166532ccf6b099bf347a7cd6038ab4ab17063278ccb48daa7d8c7c9c7",
+      "evidence_refs": []
+    },
+    "counters_after": {
+      "provider_call_counter[task_type='summary']": 5,
+      "analysis_generation": 5,
+      "analysis_attempt": 5
+    },
+    "counts": {
+      "report_item[report_id=REP2]": 4,
+      "backfill_ledger[consumed_in_report_id IS NOT NULL AND subscription_identity_hash=sha('sub:graph neural networks')]": 1
+    },
+    "row_oracles": [
+      "provider call counter delta = 0 cho cùng analysis key và generation (AMD-B07).",
+      "analysis.payload_hash của A1..A4 sau bằng trước từng byte.",
+      "Hàng backfill_ledger activation 2 có entitlement='denied_already_consumed' → coverage_from KHÔNG bị kéo lùi 7 ngày."
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo analysis_generation mới cho A1..A4 chỉ vì tag được thêm lại.",
+    "Tạo analysis_attempt mới cho A1..A4.",
+    "Tiêu thụ backfill lần thứ hai cho cùng subscription_identity_hash.",
+    "Ghi first_announced_ledger lần thứ hai cho A1..A4 (nếu chúng đã từng được công bố)."
+  ]
+}

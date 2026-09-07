@@ -1,0 +1,367 @@
+{
+  "fixture_id": "FX-ID-F",
+  "title": "Replay cùng idempotency key → cùng receipt, số đếm không đổi",
+  "purpose": "I02 và SRC-PLAN §10 INGEST_ACK_LOST: ACK chỉ sau commit; timeout là KHÔNG BIẾT KẾT QUẢ, không phải rollback; replay không nhân đôi.",
+  "scenario_refs": [
+    "SC21"
+  ],
+  "invariant_refs": [
+    "I02"
+  ],
+  "decision_refs": [
+    "B05",
+    "AMD-B05"
+  ],
+  "requirement_refs": [
+    "REQ-AC04",
+    "REQ-S9.2-01"
+  ],
+  "source_refs": [
+    "SRC-PLAN §5.1",
+    "SRC-PLAN §9.1",
+    "SRC-PLAN §10 INGEST_ACK_LOST",
+    "SRC-SPEC §9.2",
+    "contracts/data/entities.yaml#transactions/TXN-ingest-batch"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/ingest-batch.schema.json",
+  "expected_validation": "accept",
+  "batch": {
+    "request_id": "01JREQF1000000000000000000",
+    "schema_version": "0.1.0",
+    "idempotency_key": "ingest-2026-09-06-run-f-batch-0001",
+    "payload_hash": "sha256:1af4cef5fc4f28fe786f6116cfc522f39ad7b5b78d2ab9d1553efadf3293139c",
+    "job_id": "01JJ0BF1000000000000000000",
+    "lease_id": "01J1EASEF10000000000000000",
+    "lease_epoch": 1,
+    "items": [
+      {
+        "x_post_id": "1900000000000000101",
+        "author": {
+          "handle": "acc1"
+        },
+        "url": "https://x.com/acc1/status/1900000000000000101",
+        "text": "Bài đã có 1",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000102",
+        "author": {
+          "handle": "acc2"
+        },
+        "url": "https://x.com/acc2/status/1900000000000000102",
+        "text": "Bài đã có 2",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000103",
+        "author": {
+          "handle": "acc3"
+        },
+        "url": "https://x.com/acc3/status/1900000000000000103",
+        "text": "Bài đã có 3",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000201",
+        "author": {
+          "handle": "acc1"
+        },
+        "url": "https://x.com/acc1/status/1900000000000000201",
+        "text": "Bài mới 1",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000202",
+        "author": {
+          "handle": "acc2"
+        },
+        "url": "https://x.com/acc2/status/1900000000000000202",
+        "text": "Bài mới 2",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000203",
+        "author": {
+          "handle": "acc3"
+        },
+        "url": "https://x.com/acc3/status/1900000000000000203",
+        "text": "Bài mới 3",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000204",
+        "author": {
+          "handle": "acc4"
+        },
+        "url": "https://x.com/acc4/status/1900000000000000204",
+        "text": "Bài mới 4",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000205",
+        "author": {
+          "handle": "acc5"
+        },
+        "url": "https://x.com/acc5/status/1900000000000000205",
+        "text": "Bài mới 5",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000206",
+        "author": {
+          "handle": "acc6"
+        },
+        "url": "https://x.com/acc6/status/1900000000000000206",
+        "text": "Bài mới 6",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      },
+      {
+        "x_post_id": "1900000000000000207",
+        "author": {
+          "handle": "acc7"
+        },
+        "url": "https://x.com/acc7/status/1900000000000000207",
+        "text": "Bài mới 7",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": []
+      }
+    ],
+    "client_checkpoint_proposal": {
+      "phase": "collecting",
+      "cursor_token": "cursor-page-2",
+      "cursor_state": "valid",
+      "items_collected_in_run": 0,
+      "stop_hint": "none"
+    }
+  },
+  "given": {
+    "rows": {
+      "post": [
+        {
+          "id": "01JP0STF100000000000000000",
+          "x_post_id": "1900000000000000101",
+          "ingest_sequence": 91,
+          "identity_resolution": "resolved_post_only",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STF100000000000000000",
+            "target_key": "post:01JP0STF100000000000000000",
+            "x_post_id": "1900000000000000101",
+            "identity_resolution": "resolved_post_only"
+          }
+        },
+        {
+          "id": "01JP0STF200000000000000000",
+          "x_post_id": "1900000000000000102",
+          "ingest_sequence": 92,
+          "identity_resolution": "resolved_post_only",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STF200000000000000000",
+            "target_key": "post:01JP0STF200000000000000000",
+            "x_post_id": "1900000000000000102",
+            "identity_resolution": "resolved_post_only"
+          }
+        },
+        {
+          "id": "01JP0STF300000000000000000",
+          "x_post_id": "1900000000000000103",
+          "ingest_sequence": 93,
+          "identity_resolution": "resolved_post_only",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STF300000000000000000",
+            "target_key": "post:01JP0STF300000000000000000",
+            "x_post_id": "1900000000000000103",
+            "identity_resolution": "resolved_post_only"
+          }
+        }
+      ],
+      "ingest_receipt": [],
+      "checkpoint": []
+    },
+    "counts": {
+      "post": 3,
+      "ingest_receipt": 0,
+      "checkpoint": 0,
+      "max_ingest_sequence": 93
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T08:00:05.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "transaction": "TXN-ingest-batch",
+      "batch_ref": "$.batch",
+      "description": "10 item: 3 trùng x_post_id đã có, 7 mới. Transaction commit thành công.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T08:00:06.000Z",
+      "actor": "network",
+      "description": "Kết nối đứt SAU COMMIT, TRƯỚC khi collector nhận 200. Collector ở trạng thái KHÔNG BIẾT.",
+      "event_type": "ack_lost"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T08:00:30.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Gửi lại: request_id MỚI, idempotency_key và payload_hash GIỮ NGUYÊN.",
+      "batch": {
+        "request_id": "01JREQF2000000000000000000",
+        "idempotency_key": "ingest-2026-09-06-run-f-batch-0001",
+        "payload_hash": "sha256:1af4cef5fc4f28fe786f6116cfc522f39ad7b5b78d2ab9d1553efadf3293139c",
+        "note": "payload_hash tính trên payload_core = {schema_version, items, client_checkpoint_proposal}; request_id bị loại khỏi hash chính vì lý do này."
+      },
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T08:01:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Trường hợp đối chứng: CÙNG idempotency_key nhưng payload đã đổi (text của item đầu bị sửa) ⇒ payload_hash khác.",
+      "batch_payload_hash": "sha256:626886c558113e534bdca05715a23f0a044538c24b1eeb729b10f23e2e95cc4b",
+      "expected_error": "IDEMPOTENCY_CONFLICT",
+      "performed_by": "MOD-ingest-service"
+    }
+  ],
+  "expected": {
+    "after_event_1": {
+      "rows": {
+        "ingest_receipt": [
+          {
+            "id": "01JRECE1PTF100000000000000",
+            "idempotency_key": "ingest-2026-09-06-run-f-batch-0001",
+            "payload_hash": "sha256:1af4cef5fc4f28fe786f6116cfc522f39ad7b5b78d2ab9d1553efadf3293139c",
+            "items_received": 10,
+            "posts_inserted": 7,
+            "posts_duplicate": 3,
+            "items_rejected": 0,
+            "works_linked": 0,
+            "checkpoint_id": "01JCHKPTF10000000000000000",
+            "max_ingest_sequence": 100,
+            "receipt_hash": {
+              "symbolic": "H_RCf",
+              "computed_by": "sha256(JCS({idempotency_key,payload_hash,counts,checkpoint_id,max_ingest_sequence}))",
+              "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+            },
+            "committed_at": "2026-09-06T08:00:05.000Z"
+          }
+        ],
+        "checkpoint": [
+          {
+            "id": "01JCHKPTF10000000000000000",
+            "run_id": "01JRVNF1000000000000000000",
+            "sequence": 1,
+            "cursor_token": "cursor-page-2",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 100,
+            "created_by_receipt_id": "01JRECE1PTF100000000000000",
+            "created_at": "2026-09-06T08:00:05.000Z"
+          }
+        ]
+      },
+      "counts": {
+        "post": 10,
+        "ingest_receipt": 1,
+        "checkpoint": 1,
+        "max_ingest_sequence": 100
+      }
+    },
+    "after_event_3": {
+      "counts": {
+        "post": 10,
+        "ingest_receipt": 1,
+        "checkpoint": 1,
+        "max_ingest_sequence": 100
+      },
+      "response": {
+        "http_status_class": "success",
+        "receipt_id": "01JRECE1PTF100000000000000",
+        "receipt_hash": {
+          "symbolic": "H_RCf",
+          "computed_by": "giống hệt after_event_1",
+          "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+        },
+        "replayed": true
+      },
+      "deltas_must_be_zero": [
+        "post",
+        "ingest_receipt",
+        "checkpoint",
+        "post_work",
+        "work",
+        "identity_alias",
+        "max_ingest_sequence"
+      ]
+    },
+    "after_event_4": {
+      "counts": {
+        "post": 10,
+        "ingest_receipt": 1,
+        "checkpoint": 1
+      },
+      "error": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "rule": "cùng key + payload khác ⇒ từ chối, KHÔNG ghi đè (SRC-PLAN §5.1)"
+      }
+    },
+    "hash_oracles": [
+      {
+        "assert": "receipt_hash sau replay == receipt_hash lần commit đầu",
+        "symbolic": "H_RCf"
+      },
+      {
+        "assert": "posts_inserted + posts_duplicate + items_rejected == items_received (7+3+0=10)"
+      }
+    ],
+    "invariant_walkthrough": {
+      "before_commit": "Không post mới, không receipt, MAX(ingest_sequence)=93, checkpoint chưa tồn tại.",
+      "after_commit": "7 post + 1 receipt + 1 checkpoint xuất hiện ĐỒNG THỜI; không có trạng thái trung gian quan sát được.",
+      "never_observable": "checkpoint.acked_through_ingest_sequence=100 khi các post 94..100 chưa bền."
+    }
+  },
+  "forbidden_effects": [
+    "Gửi ACK trước khi COMMIT trả về thành công.",
+    "Ghi checkpoint ở một transaction riêng sau ingest.",
+    "Tạo checkpoint hoặc receipt thứ hai khi replay.",
+    "Tăng posts_inserted khi replay.",
+    "Cập nhật discovered_at của 3 post đã tồn tại.",
+    "Ghi đè receipt cũ khi payload_hash khác.",
+    "Gọi arXiv/OpenAlex hoặc Telegram bên trong transaction."
+  ]
+}

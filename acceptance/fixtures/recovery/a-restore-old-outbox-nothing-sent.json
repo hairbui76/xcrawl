@@ -1,0 +1,151 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-a",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D58",
+      "REQ-AC14"
+    ],
+    "decision_refs": [
+      "B11",
+      "AMD-B11",
+      "ADR-0005"
+    ],
+    "invariant_refs": [
+      "I15",
+      "I09"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "a",
+  "title_vi": "Restore với outbox cũ pending/unknown → không gửi gì",
+  "scenario_refs": [
+    "SC27"
+  ],
+  "invariant_refs": [
+    "I15",
+    "I09"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "storage_health": "healthy",
+    "restore_generation_current": 4,
+    "snapshot": {
+      "backup_snapshot_id": "BS-01",
+      "artifact_sha256": "<sha256 của artifact>",
+      "manifest_sha256": "<sha256 manifest>",
+      "counts": {
+        "outbox_intent.pending": 2,
+        "outbox_intent.sent": 5,
+        "delivery_part.unknown": 1,
+        "delivery_part.sent": 9
+      }
+    },
+    "outbox_in_snapshot": [
+      {
+        "id": "OI-01",
+        "intent_type": "report_digest",
+        "dispatch_state": "pending",
+        "restore_generation": 4
+      },
+      {
+        "id": "OI-02",
+        "intent_type": "telegram_alert",
+        "dispatch_state": "retry_wait",
+        "restore_generation": 4
+      },
+      {
+        "id": "OI-03",
+        "intent_type": "report_digest",
+        "dispatch_state": "sent",
+        "restore_generation": 4
+      }
+    ],
+    "delivery_parts_in_snapshot": [
+      {
+        "id": "DP-07",
+        "state": "unknown"
+      },
+      {
+        "id": "DP-08",
+        "state": "sent"
+      }
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.restore_snapshot",
+      "edge_assertion": "allowed",
+      "input": {
+        "backup_snapshot_id": "BS-01",
+        "restore_request_id": "RR-01"
+      }
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "edge_assertion": "allowed",
+      "note_vi": "Dispatcher thức dậy sau khi tiến trình khởi động lại và thử lấy intent kế tiếp."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.verify_snapshot",
+      "edge_assertion": "allowed",
+      "input": {
+        "backup_snapshot_id": "BS-01"
+      }
+    }
+  ],
+  "expected": {
+    "storage_health_after_seq1": "recovery_required",
+    "restore_record": {
+      "new_restore_generation": 5,
+      "leases_revoked": ">= 0",
+      "dispatcher_unlocked_at": null
+    },
+    "seq2_result": {
+      "error_code": "RESTORE_UNVERIFIED",
+      "messages_sent": 0
+    },
+    "outbox_generation_rule_vi": "Cả OI-01 và OI-02 mang restore_generation=4 < 5 nên KHÔNG đủ điều kiện gửi; chỉ intent mang generation 5 mới được dispatcher xét.",
+    "delivery_part_DP-07": "unknown (không đổi)",
+    "reconciliation_complete": false
+  },
+  "forbidden_effects": [
+    "Bất kỳ outbound message nào tới Telegram (đếm phải = 0)",
+    "Chuyển DP-07 từ unknown sang sent hoặc failed một cách tự động",
+    "Nâng restore_generation của OI-01/OI-02 mà không có quyết định của Operator",
+    "Chuyển storage.health sang healthy theo thời gian"
+  ],
+  "oracle_vi": "COUNT(outbound_telegram_send) == 0 từ seq1 tới seq3; storage.health == 'recovery_required'; reconciliation_complete(RR-01) == false."
+}

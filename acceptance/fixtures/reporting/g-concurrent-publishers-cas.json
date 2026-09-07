@@ -1,0 +1,133 @@
+{
+  "fixture_id": "FX-RP-G",
+  "title": "Hai publisher đồng thời → đúng một thắng CAS, bên thua rollback và rebuild",
+  "purpose": "Khóa I06 ở mức đồng thời: UNIQUE(owner_id, predecessor_window_id) là trọng tài; bên thua KHÔNG được publish kỳ chồng và KHÔNG được để lại report_item mồ côi.",
+  "scenario_refs": [
+    "SC08"
+  ],
+  "invariant_refs": [
+    "I05",
+    "I06"
+  ],
+  "decision_refs": [
+    "B04",
+    "AMD-B04"
+  ],
+  "requirement_refs": [
+    "REQ-D27",
+    "REQ-AC08"
+  ],
+  "source_refs": [
+    "SRC-PLAN §9.2 (concurrent publisher thua CAS phải đọc lại)",
+    "SRC-PLAN §7 I06"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWNGP000000000000000000",
+          "sequence": 11,
+          "window_from": "2026-09-08T01:00:00.000Z",
+          "window_to": "2026-09-08T13:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 1500,
+          "predecessor_window_id": null
+        }
+      ]
+    },
+    "note": "Hai builder (một do lịch, một do owner bấm 'chạy ngay') cùng đọc predecessor = GP."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-09T01:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Builder A đọc expected_predecessor_window_id = GP."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-09T01:00:00.500Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Builder B đọc CÙNG expected_predecessor_window_id = GP."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-09T01:00:03.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "A commit trước: coverage_window(gw_a, predecessor=GP) thành công."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-09T01:00:03.200Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "B commit sau: vi phạm ux_coverage_window_predecessor → CONFLICT (contracts/errors.yaml), toàn bộ transaction của B rollback; bản build của B → aborted (T-RP-05)."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-09T01:00:08.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "B đọc LẠI con trỏ (nay là gw_a) và dựng lại từ đầu."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-09T01:00:11.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "B commit với predecessor = gw_a → cửa sổ thứ hai, nối liền."
+    }
+  ],
+  "expected": {
+    "counts": {
+      "coverage_window[predecessor_window_id=GP]": 1,
+      "coverage_window[predecessor_window_id=gw_a]": 1,
+      "report[status='published']": 2,
+      "report[status='aborted']": 1,
+      "report_item[report_id=GRP_B_first_attempt]": 0,
+      "backfill_ledger consumed by B's losing build": 0
+    },
+    "row_oracles": [
+      "Bản dựng đầu của B để lại đúng một hàng report status='aborted' và KHÔNG hàng report_item nào.",
+      "Kỳ của B có coverage_from = gw_a.window_to (không chồng lấn, không hở).",
+      "Lỗi trả cho B là CONFLICT, KHÔNG phải IDEMPOTENCY_CONFLICT (cùng key khác payload là chuyện khác). Mỗi lần thử lại BẮT BUỘC đọc lại predecessor mới (retry-policy.yaml cas_conflict_retries.precondition_vi)."
+    ],
+    "error_expectation": {
+      "operation": "report.publish",
+      "error_code": "CONFLICT",
+      "registered_in": "contracts/errors.yaml (operations gồm report.publish; retry_budget_ref cas_conflict_retries = 3)",
+      "note": "contracts/ports.yaml report.publish.error_codes hiện CHƯA liệt kê CONFLICT — CR-PC04-04 gửi PC01."
+    }
+  },
+  "forbidden_effects": [
+    "Hai hàng coverage_window cùng predecessor_window_id.",
+    "B retry bằng cách đổi predecessor mà GIỮ NGUYÊN tập item đã chọn (phải rebuild).",
+    "B publish một kỳ chồng lấn khoảng thời gian của A.",
+    "Để lại report_item của bản dựng thất bại.",
+    "Tiêu thụ backfill trong bản dựng thất bại của B."
+  ]
+}

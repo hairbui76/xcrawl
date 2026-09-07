@@ -1,0 +1,139 @@
+{
+  "fixture_id": "FX-ID-B",
+  "title": "Thiếu định danh → target chỉ-có-post, không đoán ID",
+  "purpose": "REQ-D33: post chỉ có ảnh chụp paper, không link → thành mục 'chỉ có post'. Không tạo work, không OCR, không đoán DOI/arXiv.",
+  "scenario_refs": [
+    "SC29"
+  ],
+  "invariant_refs": [
+    "I03"
+  ],
+  "decision_refs": [
+    "B06",
+    "B15"
+  ],
+  "requirement_refs": [
+    "REQ-D33",
+    "REQ-D21",
+    "REQ-AC11"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.2 D33",
+    "SRC-PLAN §10 SOURCE_METADATA_UNAVAILABLE",
+    "contracts/data/identity.md §4"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "work": [],
+      "identity_alias": [],
+      "post": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-05T11:00:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "transaction": "TXN-ingest-batch",
+      "description": "Một item: post có 1 ảnh chụp trang đầu paper, text không chứa link, referenced_links rỗng.",
+      "item": {
+        "x_post_id": "1900000000000000010",
+        "author": {
+          "handle": "someone"
+        },
+        "url": "https://x.com/someone/status/1900000000000000010",
+        "text": "Bài này thú vị (ảnh chụp trang đầu).",
+        "collected_at": "2026-09-05T10:59:58.000Z",
+        "media_refs": [
+          {
+            "media_type": "photo",
+            "url": "https://pbs.example.invalid/media/abc.jpg"
+          }
+        ],
+        "referenced_links": []
+      },
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-05T11:00:01.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.resolve_target",
+      "description": "Tập định danh sau chuẩn hóa là rỗng ⇒ nhánh §3 bước 4.",
+      "performed_by": "MOD-identity-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "post": [
+        {
+          "id": "01JP0STB100000000000000000",
+          "x_post_id": "1900000000000000010",
+          "identity_resolution": "resolved_post_only",
+          "discovered_at": "2026-09-05T11:00:01.000Z",
+          "ingest_sequence": 200,
+          "collected_at_client": "2026-09-05T10:59:58.000Z",
+          "_note": "discovered_at là giờ SERVER; collected_at_client được lưu nhưng không dùng làm mốc nghiệp vụ.",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STB100000000000000000",
+            "target_key": "post:01JP0STB100000000000000000",
+            "x_post_id": "1900000000000000010",
+            "identity_resolution": "resolved_post_only"
+          }
+        }
+      ],
+      "work": [],
+      "identity_alias": [],
+      "post_work": [],
+      "ingest_receipt": [
+        {
+          "id": "01JRECE1PTB100000000000000",
+          "items_received": 1,
+          "posts_inserted": 1,
+          "posts_duplicate": 0,
+          "items_rejected": 0,
+          "works_linked": 0,
+          "checkpoint_id": "01JCHKPTB10000000000000000"
+        }
+      ]
+    },
+    "counts": {
+      "post": 1,
+      "work": 0,
+      "identity_alias": 0,
+      "post_work": 0,
+      "identity_conflict__state_open": 0,
+      "ingest_receipt": 1,
+      "checkpoint": 1
+    },
+    "target_usage": {
+      "savable_target": {
+        "kind": "post",
+        "post_id": "01JP0STB100000000000000000",
+        "target_key": "post:01JP0STB100000000000000000",
+        "identity_resolution": "resolved_post_only"
+      },
+      "allowed_analysis_evidence_level": "post_only",
+      "note": "Target post được Save và được summary; evidence_level bị khóa ở 'post_only' (REQ-D21, REQ-AC11)."
+    }
+  },
+  "forbidden_effects": [
+    "Tạo hàng work với cả canonical_doi và canonical_arxiv_id là NULL.",
+    "OCR ảnh để đoán arXiv ID hoặc DOI.",
+    "Suy ra định danh từ tên tác giả hoặc tiêu đề trong ảnh.",
+    "Đặt identity_resolution = 'resolved_linked' khi không có hàng post_work.",
+    "Gán evidence_level 'abstract' hoặc 'full_text' cho target này."
+  ]
+}

@@ -1,0 +1,254 @@
+{
+  "fixture_id": "FX-ID-E",
+  "title": "Bài gốc bị xóa trên X sau khi Save → snapshot còn nguyên",
+  "purpose": "REQ-AC12 và I08(c): snapshot bất biến; xóa nguồn và khởi động lại không đổi content_hash.",
+  "scenario_refs": [
+    "SC12"
+  ],
+  "invariant_refs": [
+    "I08",
+    "I17"
+  ],
+  "decision_refs": [
+    "B01"
+  ],
+  "requirement_refs": [
+    "REQ-D55",
+    "REQ-D58",
+    "REQ-AC12"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.6 D55",
+    "SRC-SPEC §7.3",
+    "SRC-SPEC §12 AC-12"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "post": [
+        {
+          "id": "01JP0STE100000000000000000",
+          "x_post_id": "1900000000000000030",
+          "source_deleted_observed_at": null,
+          "identity_resolution": "resolved_linked",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STE100000000000000000",
+            "target_key": "post:01JP0STE100000000000000000",
+            "x_post_id": "1900000000000000030",
+            "identity_resolution": "resolved_linked"
+          }
+        }
+      ],
+      "work": [
+        {
+          "id": "01JW0RKE100000000000000000",
+          "canonical_arxiv_id": "2506.06666",
+          "identity_state": "active",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKE100000000000000000",
+            "target_key": "work:01JW0RKE100000000000000000",
+            "canonical": {
+              "arxiv_base": "2506.06666"
+            },
+            "identity_state": "active"
+          }
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YE10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKE100000000000000000",
+            "target_key": "work:01JW0RKE100000000000000000"
+          },
+          "task_type": "summary",
+          "status": "valid",
+          "evidence_level": "abstract",
+          "generation_number": 1
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAPE100000000000000000",
+          "target_key_at_save": "work:01JW0RKE100000000000000000",
+          "analysis_id_at_save": "01JANA1YE10000000000000000",
+          "content_hash": {
+            "symbolic": "H_Se",
+            "computed_by": "sha256(JCS(saved_snapshot.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_payload_contains": [
+            "post text",
+            "post url",
+            "author handle",
+            "work title",
+            "canonical arxiv id",
+            "summary",
+            "evidence_level",
+            "tag khớp"
+          ],
+          "created_at": "2026-09-05T21:00:00.000Z"
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "01JSAVEDE10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKE100000000000000000",
+            "target_key": "work:01JW0RKE100000000000000000"
+          },
+          "state": "active",
+          "saved_snapshot_id": "01JSNAPE100000000000000000",
+          "save_channel": "app",
+          "saved_at": "2026-09-05T21:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-08T08:00:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "transaction": "TXN-ingest-batch",
+      "batch_ref": "$.batch",
+      "description": "Đợt sau quan sát thấy post 1900000000000000030 đã bị xóa trên X. Quan sát đi qua CHÍNH ingest.submit_batch dưới dạng trường source_deleted_observed_at của item — KHÔNG có operation post.mark_source_deleted trong contracts/ports.yaml (ruling Coordinator PKT-PC02-FIX1).",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-08T08:00:01.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Item trùng x_post_id ⇒ posts_duplicate = 1, posts_inserted = 0. Cập nhật ĐƠN ĐIỆU post.source_deleted_observed_at (đang NULL ⇒ được ghi). KHÔNG đụng snapshot.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-08T09:00:00.000Z",
+      "actor": "environment",
+      "event_type": "system_restart",
+      "description": "Khởi động lại toàn hệ thống (REQ-AC12 'When khởi động lại hệ thống'). Sự kiện môi trường, không phải operation."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "post": [
+        {
+          "id": "01JP0STE100000000000000000",
+          "source_deleted_observed_at": "2026-09-08T08:00:01.000Z",
+          "_note": "Hàng post vẫn tồn tại; retention vô thời hạn (REQ-D58). source_deleted_observed_at là cột DUY NHẤT mà một item ingest trùng x_post_id được phép ghi, và chỉ khi đang NULL.",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STE100000000000000000",
+            "target_key": "post:01JP0STE100000000000000000",
+            "identity_resolution": "resolved_linked"
+          }
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAPE100000000000000000",
+          "content_hash": {
+            "symbolic": "H_Se",
+            "computed_by": "sha256(JCS(saved_snapshot.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Không đổi một byte qua cả ba sự kiện."
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "01JSAVEDE10000000000000000",
+          "state": "active",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKE100000000000000000",
+            "target_key": "work:01JW0RKE100000000000000000"
+          }
+        }
+      ]
+    },
+    "counts": {
+      "saved_snapshot": 1,
+      "saved_item__state_active": 1,
+      "post": 1,
+      "work__total": 1,
+      "ingest_receipt": 1,
+      "posts_inserted_in_batch": 0,
+      "posts_duplicate_in_batch": 1
+    },
+    "hash_oracles": [
+      {
+        "assert": "content_hash sau sự kiện 2 == trước sự kiện 1",
+        "symbolic": "H_Se"
+      },
+      {
+        "assert": "content_hash sau restart (sự kiện 3) == trước restart",
+        "symbolic": "H_Se"
+      },
+      {
+        "assert": "sha256(JCS(payload)) == content_hash sau restart"
+      }
+    ],
+    "read_model": {
+      "saved_screen": "Mục vẫn đọc được đầy đủ nội dung từ snapshot; UI có thể ghi chú 'nguồn đã bị xóa trên X' nhưng KHÔNG được hiển thị mục rỗng."
+    }
+  },
+  "forbidden_effects": [
+    "DELETE hoặc UPDATE saved_snapshot khi phát hiện nguồn bị xóa.",
+    "DELETE hàng post.",
+    "Chuyển saved_item sang 'unsaved' vì nguồn biến mất.",
+    "Hiển thị Saved là rỗng hoặc lỗi.",
+    "Tính lại content_hash.",
+    "Tạo một operation riêng để đánh dấu xóa nguồn (không có post.mark_source_deleted trong ports.yaml).",
+    "Ghi đè source_deleted_observed_at đã NOT NULL bằng quan sát muộn hơn.",
+    "Tạo hàng post thứ hai cho cùng x_post_id."
+  ],
+  "batch": {
+    "request_id": "01JREQE1000000000000000000",
+    "schema_version": "0.1.0",
+    "idempotency_key": "ingest-2026-09-08-run-e-batch-0001",
+    "payload_hash": "sha256:5014c76f696db97270c90eea1912af49bbc836be49f05d92d70d1d34783417b2",
+    "job_id": "01JJ0BE1000000000000000000",
+    "lease_id": "01J1EASEE10000000000000000",
+    "lease_epoch": 1,
+    "items": [
+      {
+        "x_post_id": "1900000000000000030",
+        "author": {
+          "handle": "alice"
+        },
+        "url": "https://x.com/alice/status/1900000000000000030",
+        "text": "",
+        "collected_at": "2026-09-08T07:59:55.000Z",
+        "media_refs": [],
+        "referenced_links": [],
+        "source_deleted_observed_at": "2026-09-08T08:00:01.000Z"
+      }
+    ],
+    "client_checkpoint_proposal": {
+      "phase": "collecting",
+      "cursor_token": "cursor-page-9",
+      "cursor_state": "valid",
+      "items_collected_in_run": 1,
+      "stop_hint": "none"
+    }
+  },
+  "validation_target": "contracts/schemas/ingest-batch.schema.json",
+  "expected_validation": "accept"
+}

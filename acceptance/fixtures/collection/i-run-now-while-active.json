@@ -1,0 +1,218 @@
+{
+  "fixture_id": "i-run-now-while-active",
+  "title": "Bấm 'chạy ngay' năm lần khi đang có run active → đúng MỘT run",
+  "purpose": "SC33. `run_now_active_run_policy = coalesce` (contracts/retry-policy.yaml): mỗi lời gọi trả về run đang có, KHÔNG tạo run thứ hai và KHÔNG trả lỗi — ports.yaml đã cam kết 'bấm lặp trả run đang có'.",
+  "scenario_refs": [
+    "SC33"
+  ],
+  "invariant_refs": [
+    "I10",
+    "I13"
+  ],
+  "decision_refs": [
+    "B10",
+    "AMD-B10"
+  ],
+  "requirement_refs": [
+    "REQ-D10",
+    "REQ-D14",
+    "REQ-D36",
+    "REQ-S11.3-03",
+    "REQ-S4-06"
+  ],
+  "source_refs": [
+    "SRC-PLAN §8.1",
+    "SRC-PLAN §11 PC05",
+    "SRC-SPEC §5.2",
+    "SRC-SPEC §9.2",
+    "SRC-SPEC §9.3"
+  ],
+  "fixture_format_version": "1.0.0",
+  "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+  "contract_refs": [
+    "contracts/state/run.yaml",
+    "contracts/ports.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "x-contract": {
+    "contract_id": "CT-fixture-i-run-now-while-active",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §11 PC05"
+    ],
+    "requirement_refs": [
+      "REQ-D10",
+      "REQ-D14",
+      "REQ-D36",
+      "REQ-S11.3-03",
+      "REQ-S4-06"
+    ],
+    "decision_refs": [
+      "B10",
+      "AMD-B10"
+    ],
+    "invariant_refs": [
+      "I10",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-job-service",
+      "MOD-ingest-service"
+    ],
+    "dependencies": [
+      "contracts/state/run.yaml",
+      "contracts/ports.yaml",
+      "contracts/retry-policy.yaml"
+    ],
+    "scope": "SC33. `run_now_active_run_policy = coalesce` (contracts/retry-policy.yaml): mỗi lời gọi trả về run đang có, KHÔNG tạo run thứ hai và KHÔNG trả lỗi — ports.yaml đã cam kết 'bấm lặp trả run đang có'.",
+    "verification": "EV-PC05-07 (SELF_VALIDATION) + evidence/tools/e0_check.py E0-14/E0-15 (đọc-only). Fixture TĨNH, chạy offline, `evidence_status: NOT_RUN`.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "annotation_rule": "R4-01: mọi khóa dưới `given.rows.<entity>[]` / `expected.rows.<entity>[]` hoặc là cột có thật trong contracts/data/entities.yaml, hoặc bắt đầu bằng `_`, hoặc mang `pending_cr`."
+  },
+  "given": {
+    "rows": {
+      "run": [
+        {
+          "id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "trigger_type": "scheduled",
+          "phase": "collecting",
+          "status": "running",
+          "outcome": null,
+          "stop_reason": null,
+          "current_lease_epoch": 1,
+          "attempt_count": 1,
+          "created_at": "2026-09-07T08:00:00.000Z",
+          "_note": "Run đang chạy trước khi Owner bấm 'chạy ngay'."
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T08:31:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "run.run_now",
+      "description": "Lời gọi thứ 1: `request_id` mới, từ app. Response trả `run_id` đang có kèm lý do.",
+      "performed_by": "MOD-job-service",
+      "request_body": {
+        "request_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "status": "running",
+        "created_new_run": false,
+        "reason_vi": "Đang có một đợt chạy. `run-now` trả về đợt đang chạy, không tạo đợt thứ hai."
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T08:32:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "run.run_now",
+      "description": "Lời gọi thứ 2: `request_id` mới, từ app. Response trả `run_id` đang có kèm lý do.",
+      "performed_by": "MOD-job-service",
+      "request_body": {
+        "request_id": "73YCH102BFJ8NDMYFV64SS8TK7"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "status": "running",
+        "created_new_run": false,
+        "reason_vi": "Đang có một đợt chạy. `run-now` trả về đợt đang chạy, không tạo đợt thứ hai."
+      }
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T08:33:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "run.run_now",
+      "description": "Lời gọi thứ 3: `request_id` mới, từ app. Response trả `run_id` đang có kèm lý do.",
+      "performed_by": "MOD-job-service",
+      "request_body": {
+        "request_id": "MCKXET53RR7SJ6SZW4VNPJDV0G"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "status": "running",
+        "created_new_run": false,
+        "reason_vi": "Đang có một đợt chạy. `run-now` trả về đợt đang chạy, không tạo đợt thứ hai."
+      }
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T08:34:00.000Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.run_now",
+      "description": "Lời gọi thứ 4: `request_id` mới, từ Telegram. Response trả `run_id` đang có kèm lý do.",
+      "performed_by": "MOD-job-service",
+      "request_body": {
+        "request_id": "1N8EBKA451WAFZY09DG6KBJWDS"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "status": "running",
+        "created_new_run": false,
+        "reason_vi": "Đang có một đợt chạy. `run-now` trả về đợt đang chạy, không tạo đợt thứ hai."
+      }
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-07T08:35:00.000Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.run_now",
+      "description": "Lời gọi thứ 5: `request_id` mới, từ Telegram. Response trả `run_id` đang có kèm lý do.",
+      "performed_by": "MOD-job-service",
+      "request_body": {
+        "request_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "status": "running",
+        "created_new_run": false,
+        "reason_vi": "Đang có một đợt chạy. `run-now` trả về đợt đang chạy, không tạo đợt thứ hai."
+      }
+    }
+  ],
+  "expected": {
+    "rows": {
+      "run": [
+        {
+          "id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "status": "running",
+          "outcome": null,
+          "current_lease_epoch": 1,
+          "_note": "Không cột nào đổi. Không hàng `run` nào được thêm."
+        }
+      ]
+    },
+    "counts": {
+      "run_total": 1,
+      "run_non_terminal": 1,
+      "run_created_by_these_events": 0
+    },
+    "_responses_all_same_run_id": true
+  },
+  "forbidden_effects": [
+    "Tạo run thứ hai.",
+    "Resume một run đang `needs_user` (AMD-B10; xem SC45).",
+    "Trả lỗi cho lần bấm thứ hai — hợp đồng đã cam kết 'bấm lặp trả run đang có'.",
+    "Cấp lease mới."
+  ],
+  "oracle_vi": "`COUNT(run WHERE status NOT IN ('completed','failed','cancelled')) = 1` sau cả năm lời gọi; năm response chứa cùng một `run_id`; `COUNT(run)` tổng không tăng; `run.current_lease_epoch` không đổi."
+}

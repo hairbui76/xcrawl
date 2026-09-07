@@ -1,0 +1,366 @@
+{
+  "fixture_id": "FX-RP-I",
+  "title": "Identity merge sau khi đã công bố → ĐÚNG MỘT first-announcement, kế thừa ngày SỚM NHẤT",
+  "purpose": "Đóng CR-PC02-06. PC02 để moved_counts.first_announced = null; fixture này khóa policy: work thắng kế thừa first_announced_at sớm nhất, hàng kia được giữ dạng bằng chứng, report đã publish KHÔNG bị viết lại (I05, I17).",
+  "scenario_refs": [
+    "SC09",
+    "SC23"
+  ],
+  "invariant_refs": [
+    "I05",
+    "I07",
+    "I17"
+  ],
+  "decision_refs": [
+    "B06",
+    "B15",
+    "AMD-B15"
+  ],
+  "requirement_refs": [
+    "REQ-D29",
+    "REQ-AC09",
+    "REQ-AC07",
+    "REQ-D17"
+  ],
+  "source_refs": [
+    "SRC-PLAN §9.1",
+    "SRC-PLAN §7 I07",
+    "contracts/data/identity.md §6.5",
+    "SRC-SPEC §12 AC-09"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "acceptance/fixtures/identity/a-merge-doi-arxiv.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "work": [
+        {
+          "id": "01JWRKA0000000000000000000",
+          "canonical_doi": "10.1000/xyz",
+          "canonical_arxiv_id": null,
+          "identity_state": "active",
+          "first_discovered_at": "2026-09-02T01:00:00.000Z",
+          "ingest_sequence": 3001,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKA0000000000000000000",
+            "target_key": "work:01JWRKA0000000000000000000",
+            "identity_state": "active"
+          }
+        },
+        {
+          "id": "01JWRKB0000000000000000000",
+          "canonical_doi": null,
+          "canonical_arxiv_id": "2501.01234",
+          "identity_state": "active",
+          "first_discovered_at": "2026-09-01T01:00:00.000Z",
+          "ingest_sequence": 3000,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKB0000000000000000000",
+            "target_key": "work:01JWRKB0000000000000000000",
+            "identity_state": "active"
+          }
+        }
+      ],
+      "report": [
+        {
+          "id": "01JRPTA1000000000000000000",
+          "status": "published",
+          "published_at": "2026-09-01T13:00:00.000Z",
+          "content_hash": "sha256:4b2b5e924efc74f85819c56b35645758098a461dabce79009a5db8201c8717c1"
+        },
+        {
+          "id": "01JRPTA2000000000000000000",
+          "status": "published",
+          "published_at": "2026-09-02T13:00:00.000Z",
+          "content_hash": "sha256:9203a14a8240aaa9375c91536fa6edcc94a14ddd89cf9b786bb5180abcf731ba"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JRTEMA000000000000000000",
+          "report_id": "01JRPTA1000000000000000000",
+          "target_key": "work:01JWRKB0000000000000000000",
+          "item_type": "new_discovery"
+        },
+        {
+          "id": "01JRTEMA900000000000000000",
+          "report_id": "01JRPTA2000000000000000000",
+          "target_key": "work:01JWRKA0000000000000000000",
+          "item_type": "new_discovery"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "01JFANNB000000000000000000",
+          "canonical_work_id": "01JWRKB0000000000000000000",
+          "first_report_id": "01JRPTA1000000000000000000",
+          "first_announced_at": "2026-09-01T13:00:00.000Z",
+          "merge_audit_id": null,
+          "superseded_by_merge_id": null
+        },
+        {
+          "id": "01JFANNA000000000000000000",
+          "canonical_work_id": "01JWRKA0000000000000000000",
+          "first_report_id": "01JRPTA2000000000000000000",
+          "first_announced_at": "2026-09-02T13:00:00.000Z",
+          "merge_audit_id": null,
+          "superseded_by_merge_id": null
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWNA1000000000000000000",
+          "sequence": 30,
+          "window_from": "2026-08-31T13:00:00.000Z",
+          "window_to": "2026-09-01T12:50:00.000Z",
+          "ingest_sequence_from": 2900,
+          "ingest_sequence_to": 3001,
+          "predecessor_window_id": null,
+          "report_id": "01JRPTA1000000000000000000"
+        },
+        {
+          "id": "01JCWNA2000000000000000000",
+          "sequence": 31,
+          "window_from": "2026-09-01T12:50:00.000Z",
+          "window_to": "2026-09-02T12:50:00.000Z",
+          "ingest_sequence_from": 3001,
+          "ingest_sequence_to": 3002,
+          "predecessor_window_id": "01JCWNA1000000000000000000",
+          "report_id": "01JRPTA2000000000000000000"
+        }
+      ]
+    },
+    "note": "Sau đó OpenAlex khai báo DOI 10.1000/xyz ứng với arXiv 2501.01234 → bằng chứng liên kết hợp lệ (identity.md §6.1). Winner theo only_candidate_with_canonical_doi = work A."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-03T02:00:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.record_alias",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Bằng chứng bắc cầu DOI ↔ arXiv từ OpenAlex về qua MOD-research-connector; MOD-ingest-service GHI alias qua identity.record_alias với evidence_source='openalex_api'. MOD-research-connector không phải caller của operation này (ports.yaml).",
+      "performed_by": "MOD-identity-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-03T02:00:01.000Z",
+      "actor": "MOD-identity-service",
+      "operation": "identity.merge_works",
+      "transaction": "TXN-identity-merge",
+      "description": "Winner = A (only_candidate_with_canonical_doi). TRONG cùng transaction, hook first-announced của PC04 chạy: cả hai bên đều có hàng có hiệu lực → cặp (first_report_id, first_announced_at) SỚM HƠN (của B, 2026-09-01) được ghi vào hàng của winner; hàng của B nhận superseded_by_merge_id và GIỮ canonical_work_id = B làm bằng chứng lịch sử."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-03T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Kỳ kế tiếp vẫn chọn work A → phải là prior_reference với ngày 01/09."
+    }
+  ],
+  "expected": {
+    "after_event_2": {
+      "rows": {
+        "first_announced_ledger": [
+          {
+            "id": "01JFANNA000000000000000000",
+            "canonical_work_id": "01JWRKA0000000000000000000",
+            "first_report_id": "01JRPTA1000000000000000000",
+            "first_announced_at": "2026-09-01T13:00:00.000Z",
+            "merge_audit_id": "01JMRGA1000000000000000000",
+            "superseded_by_merge_id": null,
+            "_note": "Hàng CÓ HIỆU LỰC của winner: kế thừa cặp sớm nhất."
+          },
+          {
+            "id": "01JFANNB000000000000000000",
+            "canonical_work_id": "01JWRKB0000000000000000000",
+            "first_report_id": "01JRPTA1000000000000000000",
+            "first_announced_at": "2026-09-01T13:00:00.000Z",
+            "merge_audit_id": null,
+            "superseded_by_merge_id": "01JMRGA1000000000000000000",
+            "_note": "Bằng chứng lịch sử; canonical_work_id vẫn trỏ work đã merged — hợp lệ vì hàng không còn hiệu lực."
+          }
+        ],
+        "identity_merge_audit": [
+          {
+            "id": "01JMRGA1000000000000000000",
+            "winner_work_id": "01JWRKA0000000000000000000",
+            "loser_work_id": "01JWRKB0000000000000000000",
+            "winner_selection_rule": "only_candidate_with_canonical_doi",
+            "performed_by": "system_automatic_on_evidence",
+            "moved_counts": {
+              "first_announced": 2
+            },
+            "preserved_counts": {
+              "published_report_item": 2
+            }
+          }
+        ]
+      },
+      "counts": {
+        "first_announced_ledger[superseded_by_merge_id IS NULL AND canonical_work_id=A]": 1,
+        "first_announced_ledger": 2,
+        "report_item rows updated": 0,
+        "saved_snapshot rows updated": 0
+      },
+      "hash_oracles": [
+        {
+          "symbolic": "h_rp_early",
+          "computed_by": "sha256(JCS(nội dung publish của rp_early))",
+          "assertion": "không đổi qua merge (I05)"
+        },
+        {
+          "symbolic": "h_rp_late",
+          "computed_by": "sha256(JCS(nội dung publish của rp_late))",
+          "assertion": "không đổi qua merge (I05)"
+        }
+      ]
+    },
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTA3000000000000000000",
+      "report_build_id": "474f7d48-dbdf-4a99-98e6-34b6fc36f844",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNA3000000000000000000",
+        "sequence": 32,
+        "coverage_from": "2026-09-02T12:50:00.000Z",
+        "coverage_to": "2026-09-03T12:50:00.000Z",
+        "ingest_sequence_from": 3002,
+        "ingest_sequence_to": 3010,
+        "predecessor_window_id": "01JCWNA2000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVA0000000000000000000",
+        "sequence": 33,
+        "content_hash": "sha256:98c8f7ebfd651c6f9fdf77e90cbdd03c947755736bc38f9572e7134e049359c8",
+        "frozen_at": "2026-09-03T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMA800000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKA0000000000000000000",
+            "target_key": "work:01JWRKA0000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKA0000000000000000000",
+          "item_type": "prior_reference",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.9012,
+              "threshold_applied": 0.8
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAA1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:c03a22fbe0049ce9c5f0c3e0bc09dee0e1f046985a4b43f572ff4444f70b1313",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-02T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "first_announced": {
+            "first_announced_report_id": "01JRPTA1000000000000000000",
+            "first_announced_at": "2026-09-01T13:00:00.000Z",
+            "first_announced_window_sequence": 30,
+            "target_key_at_announcement": "work:01JWRKB0000000000000000000",
+            "merge_audit_id": "01JMRGA1000000000000000000"
+          },
+          "reference_reason": "already_announced",
+          "discovered_at": "2026-09-01T01:00:00.000Z",
+          "ingest_sequence": 3000
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCA1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "below_min_sample",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null
+      },
+      "built_at": "2026-09-03T13:00:00.000Z",
+      "published_at": "2026-09-03T13:00:05.000Z",
+      "content_hash": "sha256:d46dc9441c4d10acfa0ea04f2f166b3b030c7e3129f9a32abb38212599409073",
+      "evidence_refs": []
+    },
+    "row_oracles": [
+      "first_announced_at của hàng CÓ HIỆU LỰC sau merge = MIN(2026-09-01T13:00:00.000Z, 2026-09-02T13:00:00.000Z).",
+      "moved_counts.first_announced = 2 (một hàng nhận cặp sớm nhất, một hàng chuyển superseded) — bảng time-and-tags.md §8.3.",
+      "Giá trị 2 KHÁC null: null là trạng thái 'policy chưa khóa' mà PC02 để tạm, nay đã đóng bởi CR-PC02-06.",
+      "UNIQUE(owner_id, canonical_work_id) vẫn giữ: hai hàng trỏ hai work khác nhau (A và B).",
+      "report_item của rp_early vẫn ghi target_key = work:B (kỳ cũ giữ nguyên nội dung đã công bố)."
+    ]
+  },
+  "forbidden_effects": [
+    "Work thắng bắt đầu lại như chưa công bố (item_type='new_discovery' ở kỳ sau).",
+    "Kế thừa ngày MUỘN hơn thay vì sớm nhất.",
+    "Xóa hàng first_announced_ledger của work thua (mất bằng chứng, B15).",
+    "Viết lại report_item.target_key của report đã published (I05, I17).",
+    "Sửa saved_snapshot.target_key_at_save (I17).",
+    "Dùng AI làm bằng chứng identity (B15).",
+    "Ghi moved_counts.first_announced = null sau khi policy đã khóa."
+  ]
+}

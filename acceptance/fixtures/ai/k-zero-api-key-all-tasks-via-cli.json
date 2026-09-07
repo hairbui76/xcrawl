@@ -1,0 +1,294 @@
+{
+  "fixture_id": "FX-AI-K",
+  "title": "Không có API key nào: cả BA task chạy qua CLI/ACP, embedding local ở server → đợt hoàn tất",
+  "purpose": "Khóa REQ-AC16/REQ-D51 ở mức fixture. Điểm dễ bỏ sót: luồng zero-key phải phủ CẢ direction_phrasing, không chỉ label + summary (SRC-PLAN §11 PC06).",
+  "scenario_refs": [
+    "SC16"
+  ],
+  "invariant_refs": [
+    "I14"
+  ],
+  "decision_refs": [
+    "B13",
+    "ADR-0010"
+  ],
+  "requirement_refs": [
+    "REQ-D51",
+    "REQ-D41",
+    "REQ-D48",
+    "REQ-D50",
+    "REQ-AC16"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.7 D51",
+    "SRC-SPEC §10.1",
+    "SRC-SPEC §12 AC-16",
+    "contracts/ai/providers.yaml §8"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/reporting/selection.md"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/analysis-result.schema.json",
+  "expected_validation": "accept",
+  "given": {
+    "provider_config": [
+      {
+        "task_type": "label",
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-cheap",
+        "secret_ref": null,
+        "enabled": true,
+        "max_concurrency": 1
+      },
+      {
+        "task_type": "summary",
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-strong",
+        "secret_ref": null,
+        "enabled": true,
+        "max_concurrency": 1
+      },
+      {
+        "task_type": "direction_phrasing",
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-strong",
+        "secret_ref": null,
+        "enabled": true,
+        "max_concurrency": 1
+      }
+    ],
+    "secret_refs_configured": [],
+    "embedding_generation": {
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2",
+      "state": "active"
+    },
+    "precondition_vi": "Mọi provider_config có secret_ref = NULL (REQ-D51). Embedding chạy LOCAL ở server, không qua adapter (SRC-SPEC §10.1) — đây là lý do luồng này khả thi.",
+    "enabled_precondition_vi": "Fixture GIẢ ĐỊNH adapter đã qua contracts/ops/cli-acp-probe.md §4. Ở giai đoạn Pre-code điều đó CHƯA xảy ra, nên ở thực tế AC-16 hiện là BLOCKED, không phải PASS (ADR-0010)."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "worker.register_capabilities",
+      "description": "Worker khai adapter CLI usable cho cả ba task."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T18:01:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "ai.run_inference_task",
+      "performed_by": "MOD-ai-adapter",
+      "description": "Task `label` qua CLI."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T18:02:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Kết quả `label` commit."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T18:03:00.000Z",
+      "actor": "MOD-report-service",
+      "operation": "embedding.generate_vectors",
+      "description": "Embedding LOCAL ở server — không API key, không CLI (SRC-SPEC §10.1)."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-06T18:05:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Kết quả `summary` commit."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-06T18:07:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Kết quả `direction_phrasing` commit — mảnh mà luồng zero-key hay bỏ sót."
+    }
+  ],
+  "expected": {
+    "analysis_result_label": {
+      "schema_version": "0.1.0",
+      "task_type": "label",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "post:01JPSTA1000000000000000000",
+        "task_type": "label",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "post_only",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTK1000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "post:01JPSTA1000000000000000000"
+      ],
+      "result": {
+        "labels": [
+          {
+            "label": "graph neural networks",
+            "confidence": "high",
+            "evidence_refs": [
+              "post:01JPSTA1000000000000000000"
+            ]
+          }
+        ]
+      }
+    },
+    "analysis_result_summary": {
+      "schema_version": "0.1.0",
+      "task_type": "summary",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "summary",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "abstract",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTK2000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "work_version:01JWVRA1000000000000000000"
+      ],
+      "result": {
+        "content": "Phương pháp mới cho dự đoán tính chất phân tử.",
+        "difference_from_existing": {
+          "text": "Abstract nêu điểm khác so với một baseline được dẫn.",
+          "comparator": {
+            "kind": "ref",
+            "source_ref": "work_version:01JWVRA1000000000000000000",
+            "note": "Baseline nêu trong abstract của chính work_version này."
+          }
+        },
+        "limitation_line": "Chưa có đánh giá trên tập ngoài miền.",
+        "peer_review_status": "preprint_not_peer_reviewed",
+        "statements": [
+          {
+            "kind": "source_verified",
+            "text": "Abstract nêu bộ dữ liệu là QM9.",
+            "citation_refs": [
+              "work_version:01JWVRA1000000000000000000"
+            ]
+          },
+          {
+            "kind": "ai_inference",
+            "text": "Cách tiếp cận gần với nhóm message passing.",
+            "citation_refs": []
+          }
+        ]
+      }
+    },
+    "analysis_result_direction": {
+      "schema_version": "0.1.0",
+      "task_type": "direction_phrasing",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "direction_phrasing",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "post_only",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTK3000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "post:01JPSTA1000000000000000000"
+      ],
+      "result": {
+        "text": "Bốn công trình trong kỳ này tụ quanh chủ đề mạng nơ-ron trên đồ thị cho phân tử; mật độ tăng từ 0.6667 lên 4 so với các kỳ trước.",
+        "direction_ref": "01JDRCA1000000000000000000",
+        "member_refs": [
+          "work:01JWRKT1000000000000000000",
+          "work:01JWRKT2000000000000000000",
+          "work:01JWRKT3000000000000000000",
+          "work:01JWRKT4000000000000000000"
+        ],
+        "label": "ứng viên để đọc sâu"
+      }
+    },
+    "counts": {
+      "outbound_calls_to_api_key_endpoints": 0,
+      "secret_refs_issued": 0,
+      "task_credentials_issued": 0,
+      "analysis[status='valid']": 3,
+      "embedding_calls_to_external_provider": 0
+    },
+    "row_oracles": [
+      "Đợt hoàn tất với COUNT(outbound call tới endpoint dùng API key) = 0 và không secret_ref nào được cấp (REQ-AC16).",
+      "Cả ba task_type đều có một hàng analysis valid — luồng zero-key phủ ĐỦ, kể cả direction_phrasing.",
+      "Embedding không sinh call ngoài nào: model local ở server (REQ-D48/D50).",
+      "usage.unknown = true cho cả ba (đường CLI, REQ-D44); không giá trị 0 nào (I14).",
+      "member_refs của direction_phrasing bằng ĐÚNG member_target_keys đã tính ở PC04 (SV-05); các con số trong text khớp density đầu vào (selection.md §8.7).",
+      "label là hằng số 'ứng viên để đọc sâu' (REQ-D54)."
+    ]
+  },
+  "ac16_reporting_rule_vi": "Nếu KHÔNG adapter CLI nào qua được contracts/ops/cli-acp-probe.md §4 thì REQ-AC16 báo BLOCKED, KHÔNG phải FAIL (ADR-0010 §Hệ quả). Fixture này mô tả nhánh pass; nhánh BLOCKED là trạng thái thực tế hiện nay vì mọi probe đều NOT_RUN.",
+  "forbidden_effects": [
+    "Gọi bất kỳ endpoint nào cần API key.",
+    "Cấp task credential khi mọi provider_config có secret_ref = NULL.",
+    "Gọi provider ngoài cho embedding (SRC-SPEC §10.1: chỉ local).",
+    "Bỏ qua direction_phrasing rồi tuyên bố AC-16 pass.",
+    "Báo AC-16 là FAIL khi nguyên nhân là adapter chưa qua probe — phải là BLOCKED."
+  ]
+}

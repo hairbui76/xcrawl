@@ -1,0 +1,369 @@
+{
+  "fixture_id": "FX-UI-SC51",
+  "title": "Thiết lập lần đầu theo SRC-SPEC §5.1 bước 1–5",
+  "purpose": "Năm dòng REQ-S5.1-01..05 (P0, bốn dòng XN) trước đây không được trích ở bất kỳ file hợp đồng hay fixture nào. Fixture này neo cả năm bước và các oracle âm của chúng.",
+  "scenario_refs": [
+    "SC51"
+  ],
+  "invariant_refs": [
+    "I01",
+    "I11",
+    "I12"
+  ],
+  "decision_refs": [
+    "B13",
+    "AMD-B09",
+    "ADR-0010"
+  ],
+  "requirement_refs": [
+    "REQ-S5.1-01",
+    "REQ-S5.1-02",
+    "REQ-S5.1-03",
+    "REQ-S5.1-04",
+    "REQ-S5.1-05",
+    "REQ-D05",
+    "REQ-D09",
+    "REQ-D35",
+    "REQ-D39",
+    "REQ-D41",
+    "REQ-D46",
+    "REQ-P0-01",
+    "REQ-P0-02",
+    "REQ-S4-04",
+    "REQ-S4-07",
+    "REQ-S4-08",
+    "REQ-OQ01"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.1",
+    "acceptance/scenarios.yaml SC51",
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml §linking"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/telegram/commands.yaml",
+    "contracts/schemas/report.schema.json",
+    "contracts/data/entities.yaml",
+    "contracts/ports.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "owner": [
+        {
+          "id": "01J0WNER100000000000000000",
+          "_note": "Hàng owner duy nhất đã tồn tại sau khi cài; KHÔNG có trang signup (REQ-D05)."
+        }
+      ],
+      "session": [],
+      "tag": [],
+      "tag_config_version": [],
+      "provider_config": [],
+      "provider_test_result": [],
+      "telegram_link": [],
+      "telegram_link_code": [],
+      "worker_registration": [],
+      "source_connection": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T09:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "auth.login",
+      "performed_by": "MOD-auth-service",
+      "step_ref": "SRC-SPEC §5.1 bước 1",
+      "description": "Đăng nhập bằng tài khoản duy nhất. Không có endpoint signup nào tồn tại."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T09:02:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.create",
+      "performed_by": "MOD-tag-service",
+      "step_ref": "SRC-SPEC §5.1 bước 2",
+      "repeat": 3,
+      "description": "Nhập ba tag trên màn hình Topics."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T09:03:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.preview_matches",
+      "performed_by": "MOD-tag-service",
+      "step_ref": "SRC-SPEC §5.1 bước 2",
+      "description": "App hiện NGAY các nhãn đang khớp để người dùng hiệu chỉnh (REQ-D46)."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T09:10:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "settings.update_config",
+      "performed_by": "MOD-settings-service",
+      "step_ref": "SRC-SPEC §5.1 bước 3",
+      "description": "Chọn provider/model theo từng tác vụ; đường CLI chỉ ra binary local (REQ-D41)."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-07T09:12:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "settings.test_provider",
+      "performed_by": "MOD-settings-service",
+      "step_ref": "SRC-SPEC §5.1 bước 3",
+      "description": "Test provider; kết quả nêu rõ nhà nào lỗi. `unknown` giữ nguyên là `unknown` (I14)."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-07T09:20:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "telegram.issue_link_code",
+      "performed_by": "MOD-telegram-adapter",
+      "step_ref": "SRC-SPEC §5.1 bước 4",
+      "description": "Sinh mã một lần trong app; mã hiện MỘT lần và không bao giờ gửi qua Telegram."
+    },
+    {
+      "seq": 7,
+      "at": "2026-09-07T09:21:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "step_ref": "SRC-SPEC §5.1 bước 4",
+      "description": "Owner gửi mã cho bot từ chat CHƯA liên kết ⇒ đi qua ngoại lệ hẹp B09."
+    },
+    {
+      "seq": 8,
+      "at": "2026-09-07T09:21:00.500Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "telegram.consume_link_code",
+      "performed_by": "MOD-telegram-adapter",
+      "step_ref": "SRC-SPEC §5.1 bước 4",
+      "description": "Mã hợp lệ ⇒ liên kết; mã chuyển `consumed`."
+    },
+    {
+      "seq": 9,
+      "at": "2026-09-07T09:40:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "worker.register_capabilities",
+      "performed_by": "MOD-job-service",
+      "step_ref": "SRC-SPEC §5.1 bước 5",
+      "description": "Khởi động collector trên máy cá nhân; đăng ký capability."
+    },
+    {
+      "seq": 10,
+      "at": "2026-09-07T09:45:00.000Z",
+      "event_type": "human_x_device_verification",
+      "step_ref": "SRC-SPEC §5.1 bước 5",
+      "description": "Đăng nhập X vào PROFILE RIÊNG CỦA DỰ ÁN trong Chrome thật; X đòi xác minh thiết bị mới; owner xử lý tay. KHÔNG mock được (E3)."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "session": [
+        {
+          "id": "01JSESS1000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "issued_at": "2026-09-07T09:00:00.000Z",
+          "revoked_at": null,
+          "_note": "Đúng một phiên owner. Không có hàng user thứ hai (REQ-D01/REQ-D05)."
+        }
+      ],
+      "tag": [
+        {
+          "id": "01JTAGA0000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "text": "protein folding",
+          "state": "active"
+        },
+        {
+          "id": "01JTAGB0000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "text": "graph neural networks",
+          "state": "active"
+        },
+        {
+          "id": "01JTAGC0000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "text": "mechanistic interpretability",
+          "state": "active"
+        }
+      ],
+      "tag_config_version": [
+        {
+          "id": "01JTCVER100000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "sequence": 1,
+          "content_hash": {
+            "symbolic": "H_TCV",
+            "computed_by": "sha256(JCS(payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Ảnh chụp bộ tag; báo cáo đầu tiên sẽ trỏ vào đây (REQ-D23)."
+        }
+      ],
+      "provider_config": [
+        {
+          "id": "01JPCFGA000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "task_type": "label",
+          "auth_family": "api_key",
+          "provider_name": "provider-a",
+          "model_name": "model-cheap-1",
+          "max_concurrency": 4,
+          "enabled": false,
+          "terms_check_at": null,
+          "_note": "enabled=false cho tới khi owner đọc điều khoản (REQ-A5, ADR-0010). terms_check_at NULL ⇒ CHECK ck_provider_config_terms_before_enable buộc enabled = false.",
+          "terms_check_by": null,
+          "terms_doc_ref": null
+        },
+        {
+          "id": "01JPCFGB000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "task_type": "summary",
+          "auth_family": "cli_acp",
+          "provider_name": "provider-b",
+          "model_name": "model-strong-1",
+          "max_concurrency": 1,
+          "secret_ref": null,
+          "enabled": false,
+          "terms_check_at": null,
+          "_note": "Đường CLI: max_concurrency = 1 (SRC-SPEC §10.2); secret_ref NULL vì không cần key (REQ-D51). terms_check_at NULL ⇒ CHECK ck_provider_config_terms_before_enable buộc enabled = false.",
+          "terms_check_by": null,
+          "terms_doc_ref": null
+        }
+      ],
+      "provider_test_result": [
+        {
+          "id": "01JPTEST100000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "provider_config_id": "01JPCFGA000000000000000000",
+          "outcome": "usable",
+          "tested_at": "2026-09-07T09:12:01.000Z"
+        }
+      ],
+      "telegram_link_code": [
+        {
+          "id": "01JTGC0DES1000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "state": "consumed",
+          "consumed_at": "2026-09-07T09:21:00.500Z",
+          "consumed_by_chat_id": "111111111"
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NKS1000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "chat_id": "111111111",
+          "generation": 1,
+          "state": "active",
+          "linked_at": "2026-09-07T09:21:00.500Z"
+        }
+      ],
+      "worker_registration": [
+        {
+          "id": "01JWREG1000000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "worker_identity": "collector-laptop-01",
+          "worker_kind": "x_collector",
+          "online_state": "online",
+          "last_heartbeat_at": "2026-09-07T09:40:00.000Z",
+          "_note": "capabilities khai cả 'CLI provider đang usable hay không' (B13, REQ-AC16)."
+        }
+      ],
+      "source_connection": [
+        {
+          "id": "01JSRCC0NN1000000000000000",
+          "owner_id": "01J0WNER100000000000000000",
+          "source_type": "x_web",
+          "session_state": "challenge_required",
+          "last_checked_at": "2026-09-07T09:45:00.000Z",
+          "_note": "X đòi xác minh thiết bị mới ở lần đầu — trạng thái mong đợi, không phải lỗi (SRC-SPEC §5.1 bước 5)."
+        }
+      ]
+    },
+    "counts": {
+      "session__active": 1,
+      "tag__state_active": 3,
+      "tag_config_version__total": 1,
+      "provider_config__total": 2,
+      "provider_config__enabled_true": 0,
+      "telegram_link__state_active": 1,
+      "telegram_link_code__state_consumed": 1,
+      "worker_registration__total": 1,
+      "signup_endpoints_in_openapi": 0
+    },
+    "oracles": [
+      {
+        "assert": "COUNT(provider_config WHERE enabled = true AND terms_check_at IS NULL) = 0 sau bước 3",
+        "why_vi": "Dạng MẠNH, nay ép được ở mức dữ liệu bằng CHECK ck_provider_config_terms_before_enable (REQ-A5, ADR-0010, CR-PC07-07 đã đóng ở PKT-PC02-FIX5)."
+      },
+      {
+        "assert": "COUNT(telegram_link WHERE state='active') = 1 và mã chuyển consumed sau bước 4"
+      },
+      {
+        "assert": "Không endpoint signup nào tồn tại trong contracts/http/openapi.yaml",
+        "why_vi": "REQ-D05, oracle âm."
+      },
+      {
+        "assert": "tag.preview_matches trả danh sách rỗng KÈM câu 'Chưa có tag nào, báo cáo sẽ trống' khi chưa có tag; TUYỆT ĐỐI không phải 'Không có nghiên cứu mới'",
+        "why_vi": "SRC-SPEC §4 màn hình Topics nêu đích danh; screens.yaml SCR-topics.states.empty."
+      },
+      {
+        "assert": "source_connection.session_state = 'challenge_required' sau bước 5 là KẾT QUẢ HỢP LỆ",
+        "why_vi": "Lần đầu X thường đòi xác minh; đó không phải lỗi hệ thống (SRC-SPEC §5.1)."
+      }
+    ],
+    "ui_route": {
+      "steps": [
+        {
+          "step": 1,
+          "screen": "SCR-login",
+          "action": "ACT-login"
+        },
+        {
+          "step": 2,
+          "screen": "SCR-topics",
+          "actions": [
+            "ACT-create-tag",
+            "ACT-preview-matches"
+          ],
+          "sub_screen": "SCR-tag-matching-preview"
+        },
+        {
+          "step": 3,
+          "screen": "SCR-settings",
+          "actions": [
+            "ACT-update-settings",
+            "ACT-test-provider"
+          ]
+        },
+        {
+          "step": 4,
+          "screen": "SCR-settings",
+          "action": "ACT-issue-telegram-code"
+        },
+        {
+          "step": 5,
+          "screen": "SCR-runs",
+          "_note": "Trạng thái collector online/offline hiện ở đây (REQ-D11); đăng nhập X làm trên máy cá nhân, ngoài app."
+        }
+      ]
+    }
+  },
+  "forbidden_effects": [
+    "Tồn tại một trang hoặc endpoint signup (REQ-D05).",
+    "Bật một adapter trước khi terms_check xong (REQ-A5).",
+    "Đồng bộ phiên X hoặc profile Chrome lên server (REQ-S11.2-03).",
+    "Dùng profile Chrome MẶC ĐỊNH của người dùng thay vì profile riêng của dự án (REQ-D09).",
+    "Hiển thị 'Không có nghiên cứu mới' khi chưa có tag.",
+    "Hiển thị giá trị key của provider ở bất kỳ màn hình nào (I11).",
+    "Coi 'challenge_required' ở bước 5 là đợt thất bại."
+  ],
+  "blocking_note_vi": "REQ-OQ01 (xác nhận REQ-D09 — profile Chrome riêng của dự án thay cho profile mặc định) vẫn CHẶN M0 và là câu hỏi mở số 1 của SRC-SPEC §13.1. D09 vẫn ở trạng thái ĐX trong một hạng mục P0; fixture này KHÔNG promote nó. Bước 5 cần E3 (Chrome thật, profile thật, người thật)."
+}

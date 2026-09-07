@@ -1,0 +1,127 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-i",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D08",
+      "REQ-S11.2-02"
+    ],
+    "decision_refs": [
+      "B12",
+      "B13",
+      "ADR-0001"
+    ],
+    "invariant_refs": [
+      "I01",
+      "I08"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "i",
+  "title_vi": "Collector token gọi Save → bị từ chối vì edge bị cấm",
+  "scenario_refs": [
+    "SC41"
+  ],
+  "invariant_refs": [
+    "I01",
+    "I08"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "principal": "ACT-collector",
+    "token": "collector_token hợp lệ, chưa hết hạn",
+    "note_vi": "Đây là ca âm NC-01 của contracts/modules.yaml."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "save.create",
+      "edge_assertion": "forbidden",
+      "input": {
+        "target_ref": {
+          "kind": "work",
+          "canonical_id": "arxiv:2601.00001"
+        },
+        "source": "app"
+      },
+      "note_vi": "MOD-x-collector KHÔNG nằm trong caller_modules của save.create (chỉ MOD-web-ui và MOD-telegram-adapter). Đây là khẳng định edge BỊ CẤM — có chủ đích."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "tag.update",
+      "edge_assertion": "forbidden",
+      "input": {
+        "tag_id": "TAG-01"
+      },
+      "note_vi": "Ca âm NC-02."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "edge_assertion": "allowed",
+      "input": {
+        "batch_idempotency_key": "BK-01",
+        "item_count": 3
+      },
+      "note_vi": "Đường hợp lệ duy nhất của collector để đưa dữ liệu vào."
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "UNAUTHORIZED",
+      "saved_item_created": false
+    },
+    "seq2": {
+      "error_code": "UNAUTHORIZED",
+      "tag_config_version_unchanged": true
+    },
+    "seq3": {
+      "result": "committed",
+      "rows_committed": 3
+    },
+    "note_vi": "Token hợp lệ ở tầng xác thực nhưng scope của nó không mở save.create/tag.update ⇒ UNAUTHORIZED. Ba nguồn upstream đã đóng băng đồng thuận về mã này: contracts/modules.yaml NC-01/NC-02 (expected_error_code: UNAUTHORIZED), contracts/errors.yaml (oracle của UNAUTHORIZED nêu đích danh NC-01/NC-02), và contracts/http/openapi.yaml (mô tả collectorToken: gọi save.create bằng token này ⇒ 401).",
+    "secondary_classification_vi": "Nếu ruling là FORBIDDEN_EDGE thì kỳ vọng đổi thành FORBIDDEN_EDGE cho seq1/seq2 và mọi thứ khác trong fixture giữ nguyên: số hàng không đổi, audit ghi từ chối."
+  },
+  "forbidden_effects": [
+    "Tạo saved_item từ collector",
+    "Đổi tag từ worker",
+    "Trả UNAUTHORIZED một cách mơ hồ khiến người vận hành tưởng token sai"
+  ],
+  "oracle_vi": "COUNT(saved_item) không đổi sau seq1; tag_config_version không đổi sau seq2; audit ghi hai lần từ chối với mã **UNAUTHORIZED**; seq3 commit bình thường. Mã này khớp `contracts/modules.yaml` NC-01/NC-02, oracle của `UNAUTHORIZED` trong `contracts/errors.yaml`, và mô tả `collectorToken` trong `contracts/http/openapi.yaml` (401). Xem `packet_deviation` về việc văn bản packet PC08 từng nói FORBIDDEN_EDGE (CR-PC08-04).",
+  "packet_deviation": {
+    "packet_text_vi": "PKT-PC08 mô tả ca (i) là '403 FORBIDDEN_EDGE'.",
+    "chosen_vi": "Fixture khẳng định UNAUTHORIZED.",
+    "reason_vi": "Ba file upstream đã đóng băng và thống nhất ở UNAUTHORIZED (NC-01/NC-02, oracle của errors.yaml, mô tả collectorToken trong openapi.yaml). PC08 không được sửa các file đó và không nên tạo một oracle mâu thuẫn với chúng. FORBIDDEN_EDGE theo errors.yaml là 'cạnh caller→callee không có trong modules.yaml' và chính errors.yaml ghi rằng mã này CHƯA được ports.yaml/modules.yaml tham chiếu ở bản 0.1.0 (CR-PC03-04).",
+    "note_vi": "Ca này thỏa mãn CẢ HAI mô tả: token sai scope VÀ cạnh không có trong allowed_edges. Chọn một mã duy nhất là quyết định của Coordinator — xem CR-PC08-04. Nếu Coordinator chọn FORBIDDEN_EDGE thì NC-01/NC-02 và oracle của errors.yaml phải đổi theo, không phải chỉ fixture này.",
+    "change_request": "CR-PC08-04"
+  }
+}

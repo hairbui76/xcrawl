@@ -1,0 +1,837 @@
+# Research Radar — Capability, auth scope và readiness registration theo từng actor
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa tiếng Anh (baseline §3).
+
+contract_id: CT-arch-capabilities
+version: 0.1.0
+status: draft
+owner_role: architecture owner
+source_refs:
+  - SRC-SPEC §6.1
+  - SRC-SPEC §6.4
+  - SRC-SPEC §10.1
+  - SRC-SPEC §10.2
+  - SRC-SPEC §11.1
+  - SRC-SPEC §11.2
+  - SRC-SPEC §11.3
+  - SRC-SPEC §11.4
+  - SRC-PLAN §6
+  - SRC-PLAN §6.1
+  - SRC-PLAN §11 PC01
+requirement_refs:
+  - REQ-D05
+  - REQ-D08
+  - REQ-D09
+  - REQ-D11
+  - REQ-D35
+  - REQ-D36
+  - REQ-D41
+  - REQ-D42
+  - REQ-D43
+  - REQ-D48
+  - REQ-D50
+  - REQ-D51
+  - REQ-A5
+  - REQ-AC16
+  - REQ-AC17
+  - REQ-AC18
+decision_refs: [B09, B10, B12, B13, ADR-0001]
+invariant_refs: [I01, I10, I11, I13, I14]
+producers: [MOD-backend-api, MOD-secret-service]
+consumers: [MOD-web-ui, MOD-x-collector, MOD-analysis-worker, MOD-telegram-adapter, MOD-backup-cli, MOD-job-service]
+dependencies:
+  - contracts/modules.yaml
+  - contracts/ports.yaml
+  - contracts/ops/deployment.md
+  - contracts/ops/secrets.md (PC08, chưa tồn tại)
+scope: >
+  Định nghĩa từng actor/principal của hệ thống: auth scope, capability được cấp và bị từ chối, phạm vi secret,
+  phạm vi network, phạm vi filesystem, phạm vi tool, và — với worker chạy trên máy cá nhân — payload đăng ký
+  readiness/capability mà worker phải báo về server. File này là mặt "ai được làm gì"; contracts/modules.yaml là
+  mặt "module nào nói chuyện với module nào"; contracts/ports.yaml là danh mục operation. Lifecycle chi tiết của
+  secret (xoay vòng, mã hóa at-rest, thu hồi) thuộc PC08.
+verification: >
+  E0 self-validation: YAML parse; mọi `auth_scope` dùng trong contracts/ports.yaml phải có định nghĩa ở đây; mọi
+  operation liệt kê trong `allowed_operations` phải tồn tại trong ports.yaml. Không có evidence E1–E4.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+principles:
+  - id: CAP-P1
+    text_vi: >
+      Một người dùng **không** đồng nghĩa không cần bảo vệ: app ra Internet nên mọi mutation vẫn phải qua domain
+      port đã xác thực (SRC-SPEC §11.1, I01).
+  - id: CAP-P2
+    text_vi: >
+      Quyền là giao của mọi ràng buộc: auth scope ∩ capability tiến trình ∩ network egress ∩ filesystem scope.
+      Thiếu một tầng nào thì thao tác bị từ chối, không "nới" ở tầng khác để bù.
+  - id: CAP-P3
+    text_vi: >
+      Biết một định danh không phải là quyền: biết chat ID không cho quyền dùng bot (SRC-SPEC §11.3); giữ token
+      collector không cho quyền gọi operation của owner.
+  - id: CAP-P4
+    text_vi: >
+      Nội dung X và paper là **dữ liệu**, không phải lệnh. Không nội dung nguồn nào được sửa system prompt, gọi
+      tool, đọc secrets hay đổi recipient Telegram (SRC-SPEC §11.4, I11).
+  - id: CAP-P5
+    text_vi: >
+      Trạng thái không biết được ghi là `unknown`; không quy đổi `unknown` thành `usable` hay thành 0 (I13, I14).
+
+auth_scopes:
+  - id: public_login
+    actor: ACT-anonymous-browser
+    description_vi: Chỉ dùng cho auth.login. Không đọc/ghi dữ liệu nghiệp vụ nào.
+    operations: [auth.login]
+  - id: public_minimal
+    actor: ACT-anonymous-probe
+    description_vi: >
+      Chỉ health.get_liveness, trả `up` + schema version. Không lộ cấu hình, tên provider, chat ID hay dữ liệu
+      nghiệp vụ.
+    operations: [health.get_liveness]
+  - id: owner_session
+    actor: ACT-owner-session
+    description_vi: >
+      Session của owner trong web app; scope rộng nhất ở phía đọc/sửa nghiệp vụ, nhưng không đọc secret.
+      Wire: `ownerSessionCookie`; **mọi** mutation cần thêm `ownerCsrfToken`, thiếu ⇒ `CSRF_REJECTED`
+      (contracts/http/openapi.yaml; ruling FIX3).
+    operations_note_vi: Xem `allowed_operations` của ACT-owner-session.
+  - id: owner_session_or_linked_chat
+    actor: [ACT-owner-session, ACT-telegram-linked-chat]
+    description_vi: >
+      Operation mà cả app lẫn chat đã liên kết được gọi: save.create, run.run_now, run.list. Đây là **toàn bộ** bề
+      mặt của ba lệnh D36; không có gì hơn.
+    operations: [save.create, run.run_now, run.list]
+  - id: collector_token
+    actor: ACT-collector
+    description_vi: Token riêng của collector, lưu trong file cấu hình quyền hạn chế trên máy cá nhân (SRC-SPEC §11.2).
+    operations: [worker.register_capabilities, worker.claim_assignment, worker.heartbeat, worker.report_stop, worker.release_assignment, ingest.submit_batch, ingest.commit_checkpoint, ingest.get_receipt]
+  - id: analysis_worker_token
+    actor: ACT-analysis-worker
+    description_vi: Token riêng của analysis worker; tách hoàn toàn khỏi token collector dù chạy cùng máy.
+    operations: [worker.register_capabilities, analysis.claim_task, analysis.get_task_input, analysis.heartbeat, analysis.submit_result, analysis.report_attempt_unknown, secret.issue_task_credential]
+  - id: collector_token_or_analysis_worker_token
+    actor: [ACT-collector, ACT-analysis-worker]
+    description_vi: Chỉ dùng cho worker.register_capabilities; payload khai `worker_kind` tương ứng.
+    operations: [worker.register_capabilities]
+  - id: telegram_ingress_secret
+    actor: ACT-telegram-ingress
+    description_vi: >
+      Xác thực endpoint ingress của Telegram (secret token do hệ thống đặt). Chỉ chứng minh update đến từ Telegram;
+      **không** chứng minh người gửi là owner — điều đó do liên kết chat ID quyết định.
+    operations: [telegram.receive_update]
+  - id: backup_operator
+    actor: ACT-backup-operator
+    description_vi: >
+      Credential riêng cho thao tác backup/restore, tách khỏi session owner. Wire: `backupOperatorToken` cho cả
+      bốn operation `backup.*` (ruling CR-PC08-02).
+    operations: [backup.create_snapshot, backup.verify_snapshot, backup.restore_snapshot, backup.reconcile_after_restore]
+  - id: internal_only
+    actor: [ACT-scheduler, ACT-embedding-service, ACT-research-connector, ACT-server-domain-service, ACT-ai-adapter, ACT-delivery-dispatcher]
+    description_vi: >
+      Port trong tiến trình, không tiếp cận được từ mạng. Không phải "không cần kiểm soát": edge nội bộ vẫn theo
+      allowed_edges của contracts/modules.yaml và bị chặn bằng import rule.
+
+actors:
+
+  - id: ACT-owner-session
+    name_vi: Chủ sở hữu qua web app (browser session)
+    principal_type: human_session
+    runs_on: browser
+    module_refs: [MOD-web-ui]
+    auth_scope: owner_session
+    allowed_operations: [auth.get_session, auth.logout, data.delete_target, data.purge_all, settings.get_config, settings.update_config, settings.test_provider, tag.list, tag.create, tag.update, tag.delete, tag.preview_matches, tag.rescan_corpus, run.list, run.get, run.run_now, run.resume, run.cancel, worker.get_status, work.get_detail, identity.resolve_conflict, analysis.request_reanalysis, report.list, report.get, save.create, save.remove, save.list, save.export, telegram.issue_link_code, telegram.unlink, delivery.get_status, delivery.decide_unknown, health.get_readiness, health.get_liveness]
+    denied_capabilities:
+      - id: DC-OWN-01
+        capability_vi: Đọc giá trị secret (API key, token collector, bot token)
+        reason_vi: Secret chỉ nằm ở secret store server; frontend không bao giờ nhận (SRC-SPEC §11.2).
+        expected_error_code: UNAUTHORIZED
+        denied_case_ref: NC-03
+      - id: DC-OWN-02
+        capability_vi: Truy cập SQLite trực tiếp hoặc chạy truy vấn tùy ý
+        reason_vi: Mọi mutation qua domain port (I01).
+        expected_error_code: UNAUTHORIZED
+        forbidden_edge_ref: FE-01
+      - id: DC-OWN-07
+        capability_vi: Thực hiện mutation bằng session hợp lệ nhưng thiếu hoặc lệch CSRF double-submit
+        reason_vi: >
+          Cookie tự động đính kèm nên phiên hợp lệ một mình không chứng minh **ý định** của người dùng. Mọi
+          operation `mutation: true` của owner session yêu cầu `ownerSessionCookie` **và** `ownerCsrfToken`
+          (contracts/ops/secrets.md §2.3; contracts/http/openapi.yaml).
+        expected_error_code: CSRF_REJECTED
+        note_vi: >
+          Ruling FIX3 tách mã này khỏi `FORBIDDEN_EDGE`, giải quyết CR-PC08-03. 19 operation trong
+          contracts/ports.yaml mang nó.
+        audit_refs: [CR-PC08-03]
+      - id: DC-OWN-03
+        capability_vi: Sửa nội dung report đã publish
+        reason_vi: Report bất biến sau publish; sửa tag chỉ ảnh hưởng kỳ sau (I05, B01).
+        expected_error_code: NOT_FOUND
+        note_vi: Không tồn tại operation nào cho việc này; "NOT_FOUND" nghĩa là không có route.
+      - id: DC-OWN-04
+        capability_vi: Xóa dữ liệu mà không qua đúng một trong ba thao tác của SRC-SPEC §7.3
+        reason_vi: >
+          Ba thao tác là riêng biệt và không thay thế nhau (REQ-S7.3-05, **XN**): `save.remove` chỉ bỏ lưu;
+          `data.delete_target` xóa dữ liệu gốc của một target nhưng **giữ** `saved_snapshot` (D55/AC-12) và mọi
+          ledger; `data.purge_all` xóa toàn bộ và đòi gõ lại cụm từ xác nhận do server phát. Không có đường tắt nào
+          khác xóa dữ liệu; không operation nào trong ba cái tự động kéo theo cái kia.
+        expected_error_code: VALIDATION_ERROR
+        audit_refs: [F-A1R1-04, R-04]
+      - id: DC-OWN-05
+        capability_vi: Chạy `data.purge_all` khi `storage.health` khác `maintenance`, hoặc với cụm từ xác nhận sai/hết hạn
+        reason_vi: >
+          Xác nhận gõ tay là điều kiện của chính đặc tả; guard `maintenance` bảo đảm không có run/dispatcher nào
+          đang chạy khi dữ liệu biến mất. Sau khi purge, dispatcher **không** tự resume (cùng nguyên tắc NC-10).
+        expected_error_code: CONFLICT
+        audit_refs: [F-A1R1-04, R-04]
+      - id: DC-OWN-06
+        capability_vi: Xóa `saved_snapshot` bằng `data.delete_target`
+        reason_vi: >
+          Saved là snapshot bất biến; bài gốc bị xóa trên X vẫn phải đọc được trong Saved (D55, AC-12, I08).
+          Xóa dữ liệu gốc **không** đụng tới snapshot đã lưu.
+        expected_error_code: VALIDATION_ERROR
+        audit_refs: [F-A1R1-04, R-04]
+    secret_scope: none
+    network_scope: [server_app_origin]
+    filesystem_scope: none
+    tool_scope: none
+    session_note_vi: >
+      Một tài khoản duy nhất, không signup, không quên-mật-khẩu tự động (D05). Hết hạn/thu hồi session và bảo vệ
+      CSRF nếu dùng cookie auth do PC08 chốt.
+
+  - id: ACT-anonymous-browser
+    name_vi: Khách chưa đăng nhập
+    principal_type: anonymous
+    runs_on: browser
+    module_refs: [MOD-web-ui]
+    auth_scope: public_login
+    allowed_operations: [auth.login]
+    denied_capabilities:
+      - id: DC-ANON-01
+        capability_vi: Mọi operation nghiệp vụ khác
+        reason_vi: Không có trang signup và không có quyền mặc định nào (D05).
+        expected_error_code: UNAUTHORIZED
+    secret_scope: none
+    network_scope: [server_app_origin]
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-anonymous-probe
+    name_vi: Health probe không xác thực
+    principal_type: anonymous
+    runs_on: any
+    module_refs: [MOD-health-service]
+    auth_scope: public_minimal
+    allowed_operations: [health.get_liveness]
+    denied_capabilities:
+      - id: DC-PROBE-01
+        capability_vi: Đọc readiness chi tiết
+        reason_vi: Readiness lộ cấu trúc hệ thống; cần owner_session.
+        expected_error_code: UNAUTHORIZED
+    secret_scope: none
+    network_scope: [server_app_origin]
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-collector
+    name_vi: X collector trên máy cá nhân
+    principal_type: machine_token
+    runs_on: personal_machine
+    module_refs: [MOD-x-collector]
+    auth_scope: collector_token
+    allowed_operations: [worker.register_capabilities, worker.claim_assignment, worker.heartbeat, worker.report_stop, worker.release_assignment, ingest.submit_batch, ingest.commit_checkpoint, ingest.get_receipt, health.get_liveness]
+    denied_capabilities:
+      - id: DC-COL-01
+        capability_vi: Gọi Save
+        reason_vi: Save là hành động của người dùng.
+        expected_error_code: UNAUTHORIZED
+        denied_case_ref: NC-01
+      - id: DC-COL-02
+        capability_vi: Sửa tag hoặc cấu hình
+        reason_vi: Collector chỉ nhận tag như tham số tìm kiếm (D24).
+        expected_error_code: UNAUTHORIZED
+        denied_case_ref: NC-02
+      - id: DC-COL-03
+        capability_vi: Ghi SQLite của server
+        reason_vi: D08 — đẩy qua API có xác thực.
+        expected_error_code: CAPABILITY_DENIED
+        denied_case_ref: NC-05
+      - id: DC-COL-04
+        capability_vi: Gửi Telegram
+        reason_vi: Cảnh báo đi qua delivery intent của server (SRC-PLAN §8.1).
+        expected_error_code: CAPABILITY_DENIED
+        forbidden_edge_ref: FE-10
+      - id: DC-COL-05
+        capability_vi: Lấy secret AI
+        reason_vi: Collector không chạy tác vụ AI nào.
+        expected_error_code: UNAUTHORIZED
+        forbidden_edge_ref: FE-09
+      - id: DC-COL-06
+        capability_vi: Xếp hàng task analysis trực tiếp hoặc đưa dữ liệu chưa commit cho analysis worker
+        reason_vi: Analysis nhận task từ server sau ingest commit (B12).
+        expected_error_code: UNAUTHORIZED
+        forbidden_edge_ref: FE-07
+      - id: DC-COL-07
+        capability_vi: Né CAPTCHA, giả fingerprint, luân chuyển account hoặc proxy
+        reason_vi: Ngoài phạm vi sản phẩm (SRC-SPEC §2.3, §13.2). Bị chặn thì dừng và báo.
+        expected_error_code: X_ACCESS_BLOCKED
+    secret_scope: scoped
+    secret_items:
+      - collector_token (file cấu hình quyền hạn chế trên máy cá nhân, không nằm trong repo)
+      - phiên đăng nhập X (nằm trong profile Chrome riêng, **không** đồng bộ lên server)
+    network_scope: [server_api_origin, x_web]
+    network_note_vi: Chỉ hai đích trên. Không có cổng vào; mọi kết nối là outbound (SRC-SPEC §6.4).
+    filesystem_scope:
+      - profile Chrome riêng của dự án (D09) — không dùng profile mặc định của người dùng
+      - file cấu hình chứa collector_token
+      - thư mục log cục bộ đã che secrets
+    tool_scope: [chrome_devtools_protocol_loopback_only]
+    tool_note_vi: Cổng debug Chrome bind loopback, không mở ra LAN hay reverse proxy (SRC-SPEC §11.2).
+
+  - id: ACT-analysis-worker
+    name_vi: Analysis worker trên máy cá nhân
+    principal_type: machine_token
+    runs_on: personal_machine
+    module_refs: [MOD-analysis-worker, MOD-ai-adapter]
+    auth_scope: analysis_worker_token
+    allowed_operations: [worker.register_capabilities, analysis.claim_task, analysis.get_task_input, analysis.heartbeat, analysis.submit_result, analysis.report_attempt_unknown, secret.issue_task_credential, health.get_liveness]
+    denied_capabilities:
+      - id: DC-AW-01
+        capability_vi: Sửa tag, report hoặc Saved
+        reason_vi: Worker chỉ đề xuất kết quả qua port (SRC-PLAN §6.1).
+        expected_error_code: UNAUTHORIZED
+        denied_case_ref: NC-02
+      - id: DC-AW-02
+        capability_vi: Tự publish report hoặc đánh dấu "work này đã báo cáo"
+        reason_vi: first_announced thuộc MOD-report-service.
+        expected_error_code: UNAUTHORIZED
+        forbidden_edge_ref: FE-13
+      - id: DC-AW-03
+        capability_vi: Lấy toàn bộ secret store
+        reason_vi: Chỉ nhận credential của provider gắn với task đang giữ lease (B13).
+        expected_error_code: UNAUTHORIZED
+      - id: DC-AW-04
+        capability_vi: Commit kết quả khi lease đã hết hạn hoặc epoch cũ
+        reason_vi: Worker stale/cancelled không commit kết quả mới (I10).
+        expected_error_code: STALE_LEASE
+      - id: DC-AW-05
+        capability_vi: Chạy embedding
+        reason_vi: Embedding chạy ở server, chỉ local (D50/B12); worker không khai capability này.
+        expected_error_code: CAPABILITY_DENIED
+    secret_scope: scoped
+    secret_items:
+      - analysis_worker_token
+      - task credential ngắn hạn của **một** provider cho task đang giữ lease
+      - phiên đăng nhập CLI/ACP của owner trên máy cá nhân (không rời máy)
+    network_scope: [server_api_origin, ai_provider_endpoints_configured]
+    filesystem_scope:
+      - thư mục làm việc của worker
+      - file cấu hình chứa analysis_worker_token
+    filesystem_denied_vi: Không truy cập profile Chrome, không đọc file cấu hình của collector.
+    tool_scope: [inference_only]
+    tool_note_vi: >
+      Đường CLI/ACP chạy với tool/file/network **bị khóa** ngoài phần inference. Nếu không kiểm chứng được cô lập
+      cho một provider thì adapter của provider đó giữ trạng thái `disabled` (B13). Điều khoản từng nhà phải đọc
+      trước khi bật (A5).
+
+  - id: ACT-ai-adapter
+    name_vi: AI adapter (trong tiến trình analysis worker)
+    principal_type: in_process_component
+    runs_on: personal_machine
+    module_refs: [MOD-ai-adapter]
+    auth_scope: internal_only
+    allowed_operations: [ai.run_inference_task, ai.probe_provider_capability]
+    denied_capabilities:
+      - id: DC-AI-01
+        capability_vi: Gửi Telegram
+        reason_vi: Nội dung nguồn không được đổi recipient (I11).
+        expected_error_code: CAPABILITY_DENIED
+        denied_case_ref: NC-04
+      - id: DC-AI-02
+        capability_vi: Fetch URL tùy ý (kể cả arXiv/OpenAlex)
+        reason_vi: Metadata chỉ đi qua MOD-research-connector với ID đã chuẩn hóa.
+        expected_error_code: CAPABILITY_DENIED
+        denied_case_ref: NC-07
+      - id: DC-AI-03
+        capability_vi: Gọi tool theo yêu cầu nằm trong nội dung nguồn
+        reason_vi: Nội dung ngoài là dữ liệu, không phải lệnh (SRC-SPEC §11.4).
+        expected_error_code: CAPABILITY_DENIED
+        scenario_refs: [SC17]
+      - id: DC-AI-04
+        capability_vi: Điều khiển Chrome hoặc chạm SQLite
+        reason_vi: SRC-PLAN §6.
+        expected_error_code: CAPABILITY_DENIED
+        forbidden_edge_ref: FE-17
+      - id: DC-AI-05
+        capability_vi: Ghi giá trị credential hoặc transcript chứa secret vào log
+        reason_vi: Log phải che secrets trước khi ghi (SRC-SPEC §11.2).
+        expected_error_code: CAPABILITY_DENIED
+    secret_scope: scoped
+    secret_items: ["credential ngắn hạn của đúng một provider, nhận theo từng task"]
+    network_scope: [ai_provider_endpoints_configured]
+    filesystem_scope: [thư mục làm việc của worker]
+    tool_scope: [inference_only]
+    declared_oracle:
+      note_vi: >
+        Ba giá trị dưới đây là **oracle khai báo** cho fixture (f) của PC06 và cho SC17: chúng đo được bằng cách
+        đếm, không phải bằng cách đọc mô tả (ruling CR-PC06-03). Chúng là khẳng định về **cấu hình adapter**, không
+        phải về hành vi của model: một model vẫn có thể sinh ra văn bản đòi gọi tool; điều được bảo đảm là không có
+        tool nào tồn tại để gọi.
+      tool_definitions_registered: 0
+      tool_definitions_registered_meaning_vi: >
+        Số định nghĩa tool/function đăng ký với provider trong mỗi lời gọi inference phải bằng **0** — không có
+        function calling, không có tool schema, không có plugin. Oracle: kiểm payload gửi tới provider, đếm mục
+        tool/function = 0 ở **mọi** lời gọi của cả ba task type.
+      tool_calls_permitted: false
+      tool_calls_permitted_meaning_vi: >
+        Nếu đầu ra của model vẫn chứa một yêu cầu gọi tool (một số provider tự sinh), adapter **không** thực hiện nó:
+        không có bộ điều phối tool trong đường chạy. Yêu cầu đó được ghi audit và item đi theo `AI_OUTPUT_INVALID`.
+        Oracle: đếm số lần thực thi tool = 0 trên fixture đối kháng.
+      network_egress: inference_endpoint_only
+      network_egress_meaning_vi: >
+        Kết nối ra duy nhất được phép từ tiến trình adapter là endpoint của provider đã cấu hình cho **task đang
+        chạy**. Oracle: đếm kết nối tới mọi host khác = 0 (fixture `f-secret-canary-injection.json` và
+        `g-ssrf-redirect-private.json` của PC08 đã dùng đúng phép đếm này).
+      applies_to_both_auth_families_vi: >
+        Áp cho **cả** đường API key lẫn đường CLI/ACP. Với CLI/ACP, `isolation_verified: false` ⇒ adapter giữ
+        trạng thái `disabled` (B13, ADR-0010): không bật để thử.
+      audit_refs: [CR-PC06-03]
+      invariant_refs: [I11]
+      scenario_refs: [SC17]
+    usage_reporting_vi: >
+      Đường API key báo token count thật; đường CLI được phép báo `unknown` (D44). `unknown` **không** được ghi
+      thành 0 (I14).
+
+  - id: ACT-telegram-ingress
+    name_vi: Endpoint ingress nhận update từ Telegram
+    principal_type: external_service
+    runs_on: server
+    module_refs: [MOD-telegram-adapter]
+    auth_scope: telegram_ingress_secret
+    allowed_operations: [telegram.receive_update]
+    denied_capabilities:
+      - id: DC-TGI-01
+        capability_vi: Thực hiện bất kỳ hành động nghiệp vụ nào khi chat ID chưa liên kết
+        reason_vi: >
+          Tin từ chat chưa liên kết bị **bỏ im lặng** — không trả lời, vì trả lời "không có quyền" là tự xác nhận
+          bot tồn tại (SRC-SPEC §11.3, AC-18).
+        expected_error_code: UNAUTHORIZED_COMMAND
+        denied_case_ref: NC-06
+      - id: DC-TGI-02
+        capability_vi: Chấp nhận callback trỏ tới target không thuộc payload đã gửi
+        reason_vi: Callback target phải được xác thực (PC07).
+        expected_error_code: UNAUTHORIZED_COMMAND
+    linking_exception:
+      id: CAP-B09
+      status: PROVISIONAL
+      rule_vi: >
+        Ngoại lệ hẹp duy nhất cho chat chưa liên kết: một tin nhắn **đúng định dạng mã liên kết** được đối chiếu với
+        các mã chưa hết hạn và chưa dùng. Mọi nội dung khác từ chat chưa liên kết bị bỏ im lặng. Mã dùng một lần;
+        liên kết mới vô hiệu hóa liên kết cũ và tăng link generation (D35, D37, B09).
+    secret_scope: scoped
+    secret_items: [telegram_ingress_secret_token, telegram_bot_token]
+    network_scope: [telegram_bot_api]
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-telegram-linked-chat
+    name_vi: Chat Telegram đã liên kết (chủ sở hữu ở ngoài)
+    principal_type: human_via_external_channel
+    runs_on: external
+    module_refs: [MOD-telegram-adapter]
+    auth_scope: owner_session_or_linked_chat
+    allowed_operations: [save.create, run.run_now, run.list]
+    allowed_commands_vi:
+      - "Save (nút gắn ID mục trong digest) → save.create"
+      - "Chạy ngay → run.run_now"
+      - "Xem trạng thái → run.list (read-only)"
+    denied_capabilities:
+      - id: DC-TGC-01
+        capability_vi: Lệnh thứ tư bất kỳ, gồm resume
+        reason_vi: Đúng ba lệnh của D36; resume là hành động riêng trong app (B10, AMD-B10).
+        expected_error_code: UNAUTHORIZED_COMMAND
+        forbidden_edge_ref: FE-33
+      - id: DC-TGC-02
+        capability_vi: Sửa tag hoặc cấu hình qua chat
+        reason_vi: Ngoài phạm vi (SRC-SPEC §2.3, §11.3).
+        expected_error_code: UNAUTHORIZED_COMMAND
+        denied_case_ref: NC-06
+      - id: DC-TGC-03
+        capability_vi: "`run.run_now` vượt qua run đang `needs_user`"
+        reason_vi: run-now không override needs_user (B10).
+        expected_error_code: VALIDATION_ERROR
+    secret_scope: none
+    network_scope: [telegram_bot_api]
+    filesystem_scope: none
+    tool_scope: none
+    note_vi: >
+      Hủy liên kết là **hành động trong app** (telegram.unlink), không phải lệnh chat — PROVISIONAL, xem
+      PROV-PC01-02.
+
+  - id: ACT-delivery-dispatcher
+    name_vi: Dispatcher outbox (tiến trình nội bộ server thực hiện việc gửi ra ngoài)
+    principal_type: internal_process
+    runs_on: server
+    module_refs: [MOD-delivery-service, MOD-telegram-adapter]
+    auth_scope: internal_only
+    allowed_operations: [delivery.dispatch_next, delivery.record_receipt, delivery.mark_unknown, telegram.send_payload]
+    why_separate_vi: >
+      Tách khỏi `ACT-server-domain-service` vì đây là principal **duy nhất** trong hệ thống được phép tạo side
+      effect ra ngoài Internet cho Telegram. Gộp nó vào actor domain chung buộc actor chung phải khai
+      `network_scope: [telegram_bot_api]`, tức là cấp quyền chạm Internet cho **mọi** domain service — đúng thứ
+      `NET-P1` cấm. Trước FIX6 không actor nào khai `telegram.send_payload`/`delivery.dispatch_next`, nên
+      `CAPABILITY_DENIED` của `telegram.send_payload` không có bản ghi capability để đối chiếu (CR-PC10-03).
+    network_scope: [telegram_bot_api]
+    network_scope_declared_value:
+      host_class: telegram_bot_api
+      host_class_meaning_vi: >
+        Endpoint API bot của Telegram đã cấu hình (một host class, không phải một danh sách IP). Đây là **giá trị
+        khai báo** mà oracle của I11 đối chiếu: đếm outbound connection theo host class.
+      allowed_outbound_from_this_actor: [telegram_bot_api]
+      denied_outbound_from_this_actor: [x_web, arxiv_api, openalex_api, ai_provider_endpoints_configured, backup_destination_configured, mọi host khác]
+      capability_guarded_by_capability_denied_vi: >
+        `CAPABILITY_DENIED` trên `telegram.send_payload` bảo vệ đúng một capability: **mở kết nối ra
+        `telegram_bot_api` và gửi một payload tới một recipient**. Nó bị từ chối khi (a) tiến trình gọi không phải
+        `ACT-delivery-dispatcher` — không principal nào khác có host class này trong `network_scope`; hoặc (b)
+        recipient trong payload không phải chat đã liên kết ở link generation hiện tại; hoặc (c) payload đến từ
+        một nguồn không phải `delivery.create_intent` đã commit.
+      i11_oracle_vi: >
+        I11 ("bài nguồn/AI output không có quyền đọc secrets, gọi tool hay đổi recipient") đối chiếu được bằng ba
+        phép đếm trên fixture đối kháng: outbound connection tới `telegram_bot_api` từ mọi tiến trình **không phải**
+        dispatcher = **0**; số recipient khác chat đã liên kết = **0**; số `telegram.send_payload` không truy được
+        về một `outbox_intent` đã commit = **0**.
+      recipient_rule_vi: >
+        Recipient do hệ thống quyết định từ `telegram_link` ở link generation hiện tại. **Nội dung nguồn không định
+        nghĩa recipient** (SRC-PLAN §6.1). Đổi liên kết tăng generation và huỷ delivery đang chờ của recipient cũ.
+      restore_guard_vi: >
+        Dispatcher bị khoá khi `storage.health ∈ {write_blocked, maintenance, recovery_required}`; ở
+        `recovery_required` mã trả về là `RESTORE_UNVERIFIED` chứ không phải `CAPABILITY_DENIED` — hai thứ khác
+        nhau: một là "chưa được phép lúc này", một là "đường đi không tồn tại".
+      audit_refs: [CR-PC10-03]
+      invariant_refs: [I09, I11, I15]
+      scenario_refs: [SC14, SC17, SC18, SC27]
+    denied_capabilities:
+      - id: DC-DSP-01
+        capability_vi: Gửi tới recipient không phải chat đã liên kết ở generation hiện tại
+        reason_vi: Nội dung nguồn không đổi được recipient (I11); đổi liên kết huỷ delivery cũ, không chuyển sang recipient mới.
+        expected_error_code: CAPABILITY_DENIED
+      - id: DC-DSP-02
+        capability_vi: Gửi khi `storage.health` khác `healthy`
+        reason_vi: Attempt phải commit TRƯỚC network call; không commit được thì không được gọi mạng (SRC-PLAN §8.3).
+        expected_error_code: STORAGE_WRITE_FAILED
+      - id: DC-DSP-03
+        capability_vi: Tự gửi lại part ở trạng thái `unknown`
+        reason_vi: B03/AMD-B03 — chỉ `delivery.decide_unknown` của owner mới đưa part ra khỏi `unknown`.
+        expected_error_code: TELEGRAM_SEND_UNCERTAIN
+      - id: DC-DSP-04
+        capability_vi: Replay outbox generation cũ sau restore
+        reason_vi: I15; dispatcher chỉ gửi intent có `restore_generation` bằng generation hiện tại.
+        expected_error_code: RESTORE_UNVERIFIED
+    secret_scope: none
+    secret_note_vi: >
+      Dispatcher **không** giữ bot token: nó gọi `telegram.send_payload` của `MOD-telegram-adapter`, và adapter là
+      nơi duy nhất đọc token (xem `secret_items` của actor `ACT-telegram-ingress`). Tách như vậy để một lỗi ở logic
+      dispatch không biến thành lộ token.
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-backup-operator
+    name_vi: Backup operator
+    principal_type: human_operator
+    runs_on: server
+    module_refs: [MOD-backup-cli, MOD-backup-service]
+    auth_scope: backup_operator
+    allowed_operations: [backup.create_snapshot, backup.verify_snapshot, backup.restore_snapshot, backup.reconcile_after_restore]
+    denied_capabilities:
+      - id: DC-BK-01
+        capability_vi: Tự động mở lại dispatcher/worker claim ngay sau restore
+        reason_vi: Restore chưa verify thì side effect vẫn bị khóa (I15).
+        expected_error_code: RESTORE_UNVERIFIED
+        denied_case_ref: NC-10
+      - id: DC-BK-02
+        capability_vi: Replay outbox cũ hoặc reset `first_announced`
+        reason_vi: Phải là quyết định có chủ đích trong reconcile (I15).
+        expected_error_code: RESTORE_UNVERIFIED
+      - id: DC-BK-03
+        capability_vi: Sửa dữ liệu nghiệp vụ (tag, report, Saved)
+        reason_vi: Actor này chỉ có phạm vi backup/restore, không phải session owner.
+        expected_error_code: UNAUTHORIZED
+      - id: DC-BK-04
+        capability_vi: Backup profile Chrome hoặc phiên X từ máy cá nhân
+        reason_vi: Profile browser tách khỏi backup server (SRC-SPEC §11.2; PC08 chốt chi tiết).
+        expected_error_code: CAPABILITY_DENIED
+    secret_scope: scoped
+    secret_items: [backup_operator_credential, credential của đích lưu backup]
+    network_scope: [server_loopback, backup_destination_configured]
+    filesystem_scope: [thư mục snapshot backup trên server]
+    tool_scope: [sqlite_online_backup_api, vacuum_into]
+    tool_note_vi: >
+      Không dùng copy file DB đang hoạt động làm bằng chứng đủ; WAL là một phần trạng thái bền (SRC-PLAN §3.1, B11).
+
+  - id: ACT-scheduler
+    name_vi: Scheduler (tiến trình nội bộ server)
+    principal_type: internal_process
+    runs_on: server
+    module_refs: [MOD-scheduler]
+    auth_scope: internal_only
+    allowed_operations: [scheduler.evaluate_due, job.enqueue_scheduled_run, job.coalesce_overdue]
+    denied_capabilities:
+      - id: DC-SCH-01
+        capability_vi: Gửi digest hoặc đánh dấu report đã giao
+        reason_vi: SRC-PLAN §6.
+        expected_error_code: UNAUTHORIZED
+        denied_case_ref: NC-09
+      - id: DC-SCH-02
+        capability_vi: Gọi Chrome hoặc đẩy việc vào máy cá nhân
+        reason_vi: Collector **kéo** việc; không có cổng vào máy cá nhân (D11, SRC-SPEC §6.4).
+        expected_error_code: CAPABILITY_DENIED
+        forbidden_edge_ref: FE-26
+    secret_scope: none
+    network_scope: []
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-embedding-service
+    name_vi: Embedding service (tiến trình nội bộ server)
+    principal_type: internal_process
+    runs_on: server
+    module_refs: [MOD-embedding-service]
+    auth_scope: internal_only
+    allowed_operations: [embedding.generate_vectors, embedding.get_active_generation, embedding.start_generation_rebuild, embedding.activate_generation]
+    denied_capabilities:
+      - id: DC-EMB-01
+        capability_vi: Gọi provider API hoặc CLI
+        reason_vi: Embedding **chỉ local** (SRC-SPEC §10.1); vi phạm sẽ phá AC-16.
+        expected_error_code: CAPABILITY_DENIED
+        denied_case_ref: null
+        forbidden_edge_ref: FE-22
+      - id: DC-EMB-02
+        capability_vi: Thay đổi subscription (tag)
+        reason_vi: SRC-PLAN §6.
+        expected_error_code: UNAUTHORIZED
+        forbidden_edge_ref: FE-23
+      - id: DC-EMB-03
+        capability_vi: So sánh vector khác model/generation/dimension trong cùng một lần selection
+        reason_vi: I12.
+        expected_error_code: EMBEDDING_GENERATION_MISMATCH
+    secret_scope: none
+    network_scope: []
+    network_note_vi: Model nạp từ artifact cục bộ trên server; không tải model lúc chạy.
+    filesystem_scope: [thư mục artifact model embedding trên server]
+    tool_scope: none
+
+  - id: ACT-research-connector
+    name_vi: Research connector (tiến trình nội bộ server)
+    principal_type: internal_process
+    runs_on: server
+    module_refs: [MOD-research-connector]
+    auth_scope: internal_only
+    allowed_operations: [research.fetch_work_metadata, research.get_connector_health]
+    denied_capabilities:
+      - id: DC-RC-01
+        capability_vi: Điều khiển Chrome hoặc truy cập X
+        reason_vi: SRC-PLAN §6.
+        expected_error_code: CAPABILITY_DENIED
+        denied_case_ref: NC-08
+      - id: DC-RC-02
+        capability_vi: Nhận chỉ dẫn fetch URL tùy ý từ model hoặc từ nội dung nguồn
+        reason_vi: Chỉ nhận DOI/arXiv ID đã chuẩn hóa (SRC-PLAN §6).
+        expected_error_code: VALIDATION_ERROR
+      - id: DC-RC-03
+        capability_vi: Đoán DOI khi thiếu ID, hoặc xóa abstract cũ đã có khi nguồn lỗi
+        reason_vi: SRC-PLAN §10 SOURCE_METADATA_UNAVAILABLE.
+        expected_error_code: SOURCE_METADATA_UNAVAILABLE
+    secret_scope: scoped
+    secret_items: ["email/định danh liên hệ mà OpenAlex yêu cầu (A6)"]
+    network_scope: [arxiv_api, openalex_api]
+    filesystem_scope: none
+    tool_scope: none
+
+  - id: ACT-server-domain-service
+    name_vi: Các domain service của server (auth, settings, tag, job, ingest, identity, analysis, report, saved, delivery, telegram, secret, health)
+    principal_type: internal_process
+    runs_on: server
+    module_refs: [MOD-auth-service, MOD-settings-service, MOD-tag-service, MOD-job-service, MOD-ingest-service, MOD-identity-service, MOD-analysis-service, MOD-report-service, MOD-saved-service, MOD-delivery-service, MOD-telegram-adapter, MOD-secret-service, MOD-health-service]
+    auth_scope: internal_only
+    allowed_operations_note_vi: >
+      Theo đúng `outbound_operations` của từng module trong contracts/modules.yaml; không có quyền chung "gọi mọi
+      port nội bộ".
+    denied_capabilities:
+      - id: DC-SRV-01
+        capability_vi: Chọn bảng/path/query tùy ý ngoài phạm vi `data_owner_of` của mình
+        reason_vi: Repository port theo phạm vi bảng (SRC-PLAN §6).
+        expected_error_code: CAPABILITY_DENIED
+      - id: DC-SRV-02
+        capability_vi: Đọc giá trị secret (trừ MOD-secret-service)
+        reason_vi: Chỉ secret service đọc được giá trị key ở server (SRC-PLAN §6.1).
+        expected_error_code: UNAUTHORIZED
+      - id: DC-SRV-03
+        capability_vi: Gọi mạng ngoài trong một transaction SQLite dài
+        reason_vi: External side effect dùng intent/outbox đã commit và receipt sau đó (SRC-PLAN §5.1).
+        expected_error_code: CAPABILITY_DENIED
+    secret_scope: none
+    secret_exception_vi: "MOD-secret-service có `secret_scope: owner`; MOD-auth-service giữ credential đăng nhập của owner."
+    network_scope: []
+    network_scope_note_vi: >
+      Vẫn **rỗng** sau FIX6 và đó là điều được khẳng định, không phải thiếu sót: không domain service nào chạm
+      Internet. Hai đường ra ngoài duy nhất của server nằm ở principal riêng —
+      `ACT-delivery-dispatcher` (`telegram_bot_api`) và `ACT-research-connector` (`arxiv_api`, `openalex_api`) —
+      cộng đường test provider khi owner bấm, đã khai ở `network_egress` của module `MOD-settings-service`.
+      `MOD-delivery-service` và `MOD-telegram-adapter` vẫn nằm trong `module_refs` của actor này cho phần **nghiệp
+      vụ trong tiến trình** (ghi intent, đọc trạng thái); phần **gửi ra ngoài** thuộc `ACT-delivery-dispatcher`
+      (CR-PC10-03).
+    filesystem_scope: [volume chứa file SQLite (chỉ qua repository port của phạm vi mình sở hữu)]
+    tool_scope: none
+
+# ---------------------------------------------------------------------------
+# Readiness / capability registration cho worker chạy trên máy cá nhân
+# (checklist PC01 mục 4). Payload này là body của worker.register_capabilities
+# và là nguồn dữ liệu cho worker.get_status + health.get_readiness.
+# ---------------------------------------------------------------------------
+worker_capability_registration:
+  operation: worker.register_capabilities
+  transport: http
+  direction_vi: Luôn là outbound từ máy cá nhân; server không bao giờ gọi vào (SRC-SPEC §6.4).
+  payload_fields:
+    - field: worker_instance_id
+      type: string
+      required: true
+      description_vi: Định danh ổn định của một cài đặt worker trên một máy.
+    - field: worker_kind
+      type: enum
+      values: [collector, analysis]
+      required: true
+      description_vi: Quyết định token nào hợp lệ và assignment nào được giao.
+    - field: registration_seq
+      type: integer
+      required: true
+      description_vi: Tăng đơn điệu; bản seq lùi bị bỏ qua để tránh ghi đè bằng trạng thái cũ.
+    - field: agent_version
+      type: string
+      required: true
+      description_vi: Phiên bản worker, để đối chiếu compatibility với schema_version của server.
+    - field: schema_version
+      type: string
+      required: true
+      description_vi: Phiên bản wire mà worker nói (SRC-PLAN §5.1).
+    - field: capabilities.collector_online
+      type: boolean
+      required: "khi worker_kind = collector"
+      description_vi: >
+        Worker tự khai đang sẵn sàng nhận việc. Đây **chỉ là lời khai**; trạng thái "online" hiển thị trong app do
+        server tính từ heartbeat theo ngưỡng ở contracts/ops/deployment.md.
+    - field: capabilities.chrome_profile_ready
+      type: boolean
+      required: "khi worker_kind = collector"
+      description_vi: Profile Chrome **riêng của dự án** (D09) tồn tại, mở được và không bị khóa bởi tiến trình khác.
+    - field: capabilities.x_session_state
+      type: enum
+      values: [ok, challenge_required, expired, unknown]
+      required: "khi worker_kind = collector"
+      description_vi: >
+        Trạng thái phiên X quan sát được lần cuối. `unknown` khi chưa kiểm được — không được quy đổi thành `ok`
+        (CAP-P5). `challenge_required`/`expired` là đầu vào để server không giao thêm việc và giữ run ở `needs_user`.
+    - field: capabilities.ai_providers
+      type: array
+      required: "khi worker_kind = analysis"
+      item_fields:
+        - name: provider_id
+          type: string
+          values: null
+          required: true
+          note_vi: Định danh provider đã cấu hình trong Settings.
+        - name: auth_family
+          type: enum
+          values: [api_key, cli_acp]
+          required: true
+          note_vi: Hai họ provider của D41.
+        - name: usable
+          type: enum
+          values: [usable, unusable, unknown]
+          required: true
+          note_vi: "`unknown` không được quy đổi thành `usable` (CAP-P5, I13)."
+        - name: reason_code
+          type: enum
+          values: [binary_missing, not_logged_in, auth_expired, policy_unverified, isolation_unverified, probe_timeout, probe_error, disabled_by_owner]
+          required: "bắt buộc khi usable != usable"
+          note_vi: Cùng tập giá trị với `reason_code_enum` bên dưới.
+        - name: max_concurrency
+          type: integer
+          values: null
+          required: true
+          note_vi: Đường CLI/ACP bằng 1 theo D43; đường API key do provider tự khai.
+        - name: tasks_supported
+          type: array
+          values: [label, summary, direction_phrasing]
+          required: true
+          note_vi: >
+            Ba task cần AI; embedding không nằm ở đây vì chạy local trên server. Chính tả enum lấy từ
+            contracts/data/entities.yaml (`analysis_task.task_type`) theo ruling CR-PC03-05 — trước FIX3 file này
+            dùng `open_labeling`/`emerging_direction_phrasing`, không khớp entity.
+        - name: isolation_verified
+          type: boolean
+          values: null
+          required: true
+          note_vi: "`false` ⇒ adapter của provider đó giữ trạng thái disabled (B13)."
+        - name: policy_reviewed
+          type: boolean
+          values: null
+          required: true
+          note_vi: Điều khoản của chính nhà cung cấp đã được đọc trước khi bật (A5).
+      description_vi: >
+        Đây là **nguồn sự thật duy nhất** cho biết đường CLI/ACP có dùng được hay không, vì server không probe được
+        CLI trên máy cá nhân. settings.test_provider chỉ thử được đường API key.
+    - field: capabilities.embedding_supported
+      type: boolean
+      required: true
+      constant_value: false
+      description_vi: >
+        Luôn `false`: embedding chạy ở server, chỉ local (D50/B12). Server **từ chối** bản đăng ký khai `true`.
+    - field: capabilities.local_storage_writable
+      type: boolean
+      required: true
+      description_vi: Máy cá nhân còn ghi được (log, checkpoint tạm); false ⇒ worker báo stop `local_storage_unavailable`.
+    - field: observed_at
+      type: string (RFC 3339 UTC, millisecond)
+      required: true
+      description_vi: >
+        Thời điểm worker quan sát. Server **không tin clock worker** cho thứ tự nghiệp vụ; mốc authoritative là thời
+        điểm server ghi nhận (SRC-PLAN §9.1).
+  reason_code_enum:
+    - binary_missing
+    - not_logged_in
+    - auth_expired
+    - policy_unverified
+    - isolation_unverified
+    - probe_timeout
+    - probe_error
+    - disabled_by_owner
+  server_rules:
+    - id: WR-01
+      rule_vi: Server chỉ giao assignment cho worker đã đăng ký đủ capability cần cho phase đó.
+    - id: WR-02
+      rule_vi: >
+        `usable: unknown` được đối xử như **không dùng được** khi quyết định giao việc, nhưng hiển thị riêng với
+        `unusable` trên giao diện (I13).
+    - id: WR-03
+      rule_vi: >
+        Bản đăng ký khai `embedding_supported: true` bị từ chối bằng VALIDATION_ERROR; đây là guard cho D50/B12.
+    - id: WR-04
+      rule_vi: >
+        Đăng ký **không** cấp lease. Lease chỉ đến từ worker.claim_assignment / analysis.claim_task và mang
+        `lease_epoch` riêng (I10).
+    - id: WR-05
+      rule_vi: >
+        Trạng thái "collector online" hiển thị cho người dùng do server tính từ heartbeat gần nhất theo ngưỡng
+        PROVISIONAL trong contracts/ops/deployment.md, không lấy trực tiếp từ `capabilities.collector_online`.
+
+zero_api_key_path:
+  requirement_ref: REQ-AC16
+  statement_vi: >
+    Nếu owner cấu hình gắn nhãn, summary **và** diễn đạt khối "hướng đang nổi" chạy hết qua CLI/ACP, hệ thống hoàn
+    tất một đợt mà không cần API key nào, vì embedding dùng model local ở server (D51, AC-16).
+  capability_conditions:
+    - "ai_providers có ít nhất một mục `auth_family: cli_acp` với `usable: usable` cho từng task đang bật."
+    - "MOD-embedding-service không có network egress tới provider (FE-22)."
+    - "secret.issue_task_credential không được gọi cho task dùng đường CLI (không có key để cấp)."
+  note_vi: >
+    Nếu khối "hướng đang nổi" được bật mà không có provider nào phục vụ task
+    `direction_phrasing`, luồng zero-API-key **chưa** đạt AC-16 cho phần đó — báo `insufficient_capability`,
+    không âm thầm bỏ khối (SRC-PLAN §11 PC06).

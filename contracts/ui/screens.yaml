@@ -1,0 +1,628 @@
+# Research Radar — hợp đồng màn hình: read model, action map, trạng thái hiển thị
+# Văn xuôi tiếng Việt; identifier/key/enum/operation_id tiếng Anh (baseline §3).
+
+contract_id: CT-ui-screens
+version: 0.1.0
+status: draft
+owner_role: interaction contract owner
+source_refs:
+  - "SRC-SPEC §4 (bảng màn hình, 8 hàng + sơ đồ điều hướng)"
+  - "SRC-SPEC §5.3 (đọc và Save)"
+  - "SRC-SPEC §5.4 (can thiệp xác minh)"
+  - "SRC-SPEC §8.3 (ba trạng thái phải phân biệt được)"
+  - "SRC-SPEC §9.1 (tách vòng đời run và delivery)"
+  - "SRC-SPEC §7.3 (ba thao tác xóa)"
+  - "SRC-SPEC §12 AC-10, AC-11, AC-12, AC-13, AC-15"
+  - "SRC-PLAN §3 B01, B10, B13"
+  - "SRC-PLAN §6 (Web UI chỉ gọi backend owner API)"
+  - "SRC-PLAN §7 I01, I05, I08, I09, I11, I13"
+  - "SRC-PLAN §11 PC07"
+requirement_refs:
+  - REQ-S4-01
+  - REQ-S4-02
+  - REQ-S4-03
+  - REQ-S4-04
+  - REQ-S4-05
+  - REQ-S4-06
+  - REQ-S4-07
+  - REQ-S4-08
+  - REQ-S4-09
+  - REQ-S4-10
+  - REQ-S8.3-01
+  - REQ-S8.3-02
+  - REQ-S8.3-03
+  - REQ-S5.1-01
+  - REQ-S5.1-02
+  - REQ-S5.1-03
+  - REQ-S5.3-01
+  - REQ-S5.3-03
+  - REQ-S5.4-04
+  - REQ-S7.3-05
+  - REQ-D04
+  - REQ-D05
+  - REQ-D45
+  - REQ-D55
+  - REQ-AC10
+  - REQ-AC12
+  - REQ-AC13
+  - REQ-AC15
+  - REQ-OQ10
+decision_refs: [B01, B10, AMD-B10, R-04, CR-PC04-07, CR-PC01-02]
+invariant_refs: [I01, I05, I08, I09, I11, I13, I15]
+producers: [MOD-web-ui]
+consumers: [MOD-web-ui]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/capabilities.yaml
+  - contracts/data/entities.yaml
+  - contracts/state/run.yaml
+  - contracts/state/delivery.yaml
+  - contracts/state/storage.yaml
+  - contracts/state/report.yaml
+  - contracts/schemas/report.schema.json
+  - contracts/schemas/saved-snapshot.schema.json
+  - contracts/reporting/time-and-tags.md
+scope: >-
+  Với mỗi màn hình của SRC-SPEC §4: read model (trường hiển thị và entity nguồn), action map
+  (mỗi hành động ánh xạ tới ĐÚNG MỘT `operation_id` trong contracts/ports.yaml), auth scope,
+  khả dụng trên điện thoại, và năm trạng thái hiển thị (loading / empty / partial / error /
+  stale_last_known). File này KHÔNG chốt màu sắc hay visual design — SRC-SPEC §4 nói rõ điều
+  đó là cố ý (REQ-S4-10). File cũng không định nghĩa wire HTTP (PC05) hay state machine (PC03).
+verification: >-
+  E0: YAML parse; mọi `operation_id` tồn tại trong contracts/ports.yaml; mọi nhãn trạng thái
+  run/delivery tồn tại trong contracts/state/run.yaml và delivery.yaml (EV-PC07-01/02).
+  E1–E4 (render review trên desktop/mobile): NOT_RUN.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Quy tắc toàn cục
+# ---------------------------------------------------------------------------
+global_rules:
+  auth:
+    scope: owner_session
+    status: PROVISIONAL
+    decision_ref: "PC05/PC08 hội tụ; ghi nhận ở đây theo chỉ dẫn Coordinator"
+    mechanism_vi: >-
+      Một tài khoản đăng nhập duy nhất, không trang signup (REQ-D05). Phiên là cookie
+      **HttpOnly** cộng **CSRF double-submit token** cho mọi mutation. Mọi màn hình dưới đây
+      dùng `auth_scope: owner_session` trừ màn hình đăng nhập (`public_login`).
+    owner_decision: "Cơ chế phiên là PROVISIONAL cho tới khi PC08 khóa; PC07 chỉ cam kết tên scope."
+  no_direct_access:
+    invariant_refs: [I01, I11]
+    rules_vi:
+      - "Web UI KHÔNG bao giờ đọc/ghi SQLite trực tiếp; mọi thứ đi qua một `operation_id` trong ports.yaml (SRC-PLAN §6, NC-01)."
+      - "Web UI KHÔNG bao giờ đọc secret. Màn hình Settings hiển thị **sự tồn tại** và **trạng thái** của key, không bao giờ giá trị (SRC-SPEC §11.2)."
+      - "Web UI KHÔNG gọi Telegram API hay AI provider trực tiếp."
+      - "Nội dung nguồn (post, abstract, output AI) được render như DỮ LIỆU: escape trước khi hiển thị, không thực thi, không cho phép nó điều khiển hành động (SRC-SPEC §11.4, I11)."
+  five_display_states:
+    note_vi: "Mọi màn hình phải định nghĩa đủ năm; thiếu một trạng thái là hợp đồng chưa đóng."
+    states:
+      - {id: loading, meaning_vi: "Đang chờ dữ liệu lần đầu."}
+      - {id: empty, meaning_vi: "Đọc thành công, không có dữ liệu. Copy phải nói ĐÚNG lý do rỗng."}
+      - {id: partial, meaning_vi: "Có dữ liệu nhưng thiếu một phần đã biết; phải nêu rõ phần nào thiếu."}
+      - {id: error, meaning_vi: "Đọc thất bại. Giữ dữ liệu cache nếu có và nói rõ đây là dữ liệu cũ."}
+      - {id: stale_last_known, meaning_vi: "`storage_health != healthy`: hiển thị dữ liệu last-known kèm `as_of`, vô hiệu hóa mutation (contracts/state/storage.yaml §ui_read_model UI-01..03)."}
+  storage_health_contract:
+    source: "contracts/state/storage.yaml §ui_read_model"
+    rules_vi:
+      - "UI-01: mọi màn hình trạng thái nghiệp vụ kèm `as_of` (timestamp UTC ms của lần đọc DB thành công gần nhất) và cờ `storage_health`."
+      - "UI-02: khi `storage_health != healthy`, dữ liệu hiển thị là LAST-KNOWN, có nhãn tường minh, KHÔNG trình bày như trạng thái hiện tại."
+      - "UI-03: nút mutation bị **vô hiệu hóa tường minh** (disabled + lý do), KHÔNG thất bại im lặng."
+    enum_ref: "storage_health ∈ {healthy, write_blocked, maintenance, recovery_required}"
+  run_status_labels:
+    requirement_refs: [REQ-S8.3-01, REQ-S8.3-02, REQ-S8.3-03, REQ-AC15]
+    invariant_refs: [I13]
+    derivation_source: "contracts/state/run.yaml §enums và §invariants_owned I13"
+    labels:
+      - id: no_matching_content
+        label_vi: "Không có nội dung phù hợp"
+        condition: "status = completed AND outcome = empty"
+        meaning_vi: "Thu thập xong, không bài nào khớp tag."
+        forbidden_label_vi: "Không có nghiên cứu mới"
+      - id: stopped_early
+        label_vi: "Đợt dừng sớm"
+        condition: "stop_reason ∈ {limit_reached, captcha, session_expired, source_blocked} HOẶC status = needs_user HOẶC status = blocked"
+        meaning_vi: "Gặp giới hạn hoặc cần xác minh."
+        forbidden_label_vi: "Đợt hoàn tất"
+      - id: run_failed
+        label_vi: "Đợt thất bại"
+        condition: "status = failed"
+        meaning_vi: "Nguồn không truy cập được hoặc lỗi hệ thống."
+        forbidden_label_vi: "Không có dữ liệu mới"
+    forbidden_globally:
+      - phrase_vi: "Không có nghiên cứu mới"
+        why_vi: >-
+          SRC-SPEC §8.3 cấm tường minh. Ba tình huống trên có ba nguyên nhân khác nhau và
+          gộp chúng thành một câu là nói dối người dùng về việc hệ thống đã làm gì. Cụm từ
+          này KHÔNG được xuất hiện ở bất kỳ màn hình nào, kể cả empty state của Topics.
+    oracle_vi: >-
+      Ba run `(completed, empty, null)`, `(completed, *, limit_reached)`, `(failed, failed, *)`
+      cho ba chuỗi nhãn PHÂN BIỆT; grep toàn bộ chuỗi hiển thị của app cho cụm bị cấm ⇒ 0 kết quả.
+  delivery_status_labels:
+    invariant_refs: [I09, I13]
+    derivation_source: "contracts/state/delivery.yaml §delivery_part_semantics DP-03 (precedence unknown > failed > retry_wait > sending > pending > sent)"
+    labels:
+      - {id: delivery_sent, label_vi: "Đã gửi Telegram", condition: "delivery.state = sent"}
+      - {id: delivery_pending, label_vi: "Đang chờ gửi", condition: "delivery.state ∈ {pending, sending, retry_wait}"}
+      - {id: delivery_unknown, label_vi: "Chưa xác định — có thể đã gửi", condition: "delivery.state = unknown", action_required_vi: "Người dùng quyết định qua `delivery.decide_unknown`."}
+      - {id: delivery_failed, label_vi: "Không gửi được", condition: "delivery.state = failed"}
+      - {id: delivery_cancelled, label_vi: "Đã hủy (liên kết đổi)", condition: "delivery.state = cancelled"}
+    hard_rules_vi:
+      - "`unknown` KHÔNG BAO GIỜ được hiển thị là `sent` hoặc `failed` (I13, AMD-B03)."
+      - "Trạng thái delivery KHÔNG được trộn vào nhãn trạng thái run: Telegram lỗi không làm đợt thành 'thất bại' (I09, SRC-SPEC §9.1)."
+      - "Báo cáo trong app đọc được đầy đủ ở MỌI trạng thái delivery, kể cả `failed` (REQ-AC14)."
+  mobile_capability:
+    source: "SRC-SPEC §4 cột cuối"
+    values: [full, read_and_save, read_only, read_only_plus_run_now]
+    note_vi: "REQ-D04: app mở được trên điện thoại từ ngoài mạng nhà. 'read_only' nghĩa là hành động mutation bị ẩn/vô hiệu trên điện thoại theo đúng bảng §4, không phải bị lỗi."
+  navigation:
+    requirement_refs: [REQ-S4-09, REQ-D45]
+    implements_vi: "REQ-S4-09: năm mục điều hướng chính và màn hình mặc định Reports."
+    primary: [Reports, Topics, Saved, Runs, Settings]
+    default_screen: Reports
+    sub_screens:
+      - {parent: Reports, child: ReportDetail}
+      - {parent: ReportDetail, child: WorkDetail}
+      - {parent: Topics, child: TagMatchingPreview}
+      - {parent: Saved, child: WorkDetail}
+      - {parent: Runs, child: RunDetail}
+  visual_design:
+    requirement_refs: [REQ-S4-10]
+    implements_vi: "REQ-S4-10: màu sắc và visual design cố ý chưa chốt; thiếu design token KHÔNG phải blocker hợp đồng."
+    status: "Cố ý chưa chốt (SRC-SPEC §4). Thiếu design token KHÔNG phải blocker của hợp đồng này."
+  unsaved_changes_and_stale_data:
+    rules:
+      - id: UC-01
+        rule_vi: "Màn hình có form (Topics, Settings) phải cảnh báo khi rời trang với thay đổi chưa lưu; không tự lưu ngầm."
+      - id: UC-02
+        rule_vi: >-
+          Mọi mutation gửi kèm phiên bản của thứ đang sửa (`tag.updated_at` hoặc
+          `settings.updated_at`). Nếu server thấy phiên bản cũ ⇒ `CONFLICT`; UI hiện diff và
+          bắt người dùng chọn, KHÔNG ghi đè im lặng.
+      - id: UC-03
+        rule_vi: >-
+          Report đã publish là bất biến (I05). UI KHÔNG bao giờ hiển thị nút "sửa báo cáo".
+          Phân tích lại một mục tạo generation mới và KHÔNG đổi báo cáo cũ (REQ-D26).
+      - id: UC-04
+        rule_vi: "Khi `storage_health != healthy`, mọi nút mutation disabled kèm lý do (UI-03)."
+
+# ---------------------------------------------------------------------------
+# 2. Màn hình
+# ---------------------------------------------------------------------------
+screens:
+
+  - id: SCR-reports
+    name_vi: Reports
+    requirement_refs: [REQ-S4-01, REQ-S4-09, REQ-S4-10, REQ-S5.3-01, REQ-D45]
+    goal_vi: "Trả lời câu hỏi 'có gì mới'."
+    is_default: true
+    auth_scope: owner_session
+    mobile: full
+    read_model:
+      source_operations: [report.list]
+      source_entities: [report, coverage_window, emerging_direction, delivery]
+      fields:
+        - {name: report_id, type: string_ulid, source: "report.id"}
+        - {name: published_at, type: timestamp_utc_ms, source: "report.published_at", display_vi: "Ngày kỳ báo cáo, quy đổi sang `owner.timezone_iana` (B08)"}
+        - {name: coverage_from, type: timestamp_utc_ms, source: "report.coverage_from"}
+        - {name: coverage_to, type: timestamp_utc_ms, source: "report.coverage_to", note_vi: "Biên phải EXCLUSIVE; hiển thị phải nói rõ khoảng nửa mở [from, to)"}
+        - {name: item_count, type: integer, source: "COUNT(report_item WHERE report_id)"}
+        - {name: emerging_direction_count, type: integer, source: "COUNT(emerging_direction WHERE report_id)"}
+        - {name: quality, type: enum, source: "report.quality", values: [complete, partial], display_vi: "`partial` hiện nhãn 'một phần' kèm số mục còn thiếu summary (B17)"}
+        - {name: delivery_status_label, type: enum, source: "derived từ delivery.state theo § global_rules → delivery_status_labels"}
+        - {name: as_of, type: timestamp_utc_ms, source: "UI-01"}
+        - {name: storage_health, type: enum, source: "storage.get_health"}
+      derived_rules_vi:
+        - "Chỉ liệt kê `report.status = 'published'`. Kỳ rỗng có `coverage_window` nhưng KHÔNG có report hiển thị (REQ-D57, AMD-B04) — nó xuất hiện ở Runs, không ở đây."
+        - "Không hiển thị `delivered_at` trên report: delivery không đổi nội dung report đã publish (I05, B01)."
+    actions:
+      - {id: ACT-open-report, label_vi: "Mở kỳ", operation_id: report.get, auth_scope: owner_session, mobile: true, navigates_to: SCR-report-detail}
+      - {id: ACT-run-now, label_vi: "Chạy ngay", operation_id: run.run_now, auth_scope: owner_session, mobile: true, guard_vi: "Không vượt qua run đang `needs_user` (AMD-B10); phản hồi nêu rõ lý do và trỏ tới Runs."}
+    states:
+      loading_vi: "Skeleton danh sách kỳ; không hiện '0 kỳ' khi chưa đọc xong."
+      empty:
+        copy_vi: "Chưa có kỳ nào, bấm chạy ngay"
+        source: "SRC-SPEC §4 hàng Reports (nguyên văn)"
+        forbidden_copy_vi: ["Không có nghiên cứu mới"]
+      partial_vi: "Kỳ có `quality = partial` hiện nhãn 'một phần' + số mục thiếu summary."
+      error_vi: "Hiện lỗi tải, GIỮ dữ liệu cache đã có (SRC-SPEC §4 nguyên văn), nhãn rõ đây là dữ liệu cũ."
+      stale_last_known_vi: "Theo UI-01/UI-02; nút 'Chạy ngay' disabled kèm lý do (UI-03)."
+
+  - id: SCR-report-detail
+    name_vi: Report detail
+    requirement_refs: [REQ-S4-02, REQ-S5.3-01, REQ-S5.3-03, REQ-AC10, REQ-AC13]
+    goal_vi: "Đọc một kỳ."
+    auth_scope: owner_session
+    mobile: read_and_save
+    read_model:
+      source_operations: [report.get]
+      source_schema: "contracts/schemas/report.schema.json"
+      source_entities: [report, report_item, emerging_direction, analysis, tag_config_version, saved_item]
+      fields:
+        - {name: emerging_directions, type: array, source: "report.schema.json → emerging_directions", display_vi: "Khối ở ĐẦU trang (REQ-D53). Nhãn bắt buộc 'ứng viên để đọc sâu' (REQ-D54); `evidence_state = insufficient_evidence` phải hiện là thiếu bằng chứng, KHÔNG hiện là 'hướng đang nổi' (B14)."}
+        - {name: items, type: array, source: "report.schema.json → items"}
+        - {name: "items[].target", type: object, source: "report.schema.json → $defs/report_item → target", schema_ref: "contracts/schemas/target.schema.json"}
+        - {name: "items[].item_type", type: enum, values: [new_discovery, prior_reference], display_vi: "`prior_reference` PHẢI hiện 'đã báo cáo <ngày D>' lấy từ `first_announced` (REQ-D29, REQ-AC09) — không hiện như phát hiện mới."}
+        - {name: "items[].analysis", type: object, source: "report.schema.json → $defs/report_item → analysis", note_vi: "Đây là **analysis revision đang đọc**; Save chụp đúng bản này (REQ-D55)."}
+        - {name: "items[].summary_state", type: enum, display_vi: "Mục thiếu summary hiện nhãn 'chưa có summary' + lý do pending, KHÔNG ẩn mục (B17)."}
+        - {name: "items[].matched_tags", type: array, display_vi: "Dòng 'khớp tag nào' — bắt buộc theo REQ-D20/REQ-AC10."}
+        - {name: "items[].evidence_level", type: enum, source: "analysis.evidence_level", values: [post_only, abstract, full_text], display_vi: "Nhãn mức độ đọc (REQ-D21, REQ-AC11)."}
+        - {name: "items[].saved_state", type: enum, source: "saved_item.state", values: [active, not_saved], display_vi: "Nút Save phản ánh trạng thái hiện tại."}
+        - {name: tag_config_version, type: object, source: "report.schema.json → tag_config_version", display_vi: "Phiên bản tag đã dùng để tạo kỳ này (REQ-D23)."}
+        - {name: coverage, type: object, source: "report.schema.json → coverage"}
+        - {name: coverage_note, type: object, source: "report.schema.json → coverage_note", display_vi: "Nêu phạm vi dữ liệu ĐÃ QUAN SÁT, không hứa bao phủ toàn bộ X (B05, SRC-PLAN §9.2)."}
+      ac10_completeness:
+        requirement_ref: REQ-AC10
+        rule_vi: >-
+          Mỗi mục phải tự đủ để quyết định mà KHÔNG cần mở nguồn: nội dung, điểm khác với cái
+          đã có, một dòng hạn chế, nhãn mức độ đọc, và tag nào đã khớp. Nếu thiếu bất kỳ phần
+          nào, mục hiện nhãn thiếu tường minh thay vì hiển thị như đầy đủ.
+    actions:
+      - {id: ACT-save-item, label_vi: "Save", operation_id: save.create, auth_scope: owner_session, mobile: true, requirement_refs: [REQ-S5.3-01], note_vi: "Gửi `source_report_item_id` để snapshot chụp đúng analysis revision đang đọc (TXN-save-target). Đây là bước cuối của đường đọc Reports → Report detail → Save (REQ-S5.3-01)."}
+      - {id: ACT-unsave-item, label_vi: "Bỏ lưu", operation_id: save.remove, auth_scope: owner_session, mobile: true, note_vi: "Bỏ lưu ≠ xóa dữ liệu gốc (REQ-S7.3-05); snapshot được giữ."}
+      - {id: ACT-open-source, label_vi: "Mở nguồn", operation_id: null, kind: external_link, auth_scope: owner_session, mobile: true, note_vi: "Mở URL post/paper ở tab mới; không phải operation của hệ thống. `rel=noopener noreferrer`, hiển thị host trước khi mở."}
+      - {id: ACT-open-work-detail, label_vi: "Mở chi tiết công trình", operation_id: work.get_detail, auth_scope: owner_session, mobile: true, navigates_to: SCR-work-detail}
+      - {id: ACT-reanalyze-item, label_vi: "Phân tích lại mục này", operation_id: analysis.request_reanalysis, auth_scope: owner_session, mobile: false, guard_vi: "Tạo generation mới, GIỮ bản cũ (REQ-D26); KHÔNG đổi báo cáo đã publish (UC-03)."}
+    states:
+      loading_vi: "Khối hướng nổi và danh sách mục có skeleton riêng."
+      empty_vi: "Không xảy ra: kỳ rỗng không được publish thành report hiển thị (REQ-D57). Nếu gặp, đó là lỗi dữ liệu — hiện error, không hiện 'không có nghiên cứu mới'."
+      partial:
+        copy_rule_vi: "SRC-SPEC §4 nguyên văn 'Rỗng-một-phần: ghi rõ đợt dừng sớm vì lý do gì'. Hiện `stop_reason` của run nguồn và danh sách mục pending."
+      error_vi: "Giữ nội dung đã tải, ghi rõ phần nào thiếu."
+      stale_last_known_vi: "Save/Bỏ lưu/Phân tích lại disabled (UI-03); nội dung vẫn đọc được."
+
+  - id: SCR-work-detail
+    name_vi: Work detail
+    requirement_refs: [REQ-S4-03, REQ-AC11, REQ-AC12]
+    goal_vi: "Đọc sâu một công trình."
+    auth_scope: owner_session
+    mobile: read_and_save
+    read_model:
+      source_operations: [work.get_detail]
+      source_entities: [work, work_version, analysis, work_label, post, post_work, saved_item, report_item, identity_conflict]
+      fields:
+        - {name: summary, type: object, source: "analysis (generation hiện hành)"}
+        - {name: evidence_level, type: enum, values: [post_only, abstract, full_text]}
+        - {name: topic_labels, type: array, source: "work_label.label_text"}
+        - {name: matched_tags, type: array}
+        - {name: source_posts, type: array, source: "post_work → post", display_vi: "Danh sách post dẫn công trình (REQ-AC07: nhiều post nằm DƯỚI một mục, không thành nhiều mục). Post đã bị xóa trên X hiện nhãn từ `post.source_deleted_observed_at`."}
+        - {name: paper_refs, type: object, source: "work.canonical_doi, work.canonical_arxiv_id, work.paper_url"}
+        - {name: work_versions, type: array, source: "work_version", display_vi: "arXiv v1/v2…; bản cũ được giữ (REQ-D26)."}
+        - {name: analysis_history, type: array, source: "analysis_generation + analysis", display_vi: "Lịch sử phân tích: mỗi generation kèm `analyzed_at` và lý do (REQ-D26). Hiện NGÀY PHÂN TÍCH cùng NGÀY PHÁT HIỆN (SRC-SPEC §10.3)."}
+        - {name: related_reported_items, type: array, display_vi: "Mục liên quan đã báo cáo, kèm ngày (REQ-D30, REQ-D29)."}
+        - {name: identity_state, type: enum, values: [active, merged, quarantined], display_vi: "`quarantined` hiện cảnh báo xung đột định danh và KHÔNG trình bày như hai phát hiện độc lập (B15)."}
+        - {name: content_state, type: enum, values: [present, redacted_by_owner_deletion], display_vi: "Nội dung đã bị owner xóa hiện nhãn tường minh; Saved vẫn đọc được từ snapshot (SC32)."}
+      grounding_rules:
+        requirement_refs: [REQ-AC11]
+        rules_vi:
+          - "Ba loại phát biểu hiển thị TÁCH BIỆT: tuyên bố của tác giả · nội dung kiểm tra được từ nguồn · suy luận của AI (SRC-SPEC §10.3, B16)."
+          - "Với `evidence_level = post_only`, mọi phát biểu về tính mới hiện là SUY LUẬN, không phải kết luận (REQ-AC11)."
+          - "Tương tác trên X (like/repost) KHÔNG được hiển thị như bằng chứng khoa học (SRC-SPEC §10.3)."
+          - "Comparator thiếu hiện `comparator: unknown`, không bịa baseline (B16)."
+    actions:
+      - {id: ACT-save-work, label_vi: "Save", operation_id: save.create, auth_scope: owner_session, mobile: true}
+      - {id: ACT-unsave-work, label_vi: "Bỏ lưu", operation_id: save.remove, auth_scope: owner_session, mobile: true}
+      - {id: ACT-open-source-work, label_vi: "Mở link gốc", operation_id: null, kind: external_link, auth_scope: owner_session, mobile: true}
+      - {id: ACT-reanalyze-work, label_vi: "Phân tích lại", operation_id: analysis.request_reanalysis, auth_scope: owner_session, mobile: false}
+      - {id: ACT-resolve-identity-conflict, label_vi: "Giải xung đột định danh", operation_id: identity.resolve_conflict, auth_scope: owner_session, mobile: false, visible_when: "identity_state = quarantined"}
+      - {id: ACT-delete-target-data, label_vi: "Xóa dữ liệu gốc của mục này", operation_id: data.delete_target, auth_scope: owner_session, mobile: false, scenario_refs: [SC32], guard_vi: "Đòi cờ xác nhận tường minh; UI phải nói rõ Saved và snapshot ĐƯỢC GIỮ (REQ-D55, TXN-delete-target)."}
+    states:
+      loading_vi: "Skeleton từng khối."
+      empty_vi: "Không áp dụng (điều hướng luôn có target)."
+      partial_vi: "Thiếu metadata paper ⇒ hiện 'chỉ có post' (REQ-D33) và ghi rõ phần nào thiếu."
+      error_vi: "SRC-SPEC §4 nguyên văn: hiện nội dung đã có, ghi rõ phần nào thiếu."
+      stale_last_known_vi: "Mutation disabled (UI-03)."
+
+  - id: SCR-topics
+    name_vi: Topics
+    requirement_refs: [REQ-S4-04, REQ-S5.1-02, REQ-D46, REQ-D28]
+    goal_vi: "Quản lý tag."
+    auth_scope: owner_session
+    mobile: read_only
+    read_model:
+      source_operations: [tag.list]
+      source_entities: [tag, tag_alias, tag_exclusion, tag_vector, embedding_generation]
+      fields:
+        - {name: tags, type: array, source: "tag WHERE state = active"}
+        - {name: "tags[].aliases", type: array, source: tag_alias}
+        - {name: "tags[].exclusions", type: array, source: tag_exclusion}
+        - {name: "tags[].matching_labels", type: array, display_vi: "Nhãn đang khớp mỗi tag (REQ-D46) — đọc qua `tag.preview_matches`."}
+        - {name: "tags[].similarity_threshold", type: number, nullable: true, display_vi: "NULL = dùng mặc định; giá trị cụ thể là KC (REQ-A2, REQ-D47)."}
+        - {name: embedding_generation, type: object, display_vi: "Model + phiên bản + dimension đang active; nếu đang rebuild thì nói rõ preview có thể chưa đủ (I12)."}
+    actions:
+      - {id: ACT-create-tag, label_vi: "Thêm tag", operation_id: tag.create, auth_scope: owner_session, mobile: false, requirement_refs: [REQ-S5.1-02], note_vi: "Bước 2 của thiết lập lần đầu (SRC-SPEC §5.1)."}
+      - {id: ACT-update-tag, label_vi: "Sửa tag", operation_id: tag.update, auth_scope: owner_session, mobile: false}
+      - {id: ACT-delete-tag, label_vi: "Xóa tag", operation_id: tag.delete, auth_scope: owner_session, mobile: false, guard_vi: "Bỏ tag KHÔNG xóa dữ liệu và KHÔNG xóa Saved (REQ-S8.2-07, I08); UI phải nói điều đó trước khi xác nhận."}
+      - {id: ACT-preview-matches, label_vi: "Xem nhãn khớp", operation_id: tag.preview_matches, auth_scope: owner_session, mobile: true, navigates_to: SCR-tag-matching-preview, requirement_refs: [REQ-S5.1-02], note_vi: "App hiện NGAY nhãn đang khớp để người dùng hiệu chỉnh — nửa sau của bước 2 (REQ-D46)."}
+      - id: ACT-rescan-corpus
+        label_vi: "Quét lại kho theo tag"
+        operation_id: tag.rescan_corpus
+        auth_scope: owner_session
+        mobile: false
+        decision_refs: [CR-PC04-07]
+        guard_vi: >-
+          BẮT BUỘC hiện **số mục ước tính** sẽ được xử lý TRƯỚC khi xác nhận (CR-PC04-07 từ
+          PC04). Lý do: đây là đường duy nhất khiến chi phí AI tỉ lệ với số bài trong KHO thay
+          vì số mục trong báo cáo (SRC-SPEC §10.4). Không có ước tính ⇒ không được hiện nút.
+          Hộp thoại nêu: số mục ước tính, việc này KHÔNG reset first-announcement và KHÔNG tiêu
+          thụ backfill (SRC-PLAN §9.2), và có ledger riêng.
+    states:
+      loading_vi: "Skeleton danh sách tag."
+      empty:
+        copy_vi: "Chưa có tag nào, báo cáo sẽ trống"
+        source: "SRC-SPEC §4 hàng Topics (nguyên văn)"
+        forbidden_copy_vi: ["Không có nghiên cứu mới"]
+        why_vi: "Rỗng ở đây là do NGƯỜI DÙNG chưa nhập tag, không phải do thế giới không có nghiên cứu. Đây là ví dụ SRC-SPEC §4 nêu đích danh."
+      partial_vi: "Preview nhãn khớp chưa tính xong ⇒ hiện 'đang tính', không hiện danh sách rỗng."
+      error_vi: "Giữ danh sách tag đã tải; lỗi preview không làm mất danh sách tag."
+      stale_last_known_vi: "Thêm/sửa/xóa/quét lại disabled (UI-03)."
+
+  - id: SCR-tag-matching-preview
+    name_vi: Tag matching preview
+    requirement_refs: [REQ-S4-04, REQ-S5.1-02, REQ-D46, REQ-A2]
+    goal_vi: "Xem nhãn nào đang khớp một tag để hiệu chỉnh (SRC-SPEC §5.1 bước 2)."
+    parent: SCR-topics
+    auth_scope: owner_session
+    mobile: read_only
+    read_model:
+      source_operations: [tag.preview_matches]
+      source_entities: [tag, work_label, tag_vector, embedding_generation]
+      fields:
+        - {name: matched_labels, type: array, display_vi: "Nhãn + điểm tương đồng + target liên quan."}
+        - {name: excluded_labels, type: array, display_vi: "Nhãn bị loại bởi tag_exclusion, kèm lý do loại."}
+        - {name: threshold_used, type: number, display_vi: "Ngưỡng đã dùng; là KC cho tới khi có dữ liệu thật (REQ-A2, REQ-D47)."}
+        - {name: embedding_generation_id, type: string_ulid, display_vi: "Preview chỉ so sánh trong CÙNG generation (I12)."}
+    actions:
+      - {id: ACT-back-to-topics, label_vi: "Quay lại Topics", operation_id: null, kind: navigation, mobile: true}
+    states:
+      loading_vi: "Đang tính tương đồng."
+      empty_vi: "Không nhãn nào vượt ngưỡng — hiện đúng câu đó kèm ngưỡng đang dùng, KHÔNG hiện 'không có nghiên cứu mới'."
+      partial_vi: "Generation đang rebuild ⇒ nói rõ preview dựa trên generation cũ hoặc bị chặn (I12)."
+      error_vi: "Hiện lỗi tính toán; giữ tag."
+      stale_last_known_vi: "Chỉ đọc; không có mutation."
+
+  - id: SCR-saved
+    name_vi: Saved
+    requirement_refs: [REQ-S4-05, REQ-D55, REQ-AC12, REQ-OQ10]
+    goal_vi: "Kho đã lưu."
+    auth_scope: owner_session
+    mobile: read_only
+    read_model:
+      source_operations: [save.list]
+      source_entities: [saved_item, saved_snapshot]
+      source_schema: "contracts/schemas/saved-snapshot.schema.json"
+      fields:
+        - {name: saved_items, type: array, source: "saved_item WHERE state = active"}
+        - {name: "saved_items[].saved_at", type: timestamp_utc_ms}
+        - {name: "saved_items[].saved_via", type: enum, values: [app, telegram], display_vi: "Nguồn Save (SRC-SPEC §4)."}
+        - {name: "saved_items[].snapshot", type: object, source: saved_snapshot, display_vi: "Nội dung đọc từ SNAPSHOT, không đọc lại nguồn. Bài gốc bị xóa trên X vẫn đọc được (REQ-AC12)."}
+        - {name: "saved_items[].snapshot_hash", type: hash_sha256, display_vi: "Không cần hiện cho người dùng; là oracle kiểm chứng."}
+        - {name: "saved_items[].source_state", type: enum, values: [source_present, source_deleted, source_redacted], display_vi: "Nhãn phụ; KHÔNG làm mục biến mất."}
+    actions:
+      - {id: ACT-unsave, label_vi: "Bỏ lưu", operation_id: save.remove, auth_scope: owner_session, mobile: false, guard_vi: "Giữ snapshot; chỉ đổi `saved_item.state` (I08)."}
+      - {id: ACT-open-saved, label_vi: "Mở", operation_id: work.get_detail, auth_scope: owner_session, mobile: true, navigates_to: SCR-work-detail, note_vi: "Nếu target đã bị xóa dữ liệu gốc, mở vẫn đọc được nội dung snapshot."}
+      - {id: ACT-search-saved, label_vi: "Tìm kiếm", operation_id: save.list, auth_scope: owner_session, mobile: true, note_vi: "Tìm kiếm là tham số của `save.list`, không phải operation riêng."}
+      - id: ACT-export-saved
+        label_vi: "Export"
+        operation_id: save.export
+        auth_scope: owner_session
+        mobile: false
+        lifecycle_status: deferred_p1
+        decision_refs: [F-PC00-02, REQ-OQ10]
+        rule_vi: >-
+          SRC-SPEC §4 liệt kê `export` trong hành động của màn hình Saved, nhưng REQ-OQ10 để
+          ngỏ và PC00 đã hoãn sang P1 (`save.export.lifecycle_status = deferred_p1`). UI MVP
+          **ẩn** nút này. Không hiện nút rồi báo lỗi — đó là hứa suông.
+        status: PROVISIONAL
+    states:
+      loading_vi: "Skeleton danh sách."
+      empty:
+        copy_vi: "Chưa lưu mục nào. Mở một kỳ báo cáo và bấm Save để giữ lại."
+        source: "SRC-SPEC §4 hàng Saved ('hướng dẫn Save từ báo cáo')"
+        forbidden_copy_vi: ["Không có nghiên cứu mới"]
+      partial_vi: "Không áp dụng: snapshot tự đủ."
+      error_vi: "Hiện lỗi tải danh sách; snapshot đã cache vẫn đọc được."
+      stale_last_known_vi: "Bỏ lưu disabled (UI-03); đọc vẫn được."
+
+  - id: SCR-runs
+    name_vi: Runs
+    requirement_refs: [REQ-S4-06, REQ-S5.1-05, REQ-AC15, REQ-S8.3-01, REQ-S8.3-02, REQ-S8.3-03, REQ-D11]
+    goal_vi: "Biết hệ thống đang làm gì."
+    auth_scope: owner_session
+    mobile: read_only_plus_run_now
+    read_model:
+      source_operations: [run.list, worker.get_status]
+      source_entities: [run, worker_registration, checkpoint, assignment_lease]
+      fields:
+        - {name: collector_online_state, type: enum, values: [online, offline, unknown], source: "worker_registration.online_state", display_vi: "`unknown` KHÔNG được hiển thị thành `offline` (I13)."}
+        - {name: last_run_at, type: timestamp_utc_ms, display_vi: "Chỉ để xem; KHÔNG dùng làm mốc lọc dữ liệu (REQ-D12)."}
+        - {name: runs, type: array}
+        - {name: "runs[].status_label", type: enum, source: "derived theo § global_rules → run_status_labels", display_vi: "Ba nhãn phân biệt (REQ-AC15)."}
+        - {name: "runs[].phase", type: enum, values: [collecting, enriching, analyzing, reporting]}
+        - {name: "runs[].progress", type: object, source: "checkpoint", display_vi: "Tiến độ theo checkpoint (SRC-SPEC §4 'Loading: hiện tiến độ theo checkpoint')."}
+        - {name: "runs[].stop_reason", type: enum, nullable: true}
+        - {name: "runs[].trigger_type", type: enum, values: [scheduled, manual]}
+        - {name: "runs[].outcome", type: enum, nullable: true}
+        - {name: "runs[].empty_period_note", type: string, nullable: true, display_vi: "Kỳ rỗng KHÔNG có report nhưng CÓ coverage record — hiện ở đây (REQ-D57, AMD-B04)."}
+        - {name: as_of, type: timestamp_utc_ms}
+        - {name: storage_health, type: enum}
+    actions:
+      - {id: ACT-run-now-from-runs, label_vi: "Chạy ngay", operation_id: run.run_now, auth_scope: owner_session, mobile: true, guard_vi: "Không vượt `needs_user` (AMD-B10)."}
+      - id: ACT-resume-run
+        label_vi: "Tiếp tục run đang chờ"
+        operation_id: run.resume
+        auth_scope: owner_session
+        mobile: false
+        decision_refs: [B10, AMD-B10]
+        visible_when: "run.status = needs_user"
+        rule_vi: >-
+          **Đây là nơi DUY NHẤT (cùng Run detail) có hành động resume.** B10/AMD-B10: `status`
+          là read-only, `run_now` không vượt `needs_user`, resume là hành động riêng trong app
+          và KHÔNG có lệnh Telegram thứ tư. Guard của server: chỉ resume khi phiên nguồn không
+          còn challenge (contracts/state/run.yaml).
+      - {id: ACT-cancel-run, label_vi: "Hủy run", operation_id: run.cancel, auth_scope: owner_session, mobile: false}
+      - {id: ACT-open-run-detail, label_vi: "Mở chi tiết", operation_id: run.get, auth_scope: owner_session, mobile: true, navigates_to: SCR-run-detail}
+    states:
+      loading_vi: "Hiện tiến độ theo checkpoint (SRC-SPEC §4)."
+      empty_vi: "Chưa có đợt nào. Không dùng cụm bị cấm."
+      partial_vi: "Run `outcome = partial` hiện 'một phần' + số mục thiếu."
+      error_vi: "Hiện lỗi tải; giữ danh sách cache kèm `as_of`."
+      stale_last_known_vi: "Chạy ngay / Tiếp tục / Hủy disabled kèm lý do (UI-03)."
+    ac15_oracle_vi: >-
+      Ba run (empty / limit / failed) cho ba nhãn khác nhau, và không nhãn nào là
+      'Không có nghiên cứu mới'. Trạng thái delivery hiển thị ở cột RIÊNG, không trộn vào nhãn run (I09).
+
+  - id: SCR-run-detail
+    name_vi: Run detail
+    requirement_refs: [REQ-S4-07, REQ-S5.4-04, REQ-AC04]
+    goal_vi: "Chẩn đoán một đợt."
+    auth_scope: owner_session
+    mobile: read_only
+    read_model:
+      source_operations: [run.get, delivery.get_status]
+      source_entities: [run, checkpoint, ingest_receipt, delivery, delivery_part, outbox_intent]
+      fields:
+        - {name: trigger_type, type: enum}
+        - {name: applied_config, type: object, display_vi: "Cấu hình đã áp cho đợt (bất biến sau khi rời `queued`)."}
+        - {name: items_collected, type: integer, source: "SUM(ingest_receipt.items_received)"}
+        - {name: items_new, type: integer, source: "SUM(ingest_receipt.posts_inserted)"}
+        - {name: checkpoint, type: object, source: "checkpoint mới nhất của run", display_vi: "`acked_through_ingest_sequence` + `cursor_state`."}
+        - {name: coverage_limitation_note, type: string, display_vi: "Giới hạn bao phủ X (B05): 'completed' KHÔNG có nghĩa đã quét đủ toàn bộ X."}
+        - {name: errors, type: array, display_vi: "Mã lỗi + `message_safe` từ contracts/errors.yaml. KHÔNG hiện transcript, key, cookie."}
+        - {name: delivery_status, type: object, source: "delivery.get_status", display_vi: "Nhãn theo § global_rules → delivery_status_labels; `unknown` hiện RIÊNG (I13)."}
+        - {name: alert_intent_count, type: integer, display_vi: "Phải là 1 cho một run `needs_user` (REQ-AC04, I09)."}
+      log_redaction_vi: "SRC-SPEC §4 'xem log đã che secrets': log hiển thị đã che; UI không có đường xem log thô."
+    actions:
+      - {id: ACT-resume-run-detail, label_vi: "Tiếp tục", operation_id: run.resume, auth_scope: owner_session, mobile: false, visible_when: "run.status = needs_user", decision_refs: [B10, AMD-B10]}
+      - {id: ACT-cancel-run-detail, label_vi: "Hủy", operation_id: run.cancel, auth_scope: owner_session, mobile: false}
+      - id: ACT-decide-unknown-delivery
+        label_vi: "Quyết định về lần gửi chưa xác định"
+        operation_id: delivery.decide_unknown
+        auth_scope: owner_session
+        mobile: false
+        visible_when: "delivery.state = unknown"
+        decision_refs: [B03, AMD-B03]
+        rule_vi: >-
+          Ba lựa chọn theo `unknown_decision` của delivery.yaml:
+          `resend_accepting_duplicate_risk` (UI phải nói rõ NGUY CƠ TIN TRÙNG),
+          `mark_not_delivered`, `abandon`. Hệ thống KHÔNG BAO GIỜ tự chọn (AMD-B03).
+    states:
+      loading_vi: "Skeleton."
+      empty_vi: "Không áp dụng."
+      partial_vi: "Thiếu một phần dữ liệu chẩn đoán ⇒ ghi rõ phần nào."
+      error_vi: "Hiện lỗi; giữ dữ liệu đã có."
+      stale_last_known_vi: "Tiếp tục / Hủy / Quyết định unknown disabled (UI-03)."
+
+  - id: SCR-settings
+    name_vi: Settings
+    requirement_refs: [REQ-S4-08, REQ-S5.1-03, REQ-S5.1-04, REQ-D39, REQ-D41, REQ-D48, REQ-S7.3-05, REQ-S11.3-04]
+    goal_vi: "Cấu hình."
+    auth_scope: owner_session
+    mobile: read_only
+    read_model:
+      source_operations: [settings.get_config, worker.get_status, health.get_readiness]
+      source_entities: [settings, provider_config, provider_test_result, telegram_link, embedding_generation, secret_ref]
+      fields:
+        - {name: schedule, type: object, display_vi: "Giờ chạy + `owner.timezone_iana`; giờ là mốc SỚM NHẤT được chạy (REQ-D13). Giá trị cụ thể là REQ-OQ06 (PROVISIONAL 08:00 và 20:00)."}
+        - {name: per_run_limits, type: object, display_vi: "Giới hạn mỗi đợt; PROVISIONAL 200 post hoặc 30 phút (REQ-OQ05), owner chốt sau M0."}
+        - {name: backfill_days, type: integer, display_vi: "N ngày với ngược; PROVISIONAL 7 (REQ-OQ04)."}
+        - {name: provider_config_per_task, type: array, display_vi: "Provider/model theo từng tác vụ (REQ-D39/D40); đường CLI khai `max_concurrency = 1`."}
+        - {name: provider_key_state, type: enum, values: [configured, not_configured], display_vi: "CHỈ hiện đã cấu hình hay chưa. KHÔNG BAO GIỜ hiện giá trị key, kể cả một phần (SRC-SPEC §11.2, I11)."}
+        - {name: provider_test_result, type: object, display_vi: "Nêu rõ NHÀ NÀO lỗi (SRC-SPEC §4). `unknown` hiện là `unknown`, không quy thành lỗi (I14)."}
+        - {name: telegram_link_state, type: object, source: telegram_link, display_vi: "Trạng thái liên kết + `generation`. KHÔNG hiện chat ID đầy đủ."}
+        - {name: embedding_model, type: object, source: embedding_generation, display_vi: "Model + phiên bản + dimension + trạng thái generation (REQ-D48)."}
+        - {name: readiness, type: object, source: "health.get_readiness", display_vi: "Gồm 'CLI provider đang usable hay không' (B13, REQ-AC16)."}
+    actions:
+      - {id: ACT-update-settings, label_vi: "Sửa cấu hình", operation_id: settings.update_config, auth_scope: owner_session, mobile: false, requirement_refs: [REQ-S5.1-03], guard_vi: "Gửi kèm phiên bản đang sửa; lệch ⇒ `CONFLICT`, hiện diff (UC-02). Bước 3 của thiết lập lần đầu: chọn provider/model theo tác vụ; đường CLI chỉ ra binary local (REQ-D41)."}
+      - {id: ACT-test-provider, label_vi: "Test provider", operation_id: settings.test_provider, auth_scope: owner_session, mobile: false, requirement_refs: [REQ-S5.1-03]}
+      - {id: ACT-issue-telegram-code, label_vi: "Sinh mã liên kết Telegram", operation_id: telegram.issue_link_code, auth_scope: owner_session, mobile: false, requirement_refs: [REQ-S5.1-04], note_vi: "Mã hiện MỘT lần trong app; có hạn, dùng một lần (REQ-D35). Bước 4 của thiết lập lần đầu. Xem contracts/telegram/commands.yaml §linking."}
+      - id: ACT-unlink-telegram
+        label_vi: "Hủy liên kết Telegram"
+        operation_id: telegram.unlink
+        auth_scope: owner_session
+        mobile: false
+        decision_refs: [CR-PC01-02, B10, REQ-S11.3-04]
+        status: PROVISIONAL
+        rule_vi: >-
+          Hủy liên kết là **hành động trong app**, KHÔNG phải lệnh chat thứ tư. Căn cứ: REQ-D36
+          (XN, "3 lệnh") thắng REQ-D37 (ĐX, "có lệnh hủy liên kết") theo ruling CR-PC01-02 và
+          AMD-B10. Owner có thể đảo ngược. Hệ quả: delivery `pending`/`retry_wait` của
+          generation cũ chuyển `cancelled` (delivery.yaml T-DL-08).
+      - {id: ACT-logout, label_vi: "Đăng xuất", operation_id: auth.logout, auth_scope: owner_session, mobile: true}
+      - id: ACT-purge-all
+        label_vi: "Xóa toàn bộ dữ liệu"
+        operation_id: data.purge_all
+        auth_scope: owner_session
+        mobile: false
+        requirement_refs: [REQ-S7.3-05]
+        rule_vi: >-
+          Thao tác thứ ba của SRC-SPEC §7.3, đòi **xác nhận gõ tay**: người dùng phải gõ đúng
+          cụm từ do SERVER phát (`purge_challenge`); client không tự sinh cụm từ. Chỉ khả dụng
+          khi trạng thái kho là `maintenance`. Hộp thoại phải liệt kê phạm vi bị xóa và phạm vi
+          còn `OWNER_DECISION_REQUIRED` (TXN-purge-all).
+        status: OWNER_DECISION_REQUIRED_SCOPE
+    states:
+      loading_vi: "Skeleton từng nhóm cấu hình."
+      empty_vi: "Không áp dụng (luôn có giá trị mặc định)."
+      partial_vi: "Một nhóm không đọc được ⇒ nhóm đó hiện lỗi riêng, các nhóm khác vẫn sửa được."
+      error:
+        copy_rule_vi: "SRC-SPEC §4 nguyên văn: 'Lỗi test provider hiện rõ nhà nào lỗi'."
+      stale_last_known_vi: "Mọi nút sửa disabled (UI-03); giá trị hiện tại vẫn xem được kèm `as_of`."
+
+  - id: SCR-login
+    name_vi: Đăng nhập
+    requirement_refs: [REQ-S5.1-01, REQ-D05, REQ-D04]
+    goal_vi: "Một tài khoản đăng nhập duy nhất; không có trang signup."
+    auth_scope: public_login
+    mobile: full
+    read_model:
+      source_operations: [auth.login]
+      fields:
+        - {name: login_form, type: object, display_vi: "Không có 'đăng ký', không có 'quên mật khẩu' tự động (SRC-SPEC §11.1)."}
+    actions:
+      - {id: ACT-login, label_vi: "Đăng nhập", operation_id: auth.login, auth_scope: public_login, mobile: true, requirement_refs: [REQ-S5.1-01]}
+    states:
+      loading_vi: "Nút disabled khi đang gửi."
+      empty_vi: "Không áp dụng."
+      partial_vi: "Không áp dụng."
+      error_vi: "Thông báo lỗi KHÔNG tiết lộ tài khoản có tồn tại hay không."
+      stale_last_known_vi: "Không áp dụng."
+
+# ---------------------------------------------------------------------------
+# 3. Ma trận kiểm tra
+# ---------------------------------------------------------------------------
+coverage_matrix:
+  spec_section_4_rows:
+    - {row: "Reports", screen: SCR-reports, requirement: REQ-S4-01}
+    - {row: "Report detail", screen: SCR-report-detail, requirement: REQ-S4-02}
+    - {row: "Work detail", screen: SCR-work-detail, requirement: REQ-S4-03}
+    - {row: "Topics", screen: SCR-topics, requirement: REQ-S4-04}
+    - {row: "Tag matching preview (sơ đồ IA)", screen: SCR-tag-matching-preview, requirement: REQ-S4-04}
+    - {row: "Saved", screen: SCR-saved, requirement: REQ-S4-05}
+    - {row: "Runs", screen: SCR-runs, requirement: REQ-S4-06}
+    - {row: "Run detail", screen: SCR-run-detail, requirement: REQ-S4-07}
+    - {row: "Settings", screen: SCR-settings, requirement: REQ-S4-08}
+    - {row: "Điều hướng chính + màn hình mặc định", screen: "§ global_rules → navigation", requirement: REQ-S4-09}
+    - {row: "Visual design chưa chốt (cố ý)", screen: "§ global_rules → visual_design", requirement: REQ-S4-10}
+  spec_section_5_1_setup_steps:
+    note_vi: "SRC-SPEC §5.1 bước 1–5; fixture acceptance/fixtures/ui/sc51-first-time-setup.json neo cả năm."
+    steps:
+      - {step: 1, requirement: REQ-S5.1-01, screen: SCR-login, action: ACT-login}
+      - {step: 2, requirement: REQ-S5.1-02, screen: SCR-topics, actions: [ACT-create-tag, ACT-preview-matches], sub_screen: SCR-tag-matching-preview}
+      - {step: 3, requirement: REQ-S5.1-03, screen: SCR-settings, actions: [ACT-update-settings, ACT-test-provider]}
+      - {step: 4, requirement: REQ-S5.1-04, screen: SCR-settings, action: ACT-issue-telegram-code}
+      - {step: 5, requirement: REQ-S5.1-05, screen: SCR-runs, note_vi: "Đăng nhập X vào profile riêng của dự án làm trên máy cá nhân, NGOÀI app; Runs chỉ hiện trạng thái collector (REQ-D11). REQ-OQ01 vẫn chặn M0."}
+  spec_section_5_3_read_and_save:
+    note_vi: "SRC-SPEC §5.3; fixture acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json."
+    rows:
+      - {requirement: REQ-S5.3-01, path_vi: "Reports → Report detail → Save", screens: [SCR-reports, SCR-report-detail], action: ACT-save-item}
+      - {requirement: REQ-S5.3-03, path_vi: "Link trong tin Telegram trỏ về app, mở được từ điện thoại", contract_ref: "contracts/telegram/delivery.md §3.2", screen: SCR-report-detail, mobile: read_and_save}
+  forbidden_actions:
+    - {id: NC-UI-01, description_vi: "UI gọi SQLite trực tiếp", expected_vi: "không tồn tại đường; mọi action có `operation_id` hoặc là `kind: external_link | navigation`", invariant_ref: I01}
+    - {id: NC-UI-02, description_vi: "UI đọc giá trị secret", expected_vi: "Settings chỉ có `provider_key_state`; không trường nào chứa giá trị", invariant_ref: I11}
+    - {id: NC-UI-03, description_vi: "UI gửi Telegram trực tiếp", expected_vi: "không action nào trỏ `telegram.send_payload` (internal_only, caller = MOD-delivery-service)"}
+    - {id: NC-UI-04, description_vi: "Resume xuất hiện ngoài Runs/Run detail", expected_vi: "chỉ ACT-resume-run và ACT-resume-run-detail dùng `run.resume`", decision_ref: AMD-B10}
+    - {id: NC-UI-05, description_vi: "Hiển thị `delivery.state = 'unknown'` thành `sent`/`failed`", expected_vi: "nhãn riêng `delivery_unknown`", invariant_ref: I13}
+    - {id: NC-UI-06, description_vi: "Dùng cụm 'Không có nghiên cứu mới' ở bất kỳ đâu", expected_vi: "0 kết quả khi grep chuỗi hiển thị", requirement_ref: REQ-S8.3-01}
+    - {id: NC-UI-07, description_vi: "Nút Export hiện ở MVP", expected_vi: "ẩn vì `save.export.lifecycle_status = deferred_p1`", requirement_ref: REQ-OQ10}
+    - {id: NC-UI-08, description_vi: "Quét lại kho không hiện số mục ước tính", expected_vi: "nút không được hiện nếu thiếu ước tính", decision_ref: CR-PC04-07}

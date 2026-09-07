@@ -1,0 +1,378 @@
+# Research Radar — hợp đồng Telegram: ingress, liên kết, ba lệnh, callback Save
+
+contract_id: CT-telegram-commands
+version: 0.1.0
+status: draft
+owner_role: interaction contract owner
+source_refs:
+  - "SRC-SPEC §3.6 D35, D36, D37, D38"
+  - "SRC-SPEC §5.1 bước 4 (sinh mã liên kết)"
+  - "SRC-SPEC §5.3 (Save qua Telegram)"
+  - "SRC-SPEC §5.4 (can thiệp xác minh)"
+  - "SRC-SPEC §8.2 hàng 10 (bấm Save 5 lần)"
+  - "SRC-SPEC §11.3 (liên kết Telegram)"
+  - "SRC-SPEC §12 AC-13, AC-18"
+  - "SRC-PLAN §3 B09, B10"
+  - "SRC-PLAN §10 UNAUTHORIZED_COMMAND"
+  - "SRC-PLAN §11 PC07"
+requirement_refs:
+  - REQ-D35
+  - REQ-D36
+  - REQ-D37
+  - REQ-D38
+  - REQ-S11.3-01
+  - REQ-S11.3-02
+  - REQ-S11.3-03
+  - REQ-S11.3-04
+  - REQ-S11.3-05
+  - REQ-S5.4-04
+  - REQ-AC13
+  - REQ-AC18
+  - REQ-OOS-05
+decision_refs: [B09, B10, AMD-B09, AMD-B10, CR-PC01-02]
+invariant_refs: [I08, I09, I11, I13]
+producers: [MOD-telegram-adapter]
+consumers: [MOD-web-ui, MOD-delivery-service, MOD-saved-service, MOD-job-service]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/data/entities.yaml (ENT-telegram-link-attempt — nguồn đếm rate limit B09)
+  - contracts/capabilities.yaml
+  - contracts/errors.yaml
+  - contracts/state/delivery.yaml
+  - contracts/state/run.yaml
+  - contracts/data/entities.yaml
+  - contracts/telegram/delivery.md
+  - contracts/schemas/saved-snapshot.schema.json
+scope: >-
+  Hợp đồng cổng vào Telegram: xác thực update, chống replay, quy tắc bỏ im lặng, ngoại lệ hẹp
+  cho việc nhận mã liên kết (B09), vòng đời liên kết/hủy liên kết, ba lệnh của REQ-D36, và
+  callback Save. KHÔNG định nghĩa wire HTTP (PC05), state machine delivery (PC03), hay cách
+  render digest (contracts/telegram/delivery.md).
+verification: >-
+  E0: YAML parse; mọi `operation_id` tồn tại trong ports.yaml; mọi error code tồn tại trong
+  errors.yaml (EV-PC07-02); fixture (f)–(m) trong acceptance/fixtures/telegram/. E1–E4: NOT_RUN.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Ingress: xác thực và chống replay
+# ---------------------------------------------------------------------------
+ingress:
+  operation_id: telegram.receive_update
+  owner_module: MOD-telegram-adapter
+  auth_scope: telegram_ingress_secret
+  caller: EXT-telegram-api
+  transport_note_vi: "Wire HTTP do PC05 khóa; ở đây chỉ khóa ngữ nghĩa xác thực và định tuyến."
+  authentication:
+    - id: ING-01
+      rule_vi: >-
+        Mỗi update phải mang **secret token của webhook** do server phát khi đăng ký webhook
+        (`telegram_ingress_secret_token` trong capabilities.yaml). So sánh bằng thuật toán
+        constant-time. Thiếu hoặc sai ⇒ `UNAUTHORIZED`, **không phản hồi nội dung**, ghi
+        `telegram_update_log` với `disposition = dropped_invalid`.
+      requirement_refs: [REQ-S11.3-02]
+    - id: ING-02
+      rule_vi: >-
+        Không tin `chat_id` hay trường `from` → `id` của update Telegram trong payload như bằng chứng danh tính khi chưa qua
+        ING-01: bất kỳ ai biết URL webhook cũng có thể gửi JSON tùy ý. Danh tính chỉ có nghĩa
+        SAU khi secret token khớp.
+    - id: ING-03
+      rule_vi: >-
+        Chỉ chấp nhận đúng các loại update mà bot cần: `message` (văn bản) và `callback_query`.
+        Mọi loại khác (channel_post, inline_query, poll, …) bị bỏ im lặng với
+        `disposition = dropped_invalid`.
+  replay_and_dedup:
+    - id: ING-04
+      rule_vi: >-
+        `update_id` là khóa chống trùng: `ux_telegram_update_id (owner_id, provider_update_id)`
+        trong `telegram_update_log`. Update trùng `update_id` được bỏ qua và trả cùng kết quả
+        như lần đầu, KHÔNG thực hiện lại tác dụng phụ.
+      entity_ref: "contracts/data/entities.yaml ENT-telegram-update-log"
+    - id: ING-05
+      rule_vi: >-
+        trường `callback_query` → `id` của update Telegram chỉ được trả lời (`answerCallbackQuery`) một lần; trả lời lại là
+        no-op. Việc chống trùng của Save nằm ở `saved_item.idempotency_key`, không ở đây.
+    - id: ING-06
+      rule_vi: >-
+        Update cũ hơn `telegram_update_max_age` bị bỏ. PROVISIONAL **86400 giây (24 giờ)**,
+        lý do: webhook backlog sau khi server offline lâu có thể phát lại lệnh cũ; một lệnh
+        `run_now` từ hôm qua không phản ánh ý định hiện tại. `CR-PC07-05` để PC08 xác nhận.
+      status: PROVISIONAL
+  authorization:
+    - id: ING-07
+      rule_vi: >-
+        Chỉ chat đã liên kết (`telegram_link.state = 'active'`, `chat_id` khớp) mới ra được ba
+        lệnh của REQ-D36 và callback Save. Biết `chat_id` KHÔNG phải là quyền (REQ-S11.3-03).
+      auth_scope_ref: "ports.yaml `owner_session_or_linked_chat` cho run.list / run.run_now / save.create"
+    - id: ING-08
+      rule_vi: >-
+        Chat CHƯA liên kết: **bỏ im lặng tuyệt đối** — không trả lời gì, kể cả "không có
+        quyền", vì trả lời là tự xác nhận bot tồn tại (REQ-S11.3-02, nguyên văn SRC-SPEC §11.3).
+        Ngoại lệ DUY NHẤT là B09 ở mục 2.
+      error_code: UNAUTHORIZED_COMMAND
+      oracle_vi: "outbound call count = 0; số hàng của mọi bảng nghiệp vụ không đổi (REQ-AC18)."
+    - id: ING-09
+      rule_vi: >-
+        Không có lệnh nào sửa tag hoặc cấu hình qua chat (REQ-S11.3-05, REQ-OOS-05). Chuỗi văn
+        bản trông giống lệnh cấu hình từ chat ĐÃ liên kết cũng bị từ chối: allowlist ba lệnh,
+        không phải blocklist.
+  silent_drop_summary:
+    principle_vi: "Im lặng là mặc định; trả lời là ngoại lệ phải có căn cứ."
+    cases:
+      - {case_vi: "Secret token sai", reply: none, log_disposition: dropped_invalid}
+      - {case_vi: "Loại update không hỗ trợ", reply: none, log_disposition: dropped_invalid}
+      - {case_vi: "Chat chưa liên kết, nội dung bất kỳ", reply: none, log_disposition: dropped_unlinked}
+      - {case_vi: "Chat chưa liên kết, nội dung ĐÚNG định dạng mã liên kết", reply: "chỉ khi mã hợp lệ", log_disposition: link_code_attempt, counter_row_vi: "ghi một hàng `telegram_link_attempt`"}
+      - {case_vi: "Chat đã liên kết, lệnh ngoài allowlist", reply: "một câu ngắn nêu ba lệnh khả dụng", log_disposition: dropped_invalid}
+      - {case_vi: "Callback data không parse được", reply: "answerCallbackQuery rỗng", log_disposition: dropped_invalid}
+
+# ---------------------------------------------------------------------------
+# 2. Liên kết: mã một lần và ngoại lệ B09
+# ---------------------------------------------------------------------------
+linking:
+  decision_refs: [B09, AMD-B09]
+  requirement_refs: [REQ-D35, REQ-S11.3-01]
+  problem_vi: >-
+    SRC-SPEC §11.3 nói bỏ im lặng mọi tin từ chat chưa liên kết, nhưng SRC-SPEC §5.1 bước 4 cần
+    nhận mã từ một chat **chưa** liên kết. B09 giải bằng một ngoại lệ HẸP.
+  issue_flow:
+    operation_id: telegram.issue_link_code
+    caller: MOD-web-ui
+    auth_scope: owner_session
+    rules_vi:
+      - "App sinh mã; mã hiển thị MỘT lần trong app và KHÔNG bao giờ gửi qua Telegram (SRC-SPEC §11.2: mã không tái sử dụng)."
+      - "Lưu `telegram_link_code.code_hash` (sha256), KHÔNG lưu mã thô."
+      - "Sinh mã mới ⇒ mã `active` cũ chuyển `revoked` (UNIQUE partial `ux_telegram_link_code_active`)."
+  code_format:
+    regex: "^RR-[0-9A-HJKMNP-TV-Z]{8}$"
+    example: "RR-7QK2M4XB"
+    rationale_vi: >-
+      Tiền tố `RR-` cố định cho phép nhận diện "chuỗi này ĐÚNG định dạng mã liên kết" mà không
+      cần biết mã thật — đó chính là điều kiện của ngoại lệ B09. Bảng chữ Crockford base32 bỏ
+      I, L, O, U để tránh nhầm khi gõ tay. 8 ký tự ⇒ 32^8 ≈ 1.1e12 khả năng.
+    status: PROVISIONAL
+    decision_ref: CR-PC07-01
+  expiry:
+    value: 15
+    unit: minutes
+    status: PROVISIONAL
+    decision_ref: CR-PC07-01
+    rationale_vi: >-
+      Đủ để người dùng chuyển từ app sang Telegram và gõ mã; đủ ngắn để một mã lộ qua ảnh chụp
+      màn hình không còn dùng được. Owner có thể đổi; giá trị phải nằm trong settings.
+  one_use:
+    rule_vi: >-
+      Mã dùng ĐÚNG một lần: `consumed_at` NOT NULL sau lần dùng đầu, `state = 'consumed'`.
+      Lần thứ hai với cùng mã ⇒ **bỏ im lặng** (không nói "mã đã dùng" — điều đó xác nhận mã
+      từng đúng). Fixture (g).
+    operation_id: telegram.consume_link_code
+  validation_exception:
+    id: B09-EXCEPTION
+    rule_vi: >-
+      Một tin nhắn từ chat CHƯA liên kết được xử lý CHỈ KHI toàn bộ nội dung (sau trim) khớp
+      § linking → code_format → regex. Khi đó nó được đối chiếu với các mã chưa hết hạn, chưa dùng:
+      khớp ⇒ liên kết thành công + phản hồi xác nhận; không khớp ⇒ **bỏ im lặng**.
+      Mọi thứ khác từ chat chưa liên kết bị bỏ im lặng KHÔNG qua bước đối chiếu.
+    forbidden_vi:
+      - "Phản hồi 'mã sai' hoặc 'mã hết hạn' cho chat chưa liên kết — làm vậy biến bot thành oracle dò mã."
+      - "Đối chiếu chuỗi không đúng định dạng (mở rộng bề mặt tấn công không cần thiết)."
+      - "Cho phép ngoại lệ này chạy bất kỳ lệnh nào khác."
+    oracle_vi: >-
+      Fixture (i): chat lạ gửi chuỗi đúng định dạng nhưng sai mã ⇒ outbound call = 0, không
+      hàng nào đổi. Chat lạ gửi ĐÚNG mã ⇒ đúng 1 hàng `telegram_link` mới, 1 phản hồi.
+  rate_limit:
+    value: 5
+    unit: attempts_per_chat_per_hour
+    status: PROVISIONAL
+    decision_ref: CR-PC07-01
+    counter_source:
+      entity: telegram_link_attempt
+      file: contracts/data/entities.yaml
+      columns: [chat_id_hash, attempted_at, outcome, link_code_id]
+      query_vi: "COUNT(telegram_link_attempt WHERE chat_id_hash = H AND attempted_at trong cửa sổ trượt)"
+      note_vi: >-
+        Bảng này được PC02 thêm ở PKT-PC02-FIX3 theo CR-PC07-02 do chính PC07 nêu: trước đó
+        ngưỡng ở đây không ép được ở mức dữ liệu vì không cột nào lưu bộ đếm.
+    rule_vi: >-
+      Đếm theo `chat_id_hash` các lần khớp định dạng nhưng sai mã, đọc từ `telegram_link_attempt`.
+      Vượt ngưỡng ⇒ tiếp tục bỏ im lặng và KHÔNG đối chiếu nữa, ghi một hàng
+      `outcome = 'rate_limited_not_checked'` (im lặng vẫn là im lặng; rate limit chỉ giảm chi phí
+      và thu hẹp cửa sổ dò). Không bao giờ trả `RATE_LIMITED` cho chat chưa liên kết.
+    write_rule_vi: >-
+      CHỈ ghi hàng khi chuỗi KHỚP ĐỊNH DẠNG mã. Tin không khớp định dạng KHÔNG tạo hàng — nếu
+      ghi, bảng thành nhật ký mọi tin nhắn của người lạ. Lưu `chat_id_hash`, không lưu chat ID thô.
+    retention_vi: "30 ngày PROVISIONAL (CR-PC02-17), ngoại lệ có chủ ý của REQ-D58."
+  link_established:
+    rows_written_vi:
+      - "`telegram_link` hàng mới: `chat_id`, `generation = generation_cũ + 1`, `state = 'active'`."
+      - "`telegram_link` cũ (nếu có): `state = 'revoked'` — liên kết mới vô hiệu hóa liên kết cũ (REQ-D37, REQ-S11.3-04)."
+      - "`telegram_link_code`: `state = 'consumed'`, `consumed_at`, `consumed_by_chat_id`."
+      - "Delivery `pending`/`retry_wait` gắn generation CŨ ⇒ `cancelled` (delivery.yaml T-DL-08)."
+    reply_vi: "Một tin xác nhận ngắn: đã liên kết, ba lệnh khả dụng, và hủy liên kết làm trong app."
+    forbidden_vi:
+      - "Tự gửi lại digest cũ cho generation mới (fixture (e)) — nội dung cũ thuộc về recipient cũ."
+      - "Chuyển payload đang chờ sang recipient mới (SRC-PLAN §8.3)."
+  unlink:
+    decision_refs: [CR-PC01-02, B10, AMD-B10]
+    status: PROVISIONAL
+    operation_id: telegram.unlink
+    caller: MOD-web-ui
+    auth_scope: owner_session
+    rule_vi: >-
+      Hủy liên kết là **hành động trong app**, KHÔNG phải lệnh chat thứ tư. Căn cứ: REQ-D36 là
+      **XN** và nói rõ "3 lệnh"; REQ-D37 là **ĐX** và nói "có lệnh hủy liên kết". Khi một XN và
+      một ĐX mâu thuẫn, XN thắng (SRC-PLAN §1 thứ tự áp dụng). Ruling Coordinator CR-PC01-02
+      chốt như vậy; Owner có thể đảo ngược — khi đó lệnh thứ tư phải được thêm vào REQ-D36 bằng
+      amendment, không phải thêm lặng lẽ.
+    effects_vi:
+      - "`telegram_link.state = 'revoked'`."
+      - "Delivery `pending`/`retry_wait` ⇒ `cancelled`; delivery đã `sent` KHÔNG bị đụng (fixture (d))."
+      - "Chat cũ trở thành chat chưa liên kết ⇒ mọi tin sau đó bị bỏ im lặng."
+
+# ---------------------------------------------------------------------------
+# 3. Ba lệnh (REQ-D36) — allowlist đóng
+# ---------------------------------------------------------------------------
+commands:
+  allowlist_rule_vi: "Đúng BA lệnh. Không có lệnh thứ tư (AMD-B10). Bất kỳ chuỗi nào khác từ chat đã liên kết nhận một câu nhắc ngắn liệt kê ba lệnh."
+  execution_operation: telegram.execute_command
+  list:
+    - id: CMD-save
+      trigger_vi: "Nút Save gắn dưới mỗi mục trong digest (callback_query), KHÔNG phải lệnh gõ."
+      requirement_refs: [REQ-D38, REQ-AC13]
+      operation_id: save.create
+      auth_scope: owner_session_or_linked_chat
+      callback_payload:
+        fields:
+          - {name: v, type: integer, meaning_vi: "Phiên bản định dạng callback data; hiện tại 1."}
+          - {name: ri, type: string_ulid, meaning_vi: "`report_id` — kỳ mà nút thuộc về."}
+          - {name: ii, type: string_ulid, meaning_vi: "`report_item_id` — mục cụ thể; đây là 'ID mục' của REQ-D38."}
+          - {name: lg, type: integer, meaning_vi: "`telegram_link_generation` lúc dựng payload."}
+          - {name: rv, type: string, meaning_vi: "8 ký tự đầu của `report.content_hash` — revision của báo cáo."}
+        size_note_vi: "Telegram giới hạn callback data 64 byte; định dạng nén trên vừa trong giới hạn. Chi tiết giới hạn là KC — xem contracts/telegram/delivery.md §formatting_limits."
+        encoding_vi: "Chuỗi phân tách bằng `:` — `1:<ri>:<ii>:<lg>:<rv>`. Không nhúng nội dung người dùng."
+      validation_order:
+        - {step: 1, check_vi: "Chat đã liên kết và `chat_id` khớp `telegram_link.chat_id` hiện hành", fail_vi: "bỏ im lặng (ING-08)"}
+        - {step: 2, check_vi: "Callback data parse được và `v` được hỗ trợ", fail_vi: "`answerCallbackQuery` rỗng, ghi log `dropped_invalid`"}
+        - {step: 3, check_vi: "`lg` bằng `telegram_link.generation` hiện hành", fail_vi: "callback cũ — trả lời an toàn 'Liên kết đã thay đổi, mở app để Save', KHÔNG Save (fixture (f))"}
+        - {step: 4, check_vi: "`ri` tồn tại, `report.status = 'published'`, và `rv` khớp `report.content_hash`", fail_vi: "revision đã đổi — trả lời an toàn 'Mục này thuộc bản báo cáo cũ, mở app để Save', KHÔNG Save (fixture (f))"}
+        - {step: 5, check_vi: "`ii` là `report_item` THUỘC `ri`", fail_vi: "trả lời an toàn, KHÔNG Save — chặn việc ghép item của kỳ khác vào callback"}
+        - {step: 6, check_vi: "Gọi `save.create` với `source_report_item_id = ii` và `idempotency_key`", fail_vi: "theo errors.yaml"}
+      idempotency:
+        key_vi: "`tg-cb:` + id của callback_query cho lần bấm; và `saved_item.idempotency_key` cho Save."
+        five_presses_rule:
+          requirement_refs: [REQ-D38, REQ-AC13]
+          source: "SRC-SPEC §8.2 hàng 10"
+          rule_vi: >-
+            Bấm 5 lần ⇒ **một** bản ghi Saved và **năm** phản hồi trạng thái. UNIQUE partial
+            `ux_saved_active_owner_target` là trọng tài; transaction thua đọc lại và trả
+            `already_saved: true` (entities.yaml TXN-save-target §concurrency).
+          oracle_vi: "COUNT(saved_item WHERE target_key = T AND state='active') = 1; số answerCallbackQuery = 5."
+      snapshot_rule_vi: >-
+        Snapshot chụp từ **analysis revision của `report_item` đang đọc**, không phải bản mới
+        hơn vừa xuất hiện (REQ-D55; contracts/schemas/saved-snapshot.schema.json).
+      reply_templates_vi:
+        saved_new: "Đã lưu."
+        saved_already: "Mục này đã có trong Saved."
+        stale_generation: "Liên kết Telegram đã thay đổi. Mở ứng dụng để lưu mục này."
+        stale_revision: "Mục này thuộc bản báo cáo cũ. Mở ứng dụng để lưu."
+      forbidden_vi:
+        - "Save một target không thuộc `ri` (chặn ở step 5)."
+        - "Tạo Saved khi `lg` hoặc `rv` đã cũ."
+        - "Im lặng với chat ĐÃ liên kết khi bấm nút (người dùng cần biết kết quả — REQ-D38)."
+
+    - id: CMD-run-now
+      trigger_vi: "Lệnh gõ `/run_now` (và biến thể ngôn ngữ tự nhiên được ánh xạ ở tầng adapter)."
+      requirement_refs: [REQ-D36, REQ-S5.4-04]
+      decision_refs: [B10, AMD-B10]
+      operation_id: run.run_now
+      auth_scope: owner_session_or_linked_chat
+      rules:
+        - id: RN-01
+          rule_vi: >-
+            **KHÔNG BAO GIỜ vượt qua một run đang `needs_user`.** Nếu run hiện tại ở
+            `needs_user`, lệnh KHÔNG resume, KHÔNG tạo run mới; bot trả lời nêu rõ đang chờ
+            xác minh và **trỏ người dùng vào app** để bấm "Tiếp tục" (AMD-B10). Fixture (l).
+          forbidden_vi: ["Coi `run_now` là resume ngầm.", "Tạo run thứ hai song song."]
+        - id: RN-02
+          rule_vi: "Nếu đang có run non-terminal khác, trả cùng `run_id` đó thay vì tạo run mới (run.yaml SC33)."
+        - id: RN-03
+          rule_vi: "Nếu không có run active, xếp hàng một run `trigger_type = 'manual'` và trả lời đã xếp hàng."
+      reply_templates_vi:
+        queued: "Đã xếp hàng một đợt chạy."
+        already_running: "Đang có một đợt chạy. Trạng thái: {status_label}."
+        blocked_needs_user: "Đợt đang chờ xác minh trên máy cá nhân. Mở ứng dụng, vào Runs và bấm Tiếp tục sau khi xử lý xong."
+      error_codes: [UNAUTHORIZED_COMMAND, VALIDATION_ERROR, STORAGE_WRITE_FAILED]
+
+    - id: CMD-status
+      trigger_vi: "Lệnh gõ `/status`."
+      requirement_refs: [REQ-D36, REQ-AC15]
+      decision_refs: [B10, AMD-B10]
+      operation_id: run.list
+      auth_scope: owner_session_or_linked_chat
+      rules:
+        - id: ST-01
+          rule_vi: "**Read-only tuyệt đối.** Không mutation nào; không resume; không đổi trạng thái gì (AMD-B10)."
+        - id: ST-02
+          rule_vi: >-
+            Văn bản phải phân biệt được BA trạng thái của REQ-AC15 bằng ba câu khác nhau, dùng
+            đúng nhãn của contracts/ui/screens.yaml §§ global_rules → run_status_labels, và
+            KHÔNG chứa cụm "Không có nghiên cứu mới". Fixture (m).
+        - id: ST-03
+          rule_vi: >-
+            Trạng thái delivery hiển thị RIÊNG với trạng thái run; `unknown` có câu riêng
+            (I13). Không nói "đã gửi" khi còn một part `unknown`.
+        - id: ST-04
+          rule_vi: "Kèm trạng thái collector online/offline/unknown và `as_of` (REQ-D11, UI-01)."
+      reply_templates_vi:
+        no_matching_content: "Đợt gần nhất: không có nội dung phù hợp (đã thu thập xong, không bài nào khớp tag)."
+        stopped_early: "Đợt gần nhất: dừng sớm — {stop_reason_vi}."
+        run_failed: "Đợt gần nhất: thất bại — {error_summary_safe}."
+        delivery_unknown_suffix: "Lần gửi gần nhất chưa xác định; mở ứng dụng để quyết định."
+      error_codes: [UNAUTHORIZED_COMMAND]
+
+# ---------------------------------------------------------------------------
+# 4. Quy tắc phản hồi và lỗi
+# ---------------------------------------------------------------------------
+response_rules:
+  safety:
+    - "Không bao giờ chứa secret, token, API key, cookie, transcript AI (SRC-SPEC §11.2, I11)."
+    - "Chỉ dùng `message_safe` của contracts/errors.yaml; không đưa stack trace hay câu lỗi thô."
+    - "Nội dung nguồn (tiêu đề, text post) được escape theo contracts/telegram/delivery.md §escaping trước khi đưa vào tin."
+    - "Không phản hồi bất kỳ điều gì cho chat chưa liên kết, trừ đúng nhánh B09 khi mã hợp lệ."
+  length_vi: "Giới hạn độ dài và định dạng theo contracts/telegram/delivery.md §formatting_limits (KC)."
+edge_cases:
+  - id: EDGE-01
+    case_vi: "Callback data không parse được hoặc `v` không hỗ trợ"
+    behaviour_vi: "`answerCallbackQuery` rỗng (để nút hết quay), không Save, ghi log `dropped_invalid`."
+  - id: EDGE-02
+    case_vi: "Tin văn bản vượt giới hạn kích thước hợp lý"
+    behaviour_vi: "Cắt ở tầng đọc, KHÔNG xử lý như lệnh; ghi log. PROVISIONAL ngưỡng 4096 ký tự (giới hạn tin của Telegram) — KC theo delivery.md."
+  - id: EDGE-03
+    case_vi: "Bấm Save 5 lần liên tiếp"
+    behaviour_vi: "Một `saved_item`, năm phản hồi (REQ-D38, SRC-SPEC §8.2 hàng 10). Fixture (j)."
+  - id: EDGE-04
+    case_vi: "Save từ app và Telegram đồng thời cùng target"
+    behaviour_vi: "Một `saved_item` active; bên thua trả `already_saved: true` (I08, REQ-AC13). Fixture (j)."
+  - id: EDGE-05
+    case_vi: "Chat đã liên kết gửi chuỗi trông giống lệnh sửa tag"
+    behaviour_vi: "Từ chối theo allowlist; nhắc ba lệnh. Không mutation (REQ-S11.3-05)."
+  - id: EDGE-06
+    case_vi: "Update tới khi trạng thái kho là `write_blocked`"
+    behaviour_vi: "Lệnh read-only (`/status`) vẫn trả lời kèm nhãn last-known + `as_of`; lệnh mutation (`/run_now`, Save) trả lời rằng hệ thống đang không ghi được, KHÔNG hứa đã nhận (UI-02/UI-03, SRC-PLAN §8.4)."
+  - id: EDGE-07
+    case_vi: "Chat đã bị unlink nhưng vẫn gửi tin"
+    behaviour_vi: "Bỏ im lặng như mọi chat chưa liên kết."
+error_code_map:
+  - {code: UNAUTHORIZED_COMMAND, when_vi: "chat chưa liên kết, lệnh ngoài allowlist, callback target sai, mã hết hạn/đã dùng", reply_vi: "im lặng (hoặc câu nhắc ba lệnh nếu chat ĐÃ liên kết)", domain_state_vi: "không đổi"}
+  - {code: UNAUTHORIZED, when_vi: "secret token webhook sai", reply_vi: "im lặng", domain_state_vi: "không đổi"}
+  - {code: VALIDATION_ERROR, when_vi: "callback data hỏng, tham số lệnh sai", reply_vi: "answerCallbackQuery rỗng hoặc câu nhắc", domain_state_vi: "không đổi"}
+  - {code: IDEMPOTENCY_CONFLICT, when_vi: "cùng idempotency key với payload khác", reply_vi: "câu an toàn", domain_state_vi: "không đổi"}
+  - {code: CONFLICT, when_vi: "Save khi đã có bản active", reply_vi: "Mục này đã có trong Saved", domain_state_vi: "không tạo hàng mới"}
+  - {code: STORAGE_WRITE_FAILED, when_vi: "kho không ghi được", reply_vi: "nêu rõ chưa lưu được, không hứa đã nhận", domain_state_vi: "không đổi"}
+forbidden_cases:
+  - {id: NC-TG-01, description_vi: "Trả lời chat chưa liên kết bất kỳ điều gì (ngoài nhánh B09 mã hợp lệ)", requirement_ref: REQ-S11.3-02, oracle_vi: "outbound call count = 0"}
+  - {id: NC-TG-02, description_vi: "Lệnh thứ tư qua chat", decision_ref: AMD-B10}
+  - {id: NC-TG-03, description_vi: "`/run_now` resume một run `needs_user`", decision_ref: AMD-B10}
+  - {id: NC-TG-04, description_vi: "`/status` gây mutation", decision_ref: AMD-B10}
+  - {id: NC-TG-05, description_vi: "Sửa tag/cấu hình qua chat", requirement_ref: REQ-S11.3-05}
+  - {id: NC-TG-06, description_vi: "Save khi `lg`/`rv` đã cũ", invariant_ref: I08}
+  - {id: NC-TG-07, description_vi: "Nội dung nguồn quyết định recipient", invariant_ref: I11}

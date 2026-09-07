@@ -1,0 +1,110 @@
+{
+  "fixture_id": "FX-TG-H",
+  "title": "Chat lạ gửi /status → không phản hồi, không mutation, outbound = 0",
+  "purpose": "REQ-AC18 nguyên văn. REQ-S11.3-02: trả lời 'không có quyền' là tự xác nhận bot tồn tại.",
+  "scenario_refs": [
+    "SC18"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B09"
+  ],
+  "requirement_refs": [
+    "REQ-AC18",
+    "REQ-S11.3-02",
+    "REQ-S11.3-03"
+  ],
+  "source_refs": [
+    "SRC-SPEC §11.3",
+    "SRC-SPEC §12 AC-18",
+    "SRC-PLAN §10 UNAUTHORIZED_COMMAND"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 1,
+          "chat_id": "111111111"
+        }
+      ],
+      "run": [
+        {
+          "id": "01JRVN10000000000000000000",
+          "status": "completed",
+          "outcome": "complete"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T00:00:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "description": "Chat 999999999 (chưa liên kết) gửi `/status`. Secret token webhook ĐÚNG — đây là update thật từ Telegram, chỉ là chat sai."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 1,
+          "_note": "Không đổi."
+        }
+      ]
+    },
+    "counts": {
+      "domain_rows_changed": 0,
+      "run_list_calls": 0,
+      "saved_item__total": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 0,
+      "telegram.answerCallbackQuery": 0,
+      "note": "ĐÂY là oracle chính của REQ-AC18: tổng số lời gọi ra Telegram = 0."
+    },
+    "log": {
+      "telegram_update_log": [
+        {
+          "disposition": "dropped_unlinked",
+          "chat_id_hash": {
+            "symbolic": "H_CHAT",
+            "computed_by": "sha256(chat_id)",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          },
+          "command": null,
+          "note": "Ghi log để chứng minh đã nhận và đã bỏ; log dùng hash, không lưu chat ID thô."
+        }
+      ]
+    },
+    "why_silent_vi": "Bất kỳ phản hồi nào — kể cả từ chối — cho biết bot tồn tại ở địa chỉ này."
+  },
+  "forbidden_effects": [
+    "Trả lời bất kỳ điều gì.",
+    "Gọi run.list.",
+    "Đổi bất kỳ hàng nghiệp vụ nào.",
+    "Lưu chat ID lạ ở dạng thô.",
+    "Đếm lần này vào rate limit của chat đã liên kết."
+  ]
+}

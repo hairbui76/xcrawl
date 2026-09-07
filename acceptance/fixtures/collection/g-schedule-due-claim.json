@@ -1,0 +1,302 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-g-schedule-due-claim",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-AC01",
+      "REQ-D11",
+      "REQ-D13",
+      "REQ-P0-03"
+    ],
+    "decision_refs": [
+      "B08",
+      "AMD-B08"
+    ],
+    "invariant_refs": [
+      "I01",
+      "I10",
+      "I15"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "AC-01, phía dây. Fixture khóa: đăng ký KHÔNG cấp lease; lease CHỈ đến từ claim; guard storage phải xanh trước khi cấp.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "g-schedule-due-claim",
+  "title_vi": "Lịch tới hạn khi collector online ⇒ tự claim, không cần mở X",
+  "scenario_refs": [
+    "SC01"
+  ],
+  "invariant_refs": [
+    "I01",
+    "I10",
+    "I15"
+  ],
+  "preconditions_vi": {
+    "schedule": "08:00 giờ địa phương của `schedule_timezone` (PROVISIONAL Asia/Ho_Chi_Minh)",
+    "run": "đã được scheduler tạo ở status=queued",
+    "storage.health": "healthy"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "worker.register_capabilities",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/registrations"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "reg-2026-09-07-0001-aaaaa"
+      },
+      "request_body": {
+        "request_id": "59C2F7ER9N0YKK2MD1MTQZPGHD",
+        "schema_version": "0.1.0",
+        "worker_instance_id": "JJ1KC0KSPYNFGC7NTA9BMRVHYP",
+        "registration_seq": 7,
+        "worker_kind": "collector",
+        "collector_version": "0.1.0",
+        "capabilities": {
+          "collector_online": true,
+          "chrome_profile_ready": true,
+          "x_session_state": "ok",
+          "embedding_supported": false
+        }
+      },
+      "response_status": 200,
+      "response_body": {
+        "registered_at": "2026-09-07T08:00:01.000Z",
+        "heartbeat_interval_s": 30,
+        "lease_granted": false
+      },
+      "note_vi": "Đăng ký KHÔNG cấp lease — `lease_granted: false` là khẳng định tường minh (contracts/ops/deployment.md §7 bước 6, I10)."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/claim"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "claim-2026-09-07-0800-aaa"
+      },
+      "request_body": {
+        "claim_request": {
+          "request_id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "schema_version": "0.1.0",
+          "claim_request_id": "claim-2026-09-07-0800-aaa",
+          "worker_instance_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+          "worker_kind": "collector",
+          "capabilities": {
+            "collector_online": true,
+            "chrome_profile_ready": true,
+            "x_session_state": "ok",
+            "embedding_supported": false,
+            "collector_version": "0.1.0"
+          },
+          "max_assignments": 1
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 200,
+      "response_body": {
+        "assignment": {
+          "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "phase": "collecting",
+          "trigger_type": "scheduled",
+          "catch_up_window": null,
+          "lease": {
+            "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+            "lease_epoch": 1,
+            "ttl_s": 120,
+            "heartbeat_interval_s": 30,
+            "expires_at": "2026-09-07T08:02:00.000Z"
+          },
+          "capability_requirements": {
+            "requires_chrome_profile": true,
+            "requires_x_session_ok": true
+          },
+          "search_config": {
+            "tags": [
+              "protein folding",
+              "graph neural networks"
+            ],
+            "tag_config_version_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+            "source_limits": {
+              "author_thread_only": true,
+              "external_replies": "excluded",
+              "image_only_post_policy": "post_only_no_id_guess",
+              "chrome_scope": "x_only",
+              "paper_metadata_source": "server_api",
+              "max_thread_context_posts": 50
+            }
+          },
+          "stop_conditions": {
+            "max_posts": 200,
+            "max_duration_s": 1800,
+            "evaluation": "first_of_either",
+            "on_challenge": "report_stop_and_halt",
+            "on_blocked": "report_stop_and_halt_no_rotation"
+          },
+          "checkpoint": {
+            "phase": "collecting",
+            "cursor_token": null,
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 0,
+            "items_ingested_total": 0,
+            "checkpoint_sequence": 0
+          },
+          "is_resume": false,
+          "x_coverage_note_vi": "Chỉ quan sát được phần feed tìm kiếm trả về trong ngân sách 200 bài / 30 phút; phần feed ngoài cửa sổ đó KHÔNG được quét."
+        }
+      },
+      "validate_response_against": "contracts/schemas/worker-assignment.schema.json",
+      "note_vi": "Claim thành công: lease epoch=1, checkpoint rỗng-mới (chưa ingest gì). Người dùng KHÔNG phải mở X để kích hoạt (REQ-AC01)."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/claim"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "claim-2026-09-07-0801-aaa"
+      },
+      "request_body": {
+        "claim_request": {
+          "request_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+          "schema_version": "0.1.0",
+          "claim_request_id": "claim-2026-09-07-0801-aaa",
+          "worker_instance_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "worker_kind": "collector",
+          "capabilities": {
+            "collector_online": true,
+            "chrome_profile_ready": true,
+            "x_session_state": "ok",
+            "embedding_supported": false,
+            "collector_version": "0.1.0"
+          },
+          "max_assignments": 1
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 200,
+      "response_body": {
+        "no_work": {
+          "reason": "assignment_already_held",
+          "retry_after_ms": 45000
+        }
+      },
+      "validate_response_against": "contracts/schemas/worker-assignment.schema.json",
+      "note_vi": "Claim lần hai khi đã giữ assignment: `no_work`, KHÔNG phải lỗi. `retry_after_ms` theo `claim_idle_backoff` trần 45 s."
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/claim"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "claim-after-restore-0001-a"
+      },
+      "request_body": {
+        "claim_request": {
+          "request_id": "BQ20NN4PF3PWS1RJKFARXDCEQV",
+          "schema_version": "0.1.0",
+          "claim_request_id": "claim-after-restore-0001-a",
+          "worker_instance_id": "NSWJZQY8S5GE33J4XH4A7F601X",
+          "worker_kind": "collector",
+          "capabilities": {
+            "collector_online": true,
+            "chrome_profile_ready": true,
+            "x_session_state": "ok",
+            "embedding_supported": false,
+            "collector_version": "0.1.0"
+          },
+          "max_assignments": 1
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 409,
+      "response_body": {
+        "code": "RESTORE_UNVERIFIED",
+        "scope": "storage",
+        "retry_class": "operator_decision",
+        "message_safe": "Vừa khôi phục dữ liệu. Việc gửi và giao việc đang tạm khóa cho tới khi đối soát xong.",
+        "correlation_id": "SD063B2WXSM27QPR158YB3AM5H",
+        "details_safe": {
+          "restore_id": "R0QHJE9QWCBDPTXK0RZ9T6HF44",
+          "snapshot_id": "59C2F7ER9N0YKK2MD1MTQZPGHD",
+          "storage_health": "recovery_required",
+          "pending_outbox_count": 3
+        },
+        "retry_after_ms": null
+      },
+      "validate_response_against": "contracts/http/openapi.yaml#/components/schemas/ErrorEnvelope",
+      "note_vi": "BIẾN THỂ ÂM: nếu `storage.health = recovery_required` thì claim BỊ CHẶN cho tới khi `backup.reconcile_after_restore` xong (I15, denied case NC-10)."
+    }
+  ],
+  "durable_rows_expected": [
+    "worker_registration: 1 hàng cập nhật; KHÔNG có hàng assignment_lease nào từ sự kiện 1.",
+    "assignment_lease: +1 hàng state='held', lease_epoch=1 (chỉ từ sự kiện 2).",
+    "run: status 'queued' → 'running', phase='collecting'.",
+    "Sự kiện 3 và 4: KHÔNG hàng nào đổi."
+  ],
+  "forbidden_effects": [
+    "Đăng ký capability tự nó cấp lease (I10).",
+    "Cấp lease khi storage.health != healthy (contracts/retry-policy.yaml: grace = 0).",
+    "Cấp lease sau restore trước khi reconcile (I15).",
+    "Cấp hai assignment cho cùng worker khi max_assignments = 1.",
+    "Yêu cầu người dùng mở X để kích hoạt đợt chạy (REQ-AC01)."
+  ],
+  "oracle_vi": "Fake-clock tới 08:00: trong ≤ 45 s có ĐÚNG một hàng assignment_lease state='held'. Sự kiện 1 tạo 0 lease. Sự kiện 4 trả 409 và COUNT(assignment_lease) không đổi."
+}

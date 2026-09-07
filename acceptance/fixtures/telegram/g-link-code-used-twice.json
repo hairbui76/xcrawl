@@ -1,0 +1,135 @@
+{
+  "fixture_id": "FX-TG-G",
+  "title": "Mã liên kết dùng hai lần → lần hai im lặng, mã đã consumed",
+  "purpose": "Mã dùng ĐÚNG một lần (REQ-D35). Lần hai KHÔNG được trả lời 'mã đã dùng' — điều đó xác nhận mã từng đúng.",
+  "scenario_refs": [
+    "SC18",
+    "SC47"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B09",
+    "AMD-B09"
+  ],
+  "requirement_refs": [
+    "REQ-D35",
+    "REQ-S11.3-01",
+    "REQ-S11.3-02"
+  ],
+  "source_refs": [
+    "SRC-SPEC §11.2",
+    "contracts/telegram/commands.yaml § linking → one_use",
+    "SRC-PLAN §10 UNAUTHORIZED_COMMAND"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "telegram_link_code": [
+        {
+          "id": "01JTGC0DE10000000000000000",
+          "state": "active",
+          "expires_at": "2026-09-06T23:45:00.000Z"
+        }
+      ],
+      "telegram_link": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T23:30:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "description": "Chat A gửi đúng mã ⇒ liên kết thành công."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T23:31:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "description": "Chat B (khác, chưa liên kết) gửi CÙNG mã đó."
+    }
+  ],
+  "expected": {
+    "after_event_1": {
+      "rows": {
+        "telegram_link_code": [
+          {
+            "id": "01JTGC0DE10000000000000000",
+            "state": "consumed"
+          }
+        ],
+        "telegram_link": [
+          {
+            "id": "01JTG11NK10000000000000000",
+            "state": "active",
+            "generation": 1
+          }
+        ]
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 1,
+        "telegram.answerCallbackQuery": 0,
+        "note": "Tin xác nhận liên kết."
+      }
+    },
+    "after_event_2": {
+      "rows": {
+        "telegram_link_code": [
+          {
+            "id": "01JTGC0DE10000000000000000",
+            "state": "consumed",
+            "_note": "Không đổi."
+          }
+        ],
+        "telegram_link": [
+          {
+            "id": "01JTG11NK10000000000000000",
+            "state": "active",
+            "generation": 1,
+            "_note": "Không đổi — chat B KHÔNG chiếm được liên kết."
+          }
+        ]
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 0,
+        "telegram.answerCallbackQuery": 0,
+        "note": "TUYỆT ĐỐI im lặng với chat B."
+      },
+      "counts": {
+        "telegram_link__total": 1,
+        "domain_rows_changed": 0
+      }
+    },
+    "log": {
+      "telegram_update_log": [
+        {
+          "disposition": "link_code_attempt",
+          "note": "Ghi log với chat_id_hash, không lưu chat ID thô."
+        }
+      ]
+    }
+  },
+  "forbidden_effects": [
+    "Trả lời chat B bất kỳ điều gì, kể cả 'mã đã dùng' hay 'mã hết hạn'.",
+    "Cho phép mã consumed liên kết lần hai.",
+    "Lưu chat ID của chat lạ ở dạng thô.",
+    "Chuyển liên kết sang chat B."
+  ]
+}

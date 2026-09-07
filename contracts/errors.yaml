@@ -1,0 +1,912 @@
+# Research Radar — Catalogue lỗi có kiểu và error envelope
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-errors-catalogue
+version: 0.3.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §5.1
+  - SRC-PLAN §8.1
+  - SRC-PLAN §8.2
+  - SRC-PLAN §8.3
+  - SRC-PLAN §8.4
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §9.3
+  - SRC-SPEC §11.3
+  - SRC-SPEC §11.4
+requirement_refs:
+  - REQ-AC03
+  - REQ-AC04
+  - REQ-AC14
+  - REQ-AC15
+  - REQ-AC17
+  - REQ-AC18
+  - REQ-D43
+  - REQ-D44
+  - REQ-S9.3-01
+  - REQ-S9.3-02
+  - REQ-S9.3-03
+  - REQ-S9.3-04
+  - REQ-S9.3-06
+  - REQ-S9.3-07
+  - REQ-S9.3-08
+  - REQ-S8.3-01
+  - REQ-S8.3-02
+  - REQ-S8.3-03
+  - REQ-A6
+  - REQ-A7
+decision_refs: [B02, B03, B05, B07, B10, B13, B15, B16, AMD-B02, AMD-B03, AMD-B05, AMD-B07, AMD-B10, ADR-0002, ADR-0003, ADR-0008, ADR-0010, CR-PC01-01, CR-PC01-03, CR-PC05-01, CR-PC08-03, CR-PC08-04, CR-PC10-02, "R-01 (A1-R1)", "FIX3 rulings (2026-09-06T19:05Z)"]
+invariant_refs: [I02, I04, I09, I10, I11, I13, I14, I15]
+producers: [MOD-backend-api, MOD-job-service, MOD-ingest-service, MOD-analysis-service, MOD-report-service, MOD-delivery-service, MOD-data-store, MOD-health-service, MOD-backup-service, MOD-secret-service, MOD-ai-adapter]
+consumers: [MOD-web-ui, MOD-x-collector, MOD-analysis-worker, MOD-telegram-adapter, MOD-backup-cli, MOD-scheduler]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/modules.yaml
+  - contracts/data/entities.yaml
+  - contracts/state/run.yaml
+  - contracts/state/analysis.yaml
+  - contracts/state/report.yaml
+  - contracts/state/delivery.yaml
+  - contracts/state/storage.yaml
+  - contracts/retry-policy.yaml
+scope: >-
+  File này là danh mục duy nhất của mã lỗi trong hệ thống. Mỗi mã có phạm vi, lớp retry, trạng thái đích trên
+  từng state machine, dữ liệu được giữ, hành vi bị cấm, oracle kiểm chứng, mẫu message an toàn và danh sách khóa
+  được phép xuất hiện trong `details_safe`. File cũng định nghĩa error envelope theo SRC-PLAN §5.1; PC05 tham
+  chiếu tới đây khi viết wire HTTP, không định nghĩa lại. File này KHÔNG định nghĩa mã trạng thái HTTP (PC05),
+  KHÔNG định nghĩa nội dung report (PC04) và KHÔNG định nghĩa semantic validation của output AI (PC06).
+verification: >-
+  E0 lint bằng script trong scratch dir của worker (EV-PC03-01/03/04): YAML parse; mọi mã trong file có ≥1
+  target_states entry; mọi mã được state files tham chiếu tồn tại ở đây; mọi mã của SRC-PLAN §10 có mặt; mọi mã
+  xuất hiện trong contracts/ports.yaml và contracts/modules.yaml có mặt. Kết quả SELF_VALIDATION.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Error envelope (SRC-PLAN §5.1). PC05 tham chiếu, không định nghĩa lại.
+# ---------------------------------------------------------------------------
+error_envelope:
+  contract_id: CT-errors-envelope
+  applies_to_vi: >-
+    Mọi response lỗi của operation trong contracts/ports.yaml, bất kể transport `http` hay `internal`.
+  encoding: "application/json; charset=utf-8"
+  additional_properties: false
+  fields:
+    - {name: code, type: string, nullable: false, constraints: "SCREAMING_SNAKE; phải là một `code` khai báo ở mục 3 của file này. Không có mã ngoài danh mục."}
+    - {name: scope, type: enum, nullable: false, constraints: "`run` | `item` | `delivery` | `storage` | `request`. Bằng đúng `scope` của mã trong mục 3."}
+    - {name: retry_class, type: enum, nullable: false, constraints: "`none` | `retryable_with_budget` | `needs_user` | `operator_decision` | `unknown_outcome`. Bằng đúng `retry_class` của mã."}
+    - {name: message_safe, type: string, nullable: false, constraints: "Tiếng Việt, ≤ 300 ký tự, render từ `message_safe_template` của mã. KHÔNG chèn giá trị chưa nằm trong `details_safe_keys`."}
+    - {name: correlation_id, type: string, nullable: false, constraints: "ULID. Bắt buộc kể cả khi không ghi được vào DB (mục 4)."}
+    - {name: details_safe, type: object, nullable: true, constraints: "Chỉ chứa các khóa liệt kê ở `details_safe_keys` của mã. Khóa lạ ⇒ VALIDATION_ERROR ở phía producer, không gửi ra."}
+    - {name: retry_after_ms, type: integer, nullable: true, constraints: "Chỉ có mặt khi `retry_class = retryable_with_budget` hoặc mã `RATE_LIMITED`. Đơn vị mili giây. NULL nghĩa là không có gợi ý, không phải 'retry ngay'."}
+  forbidden_content_vi:
+    - "Transcript của model, prompt gốc, nội dung post nguyên văn."
+    - "API key, bot token, cookie, header Authorization, chat ID, đường dẫn file tuyệt đối trên máy cá nhân."
+    - "Stack trace, câu SQL, tên bảng/cột nội bộ."
+    - "URL nguồn đầy đủ khi lỗi phát sinh trong đường xử lý nội dung không tin cậy (SRC-SPEC §11.4)."
+  correlation_rule_vi: >-
+    `correlation_id` được sinh ở biên nhận request và đi kèm mọi log/metric của request đó. Khi
+    `storage.health != healthy`, envelope vẫn phải có `correlation_id` — nó đến từ bộ nhớ tiến trình và từ kênh
+    health độc lập, KHÔNG cần một hàng DB (SRC-PLAN §8.4). Xem mục 4.
+
+# ---------------------------------------------------------------------------
+# 2. Vocabulary
+# ---------------------------------------------------------------------------
+vocabulary:
+  scope:
+    run: "Lỗi làm đổi trạng thái của một `run` (ENT-run)."
+    item: "Lỗi thuộc về một đơn vị công việc con: một analysis task hoặc một target."
+    delivery: "Lỗi thuộc về một `delivery` / `delivery_part` (ENT-delivery, ENT-delivery-part)."
+    storage: "Lỗi thuộc về khả năng ghi của data store (contracts/state/storage.yaml)."
+    request: "Lỗi ở mức một lần gọi operation; không tự nó đổi trạng thái nghiệp vụ nào."
+  retry_class:
+    none: "Không retry. Lặp lại y hệt sẽ cho cùng kết quả; cần thay đổi đầu vào hoặc quyết định của người."
+    retryable_with_budget: "Được retry theo đúng một budget có tên trong contracts/retry-policy.yaml. Không có budget ⇒ không được retry."
+    needs_user: "Chỉ Owner mới gỡ được; hệ thống dừng và chờ. Không có đường tự động."
+    operator_decision: "Kết quả cần một quyết định có chủ đích của Operator qua một operation cụ thể; hệ thống không tự chọn."
+    unknown_outcome: "Không biết side effect ngoài hệ thống đã xảy ra hay chưa. Timeout transport là KHÔNG BIẾT, không phải rollback (SRC-PLAN §5.1)."
+  target_states_semantics_vi: >-
+    Mỗi phần tử của `target_states` có `machine` ∈ {run, analysis, report, delivery, storage, request} và
+    `to_state`. Với machine ≠ `request`, `to_state` phải là một trạng thái đã khai báo trong file state tương ứng.
+    Với machine = `request`, `to_state` luôn là `unchanged`: mã đó không đổi trạng thái nghiệp vụ nào, và đây là
+    một phát biểu kiểm chứng được (oracle: số hàng của mọi bảng nghiệp vụ không đổi), không phải chỗ trống.
+
+# ---------------------------------------------------------------------------
+# 3. Danh mục mã lỗi
+#    16 mã của SRC-PLAN §10 + 10 mã wire chung.
+# ---------------------------------------------------------------------------
+codes:
+
+  # ------------------------------------------------------ nguồn X / thu thập
+  - code: X_CHALLENGE_REQUIRED
+    origin: SRC-PLAN §10
+    scope: run
+    retry_class: needs_user
+    title_vi: X đòi xác minh hoặc phiên đã hết hạn
+    target_states:
+      - {machine: run, to_state: "status=needs_user, stop_reason=captcha|session_expired", note_vi: "phase giữ nguyên `collecting`."}
+      - {machine: delivery, to_state: pending, note_vi: "Đúng MỘT alert intent cho mỗi run (logical_delivery_key = run_alert_id + channel)."}
+    data_kept_vi: >-
+      Checkpoint đã ACK (ENT-checkpoint.acked_through_ingest_sequence) giữ nguyên; mọi post đã commit giữ nguyên;
+      `applied_config` của run bất biến.
+    forbidden_vi:
+      - "Tự retry hoặc tự claim lại assignment (REQ-S9.3-01, I10)."
+      - "Giả lập thao tác giải xác minh, click tự động, đổi account/proxy (REQ-A7)."
+      - "Tạo alert intent thứ hai cho cùng run (REQ-AC04)."
+      - "Coi dữ liệu đã tải nhưng chưa ingest là checkpoint bền (SRC-PLAN §8.1)."
+      - "`run.run_now` hoặc lệnh Telegram `status` đưa run rời `needs_user` (B10/AMD-B10)."
+    oracle_vi: >-
+      Inject challenge sau một batch đã ACK: `COUNT(outbox_intent WHERE type='run_alert' AND run_id=R) = 1`;
+      số request thu thập mới sau thời điểm chuyển trạng thái = 0 cho tới khi `run.resume` được gọi;
+      `checkpoint.acked_through_ingest_sequence` không đổi.
+    message_safe_template_vi: "Đợt chạy đang chờ bạn xác minh trên X. Xử lý trong cửa sổ Chrome rồi bấm “tiếp tục”."
+    details_safe_keys: [run_id, phase, stop_reason, acked_through_ingest_sequence, detected_at]
+    redaction_vi: "Không đưa nội dung trang challenge, cookie, URL đầy đủ hay ảnh chụp màn hình vào details."
+    operations: [worker.report_stop, run.resume]
+    scenario_refs: [SC04]
+    requirement_refs: [REQ-AC04, REQ-S5.4-01, REQ-S5.4-05, REQ-S9.3-01]
+    invariant_refs: [I10, I13]
+
+  - code: X_ACCESS_BLOCKED
+    origin: SRC-PLAN §10
+    scope: run
+    retry_class: none
+    title_vi: X chặn truy cập hoặc thiếu capability bắt buộc
+    target_states:
+      - {machine: run, to_state: "status=blocked, stop_reason=source_blocked", note_vi: "Ghi điều kiện gỡ chặn vào run metadata."}
+    data_kept_vi: "Toàn bộ nguồn đã thu và đã commit được giữ; checkpoint đã ACK giữ nguyên."
+    forbidden_vi:
+      - "Luân chuyển account, proxy, user-agent hay bất kỳ hình thức lách chặn nào (REQ-S9.3-02)."
+      - "Hiển thị `blocked` như `empty` hoặc như “không có nghiên cứu mới” (I13, REQ-S8.3-03)."
+      - "Tự chuyển sang `queued` theo thời gian mà không có hành động của Owner. Đường thoát DUY NHẤT là `run.resume` từ `blocked` với `unblock_reason` (CR-PC03-02 đã giải; contracts/state/run.yaml T-RUN-23)."
+    oracle_vi: >-
+      Trace mạng sau thời điểm chuyển trạng thái không có request tới X; UI hiển thị lý do khác với `empty`;
+      `run.status = blocked` và `stop_reason = source_blocked` cùng lúc.
+    message_safe_template_vi: "Đợt chạy dừng vì X đang chặn truy cập. Không có thay đổi nào được thực hiện để lách."
+    details_safe_keys: [run_id, phase, stop_reason, blocked_since, unblock_condition_vi]
+    redaction_vi: "Không ghi nội dung response của X, không ghi header."
+    operations: [worker.report_stop]
+    scenario_refs: [SC15]
+    requirement_refs: [REQ-S9.3-02, REQ-S8.3-03, REQ-AC15, REQ-A7]
+    invariant_refs: [I13]
+
+  # ------------------------------------------------------------- lease/worker
+  - code: WORKER_LEASE_EXPIRED
+    origin: SRC-PLAN §10
+    scope: request
+    retry_class: none
+    title_vi: Lease của assignment đã hết hạn; worker cũ bị thu hồi quyền
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Lời gọi của worker cũ bị từ chối và KHÔNG ghi gì."}
+      - {machine: run, to_state: "status=queued", note_vi: "Chỉ khi run chưa có `needs_user`/`blocked` đã lưu; do sweep của server thực hiện, không do worker cũ."}
+      - {machine: analysis, to_state: pending, note_vi: "Task quay lại hàng đợi; attempt cũ ghi outcome `cancelled_stale_lease`."}
+    data_kept_vi: >-
+      Mọi hàng đã commit dưới lease cũ giữ nguyên (I02). `analysis_attempt` của lease cũ được giữ làm bằng chứng,
+      với `cost_uncertain` đúng theo thực tế.
+    forbidden_vi:
+      - "Worker giữ lease cũ commit thêm bất kỳ dữ liệu authoritative nào (I10)."
+      - "Reset một `needs_user` hoặc `blocked` đã lưu về `queued` chỉ vì lease hết hạn."
+      - "Tăng epoch mà không thu hồi lease cũ."
+    oracle_vi: >-
+      Hai worker cùng claim một job: worker có `lease_epoch` nhỏ hơn nhận WORKER_LEASE_EXPIRED (hoặc STALE_LEASE
+      với heartbeat), và `COUNT(post)`, `COUNT(analysis WHERE status='valid')` không đổi sau lời gọi của nó.
+    message_safe_template_vi: "Phiên làm việc của worker đã hết hạn. Việc sẽ được giao lại."
+    details_safe_keys: [job_id, lease_epoch_seen, lease_epoch_current, expired_at]
+    redaction_vi: "Không ghi worker token, không ghi hostname máy cá nhân."
+    operations: [worker.heartbeat, ingest.submit_batch, analysis.heartbeat, analysis.submit_result]
+    scenario_refs: [SC20]
+    requirement_refs: [REQ-D11, REQ-S9.3-07]
+    invariant_refs: [I02, I10]
+
+  - code: STALE_LEASE
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: none
+    title_vi: Lời gọi mang lease_epoch cũ hơn epoch hiện hành
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Không ghi bất kỳ dữ liệu authoritative nào (SRC-PLAN §5.1)."}
+    data_kept_vi: "Không có gì bị ghi, không có gì bị xóa."
+    forbidden_vi:
+      - "Ghi một phần rồi mới phát hiện epoch cũ: kiểm epoch phải nằm TRƯỚC mọi write trong cùng transaction."
+      - "Coi STALE_LEASE là retryable: worker phải claim lại, không lặp cùng lease."
+    oracle_vi: "Gửi mutation với epoch = current-1: response STALE_LEASE và hash file DB không đổi."
+    message_safe_template_vi: "Yêu cầu dùng phiên làm việc đã cũ và bị từ chối."
+    details_safe_keys: [job_id, lease_epoch_seen, lease_epoch_current]
+    redaction_vi: "Như WORKER_LEASE_EXPIRED."
+    operations: [worker.heartbeat, worker.report_stop, worker.release_assignment, ingest.submit_batch, ingest.commit_checkpoint, analysis.heartbeat, analysis.submit_result, analysis.report_attempt_unknown, analysis.get_task_input, delivery.dispatch_next, run.resume]
+    scenario_refs: [SC20]
+    requirement_refs: [REQ-D11]
+    invariant_refs: [I01, I10]
+
+  # ------------------------------------------------------------------ ingest
+  - code: INGEST_ACK_LOST
+    origin: SRC-PLAN §10
+    scope: request
+    retry_class: retryable_with_budget
+    retry_budget_ref: ingest_batch_attempts
+    title_vi: Client không nhận được ACK; server có thể đã commit hoặc chưa
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Trạng thái authoritative do receipt quyết định, không do client."}
+      - {machine: run, to_state: "status=running", note_vi: "Run không đổi trạng thái vì một ACK mất."}
+    data_kept_vi: >-
+      Nếu server đã commit thì `ingest_receipt` (UNIQUE owner_id+idempotency_key) tồn tại và replay trả lại đúng
+      hàng đó với `receipt_hash` không đổi. Nếu chưa commit thì không có hàng nào.
+    forbidden_vi:
+      - "Tiến `checkpoint.acked_through_ingest_sequence` khi chưa có receipt (I02)."
+      - "Retry mutation trước khi tra `ingest.get_receipt` (SRC-PLAN §5.1)."
+      - "Replay cùng key với payload khác — đó là IDEMPOTENCY_CONFLICT, không phải replay."
+    oracle_vi: >-
+      Crash sau commit trước ACK rồi replay cùng `idempotency_key` + cùng `payload_hash`:
+      `COUNT(post)` không đổi, `ingest_receipt.receipt_hash` không đổi, `checkpoint.sequence` không tăng.
+      Oracle âm: số lần tải trang KHÔNG phải oracle (AMD-B05).
+    message_safe_template_vi: "Không nhận được xác nhận cho lô dữ liệu. Hệ thống tra cứu biên nhận trước khi thử lại."
+    details_safe_keys: [idempotency_key, payload_hash, attempt_number, retry_after_ms]
+    redaction_vi: "Không đưa nội dung post vào details."
+    operations: [ingest.submit_batch, ingest.get_receipt]
+    scenario_refs: [SC21]
+    requirement_refs: [REQ-AC04, REQ-S9.2-01]
+    invariant_refs: [I02]
+
+  - code: IDEMPOTENCY_CONFLICT
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: none
+    title_vi: Cùng idempotency key nhưng payload khác
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "KHÔNG ghi đè bản đã commit (SRC-PLAN §5.1)."}
+    data_kept_vi: "Bản ghi đã commit dưới key đó giữ nguyên tuyệt đối."
+    forbidden_vi:
+      - "Ghi đè, merge hay 'cập nhật' bản cũ."
+      - "Sinh key mới ở phía server để lách xung đột."
+    oracle_vi: "Gửi cùng key với payload_hash khác: response IDEMPOTENCY_CONFLICT và `receipt_hash` cũ không đổi."
+    message_safe_template_vi: "Yêu cầu trùng khóa nhưng nội dung khác với lần đã ghi nhận."
+    details_safe_keys: [idempotency_key, payload_hash_seen, payload_hash_stored]
+    redaction_vi: "Chỉ hash, không bao giờ payload."
+    operations: [ingest.submit_batch, analysis.submit_result, run.run_now, run.resume, run.cancel, report.build, report.publish, delivery.create_intent, delivery.record_receipt, delivery.mark_unknown, delivery.decide_unknown, job.enqueue_scheduled_run, job.coalesce_overdue, worker.claim_assignment, analysis.claim_task]
+    scenario_refs: [SC13, SC21]
+    requirement_refs: [REQ-AC13]
+    invariant_refs: [I01]
+
+  # -------------------------------------------------------- nguồn nghiên cứu
+  - code: SOURCE_METADATA_UNAVAILABLE
+    origin: SRC-PLAN §10
+    scope: item
+    retry_class: retryable_with_budget
+    retry_budget_ref: research_connector_attempts
+    title_vi: arXiv/OpenAlex không trả metadata cho một target
+    target_states:
+      - {machine: run, to_state: "status=running, phase=enriching", note_vi: "Không làm hỏng run; sang analyzing khi hết budget."}
+      - {machine: analysis, to_state: pending, note_vi: "Item vẫn phân tích được ở mức `evidence_level = post_only`."}
+    data_kept_vi: >-
+      Post giữ nguyên; abstract đã có từ trước KHÔNG bị xóa; target tồn tại ở dạng chỉ có post (REQ-D33).
+    forbidden_vi:
+      - "Đoán DOI/arXiv id từ văn bản không chuẩn hóa (I03)."
+      - "Xóa abstract cũ đã có chỉ vì lần gọi này thất bại."
+      - "Nâng `evidence_level` lên `abstract`/`full_text` khi nguồn tương ứng chưa tồn tại."
+    oracle_vi: >-
+      Chạy cùng fixture hai lần, một lần có cache metadata một lần không: `evidence_level` khác nhau đúng như
+      bảng, và số hàng `work` không đổi giữa hai lần.
+    message_safe_template_vi: "Chưa lấy được thông tin bài báo từ nguồn học thuật. Mục hiển thị ở mức “chỉ có post”."
+    details_safe_keys: [target_key, connector_name, attempt_number, retry_after_ms]
+    redaction_vi: "Không ghi URL đầy đủ do model đề xuất; chỉ ID đã chuẩn hóa (NC-07)."
+    operations: [research.fetch_work_metadata, research.get_connector_health]
+    scenario_refs: [SC11]
+    requirement_refs: [REQ-D33, REQ-AC11, REQ-A6]
+    invariant_refs: [I13]
+
+  - code: IDENTITY_CONFLICT
+    origin: SRC-PLAN §10
+    scope: item
+    retry_class: operator_decision
+    title_vi: Hai định danh canonical mâu thuẫn cho cùng một công trình
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Ingest của các item khác trong lô vẫn commit; item xung đột bị quarantine."}
+      - {machine: run, to_state: "status=running", note_vi: "Không làm run thất bại."}
+    data_kept_vi: >-
+      Hàng `identity_conflict` được tạo với đủ nguồn của cả hai phía; `identity_merge_audit` không có bản ghi
+      merge nào; mọi provenance được giữ.
+    forbidden_vi:
+      - "Merge đoán (B15, I03)."
+      - "Coi hai alias nghi trùng là hai hướng nghiên cứu chắc chắn trong report (SRC-PLAN §10)."
+      - "Tự động merge khi số hàng phải chuyển vượt `identity_merge_max_moved_rows` (100000 rows, PROVISIONAL, CR-PC02-05) — vượt ngưỡng thì bắt buộc thành conflict."
+    oracle_vi: >-
+      Fixture `acceptance/fixtures/identity/c-identity-conflict.json`: sau ingest,
+      `COUNT(identity_conflict) = 1`, `COUNT(identity_merge_audit) = 0`, và cả hai target vẫn đọc được.
+    message_safe_template_vi: "Hai định danh của cùng một công trình đang mâu thuẫn. Mục được tạm giữ để bạn xem lại."
+    details_safe_keys: [conflict_id, conflict_type, target_key_a, target_key_b, moved_rows_estimate]
+    redaction_vi: "Không ghi nội dung post; chỉ ID đã chuẩn hóa."
+    operations: [ingest.submit_batch, identity.quarantine_conflict, identity.resolve_conflict, identity.merge_works]
+    scenario_refs: [SC23]
+    requirement_refs: [REQ-D17, REQ-AC07]
+    invariant_refs: [I03]
+
+  # ---------------------------------------------------------------------- AI
+  - code: AI_OUTPUT_INVALID
+    origin: SRC-PLAN §10
+    scope: item
+    retry_class: retryable_with_budget
+    retry_budget_ref: analysis_attempts_per_item
+    title_vi: Output của model sai schema hoặc thiếu trường bắt buộc
+    target_states:
+      - {machine: analysis, to_state: retry_wait, note_vi: "Khi còn budget."}
+      - {machine: analysis, to_state: failed, note_vi: "Khi hết budget (D43: một lần thử lại)."}
+      - {machine: run, to_state: "status=running, phase=reporting, outcome dự kiến=partial", note_vi: "Item thiếu summary được ghi pending."}
+    data_kept_vi: >-
+      `analysis_attempt` với `outcome = schema_invalid` và `error_code = AI_OUTPUT_INVALID`; KHÔNG có hàng
+      `analysis` nào được tạo. Input của task giữ nguyên để thử lại.
+    forbidden_vi:
+      - "Commit output sai schema thành `valid` (SRC-PLAN §8.2)."
+      - "Bóc một JSON bất kỳ ra khỏi transcript rồi bỏ qua các field kiểm chứng (REQ-D43)."
+      - "Đánh dấu item là `valid` mà chưa qua semantic validation của PC06."
+      - "Ghi `usage = 0` khi không biết (I14)."
+    oracle_vi: >-
+      Fixture output sai schema / thiếu citation / JSON lồng trong transcript: `COUNT(analysis WHERE status='valid'
+      AND analysis_key=K) = 0`, `COUNT(analysis_attempt WHERE outcome='schema_invalid') = số lần thử`,
+      report `quality = partial` và item nằm trong pending list.
+    message_safe_template_vi: "Kết quả phân tích không đúng định dạng nên không được ghi nhận."
+    details_safe_keys: [task_id, task_type, attempt_number, validation_failure_kind, retry_after_ms]
+    redaction_vi: "TUYỆT ĐỐI không đưa transcript hay đoạn JSON của model vào message/details (SRC-PLAN §5.1)."
+    operations: [analysis.submit_result]
+    scenario_refs: [SC11, SC17]
+    requirement_refs: [REQ-D43, REQ-AC11, REQ-S9.3-03]
+    invariant_refs: [I04, I11, I14]
+
+  - code: AI_PROVIDER_UNAVAILABLE
+    origin: SRC-PLAN §10
+    scope: item
+    retry_class: retryable_with_budget
+    retry_budget_ref: provider_unavailable_waits
+    title_vi: Provider AI không dùng được (mạng, CLI lỗi khởi động, quota)
+    target_states:
+      - {machine: analysis, to_state: retry_wait, note_vi: "Budget riêng, KHÔNG tiêu thụ budget của AI_OUTPUT_INVALID vì chưa có inference nào chạy."}
+      - {machine: analysis, to_state: failed, note_vi: "Khi hết `provider_unavailable_waits`."}
+      - {machine: run, to_state: "status=running, phase=reporting", note_vi: "outcome dự kiến `partial`; run KHÔNG chuyển `failed` chỉ vì AI lỗi."}
+      - {machine: run, to_state: "status=blocked, stop_reason=source_blocked", note_vi: "CHỈ khi mọi provider đã cấu hình đều unusable VÀ không có fallback do Owner bật."}
+    data_kept_vi: "Input của task giữ nguyên; usage ghi `unknown` (NULL), không ghi 0 (I14)."
+    forbidden_vi:
+      - "Tự bật fallback provider khi Owner chưa cấu hình (SRC-PLAN §10, REQ-S9.3-04)."
+      - "Ghi `usage_tokens_in/out = 0` thay cho `unknown` (I14)."
+      - "Chuyển run sang `failed` vì lỗi AI trong khi dữ liệu thu thập vẫn còn (I09 tương tự cho delivery)."
+    oracle_vi: >-
+      Provider failure có và không có fallback cấu hình: với fallback, `analysis.provider_name` là provider thứ
+      hai; không có fallback, `COUNT(outbound call tới provider thứ hai) = 0` và item vào `failed` sau hết budget.
+    message_safe_template_vi: "Nhà cung cấp AI đang không dùng được. Mục này chưa có phân tích."
+    details_safe_keys: [task_id, provider_name, reason_code, attempt_number, retry_after_ms]
+    redaction_vi: "Không ghi endpoint đầy đủ, không ghi key hay đoạn header."
+    operations: [ai.run_inference_task, ai.probe_provider_capability, analysis.submit_result]
+    scenario_refs: [SC16, SC28]
+    requirement_refs: [REQ-S9.3-04, REQ-D44, REQ-AC16]
+    invariant_refs: [I14]
+
+  - code: AI_ATTEMPT_UNCERTAIN
+    origin: SRC-PLAN §10
+    scope: item
+    retry_class: unknown_outcome
+    retry_budget_ref: analysis_unknown_attempt_auto_rerun
+    title_vi: Worker chết sau khi model đã chạy; không biết đã phát sinh chi phí hay chưa
+    target_states:
+      - {machine: analysis, to_state: unknown_attempt}
+      - {machine: run, to_state: "status=running", note_vi: "Run không đổi vì một attempt không rõ."}
+    data_kept_vi: >-
+      `analysis_attempt` với `outcome = timeout_unknown`, `cost_uncertain = true`, `ended_at` có thể NULL.
+      Không có hàng `analysis` nào (I16 của PC02: attempt không bao giờ là kết quả).
+    forbidden_vi:
+      - "Tuyên bố “chưa phát sinh phí” (SRC-PLAN §10)."
+      - "Biến một attempt thành kết quả hợp lệ (I16)."
+      - "Chạy lại vượt `analysis_unknown_attempt_auto_rerun` mà không có `analysis.request_reanalysis` của Owner."
+    oracle_vi: >-
+      Crash worker sau khi provider trả lời nhưng trước `analysis.submit_result`: `COUNT(analysis_attempt WHERE
+      cost_uncertain = true) = 1`, `COUNT(analysis WHERE status='valid') = 0`, và lần chạy lại tạo attempt MỚI
+      chứ không sửa attempt cũ.
+    message_safe_template_vi: "Một lần phân tích không rõ kết quả. Chi phí có thể đã phát sinh."
+    details_safe_keys: [task_id, attempt_id, attempt_number, cost_uncertain, last_known_phase]
+    redaction_vi: "Không ghi transcript, không ghi nội dung một phần của response."
+    operations: [analysis.report_attempt_unknown]
+    scenario_refs: [SC28]
+    requirement_refs: [REQ-D44]
+    invariant_refs: [I04, I14]
+
+  - code: EMBEDDING_GENERATION_MISMATCH
+    origin: SRC-PLAN §10
+    scope: request
+    retry_class: none
+    title_vi: Vector khác model/generation/dimension bị đem so sánh
+    target_states:
+      - {machine: report, to_state: aborted, note_vi: "Selection bị chặn TRƯỚC commit publish."}
+      - {machine: request, to_state: unchanged, note_vi: "Không ghi report_item nào."}
+    data_kept_vi: "Mọi vector của cả hai generation giữ nguyên; không xóa, không chuyển đổi."
+    forbidden_vi:
+      - "Tính cosine giữa vector khác dimension hoặc khác model (I12)."
+      - "Trộn vector mới và cũ trong cùng một lần selection (SRC-PLAN §9.3)."
+      - "Gọi API để thay embedding local âm thầm (D48/REQ-AC16)."
+    oracle_vi: "Xen kẽ hai generation trước commit publish: publish bị chặn, `COUNT(report WHERE status='published')` không tăng."
+    message_safe_template_vi: "Dữ liệu vector đang chuyển thế hệ nên chưa dựng được báo cáo."
+    details_safe_keys: [expected_generation_id, seen_generation_id, dimension_expected, dimension_seen]
+    redaction_vi: "Không xuất giá trị vector."
+    operations: [report.build, report.publish, embedding.activate_generation]
+    scenario_refs: [SC24]
+    requirement_refs: [REQ-D48, REQ-AC16]
+    invariant_refs: [I12]
+
+  # ------------------------------------------------------------------ report
+  - code: TAG_VERSION_STALE
+    origin: SRC-PLAN §10
+    scope: request
+    retry_class: retryable_with_budget
+    retry_budget_ref: report_build_rebuild_attempts
+    title_vi: tag_config_version đổi giữa lúc build và lúc CAS commit
+    target_states:
+      - {machine: report, to_state: aborted, note_vi: "Bản build hiện tại bị bỏ; rebuild là một build_id MỚI."}
+      - {machine: run, to_state: "status=running, phase=reporting"}
+    data_kept_vi: >-
+      Report đã publish trước đó KHÔNG bị mutate (I05). Bản build dở dang bị đánh `aborted`, giữ lại để truy vết.
+    forbidden_vi:
+      - "Sửa nội dung một report đã publish (I05, B01/AMD-B01)."
+      - "Publish với `tag_config_version` khác với version đã dùng để chọn."
+      - "Rebuild vô hạn: sau `report_build_rebuild_attempts` thì run kết thúc với outcome `partial` và lý do rõ."
+    oracle_vi: >-
+      Đổi tag ngay trước CAS commit: publish trả TAG_VERSION_STALE, `content_hash` của report đã publish trước đó
+      không đổi, và bản rebuild dùng `tag_config_version` mới.
+    message_safe_template_vi: "Bộ tag vừa thay đổi nên báo cáo được dựng lại."
+    details_safe_keys: [report_build_id, expected_tag_config_version_id, current_tag_config_version_id, rebuild_attempt]
+    redaction_vi: "Không liệt kê tên tag trong details khi lỗi được trả ra kênh Telegram."
+    operations: [report.build, report.publish, tag.freeze_config_version]
+    scenario_refs: [SC05, SC19]
+    requirement_refs: [REQ-D23, REQ-CTAG, REQ-AC05]
+    invariant_refs: [I05]
+
+  - code: CONFLICT
+    origin: SRC-PLAN §5.1 (wire chung; CR-PC01-03 đã được Coordinator chấp nhận)
+    scope: request
+    retry_class: retryable_with_budget
+    retry_budget_ref: cas_conflict_retries
+    title_vi: Thua CAS trên một tài nguyên có predecessor (coverage window, generation active)
+    target_states:
+      - {machine: report, to_state: aborted, note_vi: "Publisher thua CAS phải ĐỌC LẠI, không publish kỳ chồng (SRC-PLAN §9.2)."}
+      - {machine: request, to_state: unchanged}
+    data_kept_vi: "Không ghi gì; kỳ của publisher thắng giữ nguyên."
+    forbidden_vi:
+      - "Publish một coverage window chồng lấn hoặc để hở (I06)."
+      - "Retry CAS mà không đọc lại predecessor mới."
+      - "Tiêu thụ backfill ledger khi thua CAS (B04)."
+    oracle_vi: >-
+      Hai publisher đồng thời trên cùng predecessor: đúng một hàng `coverage_window` mới,
+      `ux_coverage_window_predecessor` chặn hàng thứ hai, và backfill_ledger không tăng cho publisher thua.
+    message_safe_template_vi: "Một tiến trình khác vừa ghi trước. Hệ thống đọc lại và thử lại."
+    details_safe_keys: [resource_kind, expected_predecessor_id, current_predecessor_id, attempt_number, retry_after_ms]
+    redaction_vi: "Không lộ nội dung report của tiến trình thắng."
+    operations: [report.publish, embedding.activate_generation, tag.freeze_config_version]
+    scenario_refs: [SC08, SC24]
+    requirement_refs: [REQ-D27, REQ-AC08]
+    invariant_refs: [I06, I12]
+
+  # ---------------------------------------------------------------- delivery
+  - code: TELEGRAM_SEND_UNCERTAIN
+    origin: SRC-PLAN §10
+    scope: delivery
+    retry_class: unknown_outcome
+    title_vi: Timeout / mất kết nối / crash sau điểm có thể đã gửi
+    target_states:
+      - {machine: delivery, to_state: unknown, note_vi: "Ở mức `delivery_part`; aggregate cũng `unknown` khi có ít nhất một part `unknown` chưa quyết định."}
+      - {machine: run, to_state: "không đổi", note_vi: "I09: Telegram lỗi KHÔNG làm run thất bại."}
+    data_kept_vi: >-
+      `delivery_part` với `state = unknown`, `provider_message_id = NULL`, attempt đã ghi TRƯỚC network call;
+      report trong app giữ đầy đủ nội dung (I09).
+    forbidden_vi:
+      - "Retry tự động từ `unknown` (AMD-B03)."
+      - "Hiển thị `unknown` thành `sent` hoặc `failed` (I13)."
+      - "Gửi lại một part `unknown` chỉ vì aggregate chưa `sent` (SRC-PLAN §8.3)."
+      - "Đổi trạng thái run vì kết quả delivery (I09)."
+    oracle_vi: >-
+      Mô phỏng Telegram nhận tin rồi cắt response: `delivery_part.state = 'unknown'`, số outbound call tiếp theo
+      = 0 cho tới khi `delivery.decide_unknown`, và `report.content_hash` không đổi.
+    message_safe_template_vi: "Chưa xác định được tin đã gửi tới Telegram hay chưa. Bạn quyết định có gửi lại không."
+    details_safe_keys: [delivery_id, delivery_part_id, part_index, attempt_seq, uncertainty_kind]
+    redaction_vi: "Không ghi bot token, không ghi chat ID, không ghi nội dung message."
+    operations: [delivery.dispatch_next, delivery.mark_unknown, delivery.decide_unknown]
+    scenario_refs: [SC14]
+    requirement_refs: [REQ-AC14, REQ-S9.1-03]
+    invariant_refs: [I09, I13]
+
+  - code: TELEGRAM_PERMANENT_FAILURE
+    origin: SRC-PLAN §10
+    scope: delivery
+    retry_class: none
+    title_vi: Recipient không hợp lệ / bị thu hồi / lỗi vĩnh viễn
+    target_states:
+      - {machine: delivery, to_state: failed}
+      - {machine: run, to_state: "không đổi", note_vi: "I09."}
+    data_kept_vi: "Report giữ nguyên trong app, `content_hash` không đổi; `delivery.attempt_count` giữ số lần đã thử."
+    forbidden_vi:
+      - "Xóa report (REQ-AC14)."
+      - "Đổi run thành `failed` (I09)."
+      - "Chuyển payload sang recipient khác (SRC-PLAN §8.3)."
+    oracle_vi: "Recipient bị revoke: `delivery.state = 'failed'`, `report.content_hash` trước/sau bằng nhau, app vẫn mở được report."
+    message_safe_template_vi: "Không gửi được tới Telegram. Báo cáo vẫn còn đầy đủ trong ứng dụng."
+    details_safe_keys: [delivery_id, delivery_part_id, failure_kind, attempt_count]
+    redaction_vi: "Không ghi chat ID hay bot token."
+    operations: [delivery.dispatch_next, telegram.send_payload]
+    scenario_refs: [SC14, SC25]
+    requirement_refs: [REQ-AC14]
+    invariant_refs: [I09, I13]
+
+  - code: UNAUTHORIZED_COMMAND
+    origin: SRC-PLAN §10
+    scope: request
+    retry_class: none
+    title_vi: Update Telegram từ chat chưa liên kết hoặc lệnh ngoài allowlist
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "KHÔNG đổi bất kỳ domain state nào."}
+    data_kept_vi: "Không có gì thay đổi; chỉ một audit record đã che dữ liệu."
+    forbidden_vi:
+      - "Trả lời chat lạ bất kỳ điều gì — kể cả “không có quyền” (REQ-S11.3-02)."
+      - "Thực hiện lệnh ngoài ba lệnh của D36; không có lệnh thứ tư (AMD-B10)."
+      - "Coi callback query giả mạo là hợp lệ mà không kiểm target."
+    oracle_vi: >-
+      Fake update từ chat lạ, callback target sai, mã liên kết hết hạn/đã dùng: `outbound call count = 0`,
+      số hàng của mọi bảng nghiệp vụ không đổi. Ngoại lệ B09/AMD-B09: chuỗi khớp ĐÚNG định dạng mã liên kết
+      được đối chiếu với mã chưa hết hạn chưa dùng; mã sai cũng im lặng.
+    message_safe_template_vi: "(không phát ra ngoài — chính sách im lặng)"
+    details_safe_keys: [command_kind, rejection_reason_code]
+    redaction_vi: "KHÔNG ghi chat ID gốc vào log dạng rõ; hash chat ID nếu cần đếm."
+    operations: [telegram.receive_update, telegram.execute_command, telegram.consume_link_code, run.list, run.run_now]
+    scenario_refs: [SC18]
+    requirement_refs: [REQ-S11.3-02, REQ-D35, REQ-D36, REQ-AC18]
+    invariant_refs: [I01, I11]
+
+  # ----------------------------------------------------------------- storage
+  - code: STORAGE_WRITE_FAILED
+    origin: SRC-PLAN §10
+    scope: storage
+    retry_class: retryable_with_budget
+    retry_budget_ref: storage_recovery_probe
+    title_vi: Data store không ghi được (hết ổ, I/O lỗi, DB unavailable)
+    target_states:
+      - {machine: storage, to_state: write_blocked}
+      - {machine: request, to_state: unchanged, note_vi: "Mutation KHÔNG được ACK (SRC-PLAN §8.4)."}
+      - {machine: run, to_state: "không đổi trên đĩa", note_vi: "Xem mục 4: không tuyên bố đã persist một transition mà DB không ghi được."}
+    data_kept_vi: >-
+      Không tiến cursor, không tiến `acked_through_ingest_sequence`, không có receipt mới. Dữ liệu đã commit
+      trước đó nguyên vẹn (WAL an toàn, REQ-S9.3-08).
+    forbidden_vi:
+      - "ACK một mutation chưa commit (I02)."
+      - "Tuyên bố “đã ghi lỗi vào DB” khi DB đang không ghi được (SRC-PLAN §8.4)."
+      - "Nhận job/assignment mới trong khi `write_blocked`."
+      - "Ghi hỏng file SQLite bằng cách ghi tiếp khi hết ổ (REQ-S9.3-08)."
+    oracle_vi: >-
+      Disk-full injection: `ingest_receipt` cho batch đó KHÔNG tồn tại, `health.get_readiness` báo storage đỏ,
+      và `health.get_liveness` vẫn trả lời được (kênh độc lập DB).
+    message_safe_template_vi: "Hệ thống tạm thời không ghi được dữ liệu. Đã dừng nhận việc mới."
+    details_safe_keys: [storage_health, failed_operation_id, observed_at, retry_after_ms]
+    redaction_vi: "Không ghi đường dẫn file DB, không ghi câu SQL."
+    operations: [storage.get_health, health.get_readiness, ingest.submit_batch, ingest.commit_checkpoint, report.publish, delivery.record_receipt]
+    scenario_refs: [SC26]
+    requirement_refs: [REQ-S9.3-08, REQ-AC15]
+    invariant_refs: [I02, I13]
+
+  - code: RESTORE_UNVERIFIED
+    origin: SRC-PLAN §10
+    scope: storage
+    retry_class: operator_decision
+    title_vi: Vừa restore, chưa đối soát; side effect bị khóa
+    target_states:
+      - {machine: storage, to_state: recovery_required}
+      - {machine: delivery, to_state: "không đổi", note_vi: "Dispatcher bị khóa; outbox cũ KHÔNG replay (I15)."}
+      - {machine: run, to_state: "không đổi", note_vi: "Worker claim bị chặn."}
+    data_kept_vi: "Toàn bộ snapshot đã restore; lease cũ được đánh dấu để thu hồi ở bước reconcile."
+    forbidden_vi:
+      - "Replay outbox cũ (I15, NC-10)."
+      - "Chạy lại job có side effect."
+      - "Reset `first_announced` trước khi kiểm tra toàn vẹn (I15)."
+      - "Tự động mở lại dispatcher; chỉ `backup.reconcile_after_restore` mới mở khóa."
+    oracle_vi: >-
+      Restore vào môi trường sạch: `storage.health = 'recovery_required'`, số outbound send trước reconcile = 0,
+      `COUNT(assignment_lease WHERE state='held')` sau reconcile = 0.
+    message_safe_template_vi: "Vừa khôi phục dữ liệu. Việc gửi và giao việc đang tạm khóa cho tới khi đối soát xong."
+    details_safe_keys: [restore_id, snapshot_id, storage_health, pending_outbox_count]
+    redaction_vi: "Không ghi đường dẫn snapshot, không ghi manifest hash ra kênh Telegram."
+    operations: [backup.restore_snapshot, backup.reconcile_after_restore, delivery.dispatch_next, worker.claim_assignment, analysis.claim_task]
+    scenario_refs: [SC27]
+    requirement_refs: [REQ-D58, REQ-S13-09]
+    invariant_refs: [I15]
+
+  # ------------------------------------------------------------ wire chung
+  - code: SOURCE_LAYOUT_CHANGED
+    origin: "CR-PC05-01 (raised by PC05, accepted by Coordinator in FIX3 rulings)"
+    scope: run
+    retry_class: none
+    title_vi: Bố cục nguồn đổi tới mức parser không bóc được trường bắt buộc
+    distinct_from_x_access_blocked_vi: >-
+      `X_ACCESS_BLOCKED` nghĩa là "X không cho vào"; `SOURCE_LAYOUT_CHANGED` nghĩa là "vào được nhưng không
+      đọc được". Hai mã tách nhau vì HÀNH ĐỘNG GỠ khác hẳn: cái trước chờ điều kiện chặn hết (không làm gì
+      được), cái sau cần NGƯỜI PHÁT TRIỂN sửa parser. Gộp chúng làm một sẽ khiến một lỗi sửa được nằm chờ
+      như một lỗi không sửa được.
+    target_states:
+      - {machine: run, to_state: "status=blocked, stop_reason=source_layout_changed", note_vi: "phase giữ nguyên `collecting`."}
+      - {machine: delivery, to_state: pending, note_vi: "Đúng MỘT alert intent cho mỗi run (cùng `logical_delivery_key = run_alert_id + channel` với X_CHALLENGE_REQUIRED), vì đây là tình huống cần người chú ý ngay."}
+    data_kept_vi: >-
+      Mọi post ĐÃ bóc đủ trường và ĐÃ commit được giữ nguyên — một lô bóc được 12/40 bài vẫn commit 12 hàng.
+      Checkpoint đã ACK giữ nguyên. `run.unblock_condition_vi` ghi trường nào thiếu.
+    forbidden_vi:
+      - "Đoán giá trị cho các trường không bóc được (I03: không đoán ID; nguyên tắc tương tự cho mọi trường bắt buộc)."
+      - "Ingest item với trường rỗng hoặc trường bịa để 'đủ schema'."
+      - "Thử parser thay thế, đổi user-agent hay bật 'chế độ tương thích' (SRC-SPEC §2.3)."
+      - "Luân chuyển account/proxy (REQ-S9.3-02)."
+      - "Tự retry: bố cục sẽ không tự đổi lại, retry chỉ đốt ngân sách (retry_class = none)."
+      - "Tạo alert intent thứ hai cho cùng run."
+      - "Hiển thị run này là 'không có nghiên cứu mới' (REQ-S8.3-03, I13)."
+    oracle_vi: >-
+      Fixture `acceptance/fixtures/collection/a-feed-layout-changed.json`: bóc được 12/40 bài ⇒
+      `COUNT(post)` tăng ĐÚNG 12 (không phải 40); `run.status='blocked'`,
+      `run.stop_reason='source_layout_changed'`; `COUNT(outbox_intent WHERE kind='run_alert' AND run_id=R)=1`;
+      trace mạng sau transition không có request tới X; `run.unblock_condition_vi IS NOT NULL` và liệt kê
+      trường thiếu.
+    message_safe_template_vi: "Đợt chạy dừng vì bố cục nguồn đã thay đổi và không đọc được dữ liệu. Cần cập nhật bộ đọc."
+    details_safe_keys: [run_id, phase, stop_reason, missing_required_fields, posts_seen, posts_parsed_ok]
+    redaction_vi: >-
+      `missing_required_fields` chỉ chứa TÊN TRƯỜNG theo schema (ví dụ `author.handle`), tuyệt đối không kèm
+      giá trị quan sát được, không kèm HTML/DOM, không kèm URL đầy đủ.
+    operations: [worker.report_stop]
+    scenario_refs: [SC03, SC15]
+    requirement_refs: [REQ-A1, REQ-A7, REQ-S9.3-02, REQ-S8.3-03, REQ-AC15]
+    invariant_refs: [I02, I13]
+
+  - code: CSRF_REJECTED
+    origin: "CR-PC08-03 (ruling FIX3: HTTP 403, scope request, retry_class none)"
+    scope: request
+    retry_class: none
+    title_vi: Thiếu hoặc sai CSRF token trên một mutation dùng phiên owner
+    distinct_from_vi: >-
+      Ba mã 403/401 KHÔNG được dùng lẫn (ruling CR-PC08-04):
+      `UNAUTHORIZED` (401) = danh tính chưa được thiết lập, hoặc LỚP principal không được phép — ví dụ
+      collector token gọi `save.create`.
+      `FORBIDDEN_EDGE` (403) = cạnh caller→callee không có trong `contracts/modules.yaml` (default deny).
+      `CSRF_REJECTED` (403) = danh tính HỢP LỆ và cạnh HỢP LỆ, nhưng lời gọi không chứng minh được nó do
+      chính trang của ứng dụng phát ra.
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "KHÔNG đổi bất kỳ hàng nghiệp vụ nào; kiểm CSRF nằm TRƯỚC mọi write."}
+    data_kept_vi: "Không có gì được ghi. Phiên KHÔNG bị hủy — một request thiếu token không phải bằng chứng phiên bị chiếm."
+    forbidden_vi:
+      - "Bỏ qua kiểm CSRF cho một số mutation 'ít rủi ro' — mọi mutation dùng cookie phiên đều phải kiểm."
+      - "Thực hiện một phần rồi mới kiểm token."
+      - "Hủy phiên owner khi gặp mã này (biến một lỗi tích hợp thành một sự cố đăng xuất)."
+      - "Áp mã này cho worker/collector: chúng dùng bearer token nên KHÔNG có bề mặt CSRF."
+    oracle_vi: >-
+      Gửi một mutation owner-session hợp lệ nhưng thiếu header `X-CSRF-Token` (hoặc giá trị lệch cookie
+      `rr_csrf`): response 403 `CSRF_REJECTED`, số hàng của mọi bảng nghiệp vụ KHÔNG đổi, và phiên vẫn dùng
+      được ở request kế tiếp.
+    message_safe_template_vi: "Yêu cầu không hợp lệ. Hãy tải lại trang rồi thử lại."
+    details_safe_keys: [operation_id]
+    redaction_vi: "KHÔNG BAO GIỜ ghi giá trị token nhận được hay token mong đợi vào log hoặc details."
+    operations: [settings.update_config, tag.create, tag.update, tag.delete, tag.rescan_corpus, run.run_now, run.resume, run.cancel, save.create, save.remove, data.delete_target, data.purge_all, telegram.issue_link_code, telegram.unlink, delivery.decide_unknown, analysis.request_reanalysis, identity.resolve_conflict, auth.logout]
+    scenario_refs: [SC18]
+    requirement_refs: [REQ-D01, REQ-D04, REQ-D05, REQ-S11.2-01]
+    invariant_refs: [I01]
+
+  - code: UNAUTHORIZED
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: none
+    title_vi: Thiếu hoặc sai xác thực ở mức API cho operation được gọi
+    target_states:
+      - {machine: request, to_state: unchanged}
+    data_kept_vi: "Không đổi hàng nào; ghi audit từ chối đã che secrets."
+    forbidden_vi:
+      - "Thực hiện một phần rồi mới kiểm quyền."
+      - "Lộ sự tồn tại của tài nguyên trong message (dùng NOT_FOUND hay UNAUTHORIZED nhất quán theo PC05)."
+    oracle_vi: "NC-01/NC-02/NC-03/NC-09: gọi bằng token sai scope ⇒ UNAUTHORIZED và số hàng bảng đích không đổi."
+    message_safe_template_vi: "Không có quyền thực hiện thao tác này."
+    details_safe_keys: [operation_id, required_auth_scope]
+    redaction_vi: "Không ghi token, không ghi header Authorization."
+    operations: [auth.get_session, save.create, tag.update, secret.issue_task_credential, delivery.dispatch_next]
+    scenario_refs: [SC13, SC05, SC17, SC14]
+    requirement_refs: [REQ-D01, REQ-D05]
+    invariant_refs: [I01, I11]
+
+  - code: CAPABILITY_DENIED
+    origin: CR-PC01-01 (Coordinator đã chấp nhận); dùng bởi NC-04, NC-05, NC-07, NC-08
+    scope: request
+    retry_class: none
+    title_vi: Tiến trình/mạng/tool capability bị từ chối ở mức nền tảng, không phải ở mức API
+    distinct_from_unauthorized_vi: >-
+      `UNAUTHORIZED` nghĩa là “API biết bạn là ai và từ chối”. `CAPABILITY_DENIED` nghĩa là “đường đi vật lý không
+      tồn tại”: không có egress mạng tới host đó, không có driver DB, không có tiến trình browser, tool bị khóa.
+      Bằng chứng của nó là network/process audit, KHÔNG phải response của một API.
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Không có kết nối nào được mở; đếm outbound call = 0."}
+    data_kept_vi: "Không có gì; theo định nghĩa không có lời gọi nào tới đích."
+    forbidden_vi:
+      - "Nới allowlist egress để 'chạy được' (NC-04, NC-07)."
+      - "Bật adapter CLI/ACP khi chưa kiểm chứng được cô lập tool/file/network (B13, ADR-0010)."
+      - "Coi nội dung nguồn hay output model là lệnh để mở capability (I11, SRC-SPEC §11.4)."
+    oracle_vi: >-
+      Fixture prompt injection (SC17): `outbound call count tới api.telegram.org = 0`, không tiến trình browser
+      nào khởi động từ server, hash file DB nhìn từ tiến trình collector không đổi (NC-05).
+    message_safe_template_vi: "Thao tác bị chặn ở mức nền tảng."
+    details_safe_keys: [module_id, denied_capability_kind, forbidden_edge_ref]
+    redaction_vi: "Không ghi endpoint đích đầy đủ; chỉ định danh module và loại capability."
+    operations: [ai.run_inference_task, research.fetch_work_metadata, telegram.send_payload, storage.get_health]
+    scenario_refs: [SC17, SC21, SC11]
+    requirement_refs: [REQ-AC17, REQ-D50]
+    invariant_refs: [I11]
+    negative_case_refs: [NC-04, NC-05, NC-07, NC-08]
+
+  - code: FORBIDDEN_EDGE
+    origin: SRC-PLAN §6 (default deny)
+    scope: request
+    retry_class: none
+    title_vi: Cạnh caller→callee không có trong contracts/modules.yaml
+    target_states:
+      - {machine: request, to_state: unchanged}
+    data_kept_vi: "Không đổi hàng nào; audit ghi cạnh bị từ chối."
+    forbidden_vi:
+      - "Thêm cạnh mới bằng cách sửa code mà không sửa contracts/modules.yaml và review (SRC-PLAN §6)."
+      - "Dùng FORBIDDEN_EDGE làm cách 'mềm' để cho phép cạnh: mặc định là cấm."
+    oracle_vi: "Import/dependency rule fail khi cùng tiến trình; API auth test fail khi qua mạng; danh sách FE-* của modules.yaml."
+    message_safe_template_vi: "Đường gọi này không được phép."
+    details_safe_keys: [caller_module, callee_module, forbidden_edge_ref]
+    redaction_vi: "Chỉ định danh module, không ghi payload."
+    operations: []
+    scenario_refs: [SC17, SC18]
+    requirement_refs: [REQ-D01]
+    invariant_refs: [I01]
+    note_vi: >-
+      Mã này chưa được contracts/ports.yaml hay contracts/modules.yaml tham chiếu ở bản 0.1.0 — modules.yaml
+      hiện diễn đạt cạnh cấm bằng `forbidden_edges` (FE-*) và `expected_error_code` của NC-*. Đăng ký ở đây để
+      PC05 có mã dùng cho enforcement runtime; xem CR-PC03-04.
+
+  - code: VALIDATION_ERROR
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: none
+    title_vi: Request sai schema, sai enum, vượt giới hạn kích thước
+    target_states:
+      - {machine: request, to_state: unchanged}
+    data_kept_vi: "Không ghi gì. Với ingest, item sai ở mức nghiệp vụ được đếm vào `items_rejected` chứ không cắt cụt âm thầm."
+    forbidden_vi:
+      - "Cắt cụt payload vượt giới hạn rồi vẫn commit (contracts/data/entities.yaml limits)."
+      - "Chấp nhận trường lạ (`additionalProperties: false` ở mọi schema wire)."
+      - "Sửa giá trị của client để 'cho hợp lệ'."
+    oracle_vi: >-
+      Fixture âm của PC02 (`neg-ingest-batch-*.json`): mỗi fixture trả VALIDATION_ERROR và
+      `COUNT(ingest_receipt)` không tăng. Thêm (ruling R-01/A1-R1): `ingest.commit_checkpoint` với con trỏ đề
+      xuất trỏ tới `ingest_sequence` > `acked_through_ingest_sequence` đã commit ⇒ VALIDATION_ERROR và KHÔNG có
+      write một phần (hash file DB không đổi).
+    message_safe_template_vi: "Dữ liệu gửi lên không hợp lệ."
+    details_safe_keys: [operation_id, field_path, violation_kind, limit_name, limit_value]
+    redaction_vi: "`field_path` là đường dẫn schema, KHÔNG kèm giá trị vi phạm nếu giá trị đến từ nội dung nguồn."
+    operations: [ingest.submit_batch, analysis.submit_result, worker.register_capabilities, settings.update_config, run.run_now]
+    scenario_refs: [SC21, SC11]
+    requirement_refs: [REQ-D43]
+    invariant_refs: [I01]
+
+  - code: NOT_FOUND
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: none
+    title_vi: Tài nguyên không tồn tại trong phạm vi owner
+    target_states:
+      - {machine: request, to_state: unchanged}
+    data_kept_vi: "Không đổi gì."
+    forbidden_vi:
+      - "Tạo ngầm tài nguyên thiếu ('upsert' không khai báo)."
+      - "Phân biệt được 'không tồn tại' với 'không có quyền' theo cách làm lộ dữ liệu của owner khác."
+    oracle_vi: "Gọi run.get với run_id không tồn tại: NOT_FOUND, không hàng nào được tạo."
+    message_safe_template_vi: "Không tìm thấy mục bạn yêu cầu."
+    details_safe_keys: [operation_id, resource_kind]
+    redaction_vi: "Không phản chiếu ID người gọi gửi lên nếu ID đó có thể chứa dữ liệu bên ngoài."
+    operations: [run.get, run.resume, run.cancel, report.get, delivery.get_status, ingest.get_receipt, analysis.claim_task]
+    scenario_refs: [SC15]
+    requirement_refs: [REQ-P0-12]
+    invariant_refs: [I01]
+
+  - code: RATE_LIMITED
+    origin: SRC-PLAN §5.1 (wire chung) + SRC-PLAN §10 (rate limit của nguồn)
+    scope: request
+    retry_class: retryable_with_budget
+    retry_budget_ref: research_connector_rate_limit
+    title_vi: Bị giới hạn nhịp gọi (nguồn ngoài hoặc chính API nội bộ)
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "`retry_after_ms` BẮT BUỘC có mặt với mã này."}
+      - {machine: analysis, to_state: retry_wait, note_vi: "Khi rate limit đến từ provider AI: retry TRONG đợt theo `provider_unavailable_waits`."}
+      - {machine: run, to_state: "status=running, phase=enriching, stop_reason=rate_limited, outcome dự kiến=partial", note_vi: "Khi rate limit đến từ X (ruling CR-PC10-02, SRC-SPEC §9.3). Đóng collection segment, giữ checkpoint đã ACK, ĐI TIẾP với phần dữ liệu đã có. KHÔNG phải `blocked`. Xem contracts/state/run.yaml T-RUN-25."}
+    retry_class_by_source:
+      note_vi: >-
+        Mã này có HAI mặt và chúng KHÔNG cùng lớp retry. `retry_class` ở trên (`retryable_with_budget`) áp cho
+        NGUỒN NGOÀI DO SERVER GỌI — research connector và provider AI — nơi retry có ngân sách và an toàn.
+      x_collector_vi: >-
+        Với nguồn X qua collector (`worker.report_stop`), lớp retry hiệu lực là **`none` TRONG PHẠM VI ĐỢT**:
+        SRC-SPEC §9.3 nói "Rate limit / bị chặn → dừng đợt, ghi lý do, không luân chuyển gì để lách". "Retry"
+        ở đây là ĐỢT THEO LỊCH KẾ TIẾP, không phải một lần thử lại trong cùng run. Không có backoff nào áp cho
+        collector, vì không có lần gọi lại nào để mà backoff.
+      why_split_vi: >-
+        Gộp hai mặt vào một lớp sẽ dẫn tới một trong hai lỗi: hoặc collector thử lại trong đợt (lách giới hạn),
+        hoặc connector từ bỏ ngay lần đầu (mất dữ liệu không cần thiết).
+    data_kept_vi: >-
+      Không mất dữ liệu; con trỏ và checkpoint giữ nguyên. Với nguồn X: mọi post đã ACK trước thời điểm bị
+      giới hạn vẫn commit, và run vẫn dựng báo cáo từ chúng.
+    forbidden_vi:
+      - "Luân chuyển account/proxy/IP/user-agent để lách giới hạn (REQ-S9.3-02, SRC-SPEC §2.3)."
+      - "Bỏ qua `retry_after_ms` do nguồn trả về."
+      - "Retry nóng không backoff."
+      - "Thử lại TRONG cùng đợt sau khi collector đã báo `rate_limited` (SRC-SPEC §9.3)."
+      - "Đẩy run sang `blocked` vì rate limit: `blocked` đòi Owner gỡ bằng `run.resume`, còn rate limit tự hết ở đợt sau (ruling CR-PC10-02)."
+      - "Coi `rate_limited` là `source_blocked`: X CÓ cho vào, chỉ bảo chậm lại — hai tình huống hiển thị khác nhau ở REQ-AC15."
+    oracle_vi: >-
+      Nguồn trả 429 kèm Retry-After: lần gọi kế tiếp không sớm hơn `retry_after_ms`; đếm request trong cửa sổ
+      ≤ hạn mức đã cấu hình. Với nguồn X (`worker.report_stop`): sau khi báo, số request tới X = 0 trong phần
+      còn lại của đợt; `run.stop_reason='rate_limited'`, `run.rate_limited_at IS NOT NULL`,
+      `run.outcome='partial'`, `COUNT(outbox_intent kind='run_alert')` = 0, và occurrence lịch kế tiếp VẪN
+      sinh run.
+    message_safe_template_vi: "Nguồn đang giới hạn nhịp truy cập. Hệ thống chờ rồi thử lại."
+    details_safe_keys: [source_kind, retry_after_ms, attempt_number, window_seconds, rate_limited_at]
+    redaction_vi: "Không ghi endpoint đầy đủ hay header của nguồn."
+    operations: [worker.report_stop, research.fetch_work_metadata, research.get_connector_health, ai.run_inference_task, telegram.send_payload]
+    scenario_refs: [SC03, SC11, SC14, SC15]
+    requirement_refs: [REQ-A6, REQ-A7, REQ-S9.3-02, REQ-AC15]
+    invariant_refs: [I02, I13]
+    note_vi: >-
+      `worker.report_stop` được thêm ở FIX3 theo ruling CR-PC10-02: trước đó collector gặp rate limit của X
+      KHÔNG có đường báo hợp lệ nào — `collector-probe.md` ST-4 bảo dùng mã này, nhưng mã này không liệt kê
+      operation nào của collector và `run.yaml` không có `stop_reason` tương ứng. W2 thêm mã vào
+      `worker.report_stop.error_codes` của ports.yaml trong PKT-PC01-FIX6.
+
+  - code: INTERNAL
+    origin: SRC-PLAN §5.1 (wire chung)
+    scope: request
+    retry_class: unknown_outcome
+    title_vi: Lỗi không phân loại được ở phía server
+    target_states:
+      - {machine: request, to_state: unchanged, note_vi: "Trạng thái thật do receipt/CAS quyết định, KHÔNG do mã này."}
+      - {machine: storage, to_state: healthy, note_vi: "INTERNAL không tự nó nghĩa là storage hỏng; chỉ STORAGE_WRITE_FAILED mới chuyển write_blocked."}
+    data_kept_vi: "Chưa biết. Client phải tra receipt/idempotency trước khi kết luận (SRC-PLAN §5.1)."
+    forbidden_vi:
+      - "Mặc định coi INTERNAL là rollback."
+      - "Trả stack trace hoặc tên bảng/cột trong `message_safe`."
+      - "Dùng INTERNAL để che một mã đã có trong danh mục này."
+    oracle_vi: "Fault injection ở giữa transaction: client tra `ingest.get_receipt` và kết luận đúng trạng thái; số hàng nhất quán với receipt."
+    message_safe_template_vi: "Có lỗi hệ thống. Trạng thái của thao tác chưa xác định."
+    details_safe_keys: [correlation_id, operation_id]
+    redaction_vi: "TUYỆT ĐỐI không stack trace, không SQL, không tên bảng."
+    operations: []
+    scenario_refs: [SC21, SC26]
+    requirement_refs: [REQ-S9.3-08]
+    invariant_refs: [I02, I13]
+    note_vi: "Chưa được ports.yaml 0.1.0 tham chiếu; đăng ký ở đây theo yêu cầu PKT-PC03. Xem CR-PC03-04."
+
+# ---------------------------------------------------------------------------
+# 4. Quy tắc: không bao giờ yêu cầu persist lỗi vào một DB đang không ghi được
+#    (điều kiện "Đạt khi" của SRC-PLAN §11 PC03)
+# ---------------------------------------------------------------------------
+error_persistence_rule:
+  id: EPR-01
+  statement_vi: >-
+    Không có mã lỗi nào trong file này đòi hỏi một hàng DB mới như điều kiện để lỗi được coi là đã xử lý.
+    Với mọi mã, đường báo lỗi tối thiểu là: (a) error envelope trả về cho caller, có `correlation_id` sinh trong
+    bộ nhớ tiến trình, và (b) kênh health độc lập DB (`health.get_liveness`, `health.get_readiness`,
+    `storage.get_health`). Ghi hàng audit/attempt là mong muốn, không phải điều kiện.
+  fallback_channel_vi: >-
+    Khi `storage.health ∈ {write_blocked, recovery_required}`: `health.get_liveness` vẫn phải trả lời (nó không
+    đọc DB nghiệp vụ — contracts/ports.yaml, SRC-PLAN §8.4); `health.get_readiness` báo module đỏ từ trạng thái
+    trong bộ nhớ; UI hiển thị "last-known state" kèm nhãn rõ rằng trạng thái mới CHƯA lưu được
+    (contracts/state/storage.yaml §ui_read_model).
+  forbidden_vi:
+    - "Câu 'đã ghi lỗi vào bảng error_log' như một bảo đảm khi DB không ghi được (SRC-PLAN §8.4)."
+    - "Retry vô hạn chỉ để ghi cho được một hàng lỗi."
+  oracle_vi: >-
+    Disk-full injection trong lúc một run đang chạy: `health.get_liveness` trả 'up', `health.get_readiness` báo
+    storage đỏ, error envelope trả về cho collector có `correlation_id`, và số hàng của mọi bảng nghiệp vụ không đổi.
+  invariant_refs: [I13]
+
+# ---------------------------------------------------------------------------
+# 5. Bảng tra nhanh: mã → machine → trạng thái đích
+# ---------------------------------------------------------------------------
+index_by_machine:
+  run: [X_CHALLENGE_REQUIRED, X_ACCESS_BLOCKED, SOURCE_LAYOUT_CHANGED, WORKER_LEASE_EXPIRED, INGEST_ACK_LOST, SOURCE_METADATA_UNAVAILABLE, IDENTITY_CONFLICT, AI_PROVIDER_UNAVAILABLE, AI_ATTEMPT_UNCERTAIN, TAG_VERSION_STALE, TELEGRAM_SEND_UNCERTAIN, TELEGRAM_PERMANENT_FAILURE, STORAGE_WRITE_FAILED, RESTORE_UNVERIFIED, RATE_LIMITED]
+  analysis: [WORKER_LEASE_EXPIRED, SOURCE_METADATA_UNAVAILABLE, AI_OUTPUT_INVALID, AI_PROVIDER_UNAVAILABLE, AI_ATTEMPT_UNCERTAIN, RATE_LIMITED]
+  report: [EMBEDDING_GENERATION_MISMATCH, TAG_VERSION_STALE, CONFLICT]
+  delivery: [TELEGRAM_SEND_UNCERTAIN, TELEGRAM_PERMANENT_FAILURE, RESTORE_UNVERIFIED]
+  storage: [STORAGE_WRITE_FAILED, RESTORE_UNVERIFIED, INTERNAL]
+  request_only_unchanged: [STALE_LEASE, IDEMPOTENCY_CONFLICT, UNAUTHORIZED, UNAUTHORIZED_COMMAND, CAPABILITY_DENIED, FORBIDDEN_EDGE, CSRF_REJECTED, VALIDATION_ERROR, NOT_FOUND]

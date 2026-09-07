@@ -1,0 +1,413 @@
+{
+  "fixture_id": "FX-RP-A",
+  "title": "Bỏ tag trước transaction publish → mục khớp tag đó không vào báo cáo, dữ liệu vẫn ở kho",
+  "purpose": "Khóa AMD-B01: bộ tag hiệu lực là bộ tag tại transaction publish, không phải lúc thu thập, không phải lúc gửi. Bốn mục đã tốn AI từ 08:00 vẫn bị loại vì tag bị bỏ lúc 19:00.",
+  "scenario_refs": [
+    "SC05"
+  ],
+  "invariant_refs": [
+    "I05"
+  ],
+  "decision_refs": [
+    "B01",
+    "AMD-B01",
+    "ADR-0004"
+  ],
+  "requirement_refs": [
+    "REQ-AC05",
+    "REQ-CTAG",
+    "REQ-D23",
+    "REQ-D24",
+    "REQ-S8.2-02"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.5",
+    "SRC-SPEC §8.2 hàng 2",
+    "SRC-SPEC §12 AC-05",
+    "SRC-PLAN §3 B01",
+    "SRC-PLAN §7 I05"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "timeline_note": "Mọi timestamp là UTC RFC 3339 mili giây. Owner timezone Asia/Ho_Chi_Minh chỉ dùng để dán nhãn hiển thị (time-and-tags.md §2); nó KHÔNG tham gia phép so biên.",
+  "given": {
+    "settings": {
+      "reporting.default_similarity_threshold": 0.8,
+      "reporting.threshold_calibration_state": "uncalibrated",
+      "reporting.max_items_per_period": 50
+    },
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "tag": [
+        {
+          "id": "01JTAGGNN00000000000000000",
+          "text": "graph neural networks",
+          "state": "active",
+          "similarity_threshold": null,
+          "created_at": "2026-09-01T02:00:00.000Z"
+        },
+        {
+          "id": "01JTAGPFD00000000000000000",
+          "text": "protein folding",
+          "state": "active",
+          "similarity_threshold": null,
+          "created_at": "2026-09-01T02:00:00.000Z"
+        }
+      ],
+      "tag_config_version": [
+        {
+          "id": "01JTCV10000000000000000000",
+          "sequence": 1,
+          "content_hash": "sha256:c1ad5ea220de142ea808a8594fd6f333287d7a5c379dc0c74881777c8c93b38f",
+          "created_at": "2026-09-01T02:00:00.000Z"
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWN10000000000000000000",
+          "sequence": 1,
+          "window_from": "2026-09-05T00:00:00.000Z",
+          "window_to": "2026-09-06T00:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 900,
+          "predecessor_window_id": null
+        }
+      ],
+      "work": [
+        {
+          "id": "01JWRKA1000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKA1000000000000000000",
+            "target_key": "work:01JWRKA1000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T01:00:00.000Z",
+          "ingest_sequence": 901
+        },
+        {
+          "id": "01JWRKA2000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKA2000000000000000000",
+            "target_key": "work:01JWRKA2000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T01:00:01.000Z",
+          "ingest_sequence": 902
+        },
+        {
+          "id": "01JWRKA3000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKA3000000000000000000",
+            "target_key": "work:01JWRKA3000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T01:00:02.000Z",
+          "ingest_sequence": 903
+        },
+        {
+          "id": "01JWRKA4000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKA4000000000000000000",
+            "target_key": "work:01JWRKA4000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T01:00:03.000Z",
+          "ingest_sequence": 904
+        },
+        {
+          "id": "01JWRKB1000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKB1000000000000000000",
+            "target_key": "work:01JWRKB1000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T01:00:04.000Z",
+          "ingest_sequence": 905
+        }
+      ],
+      "analysis": [
+        {
+          "target_key": "work:01JWRKA1000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T01:30:00.000Z",
+          "payload_hash": "sha256:28a9566a1451b1619d292e2770b585ae4309c108dc5389d48ad0e04e9f821fbe"
+        },
+        {
+          "target_key": "work:01JWRKA2000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T01:30:00.000Z",
+          "payload_hash": "sha256:d93979d1031a9c8aee14b694ca9440c08ecc640382e28b780533e9eb249d5105"
+        },
+        {
+          "target_key": "work:01JWRKA3000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T01:30:00.000Z",
+          "payload_hash": "sha256:e3ade8c636dc5258af9deabf977709b7410567608b0dd61402da4d0c411f5727"
+        },
+        {
+          "target_key": "work:01JWRKA4000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T01:30:00.000Z",
+          "payload_hash": "sha256:21161d080c34584bb16746cf2366ac11e318ffde008f739f61518b536376a5ac"
+        },
+        {
+          "target_key": "work:01JWRKB1000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "analyzed_at": "2026-09-06T01:30:00.000Z",
+          "payload_hash": "sha256:002f6365902d2b4cc33dcbc89eef9be22e73fee9309a7909911d192b9bd8fb0e"
+        }
+      ],
+      "work_label": [
+        {
+          "target_key": "work:01JWRKA1000000000000000000",
+          "label_text": "graph neural networks for molecules",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        },
+        {
+          "target_key": "work:01JWRKA2000000000000000000",
+          "label_text": "graph neural networks for molecules",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        },
+        {
+          "target_key": "work:01JWRKA3000000000000000000",
+          "label_text": "graph neural networks for molecules",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        },
+        {
+          "target_key": "work:01JWRKA4000000000000000000",
+          "label_text": "graph neural networks for molecules",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        },
+        {
+          "target_key": "work:01JWRKB1000000000000000000",
+          "label_text": "protein structure prediction",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T01:00:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] 5 work được commit; discovered_at do server cấp, ingest_sequence 901..905.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T01:30:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Cả 5 work đã có analysis summary hợp lệ. Chi phí AI đã phát sinh xong từ đây.",
+      "performed_by": "MOD-analysis-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T12:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.delete",
+      "description": "Owner bỏ tag 'graph neural networks' (19:00 giờ owner = 12:00Z). tag.state → 'removed', hàng KHÔNG bị xóa.",
+      "produces": {
+        "tag_config_version": {
+          "id": "01JTCV20000000000000000000",
+          "sequence": 2,
+          "content_hash": "sha256:ca2c701cb70b3781c018b8f12a7eae1cc3d9b767545a4832479e3501ddde06b6"
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Build snapshot đọc tag.get_active_config_version → TCV2 (chỉ còn 'protein folding')."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-06T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "tag.freeze_config_version",
+      "transaction": "publish",
+      "description": "expected_tag_config_version_id = TCV2, khớp → freeze."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-06T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Commit: report + report_item + coverage_window + first_announced_ledger + delivery intent."
+    }
+  ],
+  "expected": {
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPT10000000000000000000",
+      "report_build_id": "78ae47a8-82a2-4c16-92d2-328bffba343f",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWN20000000000000000000",
+        "sequence": 2,
+        "coverage_from": "2026-09-06T00:00:00.000Z",
+        "coverage_to": "2026-09-06T01:00:04.000Z",
+        "ingest_sequence_from": 900,
+        "ingest_sequence_to": 906,
+        "predecessor_window_id": "01JCWN10000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCV20000000000000000000",
+        "sequence": 2,
+        "content_hash": "sha256:ca2c701cb70b3781c018b8f12a7eae1cc3d9b767545a4832479e3501ddde06b6",
+        "frozen_at": "2026-09-06T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMA100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKB1000000000000000000",
+            "target_key": "work:01JWRKB1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKB1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.9134,
+              "threshold_applied": 0.8,
+              "matched_label_text": "protein structure prediction"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAB1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:002f6365902d2b4cc33dcbc89eef9be22e73fee9309a7909911d192b9bd8fb0e",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T01:30:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T01:00:04.000Z",
+          "ingest_sequence": 905
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCA1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "cold_start_insufficient_history",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": "Chỉ quan sát được feed của phiên X đã đăng nhập; không hứa bao phủ toàn bộ X.",
+        "backfill_applied_tag_ids": []
+      },
+      "built_at": "2026-09-06T13:00:00.000Z",
+      "published_at": "2026-09-06T13:00:05.000Z",
+      "content_hash": "sha256:af45811f72d34307c605f8a0324fc20b55fafd5d2b198665691bd3db49e47bea",
+      "evidence_refs": [
+        "EV-PC04-01"
+      ]
+    },
+    "counts": {
+      "report_item[report_id=REP1]": 1,
+      "report_item[report_id=REP1 AND target_key IN {work:A1..A4}]": 0,
+      "work": 5,
+      "analysis[status='valid']": 5,
+      "coverage_window": 2,
+      "first_announced_ledger[state='active']": 1
+    },
+    "row_oracles": [
+      "tag[id=tag_t].state = 'removed' và hàng tag KHÔNG bị xóa (entities.yaml: bỏ tag không xóa hàng).",
+      "report.tag_config_version_id = TCV2 và bằng đúng giá trị đọc ở build snapshot.",
+      "coverage_window[sequence=2].window_from = coverage_window[sequence=1].window_to (I06)."
+    ]
+  },
+  "forbidden_effects": [
+    "Bốn work A1..A4 xuất hiện trong report_item của REP1.",
+    "Xóa hàng work, analysis hoặc work_label của A1..A4 vì tag bị bỏ.",
+    "Gọi provider AI lần nào trong events 3..6 (chọn nội dung là truy vấn dữ liệu, SRC-SPEC §10.1).",
+    "Dùng post.published_at hoặc post.collected_at_client để quyết định mục nào vào kỳ.",
+    "Sửa REP1 sau khi published (I05)."
+  ]
+}

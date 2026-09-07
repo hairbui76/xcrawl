@@ -1,0 +1,221 @@
+{
+  "fixture_id": "FX-ID-C",
+  "title": "Định danh mâu thuẫn → identity_conflict quarantine, không merge đoán",
+  "purpose": "B15: xung đột đưa vào identity_conflict và giữ nguồn, không merge đoán. Không tuyên bố đã giải bằng unique constraint.",
+  "scenario_refs": [
+    "SC23"
+  ],
+  "invariant_refs": [
+    "I03"
+  ],
+  "decision_refs": [
+    "B15",
+    "B06"
+  ],
+  "requirement_refs": [
+    "REQ-D17",
+    "REQ-AC09"
+  ],
+  "source_refs": [
+    "SRC-PLAN §3 B15",
+    "SRC-PLAN §10 IDENTITY_CONFLICT",
+    "contracts/data/identity.md §5"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKC100000000000000000",
+          "canonical_doi": "10.1000/aaa",
+          "canonical_arxiv_id": null,
+          "identity_state": "active",
+          "first_discovered_at": "2026-09-04T08:00:00.000Z",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKC100000000000000000",
+            "target_key": "work:01JW0RKC100000000000000000",
+            "canonical": {
+              "doi": "10.1000/aaa"
+            },
+            "identity_state": "active"
+          }
+        },
+        {
+          "id": "01JW0RKC200000000000000000",
+          "canonical_doi": "10.1000/bbb",
+          "canonical_arxiv_id": "2502.02222",
+          "identity_state": "active",
+          "first_discovered_at": "2026-09-04T09:00:00.000Z",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKC200000000000000000",
+            "target_key": "work:01JW0RKC200000000000000000",
+            "canonical": {
+              "doi": "10.1000/bbb",
+              "arxiv_base": "2502.02222"
+            },
+            "identity_state": "active"
+          }
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASC10000000000000000",
+          "id_scheme": "doi",
+          "id_value_normalized": "10.1000/aaa",
+          "work_id": "01JW0RKC100000000000000000",
+          "evidence_source": "post_link",
+          "confidence": "asserted_by_source"
+        },
+        {
+          "id": "01JA11ASC20000000000000000",
+          "id_scheme": "doi",
+          "id_value_normalized": "10.1000/bbb",
+          "work_id": "01JW0RKC200000000000000000",
+          "evidence_source": "arxiv_api",
+          "confidence": "asserted_by_source"
+        },
+        {
+          "id": "01JA11ASC30000000000000000",
+          "id_scheme": "arxiv",
+          "id_value_normalized": "2502.02222",
+          "work_id": "01JW0RKC200000000000000000",
+          "evidence_source": "post_link",
+          "confidence": "asserted_by_source"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-05T12:00:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "research.fetch_work_metadata",
+      "description": "OpenAlex khai báo arxiv 2502.02222 ứng với doi 10.1000/aaa. Tra cứu cho ra W1c (qua DOI) và W2c (qua arXiv) — hai work, cả hai đều có canonical_doi và hai DOI KHÁC nhau.",
+      "performed_by": "MOD-research-connector"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-05T12:00:01.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.merge_works",
+      "description": "Precondition thất bại: canonical_value_mismatch ⇒ KHÔNG merge.",
+      "result": "IDENTITY_CONFLICT",
+      "performed_by": "MOD-identity-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "identity_conflict": [
+        {
+          "id": "01JC0NF11CTC10000000000000",
+          "conflict_type": "canonical_value_mismatch",
+          "state": "open",
+          "involved_work_ids": [
+            "01JW0RKC100000000000000000",
+            "01JW0RKC200000000000000000"
+          ],
+          "involved_identifiers": [
+            {
+              "id_scheme": "doi",
+              "id_value_normalized": "10.1000/aaa",
+              "evidence_source": "post_link"
+            },
+            {
+              "id_scheme": "doi",
+              "id_value_normalized": "10.1000/bbb",
+              "evidence_source": "arxiv_api"
+            },
+            {
+              "id_scheme": "arxiv",
+              "id_value_normalized": "2502.02222",
+              "evidence_source": "post_link"
+            },
+            {
+              "id_scheme": "openalex",
+              "id_value_normalized": "W3000000001",
+              "evidence_source": "openalex_api"
+            }
+          ],
+          "detected_at": "2026-09-05T12:00:01.000Z",
+          "resolution_note": null,
+          "resolved_at": null
+        }
+      ],
+      "work": [
+        {
+          "id": "01JW0RKC100000000000000000",
+          "identity_state": "quarantined",
+          "canonical_doi": "10.1000/aaa",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKC100000000000000000",
+            "target_key": "work:01JW0RKC100000000000000000",
+            "identity_state": "quarantined"
+          }
+        },
+        {
+          "id": "01JW0RKC200000000000000000",
+          "identity_state": "quarantined",
+          "canonical_doi": "10.1000/bbb",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKC200000000000000000",
+            "target_key": "work:01JW0RKC200000000000000000",
+            "identity_state": "quarantined"
+          }
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASC10000000000000000",
+          "work_id": "01JW0RKC100000000000000000"
+        },
+        {
+          "id": "01JA11ASC20000000000000000",
+          "work_id": "01JW0RKC200000000000000000"
+        },
+        {
+          "id": "01JA11ASC30000000000000000",
+          "work_id": "01JW0RKC200000000000000000"
+        }
+      ],
+      "identity_merge_audit": []
+    },
+    "counts": {
+      "identity_merge_audit": 0,
+      "identity_conflict__state_open": 1,
+      "work__total": 2,
+      "work__identity_state_active": 0,
+      "work__identity_state_quarantined": 2,
+      "work__identity_state_merged": 0,
+      "identity_alias__total": 3,
+      "identity_alias__scheme_openalex": 0
+    },
+    "notes": [
+      "Alias openalex KHÔNG được tạo: nó sẽ trỏ tới hai work và làm hỏng tính hàm của identity_alias (I03). Bằng chứng được giữ trong involved_identifiers thay vì bị vứt bỏ.",
+      "Quarantine chặn SUY LUẬN identity, không chặn dữ liệu: Saved và analysis đã có vẫn đọc được.",
+      "Thoát 'open' chỉ bằng identity.resolve_conflict do owner thực hiện; không có timeout tự giải."
+    ],
+    "reporting_constraint": "Trong khi state='open', hai work này không được trình bày là hai phát hiện độc lập và không được tính là hai hướng nghiên cứu chắc chắn (PC04 khóa cách hiển thị)."
+  },
+  "forbidden_effects": [
+    "Merge W1c và W2c.",
+    "Chọn một DOI và ghi đè DOI kia.",
+    "Xóa hoặc sửa alias hiện có.",
+    "Tạo identity_alias openalex trỏ tới một trong hai work.",
+    "Tự giải conflict sau một khoảng thời gian.",
+    "Dùng suy luận AI để chọn work đúng."
+  ]
+}

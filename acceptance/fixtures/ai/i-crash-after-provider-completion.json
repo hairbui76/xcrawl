@@ -1,0 +1,119 @@
+{
+  "fixture_id": "FX-AI-I",
+  "title": "Crash sau khi provider đã chạy xong, trước submit → unknown_attempt, cost_uncertain = true",
+  "purpose": "Khóa AI_ATTEMPT_UNCERTAIN và I16: attempt KHÔNG BAO GIỜ là kết quả. Hệ thống không được tuyên bố 'chưa phát sinh phí' cho một việc nó không biết.",
+  "scenario_refs": [
+    "SC28"
+  ],
+  "invariant_refs": [
+    "I04",
+    "I14",
+    "I16"
+  ],
+  "decision_refs": [
+    "B07",
+    "ADR-0008"
+  ],
+  "requirement_refs": [
+    "REQ-D44",
+    "REQ-D43"
+  ],
+  "source_refs": [
+    "SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN",
+    "SRC-PLAN §8.2",
+    "contracts/state/analysis.yaml crash_after_provider_completion_timeline"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/state/analysis.yaml + contracts/data/entities.yaml",
+  "expected_validation": "not_applicable",
+  "budgets_cited": {
+    "analysis_unknown_attempt_auto_rerun": 1,
+    "analysis_attempts_per_item": 2,
+    "source": "contracts/retry-policy.yaml",
+    "note_vi": "Lần tự chạy lại TIÊU THỤ một đơn vị của analysis_attempts_per_item (retry-policy consumes_vi)."
+  },
+  "given": {
+    "task": {
+      "task_id": "summary",
+      "analysis_generation_id": "01JAGENA100000000000000000"
+    },
+    "timeline_ref": "contracts/state/analysis.yaml crash_after_provider_completion_timeline (t2)"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.claim_task",
+      "description": "t0: lease cấp, analysis_attempt(started_at) được ghi."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T18:01:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "ai.run_inference_task",
+      "performed_by": "MOD-ai-adapter",
+      "description": "t2: provider chạy XONG và trả response. Phí ĐÃ phát sinh."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T18:01:30.000Z",
+      "actor": "MOD-analysis-worker",
+      "event_type": "process_crash",
+      "description": "Worker chết TRƯỚC analysis.submit_result. Kết quả mất."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T18:20:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.report_attempt_unknown",
+      "description": "Sau khi lease hết hạn, attempt được kết luận là timeout_unknown."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "analysis_attempt": [
+        {
+          "id": "01JATTA1000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "analysis_generation_id": "01JAGENA100000000000000000",
+          "attempt_number": 1,
+          "outcome": "timeout_unknown",
+          "error_code": "AI_ATTEMPT_UNCERTAIN",
+          "started_at": "2026-09-06T18:00:00.000Z",
+          "ended_at": null,
+          "worker_lease_id": "01JASGNA100000000000000000",
+          "cost_uncertain": true
+        }
+      ]
+    },
+    "counts": {
+      "analysis[status='valid']": 0,
+      "analysis_attempt[cost_uncertain=true]": 1
+    },
+    "row_oracles": [
+      "COUNT(analysis WHERE status='valid') = 0 — attempt không bao giờ là kết quả (I16).",
+      "cost_uncertain = true và ended_at = NULL: hệ thống ghi đúng cái nó KHÔNG biết.",
+      "Lần tự chạy lại (tối đa 1) tạo attempt MỚI với attempt_number = 2; KHÔNG sửa attempt cũ.",
+      "Transition unknown_attempt → valid là FORBIDDEN (contracts/state/analysis.yaml forbidden_transitions)."
+    ]
+  },
+  "forbidden_effects": [
+    "Tuyên bố 'chưa phát sinh phí' (SRC-PLAN §10).",
+    "Khôi phục kết quả từ log của worker rồi ghi thành valid (I16).",
+    "Sửa attempt cũ thay vì tạo attempt mới khi chạy lại.",
+    "Tự chạy lại quá analysis_unknown_attempt_auto_rerun (1) mà không có analysis.request_reanalysis của Owner."
+  ]
+}

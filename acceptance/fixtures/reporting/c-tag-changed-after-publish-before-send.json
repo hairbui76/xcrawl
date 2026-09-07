@@ -1,0 +1,149 @@
+{
+  "fixture_id": "FX-RP-C",
+  "title": "Đổi tag SAU publish, TRƯỚC khi Telegram gửi → nội dung đã publish không đổi một byte",
+  "purpose": "Khóa AMD-B01 ở phía delivery: 'thời điểm gửi' của C03/D-tag được đọc lại là 'thời điểm publish'. Retry Telegram không bao giờ rơi vào bộ tag khác.",
+  "scenario_refs": [
+    "SC19"
+  ],
+  "invariant_refs": [
+    "I05",
+    "I09"
+  ],
+  "decision_refs": [
+    "B01",
+    "B03",
+    "AMD-B01",
+    "AMD-B03"
+  ],
+  "requirement_refs": [
+    "REQ-CTAG",
+    "REQ-D23",
+    "REQ-AC14",
+    "REQ-S9.2-04"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.4 C03/D-tag",
+    "SRC-SPEC §9.2",
+    "SRC-PLAN §3 B01",
+    "SRC-PLAN §7 I05"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml",
+    "contracts/telegram/delivery.md"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "report": [
+        {
+          "id": "01JRPTC0000000000000000000",
+          "status": "published",
+          "quality": "complete",
+          "tag_config_version_id": "01JTCVC0000000000000000000",
+          "published_at": "2026-09-07T13:00:00.000Z",
+          "content_hash": "sha256:ac3e89195f64fe5f45a6107cada6ca69aecc479bc007fb86ab367d7cdc0055a8"
+        }
+      ],
+      "delivery": [
+        {
+          "report_id": "01JRPTC0000000000000000000",
+          "channel": "telegram",
+          "state": "retry_wait",
+          "attempt_count": 1
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T13:00:00.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Publish commit. tag_config_version_id = CTCV được ghi bất biến."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T13:00:01.000Z",
+      "actor": "MOD-report-service",
+      "operation": "delivery.create_intent",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Intent được tạo TRONG cùng transaction publish; payload trỏ nội dung đã đóng.",
+      "performed_by": "MOD-delivery-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T13:00:10.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "telegram.send_payload",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Lần gửi thứ nhất thất bại retryable → delivery.retry_wait.",
+      "performed_by": "MOD-telegram-adapter"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T13:02:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.delete",
+      "description": "Owner bỏ một tag ĐANG có mục trong REP-C. Sinh tag_config_version mới (sequence + 1)."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-07T13:05:00.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "telegram.send_payload",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Retry gửi. Payload lấy từ nội dung đã publish, KHÔNG dựng lại từ tag hiện hành.",
+      "performed_by": "MOD-telegram-adapter"
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-07T13:05:02.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.record_receipt",
+      "description": "Gửi thành công → delivery.sent."
+    }
+  ],
+  "expected": {
+    "hash_oracles": [
+      {
+        "symbolic": "h_c",
+        "computed_by": "sha256(JCS(nội dung đã publish của REP-C))",
+        "assertion": "h_c sau event 6 == h_c sau event 1 (bằng nhau từng byte)"
+      },
+      {
+        "symbolic": "h_payload",
+        "computed_by": "sha256(JCS(delivery payload đã gửi))",
+        "assertion": "h_payload ở event 3 == h_payload ở event 5"
+      }
+    ],
+    "counts": {
+      "report[id=REP-C].tag_config_version_id changed": 0,
+      "report_item[report_id=REP-C] rows added or removed after event 1": 0,
+      "delivery[report_id=REP-C]": 1,
+      "tag_config_version": 2
+    },
+    "row_oracles": [
+      "report.tag_config_version_id vẫn là CTCV sau event 4, dù tag_config_version mới đã tồn tại.",
+      "Bộ tag mới chỉ ảnh hưởng kỳ SAU; kỳ REP-C không có bất kỳ UPDATE nào."
+    ]
+  },
+  "forbidden_effects": [
+    "UPDATE bất kỳ cột nào của report hoặc report_item của REP-C sau khi published (I05).",
+    "Dựng lại payload delivery từ bộ tag hiện hành thay vì từ nội dung đã publish.",
+    "Đổi delivery sang trạng thái mới chỉ vì tag đổi.",
+    "Đánh dấu run là thất bại vì Telegram lỗi (I09)."
+  ]
+}

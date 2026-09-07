@@ -1,0 +1,326 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-c-challenge-mid-batch",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-AC04",
+      "REQ-S5.4-01",
+      "REQ-S5.4-05",
+      "REQ-S9.3-01",
+      "REQ-A7"
+    ],
+    "decision_refs": [
+      "B05",
+      "B10",
+      "AMD-B05",
+      "AMD-B10"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I10",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "AC-04. Điểm khóa: dữ liệu đã TẢI nhưng CHƯA ingest KHÔNG phải checkpoint bền; báo dừng hai lần KHÔNG tạo alert thứ hai; `status`/`run-now` KHÔNG đưa run rời `needs_user`.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "c-challenge-mid-batch",
+  "title_vi": "CAPTCHA giữa lô ⇒ needs_user, ĐÚNG MỘT alert, checkpoint = mốc ACK cuối",
+  "scenario_refs": [
+    "SC04"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I10",
+    "I13"
+  ],
+  "preconditions_vi": {
+    "run": "status=running, phase=collecting",
+    "checkpoint": "acked_through_ingest_sequence=20 sau lô 1"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0010-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "NSWJZQY8S5GE33J4XH4A7F601X",
+          "request_id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:f32828acecb4282c87eaa554d2e1db74e418cd6845843012463a3324028bdd9d",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 20,
+            "inserted": 20,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 20,
+            "max_ingest_sequence": 20
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000010",
+              "post_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 20,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "WMV5P2DB00F1TE174C3XYTN38R",
+            "checkpoint_sequence": 1,
+            "cursor_token": "cursor-page-2",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 20,
+            "items_ingested_total": 20
+          },
+          "receipt_hash": "sha256:d874e4e4a5df21173b0f83e313151f813bea4f488686efe670ae47f87c177595",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Lô 1 ACK xong. Đây là mốc bền cuối cùng."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": null,
+      "event_type": "local_observation",
+      "http": {
+        "method": null,
+        "path": null
+      },
+      "response_status": null,
+      "note_vi": "SỰ KIỆN CỤC BỘ, KHÔNG có lời gọi HTTP nào: collector đã TẢI thêm 7 bài (lô 2) nhưng CHƯA gửi, rồi X trả trang xác minh. 7 bài đó nằm trong RAM và KHÔNG BAO GIỜ trở thành checkpoint bền (SRC-PLAN §8.1). `operation: null` kèm `event_type: local_observation` là hình dạng đã ratify ở R4-02 cho sự kiện không-HTTP: gate actor-edge bỏ qua nó theo QUY TẮC, không phải vì đoán."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/stop"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "stop-2026-09-07-0010-aaaa"
+      },
+      "request_body": {
+        "request_id": "4W3DYANK88Q92P9FCMB562XBG0",
+        "schema_version": "0.1.0",
+        "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "stop_report_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+        "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+        "lease_epoch": 1,
+        "stop_reason": "challenge_required",
+        "last_acked_ingest_sequence": 20,
+        "posts_downloaded_not_ingested": 7
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 200,
+      "response_body": {
+        "run": {
+          "status": "needs_user",
+          "phase": "collecting",
+          "outcome": null,
+          "stop_reason": "captcha"
+        },
+        "alert_intent_created": true,
+        "alert_intent_id": "YEDFRWZN2T1BW8KH66N70M7DAJ"
+      },
+      "note_vi": "Server chuyển run sang `needs_user` và tạo ĐÚNG MỘT alert intent trong cùng transaction."
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/stop"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "stop-2026-09-07-0010-aaaa"
+      },
+      "request_body": {
+        "request_id": "BQ20NN4PF3PWS1RJKFARXDCEQV",
+        "schema_version": "0.1.0",
+        "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "stop_report_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+        "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+        "lease_epoch": 1,
+        "stop_reason": "challenge_required",
+        "last_acked_ingest_sequence": 20,
+        "posts_downloaded_not_ingested": 7
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 200,
+      "response_body": {
+        "run": {
+          "status": "needs_user",
+          "phase": "collecting",
+          "outcome": null,
+          "stop_reason": "captcha"
+        },
+        "alert_intent_created": false,
+        "alert_intent_id": "YEDFRWZN2T1BW8KH66N70M7DAJ"
+      },
+      "note_vi": "Báo lại CÙNG `stop_report_id` (idempotency của ports.yaml): KHÔNG tạo alert thứ hai. Đây là oracle của REQ-AC04."
+    },
+    {
+      "seq": 5,
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.list",
+      "http": {
+        "method": "get",
+        "path": "/v1/runs"
+      },
+      "performed_by": "MOD-job-service",
+      "response_status": 200,
+      "response_body": {
+        "runs": [
+          {
+            "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+            "status": "needs_user",
+            "outcome": null,
+            "stop_reason": "captcha"
+          }
+        ]
+      },
+      "note_vi": "Lệnh Telegram `status` là READ-ONLY: run KHÔNG rời `needs_user` (B10/AMD-B10). Không hàng nào đổi."
+    },
+    {
+      "seq": 6,
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.run_now",
+      "http": {
+        "method": "post",
+        "path": "/v1/runs/run-now"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "runnow-2026-09-07-0001-aaa"
+      },
+      "request_body": {
+        "request_id": "59C2F7ER9N0YKK2MD1MTQZPGHD"
+      },
+      "response_status": 200,
+      "response_body": {
+        "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+        "status": "needs_user",
+        "created_new_run": false,
+        "reason_vi": "Đang có một run chờ bạn xác minh. `run-now` không ghi đè và không tự tiếp tục."
+      },
+      "note_vi": "`run-now` KHÔNG vượt qua một run `needs_user` (AMD-B10): trả run hiện tại, KHÔNG tạo run mới, KHÔNG cấp lease mới."
+    },
+    {
+      "seq": 7,
+      "actor": "MOD-web-ui",
+      "operation": "run.resume",
+      "http": {
+        "method": "post",
+        "path": "/v1/runs/{run_id}/resume"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "resume-2026-09-07-0001-aaa"
+      },
+      "request_body": {
+        "request_id": "JJ1KC0KSPYNFGC7NTA9BMRVHYP",
+        "challenge_cleared_confirmed": true
+      },
+      "response_status": 200,
+      "response_body": {
+        "run": {
+          "status": "queued",
+          "phase": "collecting",
+          "outcome": null,
+          "stop_reason": null
+        },
+        "lease_epoch_next": 2
+      },
+      "note_vi": "CHỈ hành động resume trong app mới đưa run về `queued`. Lease MỚI được cấp khi worker claim lại (I10)."
+    }
+  ],
+  "durable_rows_expected": [
+    "post: +20 hàng (lô 1). 7 bài của lô 2 KHÔNG có hàng nào.",
+    "checkpoint.acked_through_ingest_sequence = 20 tại mọi thời điểm của fixture này.",
+    "outbox_intent WHERE kind='run_alert' AND run_id=RUN: ĐÚNG 1 hàng, kể cả sau sự kiện 4.",
+    "run: needs_user → (sự kiện 7) queued; run.current_lease_epoch tăng 1.",
+    "Sau sự kiện 5 và 6: KHÔNG hàng nào đổi (hash file DB không đổi)."
+  ],
+  "forbidden_effects": [
+    "Coi 7 bài đã tải nhưng chưa ingest là checkpoint bền (SRC-PLAN §8.1).",
+    "Tạo alert intent thứ hai (REQ-AC04).",
+    "Tự claim lại hoặc tự thử lại sau CAPTCHA (I10, REQ-S9.3-01).",
+    "Giả lập thao tác giải xác minh (SRC-SPEC §2.3).",
+    "`status` hoặc `run-now` đưa run rời `needs_user` (AMD-B10).",
+    "Resume khi phiên vẫn còn challenge (REQ-S5.4-05)."
+  ],
+  "oracle_vi": "COUNT(outbox_intent kind='run_alert' AND run_id=RUN) = 1. checkpoint.acked_through_ingest_sequence = 20. Số request thu thập mới giữa sự kiện 3 và 7 = 0. Sau sự kiện 5 và 6, hash file DB không đổi."
+}

@@ -1,0 +1,317 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-b-cursor-invalidated-reread-dedup",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-AC04",
+      "REQ-S9.2-01",
+      "REQ-A1"
+    ],
+    "decision_refs": [
+      "B05",
+      "AMD-B05",
+      "R-01 (A1-R1)"
+    ],
+    "invariant_refs": [
+      "I02"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "Cam kết của hệ thống là KHÔNG INGEST TRÙNG theo `x_post_id`, KHÔNG phải 'không bao giờ đọc lại' (AMD-B05). Fixture chứng minh oracle đúng là SỐ HÀNG, không phải số request.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "b-cursor-invalidated-reread-dedup",
+  "title_vi": "Con trỏ mất hiệu lực ⇒ đọc lại được phép, nhưng KHÔNG ingest trùng",
+  "scenario_refs": [
+    "SC03",
+    "SC21"
+  ],
+  "invariant_refs": [
+    "I02"
+  ],
+  "preconditions_vi": {
+    "checkpoint": "acked_through_ingest_sequence=5, cursor_token='cursor-page-1', cursor_state='valid'",
+    "post": "5 hàng đã tồn tại với x_post_id 1900000000000000001..005"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.commit_checkpoint",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/checkpoints"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "ckpt-2026-09-07-0002-aaaa"
+      },
+      "request_body": {
+        "checkpoint_only_request": {
+          "request_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+          "schema_version": "0.1.0",
+          "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "checkpoint_seq": 2,
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "cursor_token": null,
+          "cursor_state": "invalidated",
+          "proposed_acked_through_ingest_sequence": 5,
+          "reason": "end_of_feed"
+        }
+      },
+      "validate_request_against": "contracts/schemas/ingest-receipt.schema.json",
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "3FTRDDWE7VEMHSGAB72GN546FK",
+          "request_id": "GRF9A61FM435EJNBRGQ1JY97WW",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:fa2b7af0a811b9acde602aacb78e3638e8506dfead5fe6c3425b10b526f94bdd",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "checkpoint_only",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 0,
+            "inserted": 0,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 0,
+            "max_ingest_sequence": 5
+          },
+          "accepted_items": [],
+          "checkpoint_ack": {
+            "checkpoint_id": "AASB4RBHEPD784ZDJ213CGK9PE",
+            "checkpoint_sequence": 2,
+            "cursor_token": null,
+            "cursor_state": "invalidated",
+            "acked_through_ingest_sequence": 5,
+            "items_ingested_total": 5
+          },
+          "receipt_hash": "sha256:802b906a18591ead8a6dd809b262ace4c65c16e89764c40ae326cfcff811e10c",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Con trỏ vô hiệu được GHI NHẬN qua đường checkpoint-only (ruling R-01). `proposed_acked_through_ingest_sequence=5` KHÔNG vượt mốc ACK đã commit nên guard cho qua."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/claim"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "claim-2026-09-07-0002-aaaa"
+      },
+      "request_body": {
+        "claim_request": {
+          "request_id": "59C2F7ER9N0YKK2MD1MTQZPGHD",
+          "schema_version": "0.1.0",
+          "claim_request_id": "claim-2026-09-07-0002-aaaa",
+          "worker_instance_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "worker_kind": "collector",
+          "capabilities": {
+            "collector_online": true,
+            "chrome_profile_ready": true,
+            "x_session_state": "ok",
+            "embedding_supported": false,
+            "collector_version": "0.1.0"
+          },
+          "max_assignments": 1
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 200,
+      "response_body": {
+        "assignment": {
+          "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "phase": "collecting",
+          "trigger_type": "scheduled",
+          "catch_up_window": null,
+          "lease": {
+            "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+            "lease_epoch": 2,
+            "ttl_s": 120,
+            "heartbeat_interval_s": 30,
+            "expires_at": "2026-09-07T08:02:00.000Z"
+          },
+          "capability_requirements": {
+            "requires_chrome_profile": true,
+            "requires_x_session_ok": true
+          },
+          "search_config": {
+            "tags": [
+              "protein folding",
+              "graph neural networks"
+            ],
+            "tag_config_version_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+            "source_limits": {
+              "author_thread_only": true,
+              "external_replies": "excluded",
+              "image_only_post_policy": "post_only_no_id_guess",
+              "chrome_scope": "x_only",
+              "paper_metadata_source": "server_api",
+              "max_thread_context_posts": 50
+            }
+          },
+          "stop_conditions": {
+            "max_posts": 200,
+            "max_duration_s": 1800,
+            "evaluation": "first_of_either",
+            "on_challenge": "report_stop_and_halt",
+            "on_blocked": "report_stop_and_halt_no_rotation"
+          },
+          "checkpoint": {
+            "phase": "collecting",
+            "cursor_token": null,
+            "cursor_state": "invalidated",
+            "acked_through_ingest_sequence": 5,
+            "items_ingested_total": 5,
+            "checkpoint_sequence": 2
+          },
+          "is_resume": false,
+          "x_coverage_note_vi": "Chỉ quan sát được phần feed tìm kiếm trả về trong ngân sách 200 bài / 30 phút; phần feed ngoài cửa sổ đó KHÔNG được quét."
+        }
+      },
+      "validate_response_against": "contracts/schemas/worker-assignment.schema.json",
+      "note_vi": "Claim lại: server trả checkpoint ĐÃ ACK làm nguồn sự thật; `cursor_state='invalidated'` cho phép đọc lại từ đầu feed."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0003-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "request_id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:835d5e8314340ab852a2f979ab4cd53e994dbe38366afb6eed84fe4957b980c8",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 8,
+            "inserted": 3,
+            "deduplicated": 5,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 3,
+            "max_ingest_sequence": 8
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000001",
+              "post_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+              "outcome": "deduplicated",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 1,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            },
+            {
+              "x_post_id": "1900000000000000006",
+              "post_id": "V7JG55M6ZK6C9H823ZT8DXWY7B",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 6,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+            "checkpoint_sequence": 3,
+            "cursor_token": "cursor-page-1b",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 8,
+            "items_ingested_total": 8
+          },
+          "receipt_hash": "sha256:114bd151f8fb0c58642d2170da4ae7d7c57977260ac2cc8905306cab6b2acabc",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Đọc lại 8 bài: 5 bài ĐÃ CÓ ⇒ `deduplicated`; 3 bài mới ⇒ `inserted`. `discovered_at` của bài trùng giữ GIÁ TRỊ CŨ, không phải giờ đọc lại."
+    }
+  ],
+  "durable_rows_expected": [
+    "post: +3 hàng (chỉ x_post_id mới). Tổng 8, KHÔNG phải 13.",
+    "ingest_receipt: +2 hàng (một checkpoint_only, một batch_ingest).",
+    "checkpoint: +2 hàng append-only; acked_through_ingest_sequence 5 → 8, đơn điệu tăng.",
+    "post.discovered_at của 5 bài cũ: KHÔNG ĐỔI (giờ server chấp nhận LẦN ĐẦU — SRC-PLAN §9.1)."
+  ],
+  "forbidden_effects": [
+    "Tạo hàng post thứ hai cho một x_post_id đã có.",
+    "Cập nhật discovered_at của bài trùng thành giờ đọc lại.",
+    "Coi việc đọc lại là lỗi hoặc là vi phạm cam kết (AMD-B05 cho phép rõ ràng).",
+    "Dùng SỐ REQUEST làm oracle — AMD-B05 nói thẳng: request count KHÔNG phải oracle.",
+    "Tiến checkpoint vượt mốc ACK (ruling R-01)."
+  ],
+  "oracle_vi": "COUNT(post WHERE run_id=RUN) = 8. counts.deduplicated = 5. checkpoint.acked_through_ingest_sequence tăng đơn điệu 5→8 và không bao giờ vượt max(ingest_receipt.max_ingest_sequence)."
+}

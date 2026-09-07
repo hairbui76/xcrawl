@@ -1,0 +1,257 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-d-duplicate-ingest-replay",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-AC04",
+      "REQ-S9.2-01"
+    ],
+    "decision_refs": [
+      "B05",
+      "AMD-B05"
+    ],
+    "invariant_refs": [
+      "I02"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "INGEST_ACK_LOST. Timeout transport là KHÔNG BIẾT KẾT QUẢ, không phải rollback (SRC-PLAN §5.1). Đường tra cứu `ingest.get_receipt` là BẮT BUỘC trước mọi retry mutation.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "d-duplicate-ingest-replay",
+  "title_vi": "Mất ACK ⇒ tra receipt rồi replay; số hàng và receipt_hash KHÔNG đổi",
+  "scenario_refs": [
+    "SC21"
+  ],
+  "invariant_refs": [
+    "I02"
+  ],
+  "preconditions_vi": {
+    "server": "đã COMMIT lô nhưng response bị mất trên đường về"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0020-aaaa"
+      },
+      "response_status": null,
+      "note_vi": "Lời gọi thứ nhất. Server ĐÃ COMMIT, nhưng client KHÔNG nhận được response (timeout). `response_status` để null một cách CÓ CHỦ ĐÍCH: client không biết kết quả."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.get_receipt",
+      "http": {
+        "method": "get",
+        "path": "/v1/ingest/receipts/{idempotency_key}"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+          "request_id": "P657GMQDTJS3M0B9YYDZRCZ52A",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:b7c7470e59e2a2df1bfd0a4705488ee6fe0c5c125de15cccdfab0e00d6c03dc0",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 15,
+            "inserted": 15,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 15,
+            "max_ingest_sequence": 35
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000030",
+              "post_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 35,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "GRF9A61FM435EJNBRGQ1JY97WW",
+            "checkpoint_sequence": 4,
+            "cursor_token": "cursor-page-3",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 35,
+            "items_ingested_total": 35
+          },
+          "receipt_hash": "sha256:6b3c238ebcf1f3c07cf0e556faa82c6b8fe96840ff4b6b7e9962a2d855843a0b",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "BƯỚC BẮT BUỘC trước retry (SRC-PLAN §5.1). Server trả receipt ⇒ lô ĐÃ bền ⇒ KHÔNG gửi lại."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0020-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+          "request_id": "P657GMQDTJS3M0B9YYDZRCZ52A",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:b7c7470e59e2a2df1bfd0a4705488ee6fe0c5c125de15cccdfab0e00d6c03dc0",
+          "schema_version": "0.1.0",
+          "status": "duplicate_replay",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 15,
+            "inserted": 15,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 15,
+            "max_ingest_sequence": 35
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000030",
+              "post_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 35,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "GRF9A61FM435EJNBRGQ1JY97WW",
+            "checkpoint_sequence": 4,
+            "cursor_token": "cursor-page-3",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 35,
+            "items_ingested_total": 35
+          },
+          "receipt_hash": "sha256:6b3c238ebcf1f3c07cf0e556faa82c6b8fe96840ff4b6b7e9962a2d855843a0b",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Nếu client vẫn gửi lại (cùng key + CÙNG payload_hash): server trả CHÍNH receipt cũ với `status='duplicate_replay'`. `receipt_hash` GIỐNG HỆT sự kiện 2."
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0020-aaaa"
+      },
+      "response_status": 409,
+      "response_body": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "scope": "request",
+        "retry_class": "none",
+        "message_safe": "Yêu cầu trùng khóa nhưng nội dung khác với lần đã ghi nhận.",
+        "correlation_id": "QKEW1HGJVZ2R5X4EZBPM99RA3Q",
+        "details_safe": {
+          "idempotency_key": "batch-2026-09-07-0020-aaaa",
+          "payload_hash_seen": "sha256:83cf8b609de60036a8277bd0e96135751bbc07eb234256d4b65b893360651bf2",
+          "payload_hash_stored": "sha256:b7c7470e59e2a2df1bfd0a4705488ee6fe0c5c125de15cccdfab0e00d6c03dc0"
+        },
+        "retry_after_ms": null
+      },
+      "validate_response_against": "contracts/http/openapi.yaml#/components/schemas/ErrorEnvelope",
+      "note_vi": "Cùng key nhưng payload_hash KHÁC ⇒ 409, KHÔNG ghi đè. Đây là ranh giới giữa 'replay' và 'yêu cầu mới nhầm khóa'."
+    }
+  ],
+  "durable_rows_expected": [
+    "post: +15 hàng, TỔNG CỘNG cho cả bốn sự kiện. Sự kiện 3 và 4 không thêm hàng nào.",
+    "ingest_receipt: ĐÚNG 1 hàng cho idempotency_key này; bất biến sau commit.",
+    "checkpoint: 1 hàng; checkpoint_sequence KHÔNG tăng ở sự kiện 3."
+  ],
+  "forbidden_effects": [
+    "Gửi lại mà chưa tra `ingest.get_receipt` (SRC-PLAN §5.1).",
+    "Coi timeout là rollback và ingest lại toàn bộ lô.",
+    "Ghi đè receipt cũ khi payload khác (sự kiện 4).",
+    "Tiến checkpoint ở sự kiện 3."
+  ],
+  "oracle_vi": "COUNT(post) không đổi giữa sự kiện 2, 3 và 4. receipt_hash ở sự kiện 2 và 3 BẰNG NHAU. COUNT(ingest_receipt WHERE idempotency_key=...) = 1."
+}

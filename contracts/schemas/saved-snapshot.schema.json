@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/saved-snapshot.schema.json",
+  "title": "Saved item + immutable snapshot",
+  "description": "Một mục đã Save cùng ảnh chụp bất biến của nội dung tại thời điểm lưu. Snapshot là lý do bài gốc bị xóa trên X vẫn đọc được (REQ-D55, REQ-AC12).",
+  "x-contract": {
+    "contract_id": "CT-schema-saved-snapshot",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "interaction contract owner",
+    "source_refs": ["SRC-SPEC §3.6 D38, D55", "SRC-SPEC §7.3", "SRC-SPEC §12 AC-12, AC-13", "SRC-PLAN §7 I08, I17", "SRC-PLAN §11 PC07"],
+    "requirement_refs": ["REQ-D38", "REQ-D55", "REQ-AC12", "REQ-AC13", "REQ-S7.3-05"],
+    "decision_refs": ["B01", "CR-PC02-03"],
+    "invariant_refs": ["I08", "I17"],
+    "producers": ["MOD-saved-service"],
+    "consumers": ["MOD-web-ui", "MOD-telegram-adapter", "MOD-backup-service"],
+    "dependencies": ["contracts/data/entities.yaml", "contracts/schemas/target.schema.json", "contracts/schemas/report.schema.json", "contracts/ui/screens.yaml"],
+    "scope": "Hình dạng wire và fixture của một Saved item + snapshot. Cột và ràng buộc bảng nằm ở contracts/data/entities.yaml (ENT-saved-item, ENT-saved-snapshot); file này KHÔNG được mâu thuẫn với chúng.",
+    "verification": "EV-PC07-01 check_schema Draft 2020-12; mọi object `saved` trong acceptance/fixtures/telegram/ validate; negative fixture bị từ chối.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "satisfies_cr": "CR-PC02-03 (do chính PC02 nêu): schema này khớp entities.yaml `saved_item`/`saved_snapshot`, gồm `content_hash` và quy tắc canonical JSON.",
+    "entities_alignment": {
+      "saved_item": ["id", "owner_id", "target_kind", "target_work_id", "target_post_id", "target_key", "state", "saved_at", "unsaved_at", "save_channel", "saved_snapshot_id", "source_report_item_id", "idempotency_key", "moved_by_merge_id"],
+      "saved_snapshot": ["id", "owner_id", "target_kind", "target_key_at_save", "analysis_id_at_save", "payload", "content_hash", "created_at"],
+      "note_vi": "Tên trường trên wire giữ NGUYÊN tên cột để không sinh lớp ánh xạ ngầm. `payload` của bảng tương ứng object `saved_snapshot.payload` (object `content` trên wire) ở đây; `content_hash` tính trên chính object đó."
+    },
+    "canonical_json_rule": {
+      "algorithm": "sha256",
+      "serialization": "RFC 8785 JSON Canonicalization Scheme (JCS), UTF-8 không BOM",
+      "input": "CHÍNH object `saved_snapshot.payload` (object `content` trên wire) (không gồm `content_hash`, không gồm `saved_item`, không gồm bất kỳ trường bao ngoài nào)",
+      "format": "content_hash = \"sha256:\" + hex thường 64 ký tự",
+      "why_vi": "Cùng quy tắc với contracts/data/entities.yaml §conventions.hashes. Nếu hai file dùng hai cách canonical hóa khác nhau thì mọi oracle 'hash trước = hash sau' của I08/I17 vô nghĩa.",
+      "invariant_vi": "sha256(JCS(saved_snapshot.payload)) bằng saved_snapshot.content_hash tại MỌI thời điểm sau commit; snapshot không bao giờ bị UPDATE."
+    },
+    "unsave_resave_semantics": {
+      "decision_refs": ["I08"],
+      "rule_vi": "Tối đa MỘT saved_item `state = 'active'` cho một `target_key` trong một owner (UNIQUE partial `ux_saved_active_owner_target`).",
+      "unsave_vi": "`save.remove` chỉ đổi `state` → `unsaved` và ghi `unsaved_at`. Snapshot KHÔNG bị xóa, KHÔNG bị sửa (SRC-SPEC §7.3: bỏ lưu ≠ xóa dữ liệu gốc).",
+      "resave_vi": "Save lại tạo hàng `saved_item` MỚI với snapshot MỚI chụp tại thời điểm đó. Hàng cũ ở lại làm lịch sử. Do đó một target có thể có nhiều hàng saved_item nhưng tối đa một `active`.",
+      "why_new_snapshot_vi": "Dùng lại snapshot cũ sẽ nói dối về thời điểm chụp: giữa lần bỏ lưu và lần lưu lại, analysis có thể đã sang generation mới. `saved_at` và `analysis_id_at_save` phải phản ánh lần lưu thật.",
+      "merge_vi": "Sau identity merge, con trỏ `target_work_id`/`target_key` của saved_item được ghi lại sang work thắng; `saved_snapshot.target_key_at_save` GIỮ NGUYÊN vì nó là bằng chứng lịch sử (I17)."
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "saved_item", "snapshot"],
+  "properties": {
+    "schema_version": { "$ref": "#/$defs/semver" },
+    "saved_item": { "$ref": "#/$defs/saved_item" },
+    "snapshot": { "$ref": "#/$defs/saved_snapshot" }
+  },
+  "$defs": {
+    "ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "timestamp_utc_ms": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$" },
+    "target_key": { "type": "string", "pattern": "^(work|post):[0-9A-HJKMNP-TV-Z]{26}$" },
+    "https_url": { "type": "string", "pattern": "^https://[^\\s]{1,2040}$", "maxLength": 2048 },
+    "target": {
+      "description": "Tagged union work|post. Hình dạng chuẩn ở https://research-radar.local/schemas/target.schema.json; lặp lại ở đây để fixture validate được độc lập, KHÔNG được lệch khỏi bản gốc.",
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "work_id"],
+          "properties": {
+            "kind": { "const": "work" },
+            "work_id": { "$ref": "#/$defs/ulid" },
+            "target_key": { "type": "string", "pattern": "^work:[0-9A-HJKMNP-TV-Z]{26}$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "post_id"],
+          "properties": {
+            "kind": { "const": "post" },
+            "post_id": { "$ref": "#/$defs/ulid" },
+            "target_key": { "type": "string", "pattern": "^post:[0-9A-HJKMNP-TV-Z]{26}$" }
+          }
+        }
+      ]
+    },
+    "saved_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner_id", "target", "target_key", "state", "saved_at", "save_channel", "saved_snapshot_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ulid" },
+        "owner_id": { "$ref": "#/$defs/ulid" },
+        "target": { "$ref": "#/$defs/target" },
+        "target_key": { "$ref": "#/$defs/target_key" },
+        "state": {
+          "type": "string",
+          "enum": ["active", "unsaved", "superseded_by_merge"],
+          "description": "Tối đa một `active` cho một target (I08). `unsaved` giữ nguyên snapshot."
+        },
+        "saved_at": { "$ref": "#/$defs/timestamp_utc_ms" },
+        "unsaved_at": {
+          "oneOf": [{ "$ref": "#/$defs/timestamp_utc_ms" }, { "type": "null" }],
+          "description": "NOT NULL khi và chỉ khi state = 'unsaved'."
+        },
+        "save_channel": {
+          "type": "string",
+          "enum": ["app", "telegram"],
+          "description": "Nguồn Save, hiển thị ở màn hình Saved (SRC-SPEC §4)."
+        },
+        "saved_snapshot_id": { "$ref": "#/$defs/ulid" },
+        "source_report_item_id": {
+          "oneOf": [{ "$ref": "#/$defs/ulid" }, { "type": "null" }],
+          "description": "Mục đang đọc lúc bấm Save. NULL khi Save từ Work detail ngoài phạm vi một báo cáo."
+        },
+        "idempotency_key": {
+          "oneOf": [{ "type": "string", "pattern": "^[A-Za-z0-9_.:-]{8,128}$" }, { "type": "null" }],
+          "description": "Khóa chống trùng của callback Telegram; NULL cho Save trong app. 5 lần bấm cùng key ⇒ một hàng (REQ-D38)."
+        },
+        "moved_by_merge_id": {
+          "oneOf": [{ "$ref": "#/$defs/ulid" }, { "type": "null" }],
+          "description": "Con trỏ được ghi lại sau identity merge; snapshot KHÔNG bị đụng (I17)."
+        }
+      }
+    },
+    "saved_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner_id", "target_kind", "target_key_at_save", "created_at", "content", "content_hash"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ulid" },
+        "owner_id": { "$ref": "#/$defs/ulid" },
+        "target_kind": { "type": "string", "enum": ["work", "post"] },
+        "target_key_at_save": {
+          "$ref": "#/$defs/target_key",
+          "description": "BẤT BIẾN. Sau merge vẫn trỏ target lúc lưu — bằng chứng lịch sử, không phải con trỏ hiện hành (I17)."
+        },
+        "analysis_id_at_save": {
+          "oneOf": [{ "$ref": "#/$defs/ulid" }, { "type": "null" }],
+          "description": "Đúng bản phân tích người dùng ĐANG ĐỌC (report_item.analysis_id), KHÔNG phải bản mới hơn vừa xuất hiện. NULL chỉ khi target chưa có analysis valid nào."
+        },
+        "report_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["report_id", "report_content_hash"],
+          "description": "Kỳ báo cáo mà mục được đọc từ đó. Cho phép chứng minh snapshot khớp đúng revision đã publish (B01).",
+          "properties": {
+            "report_id": { "$ref": "#/$defs/ulid" },
+            "report_item_id": { "$ref": "#/$defs/ulid" },
+            "report_content_hash": { "$ref": "#/$defs/sha256" },
+            "report_published_at": { "$ref": "#/$defs/timestamp_utc_ms" }
+          }
+        },
+        "created_at": { "$ref": "#/$defs/timestamp_utc_ms" },
+        "content": { "$ref": "#/$defs/snapshot_content" },
+        "content_hash": {
+          "$ref": "#/$defs/sha256",
+          "description": "sha256(JCS(content)) — xem x-contract.canonical_json_rule. Oracle của REQ-AC12 và I08/I17."
+        }
+      }
+    },
+    "snapshot_content": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Nội dung TỰ ĐỦ: đọc được mà không cần truy vấn lại bất cứ bảng nào và không cần mở nguồn ngoài (REQ-AC12, REQ-AC10).",
+      "required": ["content_version", "target", "display_title", "summary", "evidence_level", "matched_tags", "source_posts"],
+      "properties": {
+        "content_version": {
+          "$ref": "#/$defs/semver",
+          "description": "Phiên bản hình dạng của chính object này. Đổi hình dạng ⇒ đổi cách canonical hóa ⇒ mọi content_hash cũ không tái lập được; vì vậy phải bump và ghi migration (entities.yaml §schema_versioning)."
+        },
+        "target": { "$ref": "#/$defs/target" },
+        "display_title": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "summary": { "$ref": "#/$defs/summary_block" },
+        "evidence_level": {
+          "type": "string",
+          "enum": ["post_only", "abstract", "full_text"],
+          "description": "Nhãn mức độ đọc (REQ-D21). Không được nâng cấp khi nguồn tương ứng không tồn tại."
+        },
+        "matched_tags": {
+          "type": "array",
+          "description": "Dòng 'khớp tag nào' (REQ-D20, REQ-AC10). Là ẢNH CHỤP tag lúc lưu — bỏ tag sau đó KHÔNG làm mảng này đổi (REQ-S8.2-07).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["tag_text"],
+            "properties": {
+              "tag_id": { "$ref": "#/$defs/ulid" },
+              "tag_text": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "similarity": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "topic_labels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "description": "Nhãn chủ đề mở do AI gắn (REQ-D22)."
+        },
+        "work_metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Vắng mặt hợp lệ với target chỉ-có-post (REQ-D33).",
+          "properties": {
+            "canonical_doi": { "type": "string", "maxLength": 512 },
+            "canonical_arxiv_id": { "type": "string", "maxLength": 64 },
+            "work_version_label": { "type": "string", "pattern": "^(v[1-9][0-9]{0,2}|journal)$" },
+            "paper_url": { "$ref": "#/$defs/https_url" },
+            "code_url": { "$ref": "#/$defs/https_url" },
+            "abstract_text": { "type": "string", "maxLength": 20000 }
+          }
+        },
+        "source_posts": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 200,
+          "description": "Các post dẫn tới target, chụp lúc lưu. Mảng rỗng hợp lệ khi target là work chưa có post nào còn đọc được.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x_post_id", "author_handle", "url", "text"],
+            "properties": {
+              "x_post_id": { "type": "string", "pattern": "^[0-9]{1,25}$" },
+              "author_handle": { "type": "string", "pattern": "^[A-Za-z0-9_]{1,15}$" },
+              "url": { "$ref": "#/$defs/https_url" },
+              "text": {
+                "type": "string",
+                "maxLength": 65536,
+                "description": "Văn bản post lúc lưu. Là DỮ LIỆU: escape khi hiển thị, không thực thi (I11)."
+              },
+              "published_at": { "$ref": "#/$defs/timestamp_utc_ms" },
+              "discovered_at": { "$ref": "#/$defs/timestamp_utc_ms" }
+            }
+          }
+        },
+        "analysis_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["analysis_id", "analyzed_at"],
+          "description": "Truy vết bản phân tích đã chụp. `analyzed_at` hiển thị cùng `discovered_at` (SRC-SPEC §10.3).",
+          "properties": {
+            "analysis_id": { "$ref": "#/$defs/ulid" },
+            "analyzed_at": { "$ref": "#/$defs/timestamp_utc_ms" },
+            "generation_number": { "type": "integer", "minimum": 1 },
+            "payload_hash": { "$ref": "#/$defs/sha256" },
+            "provider_name": { "type": "string", "maxLength": 100 },
+            "model_name": { "type": "string", "maxLength": 200 }
+          }
+        },
+        "first_announced": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Nếu mục là tham chiếu tới kỳ trước (REQ-D29, REQ-AC09).",
+          "properties": {
+            "first_report_id": { "$ref": "#/$defs/ulid" },
+            "first_announced_at": { "$ref": "#/$defs/timestamp_utc_ms" }
+          }
+        }
+      }
+    },
+    "summary_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Hình dạng REQ-D20: nội dung + điểm khác với cái đã có + một dòng hạn chế. Thiếu trường nào thì hiện nhãn thiếu, KHÔNG bịa (B16).",
+      "required": ["content_vi", "novelty_vi", "limitation_vi"],
+      "properties": {
+        "content_vi": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "novelty_vi": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000,
+          "description": "Điểm khác với cái đã có. Với evidence_level = post_only, đây là SUY LUẬN, không phải kết luận (REQ-AC11)."
+        },
+        "limitation_vi": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "comparator": {
+          "type": "string",
+          "enum": ["known", "unknown"],
+          "description": "`unknown` khi không có nguồn so sánh; KHÔNG bịa baseline (B16)."
+        },
+        "claim_kinds": {
+          "type": "array",
+          "description": "Phân loại phát biểu theo B16 / SRC-SPEC §10.3.",
+          "items": { "type": "string", "enum": ["author_claim", "source_verified", "ai_inference"] }
+        }
+      }
+    }
+  }
+}

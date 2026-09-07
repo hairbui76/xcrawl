@@ -1,0 +1,226 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/ingest-receipt.schema.json",
+  "title": "Ingest receipt và checkpoint-only request (backend → collector)",
+  "description": "Biên nhận bất biến của một lô ingest đã COMMIT (`ingest.submit_batch`), của một bước tiến con trỏ thuần túy (`ingest.commit_checkpoint`, ruling R-01), và của tra cứu sau khi mất ACK (`ingest.get_receipt`). Receipt là BẰNG CHỨNG DUY NHẤT rằng dữ liệu đã bền: khi client mất ACK, nó tra receipt chứ không đoán (SRC-PLAN §5.1, I02).",
+  "x-contract": {
+    "contract_id": "CT-schema-ingest-receipt",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": ["SRC-PLAN §5.1", "SRC-PLAN §9.1", "SRC-PLAN §10 INGEST_ACK_LOST", "SRC-PLAN §11 PC05", "SRC-SPEC §9.2", "SRC-SPEC §9.3"],
+    "requirement_refs": ["REQ-AC03", "REQ-AC04", "REQ-AC07", "REQ-D08", "REQ-D17", "REQ-D33", "REQ-S9.2-01", "REQ-S9.3-07"],
+    "decision_refs": ["B05", "B15", "AMD-B05", "R-01 (A1-R1)", "R-03 (A1-R1)"],
+    "invariant_refs": ["I02", "I03", "I10"],
+    "producers": ["MOD-ingest-service"],
+    "consumers": ["MOD-x-collector", "MOD-backend-api", "MOD-job-service"],
+    "dependencies": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml"
+    ],
+    "scope": "Hình dạng response của ba operation ingest, cộng hình dạng REQUEST của `ingest.commit_checkpoint` (đường tiến con trỏ thuần túy). KHÔNG định nghĩa request của `ingest.submit_batch` (contracts/schemas/ingest-batch.schema.json, PC02) và KHÔNG định nghĩa transaction (entities.yaml §transactions).",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): schema hợp lệ theo metaschema Draft 2020-12; fixture acceptance/fixtures/collection/ validate.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "replay_semantics": "Replay = gọi lại CÙNG `idempotency_key` + CÙNG `payload_hash`. Server trả lại CHÍNH hàng `ingest_receipt` đã commit, với `status = duplicate_replay` và `receipt_hash` KHÔNG ĐỔI; không hàng `post` nào được tạo thêm và `checkpoint.sequence` không tăng. Cùng key + payload_hash KHÁC ⇒ `IDEMPOTENCY_CONFLICT` (409), KHÔNG ghi đè. Oracle của AMD-B05: số hàng `post`, KHÔNG phải số request — số lần tải trang KHÔNG phải oracle.",
+    "ack_loss_procedure": "(1) Mất ACK ⇒ KHÔNG kết luận gì; timeout transport là KHÔNG BIẾT, không phải rollback (SRC-PLAN §5.1). (2) Gọi `ingest.get_receipt`. (3) Có receipt ⇒ dùng nó, KHÔNG gửi lại. (4) `not_committed` ⇒ gửi lại cùng key + cùng payload_hash. Ngân sách: `ingest_batch_attempts` = 3 (contracts/retry-policy.yaml).",
+    "checkpoint_only_rule": "Ruling R-01 (A1-R1): `ingest.commit_checkpoint` chỉ TIẾN CON TRỎ, KHÔNG kèm item mới (trang rỗng / hết feed / đóng segment). Guard: con trỏ đề xuất chỉ được tham chiếu `ingest_sequence <= acked_through_ingest_sequence` đã commit của run đó; vượt quá ⇒ `VALIDATION_ERROR` và KHÔNG có write một phần. Oracle: sau BẤT KỲ chuỗi lời gọi nào, `checkpoint.acked_through_ingest_sequence <= max(committed ingest_receipt.max_ingest_sequence)`."
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "oneOf": [
+    { "required": ["receipt"] },
+    { "required": ["not_committed"] },
+    { "required": ["checkpoint_only_request"] }
+  ],
+  "properties": {
+    "receipt": { "$ref": "#/$defs/receipt" },
+    "not_committed": { "$ref": "#/$defs/not_committed" },
+    "checkpoint_only_request": { "$ref": "#/$defs/checkpoint_only_request" }
+  },
+  "$defs": {
+    "ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "timestamp_utc_ms": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "UTC RFC 3339 mili giây (AMD-B08)."
+    },
+    "x_post_id": { "type": "string", "pattern": "^[0-9]{1,25}$", "description": "ID post của X, dạng chuỗi số. ID truyền dưới dạng string (SRC-PLAN §5.1)." },
+
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_id", "request_id", "idempotency_key", "payload_hash", "schema_version",
+        "status", "receipt_kind", "run_id", "job_id", "lease_id", "lease_epoch",
+        "committed_at", "counts", "accepted_items", "checkpoint_ack", "receipt_hash",
+        "storage_state", "warnings"
+      ],
+      "properties": {
+        "receipt_id": { "$ref": "#/$defs/ulid", "description": "PK của hàng `ingest_receipt` (ENT-ingest-receipt). Bất biến sau commit." },
+        "request_id": { "$ref": "#/$defs/ulid", "description": "request_id của lần gọi ĐÃ TẠO receipt. Một replay có request_id KHÁC nhưng receipt KHÔNG đổi." },
+        "idempotency_key": { "type": "string", "pattern": "^[A-Za-z0-9_.:-]{16,128}$", "description": "UNIQUE(owner_id, idempotency_key)." },
+        "payload_hash": { "$ref": "#/$defs/sha256", "description": "Hash của payload_core đã commit. Client so sánh để chắc rằng replay trả đúng receipt của LÔ CỦA MÌNH." },
+        "schema_version": { "$ref": "#/$defs/semver" },
+        "status": {
+          "type": "string",
+          "enum": ["committed", "duplicate_replay"],
+          "description": "`committed`: lần gọi này đã tạo receipt. `duplicate_replay`: receipt đã tồn tại từ trước và được trả lại nguyên vẹn — KHÔNG có hàng `post` mới, `checkpoint.sequence` KHÔNG tăng."
+        },
+        "receipt_kind": {
+          "type": "string",
+          "enum": ["batch_ingest", "checkpoint_only"],
+          "description": "`batch_ingest` từ `ingest.submit_batch`; `checkpoint_only` từ `ingest.commit_checkpoint` (ruling R-01). Cần thiết để 0 item của một checkpoint-only KHÔNG bị đọc nhầm thành một batch bị từ chối (contracts/data/entities.yaml ENT-ingest-receipt.receipt_kind)."
+        },
+        "run_id": { "$ref": "#/$defs/ulid" },
+        "job_id": { "$ref": "#/$defs/ulid" },
+        "lease_id": { "$ref": "#/$defs/ulid" },
+        "lease_epoch": { "type": "integer", "minimum": 1, "description": "Epoch TẠI LÚC COMMIT. Lease cũ bị từ chối bằng STALE_LEASE (I10)." },
+        "committed_at": { "$ref": "#/$defs/timestamp_utc_ms", "description": "GIỜ SERVER tại commit point. Đồng hồ worker không được dùng (SRC-PLAN §9.1)." },
+        "counts": { "$ref": "#/$defs/counts" },
+        "accepted_items": {
+          "type": "array",
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/accepted_item" },
+          "description": "Ánh xạ item đã chấp nhận. RỖNG hợp lệ cho `receipt_kind = checkpoint_only` và cho một replay mà client chỉ cần đếm."
+        },
+        "checkpoint_ack": { "$ref": "#/$defs/checkpoint_ack" },
+        "receipt_hash": {
+          "$ref": "#/$defs/sha256",
+          "description": "sha256 của JCS({idempotency_key, payload_hash, counts, checkpoint_id, max_ingest_sequence}) — contracts/data/entities.yaml ENT-ingest-receipt. Client so sánh để biết replay trả ĐÚNG receipt cũ; giá trị này KHÔNG ĐỔI giữa lần commit và mọi lần replay."
+        },
+        "storage_state": {
+          "type": "string",
+          "enum": ["healthy", "maintenance"],
+          "description": "Chỉ hai giá trị này xuất hiện trên một receipt: một receipt CHỈ tồn tại khi transaction đã commit, nên `write_blocked` và `recovery_required` không thể đi kèm một receipt (contracts/state/storage.yaml)."
+        },
+        "warnings": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/warning" },
+          "description": "Sự kiện KHÔNG làm hỏng lô nhưng phải hiện ra: item bị quarantine vì xung đột định danh, item bị từ chối ở mức nghiệp vụ, con trỏ bị vô hiệu. Lô vẫn commit (contracts/errors.yaml IDENTITY_CONFLICT: 'ingest của các item khác trong lô vẫn commit')."
+        }
+      }
+    },
+
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["received", "inserted", "deduplicated", "quarantined", "rejected", "works_linked", "max_ingest_sequence"],
+      "description": "Bất biến số học: received = inserted + deduplicated + quarantined + rejected (contracts/data/entities.yaml ENT-ingest-receipt CHECK).",
+      "properties": {
+        "received": { "type": "integer", "minimum": 0, "description": "Số item trong lô. 0 hợp lệ CHỈ khi `receipt_kind = checkpoint_only`." },
+        "inserted": { "type": "integer", "minimum": 0, "description": "Số hàng `post` MỚI. Đây là oracle của AMD-B05: sau replay, tổng số này không tăng." },
+        "deduplicated": { "type": "integer", "minimum": 0, "description": "Số item trùng `x_post_id` đã có. Cam kết là KHÔNG INGEST TRÙNG, không phải 'không bao giờ đọc lại' (AMD-B05)." },
+        "quarantined": { "type": "integer", "minimum": 0, "description": "Item bị giữ lại vì `IDENTITY_CONFLICT`; nguồn của cả hai phía được giữ, KHÔNG merge đoán (B15, I03)." },
+        "rejected": { "type": "integer", "minimum": 0, "description": "Item không hợp lệ ở mức nghiệp vụ (đã qua schema). Vượt giới hạn kích thước ⇒ vào đây, KHÔNG cắt cụt âm thầm." },
+        "works_linked": { "type": "integer", "minimum": 0, "description": "Số cạnh `post_work` mới." },
+        "max_ingest_sequence": { "type": "integer", "minimum": 0, "description": "Sequence lớn nhất đã cấp trong lô. Là MỐC ACK." }
+      }
+    },
+
+    "accepted_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x_post_id", "post_id", "outcome", "discovered_at", "ingest_sequence"],
+      "properties": {
+        "x_post_id": { "$ref": "#/$defs/x_post_id" },
+        "post_id": { "$ref": "#/$defs/ulid", "description": "ID nội bộ của hàng `post`." },
+        "outcome": { "type": "string", "enum": ["inserted", "deduplicated", "quarantined", "rejected"] },
+        "discovered_at": { "$ref": "#/$defs/timestamp_utc_ms", "description": "GIỜ SERVER chấp nhận LẦN ĐẦU, không tin clock worker (SRC-PLAN §9.1). Với `deduplicated`, đây là giá trị CŨ, không phải giờ của lần gửi lại." },
+        "ingest_sequence": { "type": "integer", "minimum": 1, "description": "Tie-break thứ tự cho các mục cùng mili giây (AMD-B08)." },
+        "target_ref": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["kind", "key"],
+          "description": "Target đã resolve, nếu có. Tagged union `work | post` (B06/ADR-0009). null khi chưa resolve được — KHÔNG đoán (REQ-D33).",
+          "properties": {
+            "kind": { "type": "string", "enum": ["work", "post"] },
+            "key": { "type": "string", "minLength": 1, "maxLength": 512 }
+          }
+        },
+        "rejection_reason": {
+          "type": ["string", "null"],
+          "enum": ["text_too_large", "too_many_media_refs", "too_many_links", "thread_context_too_long", "malformed_x_post_id", "identity_conflict", null],
+          "description": "NOT NULL khi `outcome ∈ {rejected, quarantined}`. Lý do đọc được, KHÔNG kèm nội dung post (redaction — contracts/errors.yaml VALIDATION_ERROR)."
+        }
+      }
+    },
+
+    "checkpoint_ack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint_id", "checkpoint_sequence", "cursor_token", "cursor_state", "acked_through_ingest_sequence", "items_ingested_total"],
+      "description": "Checkpoint được commit TRONG CÙNG transaction với post + receipt (TXN-ingest-batch, I02). Checkpoint KHÔNG BAO GIỜ đi trước dữ liệu bền.",
+      "properties": {
+        "checkpoint_id": { "$ref": "#/$defs/ulid" },
+        "checkpoint_sequence": { "type": "integer", "minimum": 0, "description": "Append-only, đơn điệu tăng trong một run; seq lùi bị từ chối." },
+        "cursor_token": { "type": ["string", "null"], "maxLength": 2048, "description": "Con trỏ ĐÃ LƯU (server chỉ lưu SAU khi dữ liệu kèm theo đã commit). null khi cursor mất hiệu lực." },
+        "cursor_state": { "type": "string", "enum": ["valid", "invalidated"], "description": "`invalidated` ⇒ recovery policy cho phép đọc lại; dedup vẫn ở ingest (AMD-B05)." },
+        "acked_through_ingest_sequence": { "type": "integer", "minimum": 0, "description": "BẤT BIẾN R-01: giá trị này KHÔNG BAO GIỜ vượt `max(committed ingest_receipt.max_ingest_sequence)` của run." },
+        "items_ingested_total": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message_safe", "x_post_id"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["IDENTITY_CONFLICT", "VALIDATION_ERROR", "SOURCE_METADATA_UNAVAILABLE"],
+          "description": "Mã theo contracts/errors.yaml. Chúng xuất hiện Ở ĐÂY (trong một response 2xx) chứ không phải như một error envelope, vì lô VẪN COMMIT — chỉ item liên quan bị giữ lại."
+        },
+        "message_safe": { "type": "string", "maxLength": 300, "description": "Tiếng Việt, đã che dữ liệu. KHÔNG chứa nội dung post, URL đầy đủ hay transcript." },
+        "x_post_id": { "$ref": "#/$defs/x_post_id" },
+        "conflict_id": { "$ref": "#/$defs/ulid", "description": "Có mặt khi `code = IDENTITY_CONFLICT`; trỏ tới hàng `identity_conflict` để Owner xử lý qua `identity.resolve_conflict`." }
+      }
+    },
+
+    "not_committed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["idempotency_key", "status", "checked_at"],
+      "description": "Response của `ingest.get_receipt` khi server CHƯA TỪNG commit key đó. Đây là câu trả lời DỨT KHOÁT (server là nguồn sự thật), khác hẳn với 'không biết' của một timeout.",
+      "properties": {
+        "idempotency_key": { "type": "string", "pattern": "^[A-Za-z0-9_.:-]{16,128}$" },
+        "status": { "const": "not_committed" },
+        "checked_at": { "$ref": "#/$defs/timestamp_utc_ms" },
+        "safe_to_resubmit": { "const": true, "description": "Client được phép gửi lại CÙNG key + CÙNG payload_hash. Đây là điểm duy nhất trong hợp đồng khẳng định điều đó." }
+      }
+    },
+
+    "checkpoint_only_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request_id", "schema_version", "assignment_id", "checkpoint_seq", "lease_id", "lease_epoch", "cursor_token", "cursor_state", "proposed_acked_through_ingest_sequence", "reason"],
+      "description": "Request của `ingest.commit_checkpoint` (ruling R-01): TIẾN CON TRỎ THUẦN TÚY, KHÔNG có item.",
+      "properties": {
+        "request_id": { "$ref": "#/$defs/ulid" },
+        "schema_version": { "$ref": "#/$defs/semver" },
+        "assignment_id": { "$ref": "#/$defs/ulid" },
+        "checkpoint_seq": { "type": "integer", "minimum": 1, "description": "Idempotency key cùng với assignment_id. Seq lùi bị từ chối; cùng seq + cùng payload trả bản đã ghi." },
+        "lease_id": { "$ref": "#/$defs/ulid" },
+        "lease_epoch": { "type": "integer", "minimum": 1 },
+        "cursor_token": { "type": ["string", "null"], "maxLength": 2048 },
+        "cursor_state": { "type": "string", "enum": ["valid", "invalidated"] },
+        "proposed_acked_through_ingest_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "GUARD (R-01): server CHẤP NHẬN chỉ khi giá trị này <= `acked_through_ingest_sequence` đã commit cho run đó. Vượt quá ⇒ `VALIDATION_ERROR` (422) và KHÔNG có write một phần. Đây chính là counterexample 2 của I02 được biến thành một guard kiểm được."
+        },
+        "reason": {
+          "type": "string",
+          "enum": ["empty_page", "end_of_feed", "segment_close"],
+          "description": "Ba tình huống duy nhất được phép dùng đường này. Nộp item PHẢI đi qua `ingest.submit_batch`."
+        }
+      }
+    }
+  }
+}

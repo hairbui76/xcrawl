@@ -1,0 +1,305 @@
+{
+  "fixture_id": "FX-ID-H",
+  "title": "Năm post từ năm account + thread của tác giả cùng dẫn một arXiv ID → một mục công trình",
+  "purpose": "REQ-AC07 nguyên văn: hiện MỘT mục công trình, các post nằm dưới dạng nguồn dẫn. Đồng thời kiểm 5 biến thể chuẩn hóa arXiv của identity.md §2.2.",
+  "scenario_refs": [
+    "SC07"
+  ],
+  "invariant_refs": [
+    "I03"
+  ],
+  "decision_refs": [
+    "B06"
+  ],
+  "requirement_refs": [
+    "REQ-D17",
+    "REQ-D31",
+    "REQ-AC07"
+  ],
+  "source_refs": [
+    "SRC-SPEC §12 AC-07",
+    "SRC-SPEC §3.5 D17",
+    "SRC-SPEC §3.2 D31",
+    "contracts/data/identity.md §2.2, §3"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/ingest-batch.schema.json",
+  "expected_validation": "accept",
+  "batch": {
+    "request_id": "01JREQH1000000000000000000",
+    "schema_version": "0.1.0",
+    "idempotency_key": "ingest-2026-09-06-run-h-batch-0001",
+    "payload_hash": "sha256:13a0eb6d6ebbf72b42540576d824b12093dfc6c92609dd5a9b1d6949a6a67a5f",
+    "job_id": "01JJ0BH1000000000000000000",
+    "lease_id": "01J1EASEH10000000000000000",
+    "lease_epoch": 1,
+    "items": [
+      {
+        "x_post_id": "1900000000000000301",
+        "author": {
+          "handle": "alice",
+          "x_user_id": "4001"
+        },
+        "url": "https://x.com/alice/status/1900000000000000301",
+        "text": "New paper: https://arxiv.org/abs/2504.04444",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2504.04444",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ]
+      },
+      {
+        "x_post_id": "1900000000000000302",
+        "author": {
+          "handle": "bob",
+          "x_user_id": "4002"
+        },
+        "url": "https://x.com/bob/status/1900000000000000302",
+        "text": "Must read arXiv:2504.04444v1.",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2504.04444v1",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ]
+      },
+      {
+        "x_post_id": "1900000000000000303",
+        "author": {
+          "handle": "carol",
+          "x_user_id": "4003"
+        },
+        "url": "https://x.com/carol/status/1900000000000000303",
+        "text": "PDF here https://arxiv.org/pdf/2504.04444.pdf",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/pdf/2504.04444.pdf",
+            "link_kind_hint": "arxiv_pdf"
+          }
+        ]
+      },
+      {
+        "x_post_id": "1900000000000000304",
+        "author": {
+          "handle": "dave",
+          "x_user_id": "4004"
+        },
+        "url": "https://x.com/dave/status/1900000000000000304",
+        "text": "See ARXIV:2504.04444 .",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2504.04444",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ]
+      },
+      {
+        "x_post_id": "1900000000000000305",
+        "author": {
+          "handle": "erin",
+          "x_user_id": "4005"
+        },
+        "url": "https://x.com/erin/status/1900000000000000305",
+        "text": "https://arxiv.org/abs/2504.04444?utm_source=newsletter",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2504.04444?utm_source=newsletter",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ]
+      },
+      {
+        "x_post_id": "1900000000000000306",
+        "author": {
+          "handle": "authorx",
+          "x_user_id": "4100"
+        },
+        "url": "https://x.com/authorx/status/1900000000000000306",
+        "text": "1/5 Chúng tôi vừa đăng https://arxiv.org/abs/2504.04444",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2504.04444",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ],
+        "thread_context": {
+          "is_author_thread_member": true,
+          "thread_root_x_post_id": "1900000000000000306",
+          "position_in_thread": 0,
+          "thread_size_observed": 5
+        }
+      }
+    ],
+    "client_checkpoint_proposal": {
+      "phase": "collecting",
+      "cursor_token": "cursor-page-2",
+      "cursor_state": "valid",
+      "items_collected_in_run": 6,
+      "stop_hint": "none"
+    }
+  },
+  "given": {
+    "rows": {
+      "work": [],
+      "identity_alias": [],
+      "post": [],
+      "post_work": []
+    },
+    "counts": {
+      "work": 0,
+      "post": 0
+    }
+  },
+  "normalization_cases": [
+    {
+      "raw": "https://arxiv.org/abs/2504.04444",
+      "normalized_base": "2504.04444",
+      "version": null
+    },
+    {
+      "raw": "https://arxiv.org/abs/2504.04444v1",
+      "normalized_base": "2504.04444",
+      "version": "v1"
+    },
+    {
+      "raw": "https://arxiv.org/pdf/2504.04444.pdf",
+      "normalized_base": "2504.04444",
+      "version": null,
+      "rule": "bỏ hậu tố .pdf (identity.md §2.2 bước 3)"
+    },
+    {
+      "raw": "ARXIV:2504.04444 .",
+      "normalized_base": "2504.04444",
+      "version": null,
+      "rule": "tiền tố không phân biệt hoa thường + bỏ dấu câu cuối (bước 2, 5)"
+    },
+    {
+      "raw": "https://arxiv.org/abs/2504.04444?utm_source=newsletter",
+      "normalized_base": "2504.04444",
+      "version": null,
+      "rule": "bỏ query string (bước 4)"
+    }
+  ],
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T08:05:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "transaction": "TXN-ingest-batch",
+      "batch_ref": "$.batch",
+      "description": "6 item: 5 post độc lập + 1 post mở đầu thread của chính tác giả.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T08:05:01.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.resolve_target",
+      "description": "Cả 6 chuẩn hóa về base 2504.04444; item đầu tạo work + alias, 5 item sau tra alias và dùng lại work đó.",
+      "performed_by": "MOD-identity-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T20:00:00.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "description": "Kỳ báo cáo được dựng; work khớp tag đang hoạt động.",
+      "performed_by": "MOD-report-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKH100000000000000000",
+          "canonical_arxiv_id": "2504.04444",
+          "canonical_doi": null,
+          "identity_state": "active",
+          "first_discovered_at": "2026-09-06T08:05:01.000Z",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKH100000000000000000",
+            "target_key": "work:01JW0RKH100000000000000000",
+            "canonical": {
+              "arxiv_base": "2504.04444"
+            },
+            "identity_state": "active"
+          }
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASH10000000000000000",
+          "id_scheme": "arxiv",
+          "id_value_normalized": "2504.04444",
+          "work_id": "01JW0RKH100000000000000000",
+          "evidence_source": "post_link",
+          "_note": "MỘT hàng alias cho cả 6 biến thể raw; id_value_raw giữ biến thể của lần quan sát ĐẦU TIÊN."
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEMH10000000000000000",
+          "report_id": "01JREP0RTH1000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKH100000000000000000",
+            "target_key": "work:01JW0RKH100000000000000000"
+          },
+          "item_type": "new_discovery"
+        }
+      ]
+    },
+    "counts": {
+      "work__total": 1,
+      "identity_alias__total": 1,
+      "post": 6,
+      "post_work": 6,
+      "report_item": 1,
+      "identity_conflict__state_open": 0,
+      "identity_merge_audit": 0
+    },
+    "read_model": {
+      "work_detail_source_posts": 6,
+      "note": "6 post hiển thị dưới mục công trình dưới dạng 'nguồn dẫn' (REQ-AC07), không phải 6 mục."
+    },
+    "hash_oracles": [
+      {
+        "assert": "COUNT(DISTINCT work.canonical_arxiv_id) = 1 sau ingest"
+      },
+      {
+        "assert": "COUNT(post_work WHERE work_id = Wh) = COUNT(post) = 6"
+      }
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo 5 hoặc 6 hàng work.",
+    "Tạo alias riêng cho biến thể .pdf, ?utm_source, hoặc hậu tố v1.",
+    "Tạo 6 report_item.",
+    "Ingest replies của người ngoài thread (REQ-D31, REQ-P1-02).",
+    "Coi tương tác trên X là bằng chứng khoa học (SRC-SPEC §10.3)."
+  ]
+}

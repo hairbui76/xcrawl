@@ -1,0 +1,126 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-h",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D05",
+      "REQ-S11.1-01"
+    ],
+    "decision_refs": [],
+    "invariant_refs": [
+      "I01"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "h",
+  "title_vi": "Request không xác thực tới owner API → 401, không side effect",
+  "scenario_refs": [
+    "SC40"
+  ],
+  "invariant_refs": [
+    "I01"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "principal": "ACT-anonymous-browser",
+    "session": null,
+    "csrf_token": null
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-web-ui",
+      "principal": "ACT-anonymous-browser",
+      "operation": "report.list",
+      "edge_assertion": "allowed"
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-web-ui",
+      "principal": "ACT-anonymous-browser",
+      "operation": "settings.get_config",
+      "edge_assertion": "allowed"
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-web-ui",
+      "principal": "ACT-anonymous-browser",
+      "operation": "tag.delete",
+      "edge_assertion": "allowed",
+      "input": {
+        "tag_id": "TAG-01",
+        "request_id": "RQ-01"
+      }
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-web-ui",
+      "principal": "ACT-owner-session",
+      "operation": "tag.delete",
+      "edge_assertion": "allowed",
+      "input": {
+        "tag_id": "TAG-01",
+        "request_id": "RQ-02"
+      },
+      "csrf_token": "missing"
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "UNAUTHORIZED"
+    },
+    "seq2": {
+      "error_code": "UNAUTHORIZED"
+    },
+    "seq3": {
+      "error_code": "UNAUTHORIZED",
+      "rows_changed": 0
+    },
+    "seq4": {
+      "error_code": "FORBIDDEN_EDGE",
+      "http_status": 403,
+      "reason_vi": "Session hợp lệ nhưng thiếu CSRF double-submit. Mã và mã trạng thái lấy theo contracts/http/openapi.yaml (securityScheme ownerCsrfToken: 'Thiếu hoặc lệch ⇒ 403 FORBIDDEN_EDGE') — PC05 sở hữu ánh xạ wire.",
+      "rows_changed": 0
+    },
+    "tag_config_version_unchanged": true,
+    "response_body_vi": "Không lộ cấu hình, tên provider, chat ID hay việc tài khoản có tồn tại hay không."
+  },
+  "forbidden_effects": [
+    "Bất kỳ mutation nào từ seq3/seq4",
+    "Tăng tag_config_version",
+    "Trả nội dung nghiệp vụ trong body lỗi",
+    "Phân biệt 'sai mật khẩu' với 'không có tài khoản' trong thông báo"
+  ],
+  "oracle_vi": "Bốn lời gọi trả UNAUTHORIZED; COUNT(tag) và tag_config_version không đổi; không hàng audit nào ghi mutation thành công.",
+  "open_question": {
+    "id": "CR-PC08-03",
+    "text_vi": "errors.yaml định nghĩa FORBIDDEN_EDGE là 'cạnh caller→callee không có trong contracts/modules.yaml'. Một request thiếu CSRF token đi qua đúng cạnh MOD-web-ui → MOD-tag-service; cái sai là chứng minh ý định của người dùng, không phải cạnh. Dùng FORBIDDEN_EDGE ở đây là kéo giãn ngữ nghĩa của mã. PC08 vẫn theo PC05 để hai file không mâu thuẫn, và đề nghị PC03/PC05 xem lại: hoặc mở rộng định nghĩa FORBIDDEN_EDGE, hoặc dùng một mã khác cho CSRF.",
+    "status": "OPEN"
+  }
+}

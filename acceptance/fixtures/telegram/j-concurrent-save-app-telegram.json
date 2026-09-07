@@ -1,0 +1,255 @@
+{
+  "fixture_id": "FX-TG-J",
+  "title": "Save từ app và Telegram đồng thời → một Saved, snapshot từ revision đang đọc",
+  "purpose": "REQ-AC13 + I08. Snapshot chụp từ analysis revision của report_item đang đọc, không phải bản mới hơn (REQ-D55).",
+  "scenario_refs": [
+    "SC13"
+  ],
+  "invariant_refs": [
+    "I08",
+    "I17"
+  ],
+  "decision_refs": [
+    "B01"
+  ],
+  "requirement_refs": [
+    "REQ-D38",
+    "REQ-D55",
+    "REQ-AC13"
+  ],
+  "source_refs": [
+    "SRC-SPEC §8.2 hàng 10",
+    "contracts/data/entities.yaml TXN-save-target",
+    "contracts/schemas/saved-snapshot.schema.json"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/saved-snapshot.schema.json",
+  "expected_validation": "accept",
+  "saved": {
+    "schema_version": "0.1.0",
+    "saved_item": {
+      "id": "01JSAVED100000000000000000",
+      "owner_id": "01J0WNER100000000000000000",
+      "target": {
+        "kind": "work",
+        "work_id": "01JW0RK1000000000000000000",
+        "target_key": "work:01JW0RK1000000000000000000"
+      },
+      "target_key": "work:01JW0RK1000000000000000000",
+      "state": "active",
+      "saved_at": "2026-09-06T20:10:00.000Z",
+      "unsaved_at": null,
+      "save_channel": "telegram",
+      "saved_snapshot_id": "01JSNAP1000000000000000000",
+      "source_report_item_id": "01JR1TEM100000000000000000",
+      "idempotency_key": "tg-cb-01JD000000000000000001",
+      "moved_by_merge_id": null
+    },
+    "snapshot": {
+      "id": "01JSNAP1000000000000000000",
+      "owner_id": "01J0WNER100000000000000000",
+      "target_kind": "work",
+      "target_key_at_save": "work:01JW0RK1000000000000000000",
+      "analysis_id_at_save": "01JANA1Y100000000000000000",
+      "report_ref": {
+        "report_id": "01JREP0RT10000000000000000",
+        "report_item_id": "01JR1TEM100000000000000000",
+        "report_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "report_published_at": "2026-09-06T20:00:00.000Z"
+      },
+      "created_at": "2026-09-06T20:10:00.000Z",
+      "content": {
+        "content_version": "0.1.0",
+        "target": {
+          "kind": "work",
+          "work_id": "01JW0RK1000000000000000000",
+          "target_key": "work:01JW0RK1000000000000000000"
+        },
+        "display_title": "Một công trình ví dụ",
+        "summary": {
+          "content_vi": "Nội dung tóm tắt.",
+          "novelty_vi": "Điểm khác so với cái đã có.",
+          "limitation_vi": "Một dòng hạn chế.",
+          "comparator": "known",
+          "claim_kinds": [
+            "author_claim",
+            "source_verified",
+            "ai_inference"
+          ]
+        },
+        "evidence_level": "abstract",
+        "matched_tags": [
+          {
+            "tag_text": "protein folding",
+            "similarity": 0.81
+          }
+        ],
+        "topic_labels": [
+          "protein structure prediction"
+        ],
+        "work_metadata": {
+          "canonical_arxiv_id": "2501.01234",
+          "work_version_label": "v1"
+        },
+        "source_posts": [
+          {
+            "x_post_id": "1900000000000000301",
+            "author_handle": "alice",
+            "url": "https://x.com/alice/status/1900000000000000301",
+            "text": "New paper: https://arxiv.org/abs/2501.01234",
+            "published_at": "2026-09-06T07:55:00.000Z",
+            "discovered_at": "2026-09-06T08:00:01.000Z"
+          }
+        ],
+        "analysis_ref": {
+          "analysis_id": "01JANA1Y100000000000000000",
+          "analyzed_at": "2026-09-06T08:30:00.000Z",
+          "generation_number": 1
+        }
+      },
+      "content_hash": "sha256:8e3ca77ff136093f42e3f89f9cbb286d79aefb9a6314880575b78769909e54fa"
+    }
+  },
+  "given": {
+    "rows": {
+      "report": [
+        {
+          "id": "01JREP0RT10000000000000000",
+          "status": "published",
+          "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEM100000000000000000",
+          "report_id": "01JREP0RT10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RK1000000000000000000",
+            "target_key": "work:01JW0RK1000000000000000000"
+          },
+          "analysis_id": "01JANA1Y100000000000000000",
+          "_note": "AN1 là revision ĐANG ĐỌC."
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1Y100000000000000000",
+          "status": "valid",
+          "generation_number": 1,
+          "analyzed_at": "2026-09-06T08:30:00.000Z"
+        },
+        {
+          "id": "01JANA1Y200000000000000000",
+          "status": "valid",
+          "generation_number": 2,
+          "analyzed_at": "2026-09-06T20:09:00.000Z",
+          "_note": "Bản MỚI HƠN vừa xuất hiện. Snapshot KHÔNG được lấy bản này."
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 1
+        }
+      ],
+      "saved_item": [],
+      "saved_snapshot": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T20:10:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "save.create",
+      "performed_by": "MOD-saved-service",
+      "description": "Bấm Save trong Report detail."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T20:10:00.002Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "save.create",
+      "performed_by": "MOD-saved-service",
+      "idempotency_key": "tg-cb-01JD000000000000000001",
+      "description": "Cùng lúc, callback Save trên Telegram cho đúng mục đó."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T20:10:01.000Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "save.create",
+      "repeat": 4,
+      "description": "Bấm thêm 4 lần nữa, cùng idempotency_key (SRC-SPEC §8.2 hàng 10)."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "saved_item": [
+        {
+          "id": "01JSAVED100000000000000000",
+          "state": "active",
+          "save_channel": "app|telegram",
+          "_save_channel_note": "Kênh của transaction THẮNG; fixture không khẳng định kênh nào — oracle là SỐ HÀNG."
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAP1000000000000000000",
+          "analysis_id_at_save": "01JANA1Y100000000000000000",
+          "_note": "PHẢI là AN1 (revision đang đọc), KHÔNG phải AN2."
+        }
+      ]
+    },
+    "counts": {
+      "saved_item__state_active": 1,
+      "saved_snapshot__total": 1,
+      "orphan_saved_snapshot": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 0,
+      "telegram.answerCallbackQuery": 5,
+      "note": "5 lần bấm ⇒ 5 answerCallbackQuery; nhưng chỉ 1 hàng Saved."
+    },
+    "hash_oracles": [
+      {
+        "assert": "sha256(JCS(saved_snapshot.payload)) bằng saved_snapshot.content_hash"
+      },
+      {
+        "assert": "saved_snapshot.analysis_id_at_save bằng report_item.analysis_id của mục đang đọc"
+      }
+    ],
+    "responses": [
+      {
+        "winner": "created"
+      },
+      {
+        "loser": "already_saved: true"
+      },
+      {
+        "repeats": "already_saved x4",
+        "note": "Bot vẫn phản hồi mỗi lần bấm (REQ-D38)."
+      }
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo saved_item thứ hai ở state active.",
+    "Chụp snapshot từ AN2 (bản mới hơn vừa xuất hiện).",
+    "Để lại saved_snapshot mồ côi từ transaction thua.",
+    "Im lặng ở 4 lần bấm sau."
+  ]
+}

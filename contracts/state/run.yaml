@@ -1,0 +1,1205 @@
+# Research Radar — State machine của run (B02/AMD-B02), lease, lịch và checkpoint
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-state-run
+version: 0.5.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §5.1
+  - SRC-PLAN §7
+  - SRC-PLAN §8.1
+  - SRC-PLAN §8.4
+  - SRC-PLAN §9.1
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §3.3
+  - SRC-SPEC §5.2
+  - SRC-SPEC §5.4
+  - SRC-SPEC §8.2
+  - SRC-SPEC §8.3
+  - SRC-SPEC §9.1
+  - SRC-SPEC §9.2
+  - SRC-SPEC §9.3
+  - SRC-SPEC §12 AC-01..AC-04, AC-15
+requirement_refs:
+  - REQ-AC01
+  - REQ-AC02
+  - REQ-AC03
+  - REQ-AC04
+  - REQ-AC15
+  - REQ-D10
+  - REQ-D11
+  - REQ-D12
+  - REQ-D13
+  - REQ-D14
+  - REQ-D15
+  - REQ-D16
+  - REQ-D56
+  - REQ-D57
+  - REQ-S5.2-01
+  - REQ-S5.4-01
+  - REQ-S5.4-03
+  - REQ-S5.4-04
+  - REQ-S5.4-05
+  - REQ-S8.2-08
+  - REQ-S8.3-01
+  - REQ-S8.3-02
+  - REQ-S8.3-03
+  - REQ-S9.1-01
+  - REQ-S9.1-02
+  - REQ-S9.2-01
+  - REQ-S9.3-01
+  - REQ-S9.3-02
+  - REQ-S9.3-07
+  - REQ-S9.3-08
+  - REQ-A1
+  - REQ-A7
+  - REQ-OQ05
+  - REQ-OQ06
+decision_refs: [B02, B05, B08, B10, B12, AMD-B02, AMD-B05, AMD-B08, AMD-B10, ADR-0002, ADR-0007, CR-PC02-12, CR-PC03-02, CR-PC05-01, CR-PC10-02, CR-PC09-03, "R-01 (A1-R1)", "R-03 (A1-R1)", "F-A1R2-04", "FIX3 rulings (2026-09-06T19:05Z)"]
+invariant_refs: [I01, I02, I09, I10, I13, I15]
+producers: [MOD-job-service, MOD-scheduler]
+consumers: [MOD-web-ui, MOD-x-collector, MOD-telegram-adapter, MOD-ingest-service, MOD-report-service, MOD-analysis-service, MOD-delivery-service]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/modules.yaml
+  - contracts/data/entities.yaml
+  - contracts/errors.yaml
+  - contracts/retry-policy.yaml
+  - contracts/state/storage.yaml
+  - contracts/state/report.yaml
+  - contracts/ops/deployment.md
+scope: >-
+  File này đóng vòng đời của một `run` (ENT-run) theo mô hình bốn trường của AMD-B02, gồm: bảng ánh xạ enum cũ
+  của SRC-SPEC §9.1/§5.2 sang mô hình mới; bảng transition đầy đủ có guard/transaction/effect/oracle; ngữ nghĩa
+  lease/claim/heartbeat/epoch; quy tắc lịch, timezone, DST và catch-up; quy tắc checkpoint chỉ trên dữ liệu đã
+  ACK; và các failure timeline theo từng ranh giới commit. File này KHÔNG định nghĩa nội dung/coverage của báo
+  cáo (PC04), KHÔNG định nghĩa wire HTTP (PC05) và KHÔNG định nghĩa vòng đời gửi (contracts/state/delivery.yaml).
+verification: >-
+  EV-PC03-01/02/03/04 (SELF_VALIDATION) bằng script lint trong scratch dir: YAML parse; mọi `from`/`to` thuộc
+  enum đã khai; mọi event có ≥1 hàng; mọi trạng thái không terminal có ≥1 hàng đi ra; trạng thái terminal không
+  có hàng đi ra; reachability từ `queued` tới mọi trạng thái; mọi `error_codes` tồn tại trong contracts/errors.yaml;
+  mọi `operation_id` được trích dẫn tồn tại trong contracts/ports.yaml.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Enum (SRC-PLAN §8.1, AMD-B02 — dùng nguyên văn)
+# ---------------------------------------------------------------------------
+enums:
+  phase:
+    values: [collecting, enriching, analyzing, reporting]
+    note_vi: "`phase` chỉ có nghĩa khi `status ∈ {running, waiting_retry, needs_user, blocked}`; ở trạng thái terminal nó là phase cuối cùng đã đạt (chỉ để hiển thị)."
+  status:
+    values: [queued, running, waiting_retry, needs_user, blocked, completed, failed, cancelled]
+  outcome:
+    values: [complete, partial, empty, failed, cancelled]
+    note_vi: "NULL khi run chưa kết thúc (ENT-run.outcome nullable). NOT NULL với mọi trạng thái terminal."
+  stop_reason:
+    values: [limit_reached, captcha, session_expired, source_blocked, storage_unavailable, worker_lost, source_layout_changed, rate_limited]
+    note_vi: >-
+      Nullable. `stop_reason` là LÝ DO DỪNG, độc lập với `status` và `outcome` (AMD-B02): `completed` +
+      `limit_reached` là tổ hợp hợp lệ và phổ biến (AC-03 đọc lại).
+  trigger_type:
+    values: [scheduled, manual]
+    source_refs: [REQ-D14]
+
+initial_state: {status: queued, phase: collecting, outcome: null, stop_reason: null}
+terminal_states: [completed, failed, cancelled]
+non_terminal_states: [queued, running, waiting_retry, needs_user, blocked]
+
+terminal_state_rule:
+  id: TSR-01
+  statement_vi: >-
+    Không một trạng thái terminal nào phát sinh side effect. Từ `completed`, `failed`, `cancelled` KHÔNG có hàng
+    transition đi ra, không gọi Chrome, không gọi provider AI, không gửi Telegram, không tiến coverage.
+  clarification_vi: >-
+    Delivery của một report đã publish tiếp tục chạy SAU KHI run đã `completed` — nhưng đó là vòng đời khác
+    (contracts/state/delivery.yaml, I09), do outbox intent đã COMMIT trong transaction publish thúc đẩy, chứ
+    không phải do run terminal "làm" gì. Chuyển trạng thái delivery không bao giờ ghi vào bảng `run`.
+  retry_note_vi: "Muốn chạy lại: tạo một RUN MỚI (run.run_now hoặc occurrence lịch kế tiếp). Không có đường quay lại từ terminal."
+  oracle_vi: >-
+    Sau khi run đạt terminal, đếm: outbound call tới X = 0, outbound call tới provider AI cho run đó = 0, số hàng
+    `coverage_window` không tăng, số hàng `run` với `id = R` được UPDATE = 0.
+  invariant_refs: [I09, I13]
+
+# ---------------------------------------------------------------------------
+# 2. Bảng ánh xạ enum cũ → mô hình mới (AMD-B02, nguyên văn 13 hàng)
+#    Nguồn: precode/decision-register.md §AMD-B02. Dùng verbatim theo chỉ đạo Coordinator.
+# ---------------------------------------------------------------------------
+legacy_enum_mapping:
+  source_refs: [SRC-SPEC §9.1, SRC-SPEC §5.2, SRC-SPEC §12 AC-03]
+  decision_refs: [B02, AMD-B02, ADR-0002]
+  amendment_verbatim_from: "precode/decision-register.md §AMD-B02 — Bảng ánh xạ enum cũ sang mới"
+  rows:
+    - {legacy: queued,             maps_to: "status = queued",                                                                  belongs_to: run}
+    - {legacy: collecting,         maps_to: "status = running, phase = collecting",                                             belongs_to: run}
+    - {legacy: analyzing,          maps_to: "status = running, phase = analyzing",                                              belongs_to: run}
+    - {legacy: reporting,          maps_to: "status = running, phase = reporting",                                              belongs_to: run}
+    - {legacy: done,               maps_to: "status = completed, outcome = complete",                                           belongs_to: run}
+    - {legacy: needs_user,         maps_to: "status = needs_user",                                                              belongs_to: run}
+    - {legacy: stopped_limit,      maps_to: "status = completed, stop_reason = limit_reached, outcome ∈ {partial, complete}",   belongs_to: run}
+    - {legacy: failed,             maps_to: "status = failed, outcome = failed",                                                belongs_to: run}
+    - {legacy: failed_partial,     maps_to: "status = completed, outcome = partial",                                            belongs_to: run}
+    - {legacy: delivered,          maps_to: "delivery.state = sent",                                                           belongs_to: delivery, note_vi: "KHÔNG thuộc run (§5.2 mâu thuẫn §9.1)."}
+    - {legacy: delivered_partial,  maps_to: "delivery.state ∈ {failed, unknown} trong khi run giữ `outcome` của chính nó",     belongs_to: delivery, note_vi: "KHÔNG thuộc run."}
+    - {legacy: null,               maps_to: "status = blocked",                                                                 belongs_to: run, note_vi: "Trạng thái MỚI: X chặn hoặc thiếu capability bắt buộc."}
+    - {legacy: null,               maps_to: "outcome = empty",                                                                  belongs_to: run, note_vi: "Trạng thái MỚI: không có mục phù hợp, không có lỗi thiếu dữ liệu."}
+  ac03_reread_vi: >-
+    AC-03 đọc lại (AMD-B02, nguyên văn): "run chuyển `status = completed`, `stop_reason = limit_reached`,
+    checkpoint và tiến độ được lưu".
+  ui_three_states_vi: >-
+    Ba trạng thái của SRC-SPEC §8.3 / REQ-AC15 phân biệt bằng BỘ BA (status, outcome, stop_reason), không bằng
+    một enum: "không có nội dung phù hợp" = (completed, empty, null); "đợt dừng sớm" = (completed, partial|complete,
+    limit_reached) hoặc (needs_user, null, captcha|session_expired); "đợt thất bại" = (failed, failed, *) hoặc
+    (blocked, null, source_blocked). Ba bộ ba này khác nhau ⇒ I13 kiểm chứng được bằng assertion, không bằng mắt.
+
+# ---------------------------------------------------------------------------
+# 3. Trường của run do PC03 sở hữu
+#    ENT-run (contracts/data/entities.yaml) khai owned_by_package: "PC03 (state machine, lease, catch-up)".
+#    Các cột dưới là BỔ SUNG additive vào ENT-run; xem CR-PC03-03.
+# ---------------------------------------------------------------------------
+fields:
+  from_entities_yaml:
+    - {name: id, note_vi: "PK, ULID. PC02 cam kết không đổi tên."}
+    - {name: owner_id}
+    - {name: trigger_type, note_vi: "`scheduled` | `manual` (REQ-D14)."}
+    - {name: phase}
+    - {name: status}
+    - {name: outcome}
+    - {name: stop_reason}
+    - {name: applied_config, note_vi: "Bất biến sau khi run rời `queued`. Đổi tag giữa lúc chạy KHÔNG đổi giá trị này (REQ-D24)."}
+    - {name: created_at}
+  added_by_pc03:
+    - {name: schedule_occurrence_ids, type: json_array_of_string, nullable: false, constraints: "Danh sách occurrence đã gộp vào run này; rỗng khi trigger_type = manual. Là cơ sở của 'khoảng bao trùm' trong tin Telegram (REQ-D15)."}
+    - {name: catch_up_window_from, type: timestamp_utc_ms, nullable: true, constraints: "Mốc sớm nhất trong các occurrence đã gộp; NULL khi không phải run bù."}
+    - {name: catch_up_window_to, type: timestamp_utc_ms, nullable: true, constraints: "Mốc muộn nhất; hiển thị dạng khoảng bao trùm."}
+    - {name: current_lease_epoch, type: integer, nullable: false, constraints: ">= 0. Bằng 0 khi chưa từng cấp lease. Đơn điệu tăng, không bao giờ giảm."}
+    - {name: attempt_count, type: integer, nullable: false, constraints: ">= 0. Số lần run đã rời `queued`; dùng cho waiting_retry budget."}
+    - {name: next_attempt_at, type: timestamp_utc_ms, nullable: true, constraints: "NOT NULL khi status = waiting_retry; NULL ở mọi trạng thái khác. Chống vòng lặp nóng (SRC-PLAN §8.1)."}
+    - {name: last_error_code, type: string, nullable: true, constraints: "Mã trong contracts/errors.yaml. Metadata hiển thị, KHÔNG phải nguồn sự thật của status."}
+    - {name: unblock_condition_vi, type: string, nullable: true, constraints: "NOT NULL khi status = blocked. Câu mô tả điều kiện gỡ chặn cho Owner (SRC-PLAN §8.1)."}
+    - {name: alert_intent_id, type: string_ulid, nullable: true, constraints: "FK → outbox_intent.id. UNIQUE trong phạm vi run: tối đa MỘT alert cho một run (REQ-AC04)."}
+  coverage_metadata:
+    note_vi: >-
+      Đây là METADATA RIÊNG, không phải trạng thái. `completed` KHÔNG có nghĩa đã quét đủ toàn bộ X
+      (SRC-PLAN §8.1, AMD-B05). Các trường này là nơi duy nhất phát biểu giới hạn bao phủ.
+    decision_refs: [B05, AMD-B05]
+    fields:
+      - {name: observed_window_from, type: timestamp_utc_ms, nullable: true, constraints: "`published_at` nhỏ nhất trong các post đã ingest của run. NULL khi run chưa ingest gì."}
+      - {name: observed_window_to, type: timestamp_utc_ms, nullable: true, constraints: "`published_at` lớn nhất. Đây là PHẠM VI DỮ LIỆU ĐÃ QUAN SÁT, không phải cam kết bao phủ (SRC-PLAN §9.2)."}
+      - {name: posts_observed_total, type: integer, nullable: false, constraints: ">= 0."}
+      - {name: posts_ingested_new, type: integer, nullable: false, constraints: ">= 0. Bằng tổng `ingest_receipt.posts_inserted` của run."}
+      - {name: limit_hit, type: boolean, nullable: false, constraints: "true khi chạm `per_run_post_limit` hoặc `per_run_duration_limit`."}
+      - {name: limit_kind, type: enum, nullable: true, constraints: "`posts` | `duration` | NULL. NOT NULL khi limit_hit = true (REQ-A7: điều kiện dừng phải rõ)."}
+      - {name: cursor_invalidated, type: boolean, nullable: false, constraints: "true khi phải đọc lại theo recovery policy vì con trỏ mất hiệu lực (AMD-B05)."}
+      - {name: rate_limited_at, type: timestamp_utc_ms, nullable: true, constraints: "NOT NULL khi `stop_reason = rate_limited`. Mốc server ghi nhận nguồn báo giới hạn nhịp. `x_coverage_note_vi` BẮT BUỘC nhắc mốc này (ruling CR-PC10-02: coverage note dạng \"rate limited at <ts>\")."}
+      - {name: x_coverage_note_vi, type: string, nullable: true, constraints: "Câu ghi rõ phần feed KHÔNG quan sát được. Cấm để trống khi limit_hit = true hoặc cursor_invalidated = true."}
+  forbidden_vi:
+    - "Suy ra coverage của kỳ báo cáo từ các trường ở đây — coverage authoritative là `coverage_window` của PC04 (B04)."
+    - "Dùng `last_run` làm mốc lọc dữ liệu (REQ-D12)."
+    - "Hiển thị `posts_observed_total` như 'số nghiên cứu mới' (REQ-S8.3-01)."
+
+# ---------------------------------------------------------------------------
+# 4. Bảng transition
+#    Phủ toàn bộ 14 hàng của SRC-PLAN §8.1 + các hàng bắt buộc của PKT-PC03.
+#    Cột: from / event / guard / to / transaction / effects / forbidden / oracle / scenario_refs / error_codes
+# ---------------------------------------------------------------------------
+transitions:
+
+  - id: T-RUN-01
+    plan_row_ref: "SRC-PLAN §8.1 hàng 1"
+    from: {status: queued, phase: any}
+    event: worker_claim
+    operation_id: worker.claim_assignment
+    guard_vi: >-
+      Claim hợp lệ (token đúng scope `collector_token`) VÀ worker khai đủ capability cho phase VÀ
+      `storage.health = healthy` VÀ không có lease `held` nào khác cho job này.
+    to: {status: running, phase: "phase cần làm tiếp (mặc định collecting; sau resume là phase đã lưu)"}
+    transaction_vi: "Một transaction ghi cùng nhau: `assignment_lease` (state=held, lease_epoch = current+1) + `run.status/phase` + `run.current_lease_epoch`."
+    effects_vi:
+      - "Cấp lease + epoch; lưu `worker_identity` là owner của assignment."
+      - "Trả về checkpoint ĐÃ ACK gần nhất cho worker."
+      - "Trả về `applied_config` bất biến (tag chỉ là tham số TÌM KIẾM, không phải bộ lọc — REQ-D24, NC-02)."
+    forbidden_vi:
+      - "Cấp lease khi `storage.health != healthy` (retry-policy `storage_write_blocked_grace_before_refusing_claims = 0`)."
+      - "Cấp lease khi `storage.health = recovery_required` trước reconcile (I15, NC-10)."
+      - "Cấp hai lease cho cùng job; cùng `claim_request_id` trả cùng assignment."
+      - "Đăng ký capability tự nó cấp lease — lease CHỈ đến từ claim (contracts/ops/deployment.md §7)."
+    oracle_vi: >-
+      Fake-clock: tới mốc lịch, collector online ⇒ trong ≤ `claim_idle_backoff` trần (45 s) có đúng một hàng
+      `assignment_lease` state=held và `run.status = running`. Hai worker claim đồng thời ⇒ đúng một lease.
+    scenario_refs: [SC01, SC20]
+    error_codes: [UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, IDEMPOTENCY_CONFLICT, STALE_LEASE, STORAGE_WRITE_FAILED, RESTORE_UNVERIFIED]
+    invariant_refs: [I01, I10, I15]
+
+  - id: T-RUN-02
+    plan_row_ref: "SRC-PLAN §8.1 hàng 2"
+    from: {status: running, phase: collecting}
+    event: stop_point_reached
+    operation_id: worker.report_stop
+    guard_vi: >-
+      `stop_reason = limit_reached` (chạm `per_run_post_limit` HOẶC `per_run_duration_limit`) VÀ mọi lô sẽ dùng
+      tiếp đã có `ingest_receipt` (đã ACK).
+    to: {status: running, phase: enriching}
+    transaction_vi: "Ghi cùng nhau: `run.stop_reason = limit_reached` + `run.limit_hit/limit_kind` + `run.phase = enriching` + đóng collection segment. Checkpoint đã ACK GIỮ NGUYÊN (append-only, không UPDATE)."
+    effects_vi:
+      - "Ghi `stop_reason = limit_reached` — đây KHÔNG phải lỗi (AMD-B02)."
+      - "Ghi `observed_window_from/to`, `posts_observed_total`, `x_coverage_note_vi`."
+    forbidden_vi:
+      - "Đặt `status = failed` vì chạm giới hạn (REQ-S8.3-02: dừng sớm ≠ thất bại, và ≠ hoàn tất)."
+      - "Tiến checkpoint cho lô chưa có receipt (I02)."
+      - "Để `x_coverage_note_vi` trống khi `limit_hit = true`."
+    oracle_vi: >-
+      AC-03: đặt giới hạn thấp, chạy tới giới hạn ⇒ `(status, outcome, stop_reason)` cuối cùng là
+      `(completed, partial|complete, limit_reached)`; `checkpoint.acked_through_ingest_sequence` = max
+      `ingest_receipt.max_ingest_sequence`; request count sau thời điểm dừng = 0.
+    scenario_refs: [SC03]
+    error_codes: [STALE_LEASE, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I13]
+
+  - id: T-RUN-03
+    plan_row_ref: "bổ sung PC03 (SRC-PLAN §8.1 khai phase `enriching` nhưng không có hàng ra)"
+    from: {status: running, phase: enriching}
+    event: enrichment_finished
+    operation_id: research.fetch_work_metadata
+    guard_vi: >-
+      Mọi target đã hoặc có metadata, hoặc đã hết `research_connector_attempts` và được đánh dấu `post_only`.
+      Không chờ vô hạn cho nguồn học thuật.
+    to: {status: running, phase: analyzing}
+    transaction_vi: "Ghi cùng nhau: `work`/`work_version`/`post_work` của các target lấy được + `run.phase = analyzing` + xếp hàng `analysis.enqueue_tasks` cho các target đã COMMIT."
+    effects_vi:
+      - "Task phân tích chỉ được tạo cho dữ liệu ĐÃ COMMIT ở server (B12/AMD-B12); collector không đưa dữ liệu thẳng cho analysis worker."
+      - "Target thiếu metadata giữ `evidence_level = post_only` (REQ-D33)."
+    forbidden_vi:
+      - "Đoán DOI/arXiv id (I03)."
+      - "Xóa abstract đã có vì lần gọi này thất bại."
+      - "Cạnh MOD-x-collector → MOD-analysis-worker (đã xóa theo AMD-B12)."
+    oracle_vi: "Fixture connector fail: `COUNT(work)` không đổi, `analysis` task vẫn được tạo với `evidence_level = post_only`."
+    scenario_refs: [SC11]
+    error_codes: [SOURCE_METADATA_UNAVAILABLE, RATE_LIMITED, IDENTITY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I03, I13]
+
+  - id: T-RUN-04
+    plan_row_ref: "bổ sung PC03 (nhánh 'mọi mục có summary' của SRC-SPEC §5.2)"
+    from: {status: running, phase: analyzing}
+    event: all_items_valid
+    operation_id: analysis.submit_result
+    guard_vi: "Mọi analysis task của run ở trạng thái `valid` (contracts/state/analysis.yaml)."
+    to: {status: running, phase: reporting}
+    transaction_vi: "Chỉ ghi `run.phase = reporting`. Kết quả phân tích đã commit từ trước trong TXN-analysis-accept."
+    effects_vi: ["outcome DỰ KIẾN = complete (chưa ghi; outcome chỉ ghi tại transition terminal)."]
+    forbidden_vi: ["Ghi `outcome` khi run chưa terminal — `outcome` NULL cho tới lúc kết thúc."]
+    oracle_vi: "`COUNT(analysis_attempt WHERE outcome != 'accepted' AND run_id = R) = 0` và `run.phase = reporting`."
+    scenario_refs: [SC10]
+    error_codes: []
+    invariant_refs: [I04]
+
+  - id: T-RUN-05
+    plan_row_ref: "SRC-PLAN §8.1 hàng 10"
+    from: {status: running, phase: analyzing}
+    event: some_items_exhausted_budget
+    operation_id: analysis.submit_result
+    guard_vi: >-
+      Ít nhất một item ở `failed` hoặc `unknown_attempt` sau khi hết `analysis_attempts_per_item` /
+      `provider_unavailable_waits`, và không còn item nào `running`/`retry_wait`.
+    to: {status: running, phase: reporting}
+    transaction_vi: "Ghi cùng nhau: `pending_item_ledger` cho item thiếu summary + `run.phase = reporting`."
+    effects_vi:
+      - "Lưu pending/failed item; outcome DỰ KIẾN = partial."
+      - "Report sẽ mang `quality = partial` với pending list tường minh (B17, contracts/state/report.yaml)."
+    forbidden_vi:
+      - "Chuyển run sang `failed` vì AI lỗi ở một số mục (REQ-S9.3-03: báo cáo một phần, ghi rõ thiếu)."
+      - "Bỏ item thiếu summary ra khỏi sổ pending (B04: pending ledger độc lập con trỏ kỳ)."
+    oracle_vi: >-
+      Fixture AI lỗi 2/5 mục: `COUNT(pending_item_ledger WHERE run_id = R) = 2`, run kết thúc
+      `(completed, partial, null)`, report `quality = partial`.
+    scenario_refs: [SC22]
+    error_codes: [AI_OUTPUT_INVALID, AI_PROVIDER_UNAVAILABLE, AI_ATTEMPT_UNCERTAIN]
+    invariant_refs: [I04, I13]
+
+  - id: T-RUN-06
+    plan_row_ref: "SRC-PLAN §8.1 hàng 11"
+    from: {status: running, phase: reporting}
+    event: publish_commit_success
+    operation_id: report.publish
+    guard_vi: >-
+      CAS thắng trên `coverage_window.predecessor_window_id` VÀ `tag_config_version` khớp VÀ `embedding_generation` khớp
+      VÀ mọi target được chọn đều có analysis `valid`.
+    to: {status: completed, phase: reporting, outcome: complete}
+    transaction_vi: >-
+      MỘT transaction của PC04 ghi cùng nhau: `report` + `report_item` + first-announcement ledger +
+      `coverage_window` + backfill consumption + `tag_config_version_id` bất biến + `outbox_intent` (delivery
+      intent). `run.status/outcome` được ghi trong cùng transaction đó.
+    effects_vi:
+      - "Coverage TIẾN đúng tại commit publish (B04)."
+      - "Delivery intent được tạo trong CÙNG transaction (outbox, SRC-PLAN §5.1); việc gửi xảy ra SAU, ở vòng đời khác."
+    forbidden_vi:
+      - "Gọi Telegram bên trong transaction SQLite (SRC-PLAN §5.1)."
+      - "Sửa nội dung report sau publish (I05)."
+      - "Tiến coverage ở bất kỳ điểm nào khác ngoài commit publish (B04)."
+    oracle_vi: "Sau commit: `report.status='published'`, `coverage_window.window_from` = `coverage_window.window_to` của kỳ predecessor, `outbox_intent` tồn tại, `run = (completed, complete, null)`."
+    scenario_refs: [SC08]
+    error_codes: [TAG_VERSION_STALE, EMBEDDING_GENERATION_MISMATCH, CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I06, I09]
+
+  - id: T-RUN-07
+    plan_row_ref: "SRC-PLAN §8.1 hàng 11 (nhánh partial) + AMD-B02 `failed_partial`"
+    from: {status: running, phase: reporting}
+    event: publish_commit_success_with_pending
+    operation_id: report.publish
+    guard_vi: "Như T-RUN-06 nhưng `pending_item_ledger` cho run này không rỗng."
+    to: {status: completed, phase: reporting, outcome: partial}
+    transaction_vi: "Như T-RUN-06, thêm: `report.quality = partial` + danh sách pending tường minh trong report."
+    effects_vi: ["`failed_partial` cũ của SRC-SPEC ánh xạ chính xác vào đây (AMD-B02)."]
+    forbidden_vi:
+      - "`quality = complete` khi còn item pending (B17)."
+      - "Gọi run là `failed` (REQ-S8.3-03)."
+    oracle_vi: "run = `(completed, partial, null)` VÀ `report.quality = 'partial'` VÀ pending list hiển thị được trong app."
+    scenario_refs: [SC22, SC15]
+    error_codes: [TAG_VERSION_STALE, CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I13]
+
+  - id: T-RUN-08
+    plan_row_ref: "SRC-PLAN §8.1 hàng 12"
+    from: {status: running, phase: reporting}
+    event: no_matching_items_and_no_data_gap
+    operation_id: report.publish
+    guard_vi: >-
+      Không có target nào khớp tag VÀ không có lỗi thiếu dữ liệu (không có `SOURCE_METADATA_UNAVAILABLE` chưa
+      xử lý, `limit_hit = false`, `cursor_invalidated = false`).
+    to: {status: completed, phase: reporting, outcome: empty}
+    transaction_vi: "Ghi `coverage_window` (report_id = NULL) + `run.status/outcome`. KHÔNG tạo report hiển thị, KHÔNG tạo delivery intent."
+    effects_vi:
+      - "Đóng coverage theo policy; kỳ rỗng vẫn có coverage record (AMD-B04)."
+      - "KHÔNG gửi Telegram (REQ-D57)."
+    forbidden_vi:
+      - "Tạo digest rỗng (REQ-D57)."
+      - "Hiển thị `empty` là 'không có nghiên cứu mới' (REQ-S8.3-01, I13)."
+      - "Bỏ qua coverage record vì kỳ rỗng — sẽ tạo lỗ hổng ở kỳ sau (I06)."
+    oracle_vi: >-
+      Chuỗi kỳ có một kỳ rỗng ở giữa: `coverage_window` không hở không chồng; `COUNT(outbox_intent WHERE
+      type='report_digest') = 0` cho kỳ rỗng; run = `(completed, empty, null)`.
+    scenario_refs: [SC08, SC15]
+    error_codes: [CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I06, I13]
+
+  - id: T-RUN-09
+    plan_row_ref: "SRC-PLAN §8.1 hàng 3"
+    from: {status: running, phase: collecting}
+    event: challenge_or_session_expired
+    operation_id: worker.report_stop
+    guard_vi: "`stop_reason ∈ {challenge_required, session_expired}` do collector quan sát trực tiếp trên phiên Chrome."
+    to: {status: needs_user, phase: collecting, stop_reason: "captcha | session_expired"}
+    transaction_vi: >-
+      Ghi cùng nhau: `run.status = needs_user` + `run.stop_reason` + `outbox_intent` loại `run_alert`
+      (idempotency `run_alert_id + channel`, UNIQUE ⇒ tối đa một). Checkpoint đã ACK GIỮ NGUYÊN.
+    effects_vi:
+      - "Tạo TỐI ĐA MỘT alert intent cho mỗi run (REQ-AC04, REQ-S9.3-01)."
+      - "Lease của worker được giữ hay thu hồi đều được, nhưng worker KHÔNG tự claim lại (T-RUN-11)."
+    forbidden_vi:
+      - "Tự thử lại hoặc tự claim lại (I10)."
+      - "Alert thứ hai cho cùng run — dù `worker.report_stop` được gọi lại."
+      - "Coi dữ liệu đã tải nhưng chưa ingest là checkpoint bền (SRC-PLAN §8.1)."
+      - "Giả lập thao tác xác minh (REQ-A7)."
+    oracle_vi: >-
+      AC-04: inject challenge sau một batch đã ACK ⇒ `COUNT(outbox_intent WHERE type='run_alert' AND run_id=R)=1`;
+      request thu thập mới sau đó = 0; `checkpoint.acked_through_ingest_sequence` không đổi.
+    scenario_refs: [SC04]
+    error_codes: [X_CHALLENGE_REQUIRED, STALE_LEASE, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I10, I13]
+
+  - id: T-RUN-10
+    plan_row_ref: "SRC-PLAN §8.1 hàng 4"
+    from: {status: needs_user, phase: any}
+    event: owner_resume
+    operation_id: run.resume
+    guard_vi: >-
+      Hành động resume TRONG APP (không có lệnh Telegram tương ứng — B10/AMD-B10) VÀ phiên X được kiểm là
+      KHÔNG còn challenge. Nếu hạn chế vẫn còn thì KHÔNG chuyển trạng thái (REQ-S5.4-05).
+      Guard này chỉ thoả được sau khi bước 3 của luồng can thiệp đã xảy ra ngoài hệ thống: người dùng ngồi
+      trước MÁY CÁ NHÂN và xử lý trong cửa sổ Chrome đang mở (REQ-S5.4-03). Đó là lý do resume là hành động
+      của người, không phải một retry theo thời gian: hệ thống không quan sát được cửa sổ Chrome đó và không
+      có cách nào tự biết challenge đã được giải.
+    to: {status: queued, phase: "phase đã lưu"}
+    transaction_vi: "Ghi cùng nhau: `run.status = queued` + thu hồi lease cũ (state=revoked) + `run.current_lease_epoch += 1`."
+    effects_vi:
+      - "Giữ checkpoint đã ACK; run tiếp từ đó."
+      - "Lease MỚI chỉ được cấp khi worker claim lại (T-RUN-01) — không tiếp tục bằng lease cũ (SRC-PLAN §8.1, I10)."
+    forbidden_vi:
+      - "Resume qua Telegram (AMD-B10: không có lệnh thứ tư)."
+      - "Tiếp tục bằng lease cũ."
+      - "Resume khi phiên vẫn còn challenge — khi đó operation trả `X_CHALLENGE_REQUIRED` và run ở nguyên `needs_user`."
+      - "Lấy lại các bài đã ingest (AMD-B05: cam kết là không INGEST trùng theo `x_post_id`)."
+    oracle_vi: >-
+      AC-04 vế sau: sau resume, `COUNT(post)` không tăng cho các `x_post_id` đã có; `lease_epoch` mới > epoch cũ;
+      lời gọi của worker mang epoch cũ nhận `STALE_LEASE`.
+    scenario_refs: [SC04, SC20]
+    error_codes: [X_CHALLENGE_REQUIRED, NOT_FOUND, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STALE_LEASE]
+    invariant_refs: [I02, I10]
+    requirement_refs: [REQ-AC04, REQ-S5.4-03, REQ-S5.4-04, REQ-S5.4-05]
+
+  - id: T-RUN-11
+    plan_row_ref: "SRC-PLAN §8.1 hàng 5"
+    from: {status: needs_user, phase: any}
+    event: status_query_or_run_now
+    operation_id: run.list
+    also_operation_id: run.run_now
+    guard_vi: "Lệnh Telegram `status` (read-only) hoặc `run.run_now` từ app/Telegram trong khi run đang `needs_user`."
+    to: {status: needs_user, phase: "không đổi"}
+    transaction_vi: "KHÔNG có transaction. Không hàng nào được ghi."
+    effects_vi:
+      - "`status` chỉ đọc; trả về bộ ba (status, outcome, stop_reason) và lý do chờ."
+      - "`run.run_now` trả về `run_id` đang có kèm lý do; KHÔNG tạo run mới, KHÔNG resume (retry-policy `run_now_active_run_policy = coalesce`)."
+    forbidden_vi:
+      - "`run-now` ghi đè một run đang `needs_user` hay `blocked` (B10/AMD-B10)."
+      - "Cấp lease mới."
+      - "Tạo run thứ hai."
+    oracle_vi: >-
+      AMD-B10 oracle: gửi `status` và `run-now` khi run đang `needs_user` ⇒ KHÔNG hàng nào đổi (hash file DB
+      không đổi), KHÔNG lease mới. Chỉ hành động resume trong app mới đưa run về `queued`.
+    scenario_refs: [SC04, SC15]
+    error_codes: [UNAUTHORIZED, UNAUTHORIZED_COMMAND, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I01, I10]
+
+  - id: T-RUN-12
+    plan_row_ref: "SRC-PLAN §8.1 hàng 6"
+    from: {status: running, phase: any}
+    event: retryable_error_within_budget
+    guard_vi: >-
+      Lỗi có `retry_class = retryable_with_budget` trong contracts/errors.yaml, còn ngân sách theo
+      contracts/retry-policy.yaml, VÀ side effect của lần thử vừa rồi đã xác định (không phải `unknown_outcome`).
+    to: {status: waiting_retry, phase: "không đổi"}
+    transaction_vi: "Ghi cùng nhau: `run.status = waiting_retry` + `last_error_code` + `attempt_count += 1` + `next_attempt_at` (theo backoff của budget tương ứng)."
+    effects_vi: ["Lưu error/attempt/next_attempt_at."]
+    forbidden_vi:
+      - "Vòng lặp nóng: `next_attempt_at` BẮT BUỘC NOT NULL ở trạng thái này (SRC-PLAN §8.1)."
+      - "Vào `waiting_retry` khi kết quả là `unknown_outcome` — giữ uncertainty, không giả định rollback (SRC-PLAN §5.1)."
+      - "Retry khi không có budget có tên (RP-04)."
+    oracle_vi: "`run.status='waiting_retry'` ⇒ `next_attempt_at IS NOT NULL` và `next_attempt_at > now`; số lần chuyển vào trạng thái này ≤ budget."
+    scenario_refs: [SC21]
+    error_codes: [INGEST_ACK_LOST, RATE_LIMITED, SOURCE_METADATA_UNAVAILABLE, AI_PROVIDER_UNAVAILABLE, TAG_VERSION_STALE, CONFLICT]
+    invariant_refs: [I02]
+
+  - id: T-RUN-13
+    plan_row_ref: "SRC-PLAN §8.1 hàng 7"
+    from: {status: waiting_retry, phase: any}
+    event: retry_due
+    guard_vi: "`now >= next_attempt_at` VÀ dependency sẵn sàng (`storage.health = healthy`, worker online nếu phase cần worker)."
+    to: {status: queued, phase: "không đổi"}
+    transaction_vi: "Ghi `run.status = queued` + `next_attempt_at = NULL`."
+    effects_vi: ["Tiếp phần CHƯA COMMIT; không chạy lại phần đã ACK (I02, AMD-B05)."]
+    forbidden_vi:
+      - "Chạy lại phần đã có receipt."
+      - "Chuyển về `queued` khi `storage.health != healthy`."
+    oracle_vi: "Sau retry, `COUNT(post)` chỉ tăng bằng số `x_post_id` MỚI; `ingest_receipt` cũ không đổi."
+    scenario_refs: [SC21]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I02]
+
+  - id: T-RUN-14
+    plan_row_ref: "SRC-PLAN §8.1 hàng 8 (nhánh queued)"
+    from: {status: running, phase: "collecting | enriching | analyzing"}
+    event: lease_expired
+    guard_vi: >-
+      `now > assignment_lease.expires_at + heartbeat_grace` VÀ run CHƯA có `needs_user`/`blocked` đã lưu.
+      Do sweep của server (`lease_expiry_sweep_interval`), KHÔNG do worker cũ.
+    to: {status: queued, phase: "không đổi"}
+    transaction_vi: "Ghi cùng nhau: `assignment_lease.state = expired` + `run.current_lease_epoch += 1` + `run.status = queued` + `run.stop_reason = worker_lost` (metadata)."
+    effects_vi:
+      - "Tăng epoch; mọi lời gọi của worker cũ bị từ chối `STALE_LEASE`/`WORKER_LEASE_EXPIRED`."
+      - "GIỮ uncertainty của external attempt: nếu worker chết sau một lời gọi ra ngoài, không kết luận là chưa xảy ra (SRC-PLAN §8.1, §5.1)."
+    forbidden_vi:
+      - "Worker cũ commit thêm dữ liệu authoritative (I10)."
+      - "Reset một `needs_user`/`blocked` đã lưu (SRC-PLAN §8.1 hàng 8)."
+      - "Kết luận lần gọi ngoài của worker cũ đã rollback."
+    oracle_vi: >-
+      SC20: cho lease hết hạn, worker cũ gửi `ingest.submit_batch` ⇒ `STALE_LEASE`, `COUNT(post)` không đổi;
+      worker mới claim ⇒ `lease_epoch` mới lớn hơn.
+    scenario_refs: [SC20, SC28]
+    error_codes: [WORKER_LEASE_EXPIRED, STALE_LEASE]
+    invariant_refs: [I02, I10]
+
+  - id: T-RUN-15
+    plan_row_ref: "SRC-PLAN §8.1 hàng 8 (nhánh 'needs_user/blocked đã lưu')"
+    from: {status: running, phase: any}
+    event: lease_expired_with_stored_stop
+    guard_vi: "Như T-RUN-14 nhưng `worker.report_stop` đã COMMIT `needs_user` hoặc `blocked` TRƯỚC khi lease hết hạn."
+    to: {status: "needs_user | blocked (giữ nguyên trạng thái đã lưu)", phase: "không đổi"}
+    transaction_vi: "Chỉ ghi `assignment_lease.state = expired` + `run.current_lease_epoch += 1`. KHÔNG đụng `run.status`."
+    effects_vi: ["Thu hồi lease nhưng giữ nguyên trạng thái cần người xử lý."]
+    forbidden_vi: ["Hết hạn lease làm mất một `needs_user` đã lưu — đó là mất tín hiệu cho Owner (I13)."]
+    oracle_vi: "Sau khi lease hết hạn, `run.status` vẫn là `needs_user`; alert intent vẫn đúng 1."
+    scenario_refs: [SC04, SC20]
+    error_codes: [WORKER_LEASE_EXPIRED]
+    invariant_refs: [I10, I13]
+
+  - id: T-RUN-16
+    plan_row_ref: "SRC-PLAN §8.1 hàng 9"
+    from: {status: running, phase: any}
+    event: source_blocked_or_capability_missing
+    operation_id: worker.report_stop
+    guard_vi: >-
+      X chặn truy cập (`X_ACCESS_BLOCKED`), hoặc worker thiếu capability BẮT BUỘC cho phase.
+      SỬA Ở FIX3 (ruling CR-PC10-02): nhánh "rate limit kéo dài quá budget" ĐÃ BỊ BỎ khỏi hàng này — rate
+      limit nay đi theo T-RUN-25 (đóng segment, đi tiếp, `outcome = partial`), KHÔNG vào `blocked`. Giữ nhánh
+      cũ sẽ để hai hàng cùng nhận một sự kiện với hai kết quả khác nhau.
+    to: {status: blocked, phase: "không đổi", stop_reason: source_blocked}
+    transaction_vi: "Ghi cùng nhau: `run.status = blocked` + `run.stop_reason = source_blocked` + `run.unblock_condition_vi` (NOT NULL)."
+    effects_vi: ["Ghi điều kiện gỡ chặn cho Owner đọc."]
+    forbidden_vi:
+      - "Đổi account/proxy/user-agent để chạy tiếp (REQ-S9.3-02)."
+      - "Tự chuyển về `queued` theo thời gian (mục never_retry của retry-policy)."
+      - "Hiển thị `blocked` giống `empty` (I13, REQ-S8.3-03)."
+    oracle_vi: "Trace mạng sau transition không có request tới X; `unblock_condition_vi IS NOT NULL`; UI hiển thị khác `empty`."
+    scenario_refs: [SC15]
+    error_codes: [X_ACCESS_BLOCKED, CAPABILITY_DENIED]
+    invariant_refs: [I13]
+
+  - id: T-RUN-17a
+    plan_row_ref: "SRC-PLAN §8.1 hàng 13 (cancel) — từ queued"
+    from: {status: queued, phase: any}
+    event: owner_cancel
+    operation_id: run.cancel
+    guard_vi: "Owner gọi `run.cancel` (chỉ `owner_session`; không có lệnh Telegram tương ứng)."
+    to: {status: cancelled, phase: "không đổi", outcome: cancelled}
+    transaction_vi: "Ghi `run.status = cancelled` + `run.outcome = cancelled`. Chưa có lease nên không cần thu hồi."
+    effects_vi: ["Chặn mọi claim sau đó cho run này."]
+    forbidden_vi: ["Xóa dữ liệu đã commit (SRC-PLAN §8.1)."]
+    oracle_vi: "`worker.claim_assignment` cho run đã cancelled ⇒ không cấp lease."
+    scenario_refs: [SC20]
+    error_codes: [NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I10]
+
+  - id: T-RUN-17b
+    plan_row_ref: "SRC-PLAN §8.1 hàng 13 (cancel) — từ running"
+    from: {status: running, phase: any}
+    event: owner_cancel
+    operation_id: run.cancel
+    guard_vi: "Owner gọi `run.cancel` trong khi worker đang giữ lease."
+    to: {status: cancelled, phase: "không đổi", outcome: cancelled}
+    transaction_vi: "Ghi cùng nhau: `assignment_lease.state = revoked` + `run.current_lease_epoch += 1` + `run.status/outcome = cancelled`."
+    effects_vi:
+      - "Thu hồi lease; heartbeat kế tiếp của worker nhận lệnh dừng (`worker.heartbeat` response)."
+      - "Chặn publish mới cho run này."
+      - "Dữ liệu ĐÃ COMMIT không bị xóa."
+    forbidden_vi:
+      - "Xóa post/work/analysis đã commit."
+      - "Cho phép `report.publish` của run đã cancelled đi tiếp."
+      - "Bỏ qua attempt AI đang treo: attempt đó ghi `outcome = cancelled_stale_lease`."
+    oracle_vi: "Sau cancel: `COUNT(post WHERE discovered_by_run_id = R)` không đổi; `report.publish(R)` bị từ chối; heartbeat trả lệnh dừng."
+    scenario_refs: [SC20]
+    error_codes: [STALE_LEASE, NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I10]
+
+  - id: T-RUN-17c
+    plan_row_ref: "SRC-PLAN §8.1 hàng 13 (cancel) — từ waiting_retry / needs_user / blocked"
+    from: {status: "waiting_retry | needs_user | blocked", phase: any}
+    event: owner_cancel
+    operation_id: run.cancel
+    guard_vi: "Owner gọi `run.cancel` khi run đang chờ. Đây là đường THOÁT duy nhất đã có của `blocked`."
+    to: {status: cancelled, phase: "không đổi", outcome: cancelled}
+    transaction_vi: "Ghi `run.status/outcome = cancelled` + `next_attempt_at = NULL` + thu hồi lease nếu còn."
+    effects_vi: ["Alert intent đã tạo KHÔNG bị hủy nếu đã `sent` — vòng đời delivery độc lập (I09)."]
+    forbidden_vi:
+      - "Hủy một `delivery` đã `sent` (không thể thu hồi tin đã gửi; xem contracts/state/delivery.yaml)."
+      - "Xóa dữ liệu đã commit."
+    oracle_vi: "Cancel từ mỗi trong ba trạng thái ⇒ `(cancelled, cancelled, stop_reason giữ nguyên)`; `next_attempt_at IS NULL`."
+    scenario_refs: [SC20, SC15]
+    error_codes: [NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I09, I10]
+
+  - id: T-RUN-18
+    plan_row_ref: "SRC-PLAN §8.1 hàng 14"
+    from: {status: "running | waiting_retry | blocked", phase: any}
+    event: unrecoverable_error_or_budget_exhausted
+    guard_vi: >-
+      Lỗi có `retry_class = none` ở phạm vi run, HOẶC hết mọi budget áp dụng được, VÀ không có phần kết quả nào
+      publish được. Chỉ dùng khi `outcome = partial` KHÔNG áp dụng được.
+    to: {status: failed, phase: "không đổi", outcome: failed}
+    transaction_vi: "Ghi `run.status = failed` + `run.outcome = failed` + `last_error_code` + thu hồi lease."
+    effects_vi:
+      - "Giữ MỌI commit hợp lệ (post, work, analysis đã có)."
+      - "UI hiện lỗi và nêu rằng chạy lại nghĩa là một run/generation MỚI."
+    forbidden_vi:
+      - "Xóa dữ liệu đã commit."
+      - "Hiển thị `failed` là 'không có dữ liệu mới' (REQ-S8.3-03, I13)."
+      - "Chuyển run sang `failed` chỉ vì Telegram lỗi (I09) hoặc chỉ vì AI lỗi một số mục (dùng T-RUN-05)."
+      - "Chuyển `failed` → `completed` về sau (mục forbidden_transitions)."
+    oracle_vi: >-
+      AC-15: ba run (empty / limit / failed) cho ba bộ ba khác nhau và không bộ nào render thành
+      'không có nghiên cứu mới'.
+    scenario_refs: [SC15]
+    error_codes: [X_ACCESS_BLOCKED, AI_PROVIDER_UNAVAILABLE, STORAGE_WRITE_FAILED, INTERNAL, EMBEDDING_GENERATION_MISMATCH]
+    invariant_refs: [I09, I13]
+
+  - id: T-RUN-19
+    plan_row_ref: "bổ sung PKT-PC03 (storage write_blocked giữa run) — SRC-PLAN §8.4"
+    from: {status: running, phase: any}
+    event: storage_write_blocked_mid_run
+    operation_id: storage.get_health
+    guard_vi: "`storage.health` chuyển `write_blocked` trong khi run đang chạy."
+    to: {status: "running (KHÔNG đổi trên đĩa)", phase: "không đổi"}
+    transaction_vi: >-
+      KHÔNG CÓ transaction. Đây là hàng cố ý KHÔNG ghi: không thể ghi một transition vào một DB đang không ghi
+      được, và giả vờ đã ghi là điều SRC-PLAN §8.4 cấm.
+    effects_vi:
+      - "Mutation đang bay KHÔNG được ACK; collector nhận `STORAGE_WRITE_FAILED` và giữ lô trong bộ nhớ."
+      - "Ngừng cấp assignment mới ngay lập tức (grace = 0)."
+      - "Kênh health ĐỘC LẬP DB báo đỏ: `health.get_readiness`; `health.get_liveness` vẫn 'up'."
+      - "UI hiển thị LAST-KNOWN state kèm nhãn rõ rằng trạng thái mới chưa lưu được (contracts/state/storage.yaml §ui_read_model)."
+      - "Khi storage trở lại `healthy`: lease của run này đã hết hạn ⇒ T-RUN-14 đưa run về `queued`; nếu lease còn ⇒ worker tiếp tục từ checkpoint đã ACK."
+    forbidden_vi:
+      - "Tuyên bố đã persist lỗi vào DB (SRC-PLAN §8.4, contracts/errors.yaml §EPR-01)."
+      - "ACK mutation chưa commit (I02)."
+      - "Tiến cursor hay `acked_through_ingest_sequence` (I02)."
+      - "Ghi hỏng file SQLite bằng cách cố ghi tiếp khi hết ổ (REQ-S9.3-08)."
+    oracle_vi: >-
+      SC26 disk-full: `ingest_receipt` cho batch đó KHÔNG tồn tại; `health.get_readiness` đỏ;
+      `health.get_liveness` trả 'up'; hash file DB không đổi; sau khi dọn ổ và 3 probe thành công, run tiếp tục
+      từ đúng `acked_through_ingest_sequence` cũ.
+    scenario_refs: [SC26]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I13]
+
+  - id: T-RUN-20
+    plan_row_ref: "bổ sung PKT-PC03 (worker lost)"
+    from: {status: running, phase: "collecting | analyzing"}
+    event: worker_lost
+    guard_vi: >-
+      Không có heartbeat trong `lease_ttl + heartbeat_grace` VÀ không có `worker.report_stop`. Khác T-RUN-14 ở
+      chỗ đây là mất máy (tắt máy, mất điện), không phải lease hết hạn do worker bận.
+    to: {status: queued, phase: "không đổi", stop_reason: worker_lost}
+    transaction_vi: "Như T-RUN-14, thêm `run.stop_reason = worker_lost` để UI phân biệt với các lý do khác."
+    effects_vi:
+      - "REQ-S9.3-07: run về `queued` PHẦN CÒN LẠI và tiếp từ checkpoint."
+      - "Nếu worker chết SAU một lời gọi ra ngoài (provider AI), attempt tương ứng vào `unknown_attempt` — xem contracts/state/analysis.yaml."
+    forbidden_vi:
+      - "Coi worker mất tích là run `failed` (REQ-S9.3-07)."
+      - "Kết luận lời gọi ngoài đã hoặc chưa xảy ra."
+      - "Chạy lại phần đã ACK."
+    oracle_vi: >-
+      Tắt máy giữa run rồi bật lại: run ở `queued`, `checkpoint.acked_through_ingest_sequence` giữ nguyên,
+      sau khi hoàn tất `COUNT(post)` bằng đúng số `x_post_id` phân biệt đã quan sát.
+    scenario_refs: [SC20, SC28]
+    error_codes: [WORKER_LEASE_EXPIRED]
+    invariant_refs: [I02, I10]
+
+  - id: T-RUN-21
+    plan_row_ref: "bổ sung PKT-PC03 (run-now khi đang có run active) — chính sách COALESCE"
+    from: {status: "queued | running | waiting_retry | needs_user | blocked", phase: any}
+    event: manual_run_now_while_active
+    operation_id: run.run_now
+    guard_vi: "Đã tồn tại một run chưa terminal cho owner này."
+    to: {status: "không đổi", phase: "không đổi"}
+    transaction_vi: "KHÔNG có transaction trên `run`. Response trả `run_id` đang có + lý do."
+    effects_vi:
+      - "GỘP (`run_now_active_run_policy = coalesce`), không tạo run thứ hai, không từ chối bằng lỗi."
+      - "Với `needs_user`/`blocked`: response nêu rõ cần hành động của Owner (resume/gỡ chặn), KHÔNG tự resume (AMD-B10)."
+      - "`run_now_debounce = 60 s` chống bấm lặp với request_id khác nhau."
+    forbidden_vi:
+      - "Tạo run thứ hai song song (sẽ tranh CAS coverage và vi phạm I06)."
+      - "`run-now` đưa run rời `needs_user`/`blocked` (B10/AMD-B10)."
+      - "Đặt lịch chạy sớm hơn mốc 'sớm nhất được chạy' của run theo lịch (REQ-D13)."
+    oracle_vi: >-
+      Bấm 'chạy ngay' 5 lần trong 10 s khi đang có run: `COUNT(run WHERE status NOT IN terminal) = 1`,
+      response mỗi lần trả cùng `run_id`.
+    scenario_refs: [SC33]
+    error_codes: [UNAUTHORIZED, UNAUTHORIZED_COMMAND, IDEMPOTENCY_CONFLICT, VALIDATION_ERROR]
+    invariant_refs: [I06, I10]
+
+  - id: T-RUN-22
+    plan_row_ref: "bổ sung PKT-PC03 (lease expiry ở phase reporting)"
+    from: {status: running, phase: reporting}
+    event: report_builder_crash
+    guard_vi: >-
+      Phase `reporting` chạy TRONG SERVER (MOD-report-service), không có worker lease. Builder chết ⇒ bản build
+      dở dang ở `report.status = building` quá `report_build_stale_after`.
+    to: {status: queued, phase: reporting}
+    transaction_vi: "Ghi `report.status = aborted` (contracts/state/report.yaml) + `run.status = queued`."
+    effects_vi:
+      - "Rebuild là một `report_build_id` MỚI."
+      - "Backfill ledger KHÔNG bị tiêu thụ bởi một builder crash (B04)."
+      - "Coverage KHÔNG tiến (chỉ tiến tại commit publish)."
+    forbidden_vi:
+      - "Tiêu thụ backfill vì builder crash (AMD-B04)."
+      - "Publish bản build dở dang."
+      - "Tiến coverage khi chưa publish."
+    oracle_vi: "SC22: crash giữa builder ⇒ `COUNT(backfill_ledger consumption)` không tăng; `coverage_window` không tăng; report cũ không đổi."
+    scenario_refs: [SC22, SC08]
+    error_codes: [CONFLICT, TAG_VERSION_STALE, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I06]
+
+  - id: T-RUN-23
+    plan_row_ref: "bổ sung FIX1 — ruling CR-PC03-02 (đường thoát của `blocked`)"
+    from: {status: blocked, phase: any}
+    event: owner_declares_unblocked
+    operation_id: run.resume
+    guard_vi: >-
+      Owner gọi `run.resume` từ trạng thái `blocked` và cung cấp `unblock_reason` BẮT BUỘC (chuỗi tự do đã che
+      secrets): owner TUYÊN BỐ điều kiện chặn đã hết. Hệ thống KHÔNG tự phán đoán và KHÔNG thử lại để dò
+      (REQ-S13.2-04: bị chặn thì dừng và báo, không né). Gọi `run.resume` từ bất kỳ trạng thái nào khác
+      `needs_user`/`blocked` ⇒ `CONFLICT`, không đổi trạng thái (contracts/ports.yaml §allowed_from_states_vi).
+    to: {status: queued, phase: "phase đã lưu"}
+    transaction_vi: >-
+      Ghi cùng nhau: `run.status = queued` + `run.unblock_condition_vi` được giữ lại làm lịch sử +
+      `unblock_reason` của owner + thu hồi lease cũ + `run.current_lease_epoch += 1`.
+    effects_vi:
+      - "Giữ checkpoint đã ACK; run tiếp từ đó (giống T-RUN-10)."
+      - "Lease MỚI chỉ được cấp khi worker claim lại (I10); không tiếp tục bằng lease cũ."
+      - "`unblock_reason` là BẢN GHI CÓ CHỦ ĐÍCH của con người: nó phân biệt 'owner đã kiểm và thấy hết chặn' với 'hệ thống tự thử lại'."
+    forbidden_vi:
+      - "Tự chuyển `blocked` → `queued` theo thời gian hoặc theo một probe tự động (retry-policy §never_retry)."
+      - "Chấp nhận `run.resume` từ `blocked` mà thiếu `unblock_reason`."
+      - "Đổi account/proxy như một cách 'gỡ chặn' (REQ-S9.3-02, SRC-SPEC §2.3)."
+      - "Tiếp tục bằng lease cũ."
+    oracle_vi: >-
+      Run ở `blocked`: chờ 24 giờ ⇒ `status` vẫn `blocked` (không có đường tự động). Gọi `run.resume` thiếu
+      `unblock_reason` ⇒ `VALIDATION_ERROR`, không hàng nào đổi. Gọi đủ tham số ⇒ `status='queued'`,
+      `current_lease_epoch` tăng 1, và lời gọi của worker mang epoch cũ nhận `STALE_LEASE`.
+    scenario_refs: [SC15, SC20]
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, CSRF_REJECTED, NOT_FOUND, CONFLICT, IDEMPOTENCY_CONFLICT, STALE_LEASE]
+    invariant_refs: [I10]
+
+  - id: T-RUN-24
+    plan_row_ref: "bổ sung FIX1 — ruling FIX3 cho CR-PC05-01 (`SOURCE_LAYOUT_CHANGED`)"
+    from: {status: running, phase: collecting}
+    event: source_layout_changed
+    operation_id: worker.report_stop
+    guard_vi: >-
+      Collector VÀO ĐƯỢC nguồn nhưng KHÔNG bóc được các trường bắt buộc của item (bố cục feed đã đổi).
+      Phân biệt với T-RUN-16 (`source_blocked`): ở đây không có chặn truy cập nào — request thành công,
+      chỉ nội dung không parse được.
+    to: {status: blocked, phase: collecting, stop_reason: source_layout_changed}
+    transaction_vi: >-
+      Ghi cùng nhau: phần đã bóc đủ trường VẪN COMMIT bình thường qua `ingest.submit_batch` TRƯỚC đó;
+      rồi `run.status = blocked` + `run.stop_reason = source_layout_changed` +
+      `run.unblock_condition_vi` (NOT NULL, liệt kê TÊN trường thiếu) + `outbox_intent` loại `run_alert`
+      (idempotency `run_alert_id + channel` ⇒ TỐI ĐA MỘT alert mỗi run).
+    effects_vi:
+      - "Tạo ĐÚNG MỘT alert intent cho mỗi run — khác T-RUN-16, vì bố cục đổi cần người CHÚ Ý NGAY để sửa bộ đọc, còn bị chặn thì không ai làm gì được ngay."
+      - "Phần dữ liệu đã bóc được và đã ACK giữ nguyên: một lô bóc được 12/40 bài vẫn commit 12 hàng."
+      - "`unblock_condition_vi` ghi TÊN trường thiếu để người phát triển biết sửa gì."
+    forbidden_vi:
+      - "Đoán giá trị cho trường không bóc được (I03 mở rộng cho mọi trường bắt buộc)."
+      - "Ingest item với trường rỗng hoặc bịa để 'đủ schema'."
+      - "Thử parser thay thế, đổi user-agent, bật 'chế độ tương thích' (SRC-SPEC §2.3)."
+      - "Tự retry — bố cục sẽ không tự đổi lại (`retry_class = none`)."
+      - "Tạo alert intent thứ hai cho cùng run."
+      - "Hiển thị là 'không có nghiên cứu mới' (REQ-S8.3-03, I13)."
+    oracle_vi: >-
+      Fixture `acceptance/fixtures/collection/a-feed-layout-changed.json`: `COUNT(post)` tăng đúng 12 (không
+      phải 40); `run.status='blocked'` và `stop_reason='source_layout_changed'`;
+      `COUNT(outbox_intent WHERE kind='run_alert' AND run_id=R) = 1` kể cả khi báo dừng hai lần cùng
+      `stop_report_id`; trace mạng sau transition không có request tới X.
+    scenario_refs: [SC03, SC15]
+    error_codes: [SOURCE_LAYOUT_CHANGED, STALE_LEASE, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I13]
+
+  - id: T-RUN-25
+    plan_row_ref: "bổ sung FIX3 — ruling CR-PC10-02 (SRC-SPEC §9.3 'Rate limit / bị chặn → dừng đợt, ghi lý do, không luân chuyển gì để lách'; SRC-PLAN §8.1)"
+    from: {status: running, phase: collecting}
+    event: source_rate_limited
+    operation_id: worker.report_stop
+    guard_vi: >-
+      Nguồn X báo giới hạn nhịp (429, trang yêu cầu chậm lại) VÀ mọi lô sẽ dùng tiếp đã có `ingest_receipt`
+      (đã ACK). Phân biệt với T-RUN-16 (`source_blocked`): ở đây X **có** cho vào, chỉ bảo chậm lại; và với
+      T-RUN-24 (`source_layout_changed`): ở đây nội dung vẫn đọc được bình thường.
+    to: {status: running, phase: enriching, stop_reason: rate_limited}
+    transaction_vi: >-
+      Ghi cùng nhau: đóng collection segment + `run.stop_reason = rate_limited` + `run.rate_limited_at` (giờ
+      server) + `run.x_coverage_note_vi` (NOT NULL, phải nhắc mốc "rate limited at <ts>") + `run.phase =
+      enriching`. Checkpoint đã ACK GIỮ NGUYÊN (append-only, không UPDATE).
+    effects_vi:
+      - "Đợt thu thập DỪNG tại đây; run **đi tiếp** sang `enriching` rồi `reporting` với phần dữ liệu đã có."
+      - "outcome DỰ KIẾN = `partial` — có nội dung, nhưng phạm vi quan sát bị cắt bởi nguồn, không phải bởi ngân sách của ta."
+      - "Đợt theo lịch KẾ TIẾP chạy bình thường; không có gì bị khóa lại."
+      - "KHÔNG tạo alert intent: đây là tình huống vận hành thường gặp, không cần người xử lý ngay (khác T-RUN-09 và T-RUN-24)."
+    forbidden_vi:
+      - "Thử lại TRONG cùng đợt sau khi đã báo `rate_limited` (SRC-SPEC §9.3: 'dừng đợt, ghi lý do')."
+      - "Luân chuyển account, proxy, IP, user-agent hay bất kỳ hình thức lách giới hạn nào (SRC-SPEC §2.3, REQ-S9.3-02)."
+      - "Bỏ qua `retry_after_ms` nguồn trả về nếu vẫn còn lời gọi nào đang bay."
+      - "Đặt `status = blocked`: rate limit KHÔNG chặn đợt sau, còn `blocked` thì có (T-RUN-23 đòi Owner gỡ). Nhầm hai cái này làm người dùng phải can thiệp tay cho một tình huống tự hết."
+      - "Đặt `status = failed`: có dữ liệu và có báo cáo, nên đây không phải đợt thất bại (REQ-S8.3-03)."
+      - "Để `x_coverage_note_vi` trống hoặc không nhắc mốc `rate_limited_at`."
+    oracle_vi: >-
+      Inject 429 sau N lô đã ACK: `COUNT(post)` bằng đúng số đã ingest trước đó và KHÔNG tăng thêm;
+      `run.stop_reason='rate_limited'`, `run.rate_limited_at IS NOT NULL`, `run.x_coverage_note_vi` chứa mốc đó;
+      `run.status` đi qua `running/enriching` rồi kết thúc `completed` với `outcome='partial'`;
+      `COUNT(outbox_intent WHERE kind='run_alert' AND run_id=R) = 0`;
+      số request tới X sau thời điểm chuyển = 0; occurrence lịch kế tiếp VẪN sinh run
+      (`COUNT(run WHERE trigger_type='scheduled')` tăng bình thường).
+    scenario_refs: [SC03, SC15]
+    error_codes: [RATE_LIMITED, STALE_LEASE, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I13]
+
+# ---------------------------------------------------------------------------
+# 5. Transition bị cấm (kiểm bằng lint; mỗi hàng có counterexample)
+# ---------------------------------------------------------------------------
+forbidden_transitions:
+  - {from: needs_user, to: running, condition_vi: "không qua `run.resume`", reason_vi: "Resume là hành động riêng trong app; `status`/`run-now` không resume (B10/AMD-B10).", counterexample_vi: "Gửi lệnh Telegram `run-now` khi run `needs_user`: nếu run chuyển `running` thì FAIL.", error_code_if_attempted: UNAUTHORIZED_COMMAND}
+  - {from: failed, to: completed, condition_vi: "mọi trường hợp", reason_vi: "Terminal là terminal; chạy lại nghĩa là run mới.", counterexample_vi: "Gọi `report.publish` cho một run `failed`: phải bị từ chối, `COUNT(report)` không tăng.", error_code_if_attempted: CONFLICT}
+  - {from: cancelled, to: "bất kỳ", condition_vi: "mọi trường hợp", reason_vi: "Cancel thu hồi lease và chặn publish mới.", counterexample_vi: "`worker.claim_assignment` cho run cancelled: không cấp lease.", error_code_if_attempted: CONFLICT}
+  - {from: completed, to: "bất kỳ", condition_vi: "mọi trường hợp", reason_vi: "TSR-01: terminal không phát side effect và không đổi trạng thái.", counterexample_vi: "Delivery `failed` sau đó: `run` KHÔNG được đổi (I09).", error_code_if_attempted: CONFLICT}
+  - {from: running, to: blocked, condition_vi: "chỉ vì nguồn báo rate limit", reason_vi: "Ruling CR-PC10-02: rate limit ⇒ đóng segment và ĐI TIẾP với outcome `partial` (T-RUN-25). `blocked` đòi Owner gỡ bằng `run.resume`, biến một tình huống tự hết thành việc phải làm tay.", counterexample_vi: "Inject 429: nếu `run.status` thành `blocked` thì FAIL; phải là `running/enriching` với `stop_reason='rate_limited'`.", error_code_if_attempted: RATE_LIMITED}
+  - {from: blocked, to: running, condition_vi: "tự động theo thời gian, hoặc bất kỳ đường nào không phải `run.resume` có `unblock_reason`", reason_vi: "Retry tự động khi bị chặn là bước đầu của việc lách (REQ-S9.3-02). Đường thoát DUY NHẤT là T-RUN-23: owner tuyên bố điều kiện chặn đã hết (CR-PC03-02).", counterexample_vi: "Chờ 24 h với run `blocked`: `status` vẫn `blocked`. Gọi `run.resume` thiếu `unblock_reason`: VALIDATION_ERROR, không hàng nào đổi.", error_code_if_attempted: X_ACCESS_BLOCKED}
+  - {from: running, to: completed, condition_vi: "khi chưa có publish commit hoặc chưa xác định outcome empty", reason_vi: "`completed` chỉ đến từ T-RUN-06/07/08.", counterexample_vi: "Đóng run ở phase collecting: `outcome` NULL ⇒ FAIL constraint NOT NULL.", error_code_if_attempted: VALIDATION_ERROR}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "bởi một worker mang `lease_epoch` cũ", reason_vi: "I10 — stale writer không commit.", counterexample_vi: "Hai worker claim cùng job; worker epoch cũ gọi `worker.report_stop`: `STALE_LEASE`, `run.status` không đổi.", error_code_if_attempted: STALE_LEASE}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "trong khi `storage.health != healthy`", reason_vi: "Không có transition nào được TUYÊN BỐ là đã lưu khi DB không ghi được (SRC-PLAN §8.4).", counterexample_vi: "Disk-full: `run.status` đọc lại từ DB sau khi khôi phục phải bằng giá trị TRƯỚC sự cố.", error_code_if_attempted: STORAGE_WRITE_FAILED}
+  - {from: "bất kỳ non-terminal", to: failed, condition_vi: "chỉ vì delivery lỗi", reason_vi: "I09 — Telegram lỗi không làm run thất bại.", counterexample_vi: "Ép Telegram trả lỗi vĩnh viễn: `run.outcome` giữ `complete`, `delivery.state = failed`.", error_code_if_attempted: TELEGRAM_PERMANENT_FAILURE}
+
+# ---------------------------------------------------------------------------
+# 6. Lease / claim / heartbeat / epoch (checklist PKT-PC03 mục 2)
+# ---------------------------------------------------------------------------
+lease_model:
+  entity: ENT-assignment-lease
+  numbers_ref: "contracts/retry-policy.yaml §budgets (lease_ttl_collector, lease_ttl_analysis, heartbeat_interval_*, heartbeat_grace, lease_expiry_sweep_interval, claim_request_timeout, lease_epoch_rule)"
+  rules:
+    - id: LM-01
+      rule_vi: "Đăng ký capability KHÔNG cấp lease. Lease chỉ đến từ `worker.claim_assignment` / `analysis.claim_task` (contracts/ops/deployment.md §7 bước 6)."
+    - id: LM-02
+      rule_vi: "Một job có tối đa một lease `held`. `ux_lease_job_epoch` (owner_id, job_id, lease_epoch) chống cấp trùng cùng epoch."
+    - id: LM-03
+      rule_vi: "`lease_epoch` đơn điệu tăng, tăng đúng 1 mỗi lần cấp hoặc thu hồi có chủ đích. Không bao giờ dùng lại."
+    - id: LM-04
+      rule_vi: >-
+        Mọi mutation đang giữ job phải mang `job_id`, `lease_id`, `lease_epoch` (SRC-PLAN §5.1). Kiểm epoch nằm
+        TRƯỚC mọi write trong cùng transaction; epoch cũ ⇒ `STALE_LEASE`, không ghi gì.
+    - id: LM-05
+      rule_vi: "Lease hết hạn khi `now > expires_at + heartbeat_grace`. Heartbeat thành công gia hạn `expires_at = now + lease_ttl`."
+    - id: LM-06
+      rule_vi: >-
+        Thu hồi lease xảy ra ở: hết hạn (sweep), `run.cancel`, `run.resume`, `worker.release_assignment`,
+        `backup.reconcile_after_restore`. Mọi trường hợp đều tăng epoch.
+    - id: LM-07
+      rule_vi: >-
+        Resume LUÔN cấp lease mới khi worker claim lại; không có đường tiếp tục bằng lease cũ (I10, SRC-PLAN §8.1
+        hàng 4, AMD-B10).
+    - id: LM-08
+      rule_vi: >-
+        Sau `backup.restore_snapshot`, mọi lease trong snapshot bị coi là STALE bất kể `expires_at`: đồng hồ đã
+        nhảy và worker cũ có thể không còn tồn tại. Chỉ `backup.reconcile_after_restore` thu hồi chúng và mở khóa
+        claim (I15, NC-10).
+  stale_writer_rejection:
+    error_codes: [STALE_LEASE, WORKER_LEASE_EXPIRED]
+    oracle_vi: >-
+      Hai worker claim cùng job: worker epoch nhỏ hơn gọi `ingest.submit_batch` ⇒ `STALE_LEASE`,
+      `COUNT(post)` và `COUNT(ingest_receipt)` không đổi, hash file DB không đổi.
+    counterexample_for_I10_vi: >-
+      COUNTEREXAMPLE (phải FAIL gate): worker giữ lease cũ gọi `analysis.submit_result` và server chấp nhận vì
+      "kết quả trông hợp lệ". Khi đó hai kết quả `valid` có thể tồn tại cho cùng analysis key, phá I04 và I10.
+
+# ---------------------------------------------------------------------------
+# 7. Lịch, timezone, DST, catch-up (checklist PKT-PC03 mục 3)
+# ---------------------------------------------------------------------------
+schedule_model:
+  decision_refs: [B08, AMD-B08, ADR-0007]
+  timezone:
+    setting_key: schedule_timezone
+    value: "Asia/Ho_Chi_Minh"
+    status: PROVISIONAL
+    owner_confirmation_required: true
+    rule_vi: >-
+      MỘT IANA timezone duy nhất lưu trong `settings`, do Owner xác nhận (AMD-B08 nguyên văn: "Hệ thống lưu một
+      IANA timezone duy nhất trong Settings, do Owner xác nhận (giá trị tạm: `Asia/Ho_Chi_Minh`)"). Timezone chỉ
+      dùng để DIỄN GIẢI lịch và để HIỂN THỊ. Không dùng giờ của browser, của server hay của máy collector.
+    timestamp_rule_vi: >-
+      AMD-B08 nguyên văn: "Mọi timestamp bền được lưu ở UTC theo RFC 3339 với độ chính xác mili giây, tie-break
+      bằng ingest sequence."
+    forbidden_vi:
+      - "Lấy timezone theo máy chạy app (D56 nguyên văn đã bị AMD-B08 thay)."
+      - "So sánh hai timestamp mà không quy về UTC."
+      - "Dùng thời gian của worker làm `discovered_at` (SRC-PLAN §9.1: dùng giờ server chấp nhận lần đầu)."
+  slots:
+    values_ref: "contracts/retry-policy.yaml §budgets.schedule_slots_default (08:00, 20:00 local, PROVISIONAL, REQ-OQ06)"
+  earliest_run_semantics:
+    decision_refs: [REQ-D13]
+    rule_vi: >-
+      Giờ trong lịch là mốc SỚM NHẤT ĐƯỢC CHẠY, không phải deadline. Một occurrence trở nên "tới hạn" khi
+      `now >= resolved_utc_instant` và chưa sinh run. Không có occurrence nào chạy trước `resolved_utc_instant`
+      (`schedule_coalescing_window` lookahead = 0).
+  occurrence_identity:
+    rule_vi: >-
+      `schedule_occurrence_id` được suy ra một cách xác định từ `(owner_id, slot_key, nominal_local_date,
+      nominal_local_time)` — tức từ GIỜ ĐỊA PHƯƠNG DANH NGHĨA, KHÔNG từ instant UTC đã giải. Nhờ vậy một mốc lịch
+      không bao giờ sinh hai occurrence dù DST làm giờ đó lặp lại.
+    idempotency_ref: "contracts/ports.yaml job.enqueue_scheduled_run (key = schedule_occurrence_id)"
+  dst_rules:
+    note_vi: >-
+      `Asia/Ho_Chi_Minh` hiện KHÔNG có DST, nên các quy tắc dưới đây chưa kích hoạt với giá trị mặc định. Chúng
+      vẫn phải được đóng vì Owner chưa xác nhận timezone (B08) và vì ADR-0007 điểm 5 giao việc này cho PC03.
+    rules:
+      - id: DST-01
+        case_vi: "Giờ địa phương KHÔNG TỒN TẠI (spring-forward gap): ví dụ lịch 02:30 nhưng 02:00→03:00 bị nhảy."
+        resolution_vi: "Occurrence chạy tại INSTANT ĐẦU TIÊN >= giờ danh nghĩa, tức thời điểm kết thúc khoảng nhảy (03:00 giờ mới). Không bỏ occurrence."
+        rationale_vi: "Bỏ occurrence sẽ tạo một lỗ hổng bao phủ trong ngày đó; chạy muộn một chút không vi phạm D13 vì D13 nói 'sớm nhất được chạy'."
+        determinism_vi: "Hàm giải: `resolved_utc = min{ t : local(t) >= nominal_local }`. Một nghiệm duy nhất."
+      - id: DST-02
+        case_vi: "Giờ địa phương LẶP LẠI (fall-back): ví dụ lịch 01:30 xảy ra hai lần."
+        resolution_vi: "Chọn lần XUẤT HIỆN ĐẦU TIÊN (offset TRƯỚC chuyển đổi, tức instant UTC nhỏ hơn). Lần thứ hai KHÔNG phải một occurrence riêng."
+        rationale_vi: "Chọn lần đầu là quy tắc duy nhất vừa xác định vừa không sinh thêm một đợt chạy; sinh hai đợt sẽ vi phạm 'một occurrence một run'."
+        determinism_vi: "Hàm giải: `resolved_utc = min{ t : local(t) == nominal_local }`."
+      - id: DST-03
+        case_vi: "Owner đổi `schedule_timezone` trong Settings."
+        resolution_vi: >-
+          Occurrence ĐÃ SINH RUN giữ nguyên. Occurrence chưa sinh run được tính lại theo timezone mới kể từ thời
+          điểm đổi. Lịch KHÔNG tự đổi theo nơi Owner đang ở (ADR-0007 §Hệ quả tiêu cực) — chỉ đổi khi Owner sửa Settings.
+        rationale_vi: "Tính lại quá khứ sẽ làm `schedule_occurrence_id` của các run đã tồn tại đổi nghĩa và phá idempotency."
+  catch_up:
+    decision_refs: [REQ-D15, REQ-D16, REQ-AC02, REQ-S8.2-08]
+    rules:
+      - id: CU-01
+        rule_vi: >-
+          Mọi occurrence quá hạn chưa sinh run, có `resolved_utc_instant` trong `schedule_catch_up_lookback_max`
+          (7 ngày), được GỘP thành ĐÚNG MỘT run (`job.coalesce_overdue`, idempotency `coalesce_window_id`).
+      - id: CU-02
+        rule_vi: >-
+          Run bù ghi `schedule_occurrence_ids` (danh sách đã gộp), `catch_up_window_from` và
+          `catch_up_window_to`. Tin Telegram ghi KHOẢNG BAO TRÙM này (REQ-D15).
+      - id: CU-03
+        rule_vi: "KHÔNG gửi bù các digest cũ (REQ-D16). Chỉ có một digest cho run bù, nội dung theo coverage mới."
+      - id: CU-04
+        rule_vi: >-
+          Occurrence quá hạn hơn `schedule_catch_up_lookback_max` được đánh `skipped_stale`, KHÔNG gộp, và ghi lại
+          để `health.get_readiness` hiển thị. Chúng KHÔNG tạo lỗ hổng coverage vì coverage do sổ
+          `coverage_window` quyết định, không do lịch (B04).
+      - id: CU-05
+        rule_vi: "Nếu đang có một run chưa terminal khi tới hạn, occurrence mới KHÔNG sinh run thứ hai; nó được gộp vào cửa sổ catch-up kế tiếp sau khi run hiện tại kết thúc."
+    oracle_vi: >-
+      AC-02 / REQ-S8.2-08 (máy tắt từ thứ Hai đến thứ Năm, lịch 08:00 và 20:00): fake-clock cho 6 occurrence quá
+      hạn ⇒ `COUNT(run WHERE trigger_type='scheduled' AND created trong cửa sổ) = 1`;
+      `len(run.schedule_occurrence_ids) = 6`; `COUNT(outbox_intent WHERE type='report_digest') <= 1`.
+    scenario_refs: [SC02, SC34]
+
+# ---------------------------------------------------------------------------
+# 8. Checkpoint chỉ trên dữ liệu đã ACK (checklist PKT-PC03 mục 4)
+# ---------------------------------------------------------------------------
+checkpoint_model:
+  entity: ENT-checkpoint
+  entity_name: checkpoint
+  owner_module: MOD-ingest-service
+  decision_refs: [B05, AMD-B05, "R-01 (A1-R1)"]
+  invariant_refs: [I02]
+  rules:
+    - id: CP-01
+      decision_refs: ["R-01 (A1-R1)"]
+      rule_vi: >-
+        ĐƯỜNG CHÍNH: `client_checkpoint_proposal` của một lô được commit TRONG CÙNG transaction với `post` và
+        `ingest_receipt` (TXN-ingest-batch của PC02). Không có đường ghi checkpoint riêng lẻ đi TRƯỚC dữ liệu (I02).
+        Có ĐÚNG MỘT thực thể checkpoint trong hệ thống: `checkpoint`, do `MOD-ingest-service` sở hữu; MOD-job-service
+        chỉ ĐỌC trạng thái checkpoint qua `worker.claim_assignment` hoặc một read port nội bộ, không sở hữu nó
+        (ruling R-01/R-03 của Coordinator trên AUDIT_REPORT PKT-A1-R1).
+    - id: CP-02
+      rule_vi: >-
+        Định nghĩa vận hành của "đã ACK": `checkpoint.acked_through_ingest_sequence` — mọi post có
+        `ingest_sequence <= giá trị này` đã commit ở server.
+    - id: CP-03
+      rule_vi: "Dữ liệu đã TẢI nhưng CHƯA ingest KHÔNG phải checkpoint bền (SRC-PLAN §8.1). CAPTCHA giữa lúc đó ⇒ checkpoint giữ giá trị cũ."
+    - id: CP-04
+      rule_vi: "Checkpoint là append-only (`ux_checkpoint_run_sequence`), không UPDATE. `sequence` lùi bị từ chối."
+    - id: CP-05
+      rule_vi: >-
+        Cursor mất hiệu lực ⇒ `checkpoint.cursor_state = invalidated`, `run.cursor_invalidated = true`, và
+        recovery policy cho phép ĐỌC LẠI. Dedup xảy ra ở ingest theo `x_post_id` (AMD-B05).
+    - id: CP-06
+      rule_vi: >-
+        Cam kết của hệ thống là KHÔNG INGEST TRÙNG theo `x_post_id`, KHÔNG phải "không bao giờ đọc lại"
+        (AMD-B05 nguyên văn). Oracle là số hàng `post`, KHÔNG phải số request.
+    - id: CP-07
+      decision_refs: ["R-01 (A1-R1)"]
+      rule_vi: >-
+        ĐƯỜNG PHỤ: `ingest.commit_checkpoint` VẪN TỒN TẠI nhưng bị giới hạn thành một bước TIẾN CON TRỎ THUẦN
+        TÚY, KHÔNG kèm item mới. Nó chỉ dùng cho ba tình huống: trang rỗng, hết feed, và đóng collection segment.
+      guard_vi: >-
+        Con trỏ được đề xuất CHỈ được tham chiếu tới `ingest_sequence <= acked_through_ingest_sequence` đã commit
+        của run đó. Một đề xuất vượt quá mốc ACK ⇒ `VALIDATION_ERROR`, KHÔNG ghi một phần nào.
+      transaction_vi: >-
+        `TXN-checkpoint-only`: APPEND MỘT HÀNG `checkpoint` MỚI (với `sequence` kế tiếp) cùng một hàng
+        `ingest_receipt` mang `receipt_kind = 'checkpoint_only'`, trong MỘT transaction. Commit point là COMMIT
+        của transaction đó; ACK chỉ sau commit (I02).
+      wording_correction_vi: >-
+        SỬA Ở FIX1 (finding F-A1R2-04, cite CR-PC02-12). Câu cũ viết "cập nhật MỘT hàng `checkpoint`" — kế thừa
+        nguyên văn cách diễn đạt của ruling R-01 — và như vậy mô tả CHÍNH ĐIỀU mà CP-04 cấm ("append-only,
+        không UPDATE") và mà `TXN-checkpoint-only.forbidden_effects` của PC02 liệt kê là bị cấm
+        ("UPDATE một hàng `checkpoint` đã tồn tại"). Guard và oracle của CP-07 vốn đã đúng; chỉ câu mô tả
+        transaction sai, và đó lại chính là câu một người triển khai sẽ đọc như một chỉ dẫn. Nay CP-04, CP-07
+        và `TXN-checkpoint-only` phát biểu cùng một điều: checkpoint là APPEND-ONLY, không có ngoại lệ.
+      oracle_vi: >-
+        Sau BẤT KỲ chuỗi lời gọi `ingest.commit_checkpoint` nào:
+        `checkpoint.acked_through_ingest_sequence <= max(committed ingest_receipt.max_ingest_sequence)` —
+        checkpoint KHÔNG BAO GIỜ trỏ vượt quá các post đã bền.
+      forbidden_vi:
+        - "Dùng `ingest.commit_checkpoint` để nộp item — item chỉ đi qua `ingest.submit_batch`."
+        - "Tiến con trỏ tới một `ingest_sequence` chưa có receipt (đây chính là counterexample 2 của I02)."
+        - "Ghi một phần rồi mới phát hiện đề xuất vượt mốc — kiểm guard nằm TRƯỚC mọi write."
+    - id: CP-08
+      decision_refs: ["R-03 (A1-R1)"]
+      rule_vi: >-
+        Tên thực thể dùng trong file này lấy theo `contracts/data/entities.yaml` (PC02) vì đó là nguồn có thẩm
+        quyền về tên: `checkpoint`, `assignment_lease`, `ingest_receipt`, `coverage_window`, `identity_alias`,
+        `tag_vector`, `outbox_intent`. Các token cũ của PC01 (`ingest_checkpoint`, `lease`, `coverage_ledger`,
+        `vector`, `work_alias`) KHÔNG được dùng ở đây.
+  ack_loss_replay:
+    error_code: INGEST_ACK_LOST
+    procedure_vi: >-
+      (1) Client mất ACK ⇒ KHÔNG kết luận gì. (2) Gọi `ingest.get_receipt(assignment_id, batch_idempotency_key)`.
+      (3) Có receipt ⇒ dùng nó, không gửi lại. (4) `not_committed` ⇒ gửi lại CÙNG `idempotency_key` + CÙNG
+      `payload_hash`. (5) Payload khác ⇒ `IDEMPOTENCY_CONFLICT`, không ghi đè.
+    oracle_vi: "Crash sau commit trước ACK rồi replay: `COUNT(post)` không đổi, `receipt_hash` không đổi, `checkpoint.sequence` không tăng."
+    scenario_refs: [SC21]
+  worker_death_after_external_call:
+    rule_vi: >-
+      Khi worker chết sau một lời gọi ra ngoài (X hoặc provider AI), hệ thống GIỮ tính không chắc chắn: không ghi
+      "đã xảy ra" và cũng không ghi "chưa xảy ra". Với X: không có ingest ⇒ không có post, đọc lại là hợp lệ và
+      dedup ở ingest. Với provider AI: attempt vào `unknown_attempt` với `cost_uncertain = true`
+      (contracts/state/analysis.yaml).
+    forbidden_vi:
+      - "Suy ra 'chưa gọi' từ việc không có kết quả."
+      - "Tuyên bố chưa phát sinh chi phí (SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN)."
+    scenario_refs: [SC28]
+
+# ---------------------------------------------------------------------------
+# 9. Failure timeline theo ranh giới commit (checklist PKT-PC03 mục 5)
+# ---------------------------------------------------------------------------
+failure_timelines:
+
+  - id: FT-INGEST
+    boundary_vi: "Ranh giới commit ingest (TXN-ingest-batch)"
+    steps:
+      - {t: t0, event_vi: "Collector tải xong một trang", durable_rows_vi: "chưa có", crash_yields_vi: "Không có gì; dữ liệu chỉ nằm trong RAM của collector", recovery_vi: "Đọc lại trang; không sinh post trùng vì chưa có post nào"}
+      - {t: t1, event_vi: "Collector gửi `ingest.submit_batch` (request_id, idempotency_key, payload_hash, lease_id/epoch)", durable_rows_vi: "chưa có", crash_yields_vi: "Server chưa nhận hoặc chưa commit", recovery_vi: "`ingest.get_receipt` trả `not_committed` ⇒ gửi lại cùng key"}
+      - {t: t2, event_vi: "Server BEGIN; kiểm epoch; dedup theo `x_post_id`; ghi `post`, `post_work`, `ingest_receipt`, `checkpoint`", durable_rows_vi: "chưa (chưa COMMIT)", crash_yields_vi: "SQLite rollback; không có hàng nào", recovery_vi: "Như t1"}
+      - {t: t3, event_vi: "COMMIT", durable_rows_vi: "post + ingest_receipt + checkpoint (cùng transaction)", crash_yields_vi: "Dữ liệu ĐÃ BỀN nhưng client chưa biết", recovery_vi: "`ingest.get_receipt` trả receipt ⇒ client dùng nó, KHÔNG gửi lại"}
+      - {t: t4, event_vi: "Server trả ACK (receipt)", durable_rows_vi: "như t3", crash_yields_vi: "INGEST_ACK_LOST — client không biết", recovery_vi: "Bắt buộc tra receipt trước retry (RP-01)"}
+      - {t: t5, event_vi: "Collector tiến con trỏ nội bộ", durable_rows_vi: "như t3", crash_yields_vi: "Collector quên đã tới đâu", recovery_vi: "Claim lại; server trả `checkpoint.acked_through_ingest_sequence` làm nguồn sự thật"}
+    invariant_refs: [I02]
+    forbidden_vi: ["Tiến checkpoint ở t2 hoặc bất kỳ điểm nào trước COMMIT."]
+    scenario_refs: [SC21]
+
+  - id: FT-CHECKPOINT-ONLY
+    boundary_vi: "Ranh giới TXN-checkpoint-only (tiến con trỏ thuần túy qua `ingest.commit_checkpoint`)"
+    decision_refs: ["R-01 (A1-R1)"]
+    steps:
+      - {t: t0, event_vi: "Collector gặp trang rỗng / hết feed / đóng segment; con trỏ mới không kèm item nào", durable_rows_vi: "checkpoint(seq=N) hiện có", crash_yields_vi: "Không có gì; con trỏ cũ vẫn đúng", recovery_vi: "Claim lại; server trả checkpoint N"}
+      - {t: t1, event_vi: "`ingest.commit_checkpoint(lease_id/epoch, checkpoint_seq=N+1, cursor)` được gửi", durable_rows_vi: "vẫn checkpoint(seq=N)", crash_yields_vi: "Server chưa nhận", recovery_vi: "Gửi lại cùng `assignment_id + checkpoint_seq` ⇒ idempotent"}
+      - {t: t2, event_vi: "GUARD: kiểm `proposed cursor` chỉ tham chiếu `ingest_sequence <= acked_through_ingest_sequence` đã commit", durable_rows_vi: "chưa ghi gì", crash_yields_vi: "Không có write một phần", recovery_vi: "Đề xuất vượt mốc ACK ⇒ `VALIDATION_ERROR`, KHÔNG ghi; collector phải nộp lô qua `ingest.submit_batch` trước"}
+      - {t: t3, event_vi: "COMMIT: cập nhật MỘT hàng `checkpoint` + `ingest_receipt` tương ứng", durable_rows_vi: "checkpoint(seq=N+1) + receipt", crash_yields_vi: "Rollback toàn bộ hoặc bền toàn bộ", recovery_vi: "Cùng seq + cùng payload trả bản đã ghi; seq lùi bị từ chối"}
+      - {t: t4, event_vi: "ACK", durable_rows_vi: "như t3", crash_yields_vi: "Client không biết; nhưng con trỏ chỉ tiến tới mốc đã ACK nên đọc lại là an toàn", recovery_vi: "Gọi lại cùng seq; dedup ở ingest theo `x_post_id` (AMD-B05)"}
+    invariant_refs: [I02]
+    oracle_vi: >-
+      Sau BẤT KỲ chuỗi `ingest.commit_checkpoint` nào:
+      `checkpoint.acked_through_ingest_sequence <= max(committed ingest_receipt.max_ingest_sequence)`.
+      Negative: gửi một đề xuất trỏ tới `ingest_sequence` chưa có receipt ⇒ `VALIDATION_ERROR` và hash file DB không đổi.
+    forbidden_vi:
+      - "Nộp item qua đường này (chỉ `ingest.submit_batch` mới nhận item)."
+      - "Tiến con trỏ vượt mốc ACK — đây chính là counterexample 2 của I02."
+      - "Ghi một phần trước khi guard chạy."
+    scenario_refs: [SC21]
+
+  - id: FT-CHECKPOINT-CAPTCHA
+    boundary_vi: "CAPTCHA xuất hiện giữa lúc đã tải nhưng chưa ingest"
+    steps:
+      - {t: t0, event_vi: "Batch N đã ACK", durable_rows_vi: "checkpoint(seq=N)", crash_yields_vi: "—", recovery_vi: "—"}
+      - {t: t1, event_vi: "Collector tải batch N+1 xong, CHƯA gửi", durable_rows_vi: "vẫn checkpoint(seq=N)", crash_yields_vi: "Mất batch N+1 trong RAM", recovery_vi: "Đọc lại từ cursor của checkpoint N"}
+      - {t: t2, event_vi: "X trả CAPTCHA", durable_rows_vi: "vẫn checkpoint(seq=N)", crash_yields_vi: "—", recovery_vi: "—"}
+      - {t: t3, event_vi: "`worker.report_stop(challenge_required)` COMMIT", durable_rows_vi: "run.status=needs_user + ĐÚNG MỘT outbox_intent(run_alert)", crash_yields_vi: "Nếu crash trước COMMIT: run vẫn `running`, lease sẽ hết hạn ⇒ T-RUN-14 đưa về `queued`, và lần collect kế tiếp lại gặp CAPTCHA ⇒ tạo alert khi đó", recovery_vi: "Idempotency `assignment_id + stop_report_id` ⇒ báo lại không tạo alert thứ hai"}
+      - {t: t4, event_vi: "Owner xử lý challenge, bấm resume", durable_rows_vi: "run.status=queued, epoch+1", crash_yields_vi: "Nếu crash sau khi ghi queued trước khi trả response: idempotent theo request_id", recovery_vi: "Gọi lại `run.resume` cùng request_id ⇒ không cấp hai lease"}
+    invariant_refs: [I02, I10, I13]
+    forbidden_vi: ["Gọi batch N+1 (đã tải, chưa ingest) là checkpoint bền."]
+    scenario_refs: [SC04]
+
+  - id: FT-ANALYSIS-ACCEPT
+    boundary_vi: "Ranh giới chấp nhận kết quả phân tích (TXN-analysis-accept)"
+    steps:
+      - {t: t0, event_vi: "`analysis.claim_task` cấp lease; ghi `analysis_attempt(started_at)`", durable_rows_vi: "analysis_attempt(outcome chưa xác định)", crash_yields_vi: "Attempt treo; lease hết hạn ⇒ `cancelled_stale_lease`", recovery_vi: "Task về `pending`; attempt cũ giữ làm bằng chứng"}
+      - {t: t1, event_vi: "Adapter gọi provider", durable_rows_vi: "như t0", crash_yields_vi: "KHÔNG BIẾT model đã chạy chưa ⇒ `unknown_attempt`, `cost_uncertain = true`", recovery_vi: "`analysis.report_attempt_unknown`; tự chạy lại tối đa 1 lần (retry-policy)"}
+      - {t: t2, event_vi: "Provider trả output; adapter bóc JSON", durable_rows_vi: "như t0", crash_yields_vi: "Model ĐÃ chạy, đã tốn phí, kết quả mất ⇒ `unknown_attempt`", recovery_vi: "Như t1; KHÔNG tuyên bố chưa tốn phí"}
+      - {t: t3, event_vi: "`analysis.submit_result`: kiểm schema + semantic (PC06)", durable_rows_vi: "như t0", crash_yields_vi: "Chưa commit ⇒ không có hàng `analysis`", recovery_vi: "Retry theo `analysis_attempts_per_item`"}
+      - {t: t4, event_vi: "COMMIT: `analysis(status=valid)` + `analysis_attempt(outcome=accepted)` cùng transaction", durable_rows_vi: "analysis + attempt", crash_yields_vi: "Đã bền; ACK có thể mất", recovery_vi: "Nộp lại cùng `analysis_key + attempt_id` ⇒ idempotent; payload khác ⇒ IDEMPOTENCY_CONFLICT"}
+    invariant_refs: [I04, I14]
+    forbidden_vi: ["Biến một `analysis_attempt` thành kết quả (I16 của PC02).", "Ghi usage = 0 khi unknown (I14)."]
+    scenario_refs: [SC28]
+
+  - id: FT-PUBLISH
+    boundary_vi: "Ranh giới commit publish (CAS)"
+    steps:
+      - {t: t0, event_vi: "`report.build`: chọn item, tính hướng nổi", durable_rows_vi: "report(status=building)", crash_yields_vi: "Bản build treo ở `building`", recovery_vi: "Quá `report_build_stale_after` ⇒ `aborted`; rebuild với build_id MỚI; backfill KHÔNG bị tiêu thụ"}
+      - {t: t1, event_vi: "Đọc predecessor coverage, tag_config_version, embedding generation", durable_rows_vi: "như t0", crash_yields_vi: "Như t0", recovery_vi: "Như t0"}
+      - {t: t2, event_vi: "BEGIN; CAS trên `coverage_window.predecessor_window_id`; kiểm tag/model version", durable_rows_vi: "chưa", crash_yields_vi: "Rollback; không có coverage mới", recovery_vi: "Đọc lại rồi thử lại (`cas_conflict_retries`)"}
+      - {t: t3, event_vi: "Ghi report + report_item + first-announcement + coverage_window + backfill consumption + tag_config_version + outbox_intent; COMMIT", durable_rows_vi: "TẤT CẢ các hàng trên, cùng một transaction", crash_yields_vi: "Rollback toàn bộ hoặc bền toàn bộ — không có trạng thái giữa", recovery_vi: "Publish lại cùng `report_build_id` trả report đã publish"}
+      - {t: t4, event_vi: "Dispatcher đọc outbox và gửi", durable_rows_vi: "như t3", crash_yields_vi: "Digest chưa gửi", recovery_vi: "Outbox còn nguyên; dispatcher thử lại theo `telegram_send_attempts`. Report KHÔNG bị dựng lại"}
+    invariant_refs: [I05, I06, I09]
+    forbidden_vi: ["Gọi mạng bên trong transaction (SRC-PLAN §5.1).", "Tiêu thụ backfill trước COMMIT."]
+    scenario_refs: [SC08, SC19, SC22]
+
+  - id: FT-SEND
+    boundary_vi: "Ranh giới gửi Telegram"
+    steps:
+      - {t: t0, event_vi: "Dispatcher lấy intent; kiểm `storage.health != recovery_required`", durable_rows_vi: "outbox_intent(pending)", crash_yields_vi: "Chưa gửi", recovery_vi: "Thử lại"}
+      - {t: t1, event_vi: "COMMIT `delivery_part` attempt (attempt_seq) — TRƯỚC network call", durable_rows_vi: "delivery_part + attempt", crash_yields_vi: "Biết đã ĐỊNH gửi nhưng chưa gọi", recovery_vi: "Attempt tồn tại mà không có receipt ⇒ trạng thái `unknown` nếu không phân biệt được; xem delivery.yaml"}
+      - {t: t2, event_vi: "Gọi `sendMessage`", durable_rows_vi: "như t1", crash_yields_vi: "KHÔNG BIẾT đã gửi ⇒ `unknown`", recovery_vi: "KHÔNG tự gửi lại; `delivery.decide_unknown` của Operator"}
+      - {t: t3, event_vi: "Nhận message_id", durable_rows_vi: "như t1", crash_yields_vi: "Đã gửi nhưng chưa ghi receipt ⇒ `unknown`", recovery_vi: "Như t2"}
+      - {t: t4, event_vi: "COMMIT receipt", durable_rows_vi: "delivery_part(state=sent, provider_message_id)", crash_yields_vi: "Đã bền", recovery_vi: "Retry sau đó CHỈ trả receipt, không gửi lần hai"}
+    invariant_refs: [I09, I13]
+    forbidden_vi: ["Gọi mạng trước khi commit attempt.", "Gửi lại một part `unknown`.", "Đổi `run` vì kết quả gửi."]
+    scenario_refs: [SC14]
+
+# ---------------------------------------------------------------------------
+# 10. Invariant: owner transition + counterexample (yêu cầu PKT-PC03 §Invariants)
+# ---------------------------------------------------------------------------
+invariants_owned:
+  - id: I02
+    statement_vi: "Receipt ingest chỉ ACK sau commit; checkpoint không đi trước dữ liệu bền."
+    owner_transition: [T-RUN-02, T-RUN-13, T-RUN-19, "CP-01", "FT-INGEST t3/t4"]
+    positive_oracle_vi: "Replay cùng idempotency_key: `COUNT(post)` và `receipt_hash` không đổi (fixture `f-ingest-replay-idempotent.json`)."
+    counterexample_vi: >-
+      PHẢI FAIL: server ghi `checkpoint(seq=N+1)` sau khi nhận batch nhưng TRƯỚC COMMIT của các hàng `post`.
+      Crash tại đó ⇒ checkpoint chỉ tới N+1 trong khi post chỉ tới N ⇒ khi resume, các post của batch N+1 bị bỏ
+      qua vĩnh viễn. Gate fail nếu quan sát được `checkpoint.acked_through_ingest_sequence` >
+      `max(post.ingest_sequence)`.
+  - id: I09
+    statement_vi: "Telegram thất bại không làm report biến mất hoặc run đổi sang thất bại thu thập."
+    owner_transition: [T-RUN-06, T-RUN-07, T-RUN-17c, "forbidden_transitions hàng cuối", "FT-SEND"]
+    positive_oracle_vi: "Ép Telegram `TELEGRAM_PERMANENT_FAILURE`: `run.outcome` giữ `complete`, `report.content_hash` không đổi, app mở được report."
+    counterexample_vi: >-
+      PHẢI FAIL: một hàng transition đưa `run.status` sang `failed` khi `delivery.state = failed`. Khi đó
+      REQ-AC15 không phân biệt được "đợt thất bại vì nguồn" với "gửi Telegram lỗi", và người dùng đọc thành
+      "không có nghiên cứu mới".
+  - id: I10
+    statement_vi: "CAPTCHA không tự retry/resume; worker stale/cancelled không commit kết quả mới."
+    owner_transition: [T-RUN-09, T-RUN-10, T-RUN-11, T-RUN-14, T-RUN-17b, "LM-04", "LM-07"]
+    positive_oracle_vi: "Sau `needs_user`: request thu thập mới = 0; sau cancel/hết hạn: lời gọi của worker cũ trả `STALE_LEASE` và số hàng không đổi."
+    counterexample_vi: >-
+      PHẢI FAIL: `run-now` từ Telegram đưa run từ `needs_user` sang `queued` rồi worker claim và collect tiếp
+      trong khi challenge vẫn còn. Hoặc: worker giữ lease epoch cũ gọi `analysis.submit_result` và server ghi
+      hàng `analysis` thứ hai cho cùng key.
+  - id: I13
+    statement_vi: "(phần state) Incomplete, empty, failed và unknown được hiển thị riêng; không gọi thiếu dữ liệu là không có nghiên cứu."
+    owner_transition: [T-RUN-07, T-RUN-08, T-RUN-16, T-RUN-18, T-RUN-19, "legacy_enum_mapping.ui_three_states_vi"]
+    positive_oracle_vi: >-
+      Ba run của REQ-AC15 cho ba bộ ba `(status, outcome, stop_reason)` PHÂN BIỆT: `(completed, empty, null)`,
+      `(completed, partial|complete, limit_reached)`, `(failed, failed, *)`. Thêm `unknown` của delivery là chiều
+      thứ tư, độc lập.
+    counterexample_vi: >-
+      PHẢI FAIL: read model gộp `outcome = empty` và `status = failed` vào một nhãn "không có nội dung", hoặc
+      hiển thị `delivery.state = unknown` thành `sent`/`failed` (SRC-SPEC §8.3, REQ-S8.3-01..03).
+  - id: I15
+    statement_vi: "(phần dispatch lock) Restore không tự chạy lại job side effect."
+    owner_transition: [T-RUN-01, "LM-08"]
+    positive_oracle_vi: >-
+      Sau `backup.restore_snapshot`: `worker.claim_assignment` trả `RESTORE_UNVERIFIED`; không lease nào được
+      cấp; số outbound send = 0 cho tới `backup.reconcile_after_restore`.
+    counterexample_vi: >-
+      PHẢI FAIL: sau restore, sweep lease thấy các lease trong snapshot đã hết hạn nên tự đưa run về `queued`,
+      worker claim và chạy lại một đợt collect + publish — sinh coverage window trùng và outbox mới. Guard bắt
+      buộc là `storage.health != recovery_required` ở T-RUN-01.
+
+# ---------------------------------------------------------------------------
+# 11. Scenario do PC03 định nghĩa thêm (SC33+; SC01–SC28 đã có ở SRC-PLAN §13)
+# ---------------------------------------------------------------------------
+scenario_definitions:
+  - {id: SC33, title_vi: "Run-now trong khi đang có run active", input_vi: "Một run `running`; bấm 'chạy ngay' 5 lần trong 10 s với request_id khác nhau", expected_state_vi: "Đúng một run non-terminal; mỗi response trả cùng run_id", durable_rows_vi: "Không hàng `run` mới", forbidden_effects_vi: "Tạo run thứ hai; resume một run needs_user", oracle_vi: "COUNT(run WHERE status NOT IN terminal) = 1"}
+  - {id: SC34, title_vi: "Ranh giới DST và occurrence lịch", input_vi: "Fake-clock ở một timezone có DST; lịch đặt vào giờ bị nhảy (DST-01) và giờ lặp (DST-02)", expected_state_vi: "DST-01 sinh đúng 1 occurrence chạy tại instant kết thúc khoảng nhảy; DST-02 sinh đúng 1 occurrence tại lần xuất hiện đầu", durable_rows_vi: "Một hàng run cho mỗi occurrence", forbidden_effects_vi: "Bỏ occurrence; sinh hai run cho giờ lặp", oracle_vi: "COUNT(run) theo bảng đã chốt; schedule_occurrence_id duy nhất"}
+  - {id: SC35, title_vi: "Cancel từ mỗi trạng thái non-terminal", input_vi: "Năm run ở queued / running / waiting_retry / needs_user / blocked; gọi run.cancel cho từng cái", expected_state_vi: "Cả năm về (cancelled, cancelled); lease bị thu hồi; dữ liệu commit giữ nguyên", durable_rows_vi: "run.status/outcome; assignment_lease.state=revoked", forbidden_effects_vi: "Xóa post/analysis; thu hồi một delivery đã sent", oracle_vi: "COUNT(post) trước/sau bằng nhau; publish bị từ chối"}
+  - {id: SC36, title_vi: "Storage write_blocked giữa run rồi hồi phục", input_vi: "Disk-full injection trong phase collecting; dọn ổ sau 5 phút", expected_state_vi: "Không ACK; readiness đỏ; liveness up; sau 3 probe thành công, run tiếp từ checkpoint cũ", durable_rows_vi: "Không hàng mới trong lúc write_blocked", forbidden_effects_vi: "Tuyên bố đã persist lỗi; cấp assignment mới", oracle_vi: "hash file DB không đổi trong cửa sổ; acked_through_ingest_sequence không đổi"}

@@ -1,0 +1,164 @@
+{
+  "fixture_id": "FX-TG-B",
+  "title": "Telegram đã nhận nhưng phản hồi mất → unknown, người dùng quyết định",
+  "purpose": "TELEGRAM_SEND_UNCERTAIN: timeout là KHÔNG BIẾT KẾT QUẢ, không phải rollback (SRC-PLAN §5.1). Hệ thống không tự chọn.",
+  "scenario_refs": [
+    "SC14"
+  ],
+  "invariant_refs": [
+    "I09",
+    "I13"
+  ],
+  "decision_refs": [
+    "B03",
+    "AMD-B03",
+    "ADR-0003"
+  ],
+  "requirement_refs": [
+    "REQ-AC14"
+  ],
+  "source_refs": [
+    "SRC-PLAN §3.1",
+    "SRC-PLAN §10 TELEGRAM_SEND_UNCERTAIN",
+    "contracts/state/delivery.yaml T-DL-04, T-DL-06"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "delivery": [
+        {
+          "id": "01JDE11V100000000000000000",
+          "report_id": "01JREP0RT10000000000000000",
+          "state": "sending",
+          "telegram_link_generation": 3
+        }
+      ],
+      "delivery_part": [
+        {
+          "id": "01JDPART000000000000000000",
+          "delivery_id": "01JDE11V100000000000000000",
+          "part_index": 0,
+          "state": "sending"
+        }
+      ],
+      "delivery_attempt": [
+        {
+          "delivery_part_id": "01JDPART000000000000000000",
+          "attempt_number": 1,
+          "started_at": "2026-09-06T20:10:00.000Z",
+          "outcome": null,
+          "_note": "Hàng attempt đã COMMIT trước network call — đây là thứ cho phép phân biệt 'có thể đã gửi' với 'chưa gửi'."
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T20:10:01.000Z",
+      "event_type": "telegram_received_request",
+      "description": "Telegram NHẬN được request và đã tạo tin (quan sát ngoài hệ thống, chỉ để mô tả fixture)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T20:10:31.000Z",
+      "event_type": "response_lost",
+      "description": "Phản hồi mất trên đường về. Hệ thống KHÔNG có cách nào biết."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T20:10:31.500Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.mark_unknown",
+      "transition": "T-DL-04"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T20:30:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "delivery.get_status",
+      "description": "Người dùng mở Run detail và thấy nhãn 'Chưa xác định — có thể đã gửi'."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-06T20:31:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "delivery.decide_unknown",
+      "transition": "T-DL-06",
+      "decision": "mark_not_delivered",
+      "description": "Người dùng chọn coi như chưa tới. Có thể chọn khác — fixture khóa cơ chế, không khóa lựa chọn."
+    }
+  ],
+  "expected": {
+    "after_event_3": {
+      "rows": {
+        "delivery_part": [
+          {
+            "id": "01JDPART000000000000000000",
+            "state": "unknown",
+            "provider_message_id": null
+          }
+        ],
+        "delivery": [
+          {
+            "id": "01JDE11V100000000000000000",
+            "state": "unknown"
+          }
+        ]
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 1,
+        "telegram.answerCallbackQuery": 0
+      },
+      "counts": {
+        "automatic_retry_from_unknown": 0,
+        "elapsed_before_auto_action_seconds": "∞ (không có timeout tự chuyển)"
+      }
+    },
+    "after_event_5": {
+      "rows": {
+        "delivery_part": [
+          {
+            "id": "01JDPART000000000000000000",
+            "state": "failed"
+          }
+        ],
+        "delivery": [
+          {
+            "id": "01JDE11V100000000000000000",
+            "state": "failed"
+          }
+        ]
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 1,
+        "telegram.answerCallbackQuery": 0
+      },
+      "note": "mark_not_delivered KHÔNG gửi thêm. Nếu chọn resend_accepting_duplicate_risk thì sendMessage = 2 và người dùng ĐÃ chấp nhận nguy cơ trùng."
+    },
+    "decision_options": [
+      "resend_accepting_duplicate_risk",
+      "mark_not_delivered",
+      "abandon"
+    ],
+    "ui_requirement_vi": "Trước khi xác nhận resend, UI PHẢI nói rõ nguy cơ tin trùng (screens.yaml ACT-decide-unknown-delivery)."
+  },
+  "forbidden_effects": [
+    "Tự động chọn một trong ba lựa chọn.",
+    "Timeout tự chuyển unknown sang failed hay sent.",
+    "Gửi lại mà không có quyết định tường minh của người dùng.",
+    "Ghi provider_message_id khi không nhận được."
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "fixture_id": "FX-AI-H",
+  "title": "Provider không dùng được, Owner CHƯA cấu hình fallback → retry_wait rồi failed; usage unknown",
+  "purpose": "Khóa errors.yaml AI_PROVIDER_UNAVAILABLE + providers.yaml §6: fallback mặc định TẮT và không bao giờ tự bật. Ngân sách provider_unavailable_waits RIÊNG, không đốt quyền thử lại của D43.",
+  "scenario_refs": [
+    "SC16"
+  ],
+  "invariant_refs": [
+    "I14"
+  ],
+  "decision_refs": [
+    "B13",
+    "ADR-0010"
+  ],
+  "requirement_refs": [
+    "REQ-S9.3-04",
+    "REQ-D44",
+    "REQ-AC16"
+  ],
+  "source_refs": [
+    "SRC-SPEC §9.3",
+    "SRC-PLAN §10 AI_PROVIDER_UNAVAILABLE",
+    "contracts/retry-policy.yaml"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/state/analysis.yaml (transition) + contracts/data/entities.yaml (rows)",
+  "expected_validation": "not_applicable",
+  "expected_validation_note_vi": "Fixture hành vi: không có payload analysis-result nào được sinh ra để validate.",
+  "budgets_cited": {
+    "provider_unavailable_waits": 3,
+    "analysis_attempts_per_item": 2,
+    "source": "contracts/retry-policy.yaml",
+    "note_vi": "Trích dẫn, KHÔNG định nghĩa lại."
+  },
+  "given": {
+    "task": {
+      "task_id": "summary",
+      "analysis_generation_id": "01JAGENA100000000000000000"
+    },
+    "provider_config": {
+      "task_type": "summary",
+      "auth_family": "cli_acp",
+      "provider_name": "example-vendor-cli",
+      "model_name": "m-1",
+      "enabled": true,
+      "max_concurrency": 1
+    },
+    "fallback_allowlist": [],
+    "note_vi": "Allowlist RỖNG: Owner chưa cấu hình provider thứ hai."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "ai.run_inference_task",
+      "performed_by": "MOD-ai-adapter",
+      "description": "CLI không khởi động được (binary thiếu) → AI_PROVIDER_UNAVAILABLE. Wait 1/3."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T18:02:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "ai.run_inference_task",
+      "performed_by": "MOD-ai-adapter",
+      "description": "Wait 2/3."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T18:06:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "ai.run_inference_task",
+      "performed_by": "MOD-ai-adapter",
+      "description": "Wait 3/3 → hết provider_unavailable_waits → item failed (T-AN-07)."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "analysis_attempt": [
+        {
+          "id": "01JATTA1000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "analysis_generation_id": "01JAGENA100000000000000000",
+          "attempt_number": 1,
+          "outcome": "provider_unavailable",
+          "error_code": "AI_PROVIDER_UNAVAILABLE",
+          "started_at": "2026-09-06T18:00:00.000Z",
+          "ended_at": "2026-09-06T18:00:05.000Z",
+          "worker_lease_id": "01JASGNA100000000000000000",
+          "cost_uncertain": false
+        },
+        {
+          "id": "01JATTA2000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "analysis_generation_id": "01JAGENA100000000000000000",
+          "attempt_number": 2,
+          "outcome": "provider_unavailable",
+          "error_code": "AI_PROVIDER_UNAVAILABLE",
+          "started_at": "2026-09-06T18:02:00.000Z",
+          "ended_at": "2026-09-06T18:02:05.000Z",
+          "worker_lease_id": "01JASGNA100000000000000000",
+          "cost_uncertain": false
+        },
+        {
+          "id": "01JATTA3000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "analysis_generation_id": "01JAGENA100000000000000000",
+          "attempt_number": 3,
+          "outcome": "provider_unavailable",
+          "error_code": "AI_PROVIDER_UNAVAILABLE",
+          "started_at": "2026-09-06T18:06:00.000Z",
+          "ended_at": "2026-09-06T18:06:05.000Z",
+          "worker_lease_id": "01JASGNA100000000000000000",
+          "cost_uncertain": false
+        }
+      ]
+    },
+    "counts": {
+      "analysis[status='valid']": 0,
+      "analysis_attempt": 3,
+      "outbound_calls_to_second_provider": 0,
+      "analysis_attempts_per_item consumed": 0
+    },
+    "row_oracles": [
+      "COUNT(outbound call tới provider thứ hai) = 0 — fallback KHÔNG tự bật (errors.yaml forbidden_vi).",
+      "Ba attempt tiêu thụ provider_unavailable_waits (3), KHÔNG tiêu thụ analysis_attempts_per_item (2): chưa có inference nào chạy nên không được đốt quyền thử lại của D43.",
+      "usage của item ghi unknown (NULL), KHÔNG ghi 0 (I14).",
+      "Run KHÔNG chuyển 'failed' vì lỗi AI: item vào pending_item_ledger và report mang quality='partial' (B17)."
+    ]
+  },
+  "forbidden_effects": [
+    "Tự bật provider thứ hai khi allowlist rỗng (REQ-S9.3-04).",
+    "Ghi usage_tokens_in/out = 0 thay cho unknown (I14).",
+    "Trộn provider_unavailable_waits vào analysis_attempts_per_item.",
+    "Chuyển run sang failed vì lỗi AI trong khi dữ liệu thu thập vẫn còn (I09 tương tự)."
+  ]
+}

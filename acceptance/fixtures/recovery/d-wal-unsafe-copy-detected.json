@@ -1,0 +1,100 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-d",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D58",
+      "REQ-S7.3-04"
+    ],
+    "decision_refs": [
+      "B11",
+      "AMD-B11",
+      "ADR-0005"
+    ],
+    "invariant_refs": [
+      "I15"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "d",
+  "title_vi": "Bản copy khi DB đang ghi (WAL-unsafe) bị phát hiện là backup không hợp lệ",
+  "scenario_refs": [
+    "SC43"
+  ],
+  "invariant_refs": [
+    "I15"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "how_made_vi": "Artifact được tạo bằng `cp` trên file .db trong lúc DB đang ghi, KHÔNG copy file -wal.",
+    "manifest_counts": {
+      "saved_item": 40,
+      "report": 12,
+      "first_announced_ledger": 31,
+      "outbox_intent.pending": 1
+    },
+    "artifact_actual_counts": {
+      "saved_item": 37,
+      "report": 11,
+      "first_announced_ledger": 29,
+      "outbox_intent.pending": 1
+    },
+    "note_vi": "PRAGMA integrity_check trên artifact trả 'ok' — file không hỏng cấu trúc, chỉ thiếu các transaction còn nằm trong WAL."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.verify_snapshot",
+      "edge_assertion": "allowed",
+      "input": {
+        "backup_snapshot_id": "BS-02"
+      }
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "RESTORE_UNVERIFIED",
+      "integrity_check_outcome": "mismatch"
+    },
+    "checks": {
+      "artifact_sha256_matches": true,
+      "pragma_integrity_check": "ok",
+      "counts_match": false
+    },
+    "backup_snapshot_state": "invalid",
+    "detected_by_vi": "Điều kiện (3) của oracle manifest ở backup-restore.md §3: counts truy vấn từ artifact phải bằng counts trong manifest. Điều kiện (1) và (2) một mình KHÔNG phát hiện được lỗi này."
+  },
+  "forbidden_effects": [
+    "Dùng snapshot này cho backup.restore_snapshot",
+    "Kết luận 'backup hợp lệ' chỉ vì sha256 khớp và integrity_check ok",
+    "Ghi state='verified' cho snapshot này"
+  ],
+  "oracle_vi": "backup.verify_snapshot trả RESTORE_UNVERIFIED; backup_snapshot.state == 'invalid'; ít nhất một khóa counts lệch giữa manifest và artifact."
+}

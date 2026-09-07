@@ -1,0 +1,78 @@
+{
+  "fixture_id": "FX-ID-WIRE-NEG-4",
+  "title": "Negative: trường lạ ở cấp gốc",
+  "purpose": "additionalProperties=false ở mọi object definition (SRC-PLAN §10): consumer không được nhận trường không có trong hợp đồng, vì đó là đường để dữ liệu ngoài hợp đồng đi vào hệ thống.",
+  "scenario_refs": [
+    "SC31"
+  ],
+  "invariant_refs": [
+    "I02"
+  ],
+  "decision_refs": [
+    "B05"
+  ],
+  "requirement_refs": [
+    "REQ-P0-12"
+  ],
+  "source_refs": [
+    "SRC-PLAN §5.1",
+    "contracts/schemas/ingest-batch.schema.json"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/ingest-batch.schema.json",
+  "expected_validation": "reject",
+  "expected_violation": {
+    "json_pointer": "/collector_notes",
+    "reason": "additionalProperties: false"
+  },
+  "batch": {
+    "request_id": "01JREQP1000000000000000000",
+    "schema_version": "0.1.0",
+    "idempotency_key": "ingest-2026-09-06-run-p-batch-0001",
+    "payload_hash": "sha256:3d9ffec7158a7f55d483ed4c30cab51778d003fdaf5085d572a9f435422feae6",
+    "job_id": "01JJ0BP1000000000000000000",
+    "lease_id": "01J1EASEP10000000000000000",
+    "lease_epoch": 1,
+    "items": [
+      {
+        "x_post_id": "1900000000000000401",
+        "author": {
+          "handle": "alice",
+          "x_user_id": "4001"
+        },
+        "url": "https://x.com/alice/status/1900000000000000401",
+        "text": "Paper: https://arxiv.org/abs/2507.07777",
+        "collected_at": "2026-09-06T08:00:00.000Z",
+        "media_refs": [],
+        "referenced_links": [
+          {
+            "url": "https://arxiv.org/abs/2507.07777",
+            "link_kind_hint": "arxiv_abs"
+          }
+        ],
+        "published_at": "2026-09-06T07:55:00.000Z"
+      }
+    ],
+    "client_checkpoint_proposal": {
+      "phase": "collecting",
+      "cursor_token": "cursor-page-2",
+      "cursor_state": "valid",
+      "items_collected_in_run": 1,
+      "stop_hint": "none"
+    },
+    "collector_notes": "tùy tiện thêm trường"
+  },
+  "forbidden_effects": [
+    "Chấp nhận batch không hợp lệ rồi 'sửa' nó ở tầng domain.",
+    "Ghi bất kỳ hàng nào khi validation thất bại."
+  ]
+}

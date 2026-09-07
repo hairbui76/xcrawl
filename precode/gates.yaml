@@ -1,0 +1,580 @@
+contract_id: CT-precode-gates
+version: 0.1.0
+status: draft
+owner_role: verification owner (PC09)
+source_refs:
+  - "SRC-PLAN §12 (bảng cổng G0..G7, SP1)"
+  - "SRC-PLAN §11 (điều kiện 'Đạt khi' của từng gói PC00..PC10)"
+  - "SRC-PLAN §14.2 (E0..E4)"
+  - "SRC-PLAN §16 (quản lý thay đổi và bằng chứng hết hiệu lực)"
+  - "SRC-PLAN §17 (Definition of Ready của toàn bộ Pre-code)"
+requirement_refs:
+  - "REQ-S13-01"
+  - "REQ-S13-02"
+  - "REQ-S13-03"
+  - "REQ-S13-04"
+  - "REQ-S13-05"
+  - "REQ-S13-06"
+  - "REQ-S13-07"
+  - "REQ-S13-08"
+  - "REQ-S13-09"
+  - "REQ-OQ01"
+  - "REQ-OQ02"
+  - "REQ-A1"
+  - "REQ-A2"
+  - "REQ-A3"
+  - "REQ-A4"
+  - "REQ-A5"
+  - "REQ-A6"
+  - "REQ-A7"
+  - "REQ-S1.4-01"
+  - "REQ-S1.4-02"
+  - "REQ-S1.4-04"
+  - "REQ-S1.4-05"
+decision_refs:
+  - "B01"
+  - "B02"
+  - "B03"
+  - "B04"
+  - "B05"
+  - "B06"
+  - "B07"
+  - "B08"
+  - "B09"
+  - "B10"
+  - "B11"
+  - "B12"
+  - "B13"
+  - "B14"
+  - "B15"
+  - "B16"
+  - "B17"
+  - "ADR-0006"
+  - "ADR-0010"
+invariant_refs:
+  - "I01"
+  - "I02"
+  - "I03"
+  - "I04"
+  - "I05"
+  - "I06"
+  - "I07"
+  - "I08"
+  - "I09"
+  - "I10"
+  - "I11"
+  - "I12"
+  - "I13"
+  - "I14"
+  - "I15"
+producers:
+  - "MOD-none"
+consumers:
+  - "MOD-none"
+dependencies:
+  - "acceptance/scenarios.yaml"
+  - "acceptance/traceability.csv"
+  - "evidence/index.json"
+  - "evidence/manifest.schema.json"
+  - "evidence/tools/e0_check.py"
+  - "precode/review.md"
+  - "precode/decision-register.md"
+scope: >
+  Định nghĩa chín cổng chuyển giai đoạn G0–G7 và SP1: điều kiện vào, điều kiện ra (máy kiểm
+  được ở đâu có thể, trỏ tới đúng check của `evidence/tools/e0_check.py` và đúng nhóm scenario),
+  trạng thái hiện tại kèm evidence ref, và quy tắc làm bằng chứng hết hiệu lực. Một cổng KHÔNG
+  tự mở vì một gói tuyên bố xong; nó mở khi điều kiện ra của chính nó đo được.
+verification: >
+  Mỗi `exit_conditions[].machine_check` trỏ tới một `check_id` thật của `e0_check.py` hoặc một
+  nhóm scenario của `acceptance/scenarios.yaml`. Trạng thái ở `current_status` được ghim vào một
+  `evidence_ref` trong `evidence/index.json`; không có evidence ref thì trạng thái phải là
+  `NOT_MET`.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+status_vocabulary:
+  MET_PROVISIONAL: >
+    Điều kiện ra đo được đã đạt trên baseline hiện tại, NHƯNG kết luận dựa một phần vào các
+    quyết định còn `PROVISIONAL` chờ Owner phê chuẩn. Không phải `MET`.
+  PARTIALLY_MET: "Một số điều kiện ra đạt, một số chưa; danh sách chưa đạt được liệt kê."
+  NOT_MET: "Chưa đạt, hoặc không có bằng chứng nào để đo."
+  NOT_APPLICABLE_YET: "Cổng thuộc giai đoạn sau; chưa có gì để đo ở giai đoạn Pre-code."
+
+reading_note_vi: >
+  Không cổng nào trong file này được ghi `MET`. Lý do rõ ràng: B01–B17 vẫn `OPEN` trong
+  `agent_profile/registry.json` và mọi phương án giải chúng đều mang nhãn `PROVISIONAL` chờ Owner
+  (baseline §1, §5). `MET_PROVISIONAL` là mức cao nhất mà một Worker được ghi ở phiên này, và nó
+  có nghĩa hẹp: "đo được, đã đạt, nhưng đứng trên nền chưa phê chuẩn".
+
+gates:
+
+  - id: G0
+    name_vi: "Baseline — nguồn, registry và sổ blocker"
+    plan_ref: "SRC-PLAN §12 hàng G0"
+    owner_package: PC00
+    entry_conditions:
+      - "Có bản nguồn spec v0.2 và plan v0.1 với hash đã pin (baseline §2)."
+    exit_conditions:
+      - id: G0-X1
+        statement_vi: "Bản sao nguồn bất biến tồn tại và byte-identical với nguồn đã pin."
+        machine_check: "sha256sum precode/source/* == baseline §2"
+        met: true
+      - id: G0-X2
+        statement_vi: "Registry nguyên tử tồn tại; mọi requirement có nguồn; mọi anchor phân giải được."
+        machine_check: "e0_check E0-06-requirement-refs; e0_check E0-07-id-refs"
+        met: true
+      - id: G0-X3
+        statement_vi: "B01–B17 mỗi cái xuất hiện đúng một lần, đều `PROVISIONAL`, đều có phương án và cổng bị chặn."
+        machine_check: "EV-PC00-04 (PC00 self-validation); xác minh độc lập EV-A1R1-07/08"
+        met: true
+      - id: G0-X4
+        statement_vi: "XN/UQ không bị đổi ngầm: status của mỗi dòng D khớp cột TT của SRC-SPEC."
+        machine_check: "EV-A1R1-03 (0 status-fidelity deviations, xác minh độc lập)"
+        met: true
+      - id: G0-X5
+        statement_vi: "Hai quyết định PC00 tự chọn ngoài baseline §5 được theo dõi tới khi Owner trả lời."
+        machine_check: "precode/review.md §7 liệt kê F-PC00-01 và F-PC00-02 là mục còn mở của G0"
+        met: true
+    current_status: MET_PROVISIONAL
+    evidence_refs: ["EV-PC09-01", "EV-PC09-04"]
+    blocked_by_open_items:
+      - "F-PC00-01 (hủy liên kết là hành động trong app, không phải lệnh Telegram thứ tư) — chờ Owner."
+      - "F-PC00-02 (hoãn export Saved sang P1) — chờ Owner, gắn REQ-OQ10."
+      - "PROV-PC00-01 — phạm vi loại trừ của `data.purge_all`, `OWNER_DECISION_REQUIRED`."
+    allows_next_vi: "Soạn topology và từng hợp đồng. KHÔNG cho phép product coding."
+
+  - id: G1
+    name_vi: "Boundaries — ownership, capability và registry cạnh"
+    plan_ref: "SRC-PLAN §12 hàng G1"
+    owner_package: PC01
+    entry_conditions:
+      - "G0 ở `MET_PROVISIONAL` trở lên."
+    exit_conditions:
+      - id: G1-X1
+        statement_vi: "Mọi operation được trích dẫn ở bất kỳ đâu đều tồn tại trong ports.yaml."
+        machine_check: "e0_check E0-04-operation-refs"
+        met: true
+      - id: G1-X2
+        statement_vi: "`allowed_edges` bằng đúng tích caller × owner suy ra từ ports.yaml, cả hai chiều."
+        machine_check: "EV-PC01-09/EV-PC01-10; xác minh độc lập EV-A1R2-05 (99 == 99)"
+        met: true
+      - id: G1-X3
+        statement_vi: "Mỗi mutation có đúng MỘT owner ở mức operation VÀ ở mức bảng."
+        machine_check: "EV-A1R2-03 (entity↔owner set-diff 0 cả hai chiều, 59 entity/62 token)"
+        met: true
+      - id: G1-X4
+        statement_vi: "Mỗi cạnh bị cấm có scenario từ chối."
+        machine_check: "e0_check E0-10a-denied-edge-scenario (SC49)"
+        met: true
+      - id: G1-X5
+        statement_vi: "Mỗi cạnh bị cấm có một denied case với mã lỗi đã pin."
+        machine_check: "e0_check E0-10b-denied-edge-oracle"
+        met: true
+        note_vi: >
+          Đóng ở đợt FIX5. Ruling R5-01 chốt bảng ranh giới bốn mã (`UNAUTHORIZED` cho HTTP sai
+          principal class · `FORBIDDEN_EDGE` cho lời gọi/import trong tiến trình qua cạnh không có
+          trong `allowed_edges` · `CAPABILITY_DENIED` cho thiếu capability tiến trình/mạng/file/tool
+          · `CSRF_REJECTED` cho owner mutation thiếu CSRF), và cả 36/36 cạnh nay có
+          `denied_cases[]` với `expected_error_code` và `scenario_refs: [SC49]`.
+    current_status: MET_PROVISIONAL
+    evidence_refs: ["EV-PC09-01"]
+    blocked_by_open_items:
+      - "B12 và B13 vẫn `PROVISIONAL`: topology và chính sách secret chưa được Owner phê chuẩn."
+      - "PROV-PC01-01/-02/-04/-05/-06 chờ Owner hoặc chờ ruling."
+      - "Chưa có xác minh độc lập trên epoch chứa các bản sửa FIX5 (A2 chưa chạy)."
+    allows_next_vi: >
+      Soạn schema và state độc lập framework — đã và đang xảy ra. Mọi điều kiện ra đo được đã đạt;
+      `MET_PROVISIONAL` chứ không phải `MET` vì nền vẫn là các quyết định chờ Owner.
+
+  - id: G2
+    name_vi: "Data/workflow — identity, transaction, state, checkpoint có oracle"
+    plan_ref: "SRC-PLAN §12 hàng G2"
+    owner_package: "PC02 + PC03"
+    entry_conditions:
+      - "G1 ở `PARTIALLY_MET` trở lên và các cạnh liên quan tới ingest/analysis đã đóng."
+    exit_conditions:
+      - id: G2-X1
+        statement_vi: "Mọi schema JSON hợp lệ theo metaschema 2020-12; fixture dương/âm rơi đúng chỗ."
+        machine_check: "e0_check E0-02-metaschema; e0_check E0-03-fixture-schema"
+        met: true
+      - id: G2-X2
+        statement_vi: "I02, I03, I04, I08 mỗi cái có oracle theo số hàng/hash/tham chiếu và ít nhất một counterexample."
+        machine_check: "e0_check E0-11b-invariant-polarity; contracts/data/invariants.md §I02/I03/I04/I08"
+        met: true
+      - id: G2-X3
+        statement_vi: "Máy trạng thái đóng: enum kín, mọi trạng thái reachable, terminal không phát sinh transition ngoài ngoại lệ đã khai."
+        machine_check: "e0_check E0-09-state-lint"
+        met: true
+        note_vi: >
+          Đóng ở đợt FIX5 theo ruling R5-04: TSR-A01 nay viết "`valid` là terminal **trong phạm vi
+          một generation**; hai transition duy nhất rời nó là T-AN-12/T-AN-13 (phân tích lại /
+          phiên bản paper mới → generation mới, bản cũ được giữ)". Một hành vi, một mô tả.
+      - id: G2-X4
+        statement_vi: "Mọi mã lỗi của SRC-PLAN §10 map tới một trạng thái đích và có ít nhất một scenario."
+        machine_check: "e0_check E0-05-error-code-refs; e0_check E0-16-scenario-catalogue (28/28 mã có SC)"
+        met: true
+      - id: G2-X5
+        statement_vi: "Mọi timeout/budget có số, đơn vị và một dòng lý do."
+        machine_check: "EV-PC03-05; xác minh độc lập EV-A1R2-10 (41 budget, 0 thiếu)"
+        met: true
+      - id: G2-X6
+        statement_vi: "Checkpoint chỉ trên dữ liệu đã ACK; một mô tả duy nhất cho mọi đường ghi checkpoint."
+        machine_check: "SC21 + SC03; contracts/data/entities.yaml TXN-checkpoint-only; xác minh độc lập EV-A1R2-03"
+        met: true
+    current_status: MET_PROVISIONAL
+    evidence_refs: ["EV-PC09-01"]
+    blocked_by_open_items:
+      - "B02, B05, B06, B07, B08 vẫn `PROVISIONAL`."
+      - "PROV-PC03-04 (tự chạy lại một lần từ `unknown_attempt`) chờ Owner phê chuẩn."
+      - "Chưa kiểm chứng trên SQLite thật: partial UNIQUE index và STORED generated column là giả định."
+    allows_next_vi: "Soạn report/collector/AI/UI trên interface ổn định — đã xảy ra."
+
+  - id: G3
+    name_vi: "Domain contracts — PC04..PC08 đủ semantics, schema, lỗi và fixture"
+    plan_ref: "SRC-PLAN §12 hàng G3"
+    owner_package: "PC04, PC05, PC06, PC07, PC08"
+    entry_conditions:
+      - "G2 ở `PARTIALLY_MET` trở lên."
+    exit_conditions:
+      - id: G3-X1
+        statement_vi: "Mọi file hợp đồng mang đủ 14 trường header của baseline §3 (ngoại lệ được khai báo)."
+        machine_check: "e0_check E0-08-contract-header; e0_check E0-17-declared-deviations"
+        met: true
+      - id: G3-X2
+        statement_vi: "Mọi fixture nêu caller hợp lệ hoặc tự khai là ca cạnh bị cấm."
+        machine_check: "e0_check E0-14-fixture-actor-edge"
+        met: true
+      - id: G3-X3
+        statement_vi: "Mọi cột được fixture khẳng định đều tồn tại trong entities.yaml, hoặc là annotation `_`, hoặc mang `pending_cr`."
+        machine_check: "e0_check E0-15-fixture-field-existence (ruling R4-01)"
+        met: true
+        note_vi: >
+          Sau đợt FIX5, tám trong chín thư mục fixture có cột được đo. Riêng `boundary/` trả
+          `NOT_APPLICABLE_FREEFORM` (0 cột): nó là một bản quét 36 sự kiện cạnh bị cấm, oracle của
+          nó là "không hàng nào đổi" chứ không phải một tập hàng, nên đúng là không có
+          `rows.<entity>[]` để đo. `collection/` và `recovery/` — hai thư mục từng
+          `NOT_APPLICABLE_FREEFORM` ở đợt trước — nay có cột được đo nhờ các fixture mới, nhưng các
+          fixture GỐC của chúng vẫn ở dạng văn xuôi và vẫn không được cửa này chạm tới.
+          **0 cột kiểm KHÔNG có nghĩa là sạch** — nguyên tắc này giữ nguyên.
+      - id: G3-X4
+        statement_vi: "Cửa sổ coverage trong fixture báo cáo là nửa mở và nối liền."
+        machine_check: "e0_check E0-13-coverage-windows"
+        met: true
+      - id: G3-X5
+        statement_vi: "Mọi policy bắt buộc có giá trị cụ thể; không `TBD`."
+        machine_check: "e0_check E0-12-forbidden-strings"
+        met: false
+        gap_vi: >
+          Không có `TBD` nào được khẳng định, NHƯNG bốn giá trị rate-limit của arXiv/OpenAlex vẫn
+          là `PLACEHOLDER_KC` với `null` (REQ-A6 vẫn `KC`), và PC05 tự ghi rằng research connector
+          **không được** coi là `CONTRACT_READY` cho tới khi chúng được điền. Giới hạn định dạng
+          Telegram cũng vẫn `KC` (CR-PC07-04) và chặn `CONTRACT_READY` của `telegram/delivery.md §3.4`.
+      - id: G3-X6
+        statement_vi: "Mỗi màn hình của SRC-SPEC §4 có read model, action map, auth và trạng thái rỗng/lỗi/một phần."
+        machine_check: "EV-A1R3-10 (10 màn hình, 41 tham chiếu operation, 0 unknown)"
+        met: true
+    current_status: PARTIALLY_MET
+    evidence_refs: ["EV-PC09-01"]
+    blocked_by_open_items:
+      - "G3-X5: `research_connector_rate_limit` (REQ-A6 `KC`) và giới hạn định dạng Telegram (CR-PC07-04, `KC`) — đây là hai mục CHẶN CỨNG duy nhất còn lại của G3."
+      - "B01, B03, B04, B09, B10, B11, B14, B16, B17 vẫn `PROVISIONAL`."
+      - "Chưa có xác minh độc lập trên epoch chứa các bản sửa FIX4/FIX5 (A2 chưa chạy)."
+    allows_next_vi: "Tích hợp contract review; soạn task card (PC10)."
+
+  - id: G4
+    name_vi: "Auditable baseline — traceability đầy đủ, static check đạt, B liên quan đóng"
+    plan_ref: "SRC-PLAN §12 hàng G4"
+    owner_package: PC09
+    entry_conditions:
+      - "G3 ở `PARTIALLY_MET` trở lên; PC00–PC08 đã bàn giao."
+    exit_conditions:
+      - id: G4-X1
+        statement_vi: "Không requirement nào mồ côi trong phạm vi P0 với status XN hoặc UQ."
+        machine_check: "e0_check E0-11a-no-orphan"
+        met: true
+      - id: G4-X2
+        statement_vi: "Mỗi invariant có ít nhất một scenario dương và một scenario âm."
+        machine_check: "e0_check E0-11b-invariant-polarity (17/17)"
+        met: true
+      - id: G4-X3
+        statement_vi: "Mỗi AC-01..AC-18 có scenario; mỗi mã lỗi có scenario; mọi fixture_refs phân giải được."
+        machine_check: "e0_check E0-16-scenario-catalogue"
+        met: true
+      - id: G4-X4
+        statement_vi: "E0 đã chạy THẬT và có manifest; mọi thứ chưa chạy ghi NOT_RUN."
+        machine_check: "evidence/index.json validate được với evidence/manifest.schema.json; evidence/runs/E0-*.json tồn tại"
+        met: true
+      - id: G4-X5
+        statement_vi: "Mọi check E0 đạt."
+        machine_check: "e0_check exit code == 0"
+        met: true
+        note_vi: >
+          Đợt FIX9: 22/22 check PASS, 0 vi phạm, exit code 0. `E0-10b` nay coi "case
+          operation: null thiếu `event_type`" là **violation** chứ không phải note (F-A2R2-04),
+          và W2 đã bổ sung `event_type` cho cả sáu case — một quy tắc và cửa kiểm trích nó nay
+          nói cùng một điều về cái gì là bắt buộc. Bộ check đi 19 → 20 → 22 qua ba đợt
+          (`E0-04b` thêm ở FIX6 theo F-A2R1-01, tách thành `E0-04b`/`E0-04c`/`E0-04d` ở FIX7).
+          Mọi FAIL của ba đợt được đóng bằng cách SỬA NỘI DUNG hợp đồng — không lần nào bằng cách
+          nới một check. Ba check prose có self-test âm đã chạy (xem evidence/tools/README.md §5b).
+      - id: G4-X6
+        statement_vi: "B01–B17 được giải hoặc bị chặn có phạm vi rõ; KC có scope và probe gate."
+        machine_check: "precode/review.md §5 (bảng rà soát B01–B17) và §6 (ĐX/KC)"
+        met: false
+        gap_vi: >
+          Cả 17 blocker vẫn `OPEN` trong `agent_profile/registry.json` và mọi phương án giải là
+          `PROVISIONAL` chờ Owner. Đây là điều kiện DUY NHẤT mà không Worker nào có thể tự đóng.
+      - id: G4-X7
+        statement_vi: "Mọi finding của audit độc lập đã được xử lý hoặc có disposition."
+        machine_check: "precode/review.md §4 (bảng finding A1-R1/R2/R3)"
+        met: false
+        gap_vi: >
+          A2 đã chạy `PKT-A2-R1` trên FC-W4 epoch 4 và kết luận **PC09 FAIL** với 11 finding
+          (2 MAJOR, 3 MEDIUM, 4 LOW, 2 INFO). Bản sửa cho cả 11 đã land ở đợt FIX6 nhưng **chưa
+          được ai độc lập kiểm**; `PKT-A2-R2` trên epoch 5 là lượt tiếp theo. Người viết bản sửa
+          KHÔNG được là người xác minh chính bản sửa đó (protocol §8). F-A1R3-01..05 vẫn
+          `FIX_PROPOSED`.
+    current_status: PARTIALLY_MET
+    evidence_refs: ["EV-PC09-01", "EV-PC09-02", "EV-PC09-03", "EV-PC09-04"]
+    note_vi: >
+      Bốn trong bảy điều kiện ra nay đạt nhờ đợt FIX5 (G4-X1..X5). Hai điều kiện còn lại KHÔNG
+      thuộc thẩm quyền của bất kỳ Worker nào: G4-X6 cần Owner phê chuẩn B01–B17, G4-X7 cần một
+      auditor độc lập (A2) chạy trên epoch mới — và người xác minh không được là người viết bản sửa
+      (protocol §8).
+    blocked_by_open_items:
+      - "G4-X6: B01–B17 `OPEN`, chờ Owner phê chuẩn qua `precode/owner-decision-request.md` (24 mục). Đây là điều kiện DUY NHẤT mà không Worker nào gỡ được."
+      - "CR-PC09-09/-10/-11 (FIX7) và CR-PC09-12 (FIX8) đã được các gói sở hữu xử lý; tất cả `FIX_PROPOSED`, chờ A2 xác minh."
+      - "G4-X7: A2 đã chạy và kết luận PC09 FAIL; 11 finding ở `FIX_PROPOSED`, chưa xác minh lại trên epoch 5."
+    allows_next_vi: >
+      KHÔNG cho phép gọi baseline là `CONTRACT_READY` ở bất kỳ phạm vi nào trong lúc G4-X6 chưa
+      đạt. Xem `precode/review.md` §9 cho phát biểu điều kiện: phạm vi nào thành `CONTRACT_READY`
+      khi nào.
+
+  - id: G5
+    name_vi: "Task ready — card pin baseline, stack/path đã chọn"
+    plan_ref: "SRC-PLAN §12 hàng G5"
+    owner_package: PC10
+    entry_conditions:
+      - "G4 đạt trong đúng phạm vi định giao."
+    exit_conditions:
+      - id: G5-X1
+        statement_vi: "Stack đã được Owner chọn và có ADR."
+        machine_check: "REQ-OQ02 có câu trả lời của Owner; ADR-0006 chuyển khỏi PROVISIONAL"
+        met: false
+        gap_vi: "REQ-OQ02 (chọn stack, khuyến nghị A: Python toàn bộ) **CHẶN M1** và chưa có câu trả lời."
+      - id: G5-X2
+        statement_vi: "Mỗi card pin contract version/hash, allowed files, edges, operation và proof obligations."
+        machine_check: "agent-tasks/*.md tồn tại và trích hash của baseline đã freeze"
+        met: false
+        gap_vi: "PC10 đang chạy; chưa đo được ở thời điểm PC09 bàn giao."
+      - id: G5-X3
+        statement_vi: "Mỗi card ghi stop conditions và claim tối đa được phép."
+        machine_check: "agent-tasks/TEMPLATE.md §9, §10"
+        met: false
+    current_status: NOT_MET
+    evidence_refs: []
+    blocked_by_open_items:
+      - "G4 chưa đạt."
+      - "REQ-OQ02 (stack) chưa có câu trả lời của Owner — chặn M1."
+      - "REQ-OQ01 (D09, Chrome profile riêng) chưa có câu trả lời — chặn M0."
+    allows_next_vi: "Bắt đầu coding phạm vi được giao KHI người dùng yêu cầu. Chưa được phép."
+
+  - id: SP1
+    name_vi: "Feasibility probe — thử nghiệm collector thật 5–10 đợt"
+    plan_ref: "SRC-PLAN §12 hàng SP1; SRC-PLAN §11 PC05"
+    owner_package: PC05
+    entry_conditions:
+      - "G2 đạt và PC05 đã bàn giao protocol probe."
+      - "Owner xác nhận D09 (profile Chrome riêng của dự án) — REQ-OQ01."
+      - "Owner chấp nhận ngân sách, điều kiện dừng và tiêu chí go/no-go TRƯỚC khi probe chạy."
+      - "Owner hiểu và chấp nhận rủi ro tài khoản X bị hạn chế (REQ-A7, `KC`, không kiểm chứng được trước)."
+    exit_conditions:
+      - id: SP1-X1
+        statement_vi: "Protocol probe có tiêu chí go/no-go, điều kiện dừng và phạm vi không quan sát được — viết TRƯỚC khi chạy."
+        machine_check: "contracts/ops/collector-probe.md §3 (ngân sách), §4 (điều kiện dừng), §7 (go/no-go)"
+        met: true
+      - id: SP1-X2
+        statement_vi: "5–10 đợt thật đã chạy; số bài lấy được và số lần bị đòi xác minh được ghi lại."
+        machine_check: "evidence/runs/SP1-*.json với result != NOT_RUN"
+        met: false
+        gap_vi: "Chưa đợt nào chạy. REQ-A1 vẫn `KC`."
+      - id: SP1-X3
+        statement_vi: "Không cơ chế nào né CAPTCHA, giả fingerprint, luân chuyển account hay proxy được thêm."
+        machine_check: "SC04 forbidden_effects; REQ-OOS-02; contracts/ops/collector-probe.md"
+        met: true
+        note_vi: "Đạt ở mức hợp đồng: điều cấm đã được viết. Chưa có code nên chưa có gì để vi phạm."
+    current_status: NOT_MET
+    evidence_refs: []
+    blocked_by_open_items:
+      - "REQ-OQ01 (xác nhận D09) — **CHẶN M0**, là câu hỏi mở số 1 của SRC-SPEC §13.1."
+      - "Owner chưa chấp nhận ngân sách/stop/go-no-go."
+      - "REQ-A1 và REQ-A7 đều `KC`."
+    allows_next_vi: >
+      Viết và chạy spike tối thiểu khi được phép; output vẫn chỉ là evidence probe, KHÔNG phải
+      `LIVE_FEASIBILITY_VERIFIED` cho toàn hệ thống. Nếu probe thất bại: báo quyết định blocked
+      cho nguồn X, KHÔNG tự chuyển sang X API trả phí (SRC-PLAN §12).
+
+  - id: G6
+    name_vi: "Integration/live — code và contract đúng baseline, fault test và live proof"
+    plan_ref: "SRC-PLAN §12 hàng G6"
+    owner_package: "giai đoạn triển khai"
+    entry_conditions:
+      - "G5 đạt; code tồn tại."
+    exit_conditions:
+      - id: G6-X1
+        statement_vi: "Mọi scenario có `evidence_level_required` ≤ E2 đã chạy và PASS."
+        machine_check: "evidence/index.json: mọi SC với level ≤ E2 có result PASS"
+        met: false
+      - id: G6-X2
+        statement_vi: "Mọi scenario có `evidence_level_required` = E3 đã có live probe với giới hạn ghi rõ."
+        machine_check: "evidence/index.json: SC14, SC16, SC17, SC43, SC51 có result != NOT_RUN"
+        met: false
+      - id: G6-X3
+        statement_vi: "Một drill restore THẬT đã chạy vào môi trường sạch."
+        machine_check: "SC27 + SC53 có result != NOT_RUN; contracts/ops/backup-restore.md §5.7"
+        met: false
+    current_status: NOT_APPLICABLE_YET
+    evidence_refs: []
+    blocked_by_open_items:
+      - "Chưa có code. Mọi E1–E4 là `NOT_RUN`."
+    allows_next_vi: >
+      Gọi integration/live verified TRONG PHẠM VI đã đo. KHÔNG suy ra product accepted.
+
+  - id: G7
+    name_vi: "Product acceptance — đủ kỳ/tuần theo rubric đã chốt, Owner đánh giá"
+    plan_ref: "SRC-PLAN §12 hàng G7"
+    owner_package: "Owner"
+    entry_conditions:
+      - "G6 đạt; hệ thống đã chạy đủ số kỳ tối thiểu."
+    exit_conditions:
+      - id: G7-X1
+        statement_vi: "Rubric được KHÓA trước khi đo, không sửa sau khi thấy kết quả."
+        machine_check: "precode/review.md §7 (thiết kế đánh giá A2/A3/A4) có `rubric_locked_at` và hash"
+        met: false
+        gap_vi: "Rubric đã được viết ở `precode/review.md` §7 nhưng chưa được Owner khóa."
+      - id: G7-X2
+        statement_vi: "≥ 1 hướng nghiên cứu đáng đọc sâu mỗi tuần, đo trên ≥ 4 tuần liên tiếp."
+        machine_check: "REQ-S1.4-01; evidence A4 với ≥ 4 kỳ"
+        met: false
+      - id: G7-X3
+        statement_vi: "Tỷ lệ nhiễu: số hướng gắn nhãn sai phải bỏ qua ≤ số hướng dùng được."
+        machine_check: "REQ-S1.4-02; cùng tập đánh giá với G7-X2"
+        met: false
+      - id: G7-X4
+        statement_vi: "0 trường hợp trùng TRONG PHẠM VI canonical identity đã biết; `identity_conflict` đếm riêng."
+        machine_check: "REQ-S1.4-03 đọc theo AMD-B15; SC07 + SC23 ở E3"
+        met: false
+      - id: G7-X5
+        statement_vi: "Ngưỡng similarity đã hiệu chỉnh; `threshold_calibration_state != 'uncalibrated'`."
+        machine_check: "REQ-A2 / REQ-OQ08; contracts/reporting/selection.md"
+        met: false
+        gap_vi: >
+          Ngưỡng hiện là `0.8000` với nhãn `PROVISIONAL_BOOTSTRAP` và
+          `threshold_calibration_state = 'uncalibrated'`. Khi còn `uncalibrated`, **cấm** tuyên bố
+          đạt bất kỳ chỉ tiêu chất lượng nào của SRC-SPEC §1.4.
+    current_status: NOT_APPLICABLE_YET
+    evidence_refs: []
+    blocked_by_open_items:
+      - "REQ-A2, REQ-A3, REQ-A4 đều `KC`; A4 cần 3–4 kỳ thật và chưa có kỳ nào."
+      - "Chỉ số 'tiết kiệm thời gian đọc' KHÔNG được đưa vào (REQ-S1.4-05) — đây là một điều kiện âm phải giữ."
+    allows_next_vi: >
+      Gọi product accepted VỚI giới hạn đo đã công bố. Thiếu dữ liệu thì ghi `insufficient_evidence`,
+      KHÔNG chỉnh số để pass (SRC-PLAN §14.2).
+
+# ---------------------------------------------------------------------------------------
+# Quy tắc làm bằng chứng hết hiệu lực (SRC-PLAN §16)
+# ---------------------------------------------------------------------------------------
+invalidation_rules:
+
+  - id: INV-01
+    trigger_vi: "Sửa `contracts/reporting/time-and-tags.md` — mốc freeze tag, ranh giới coverage, backfill."
+    invalidates_vi: "Mọi bằng chứng về report, selection, coverage và Save gắn với kỳ."
+    scenarios_stale: [SC05, SC06, SC08, SC09, SC19, SC22, SC37, SC38, SC50]
+    gates_downgraded: [G3, G4]
+    not_invalidated_vi: "Bằng chứng về ingest, identity và Telegram delivery không bị ảnh hưởng."
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 3"
+
+  - id: INV-02
+    trigger_vi: "Sửa `contracts/data/identity.md` hoặc quy tắc chuẩn hóa DOI/arXiv."
+    invalidates_vi: "Mọi bằng chứng về identity, merge, first-announcement và dedup."
+    scenarios_stale: [SC07, SC09, SC23, SC29, SC30, SC50]
+    gates_downgraded: [G2, G4]
+    not_invalidated_vi: "Bằng chứng về delivery và backup không bị ảnh hưởng."
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 3"
+
+  - id: INV-03
+    trigger_vi: "Sửa `analysis_key` hoặc `prompt_version` / `schema_version` của một task AI."
+    invalidates_vi: >
+      Toàn bộ cache analysis: key mới nghĩa là kho cũ không dùng lại được. Đây là một thay đổi
+      TỐN TIỀN, không chỉ tốn công chạy lại test (ADR-0008).
+    scenarios_stale: [SC06, SC10, SC11, SC16, SC28, SC50]
+    gates_downgraded: [G2, G3, G4]
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 4"
+
+  - id: INV-04
+    trigger_vi: "Đổi provider, model hoặc embedding generation."
+    invalidates_vi: >
+      Bằng chứng CHẤT LƯỢNG (E4) và bằng chứng hành vi schema chuyển STALE cho tới khi kiểm lại.
+      Đổi embedding model buộc tính lại toàn kho (REQ-D48).
+    scenarios_stale: [SC10, SC11, SC16, SC24, SC52, SC50]
+    gates_downgraded: [G3, G4, G7]
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 4"
+
+  - id: INV-05
+    trigger_vi: "Sửa dispatcher, retry policy hoặc vòng đời liên kết Telegram."
+    invalidates_vi: "Bằng chứng về unknown delivery, replay, unlink và lệnh không được phép."
+    scenarios_stale: [SC14, SC18, SC25, SC45, SC46, SC47]
+    gates_downgraded: [G3, G4]
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 5"
+
+  - id: INV-06
+    trigger_vi: "Sửa schema, enum, ngữ nghĩa hoặc auth scope của bất kỳ operation nào."
+    invalidates_vi: >
+      Bằng chứng của mọi consumer của operation đó. Phải cập nhật version, tương thích consumer
+      VÀ traceability — không chỉ sửa prose một nơi.
+    scenarios_stale: ["mọi scenario có contract_refs trỏ tới file bị sửa"]
+    gates_downgraded: [G1, G2, G3, G4]
+    machine_check: "e0_check E0-04/E0-05/E0-07; so `contract_hashes` trong evidence/index.json"
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 2"
+
+  - id: INV-07
+    trigger_vi: "Owner phê chuẩn hoặc BÁC một trong B01–B17."
+    invalidates_vi: >
+      Phê chuẩn: gỡ nhãn `PROVISIONAL` khỏi phạm vi tương ứng và cho phép nâng trạng thái cổng.
+      BÁC: mọi hợp đồng dựng trên phương án đó chuyển STALE cùng với fixture và scenario của nó —
+      xem cột "nếu Owner bác" của từng blocker trong `precode/decision-register.md` §2.
+    scenarios_stale: ["theo bảng `AMD-B<nn>` → REQ ảnh hưởng trong precode/decision-register.md §3"]
+    gates_downgraded: [G0, G1, G2, G3, G4]
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 6; baseline §5"
+
+  - id: INV-08
+    trigger_vi: "Nguồn (spec hoặc plan) đổi hash."
+    invalidates_vi: >
+      STALE_BASELINE cho MỌI thứ. Spec mới KHÔNG tự thay baseline của task đang chạy; task nhận
+      baseline mới sau impact review, và bản cũ vẫn được giữ để audit.
+    scenarios_stale: ["tất cả"]
+    gates_downgraded: [G0, G1, G2, G3, G4, G5, SP1, G6, G7]
+    machine_check: "sha256sum research-radar-spec.md research-radar-pre-code-plan.md == baseline §2"
+    source_ref: "SRC-PLAN §16 gạch đầu dòng 6; baseline §6 hàng 1"
+
+  - id: INV-09
+    trigger_vi: "Một fixture bị sửa hoặc đổi tên."
+    invalidates_vi: "Mọi bằng chứng E1+ đã dùng fixture đó; hash fixture trong evidence manifest không còn khớp."
+    scenarios_stale: ["mọi scenario có fixture_refs trỏ tới file bị sửa"]
+    gates_downgraded: [G3, G4]
+    machine_check: "so `inputs.fixtures[].sha256` trong evidence/index.json với hash hiện tại"
+    source_ref: "SRC-PLAN §14.1 (hash artifact); §16"
+
+  - id: INV-10
+    trigger_vi: "Đổi timezone của owner (B08) hoặc lịch chạy."
+    invalidates_vi: >
+      Mọi fixture lịch và mọi biên coverage tính theo giờ owner phải dựng lại. `Asia/Ho_Chi_Minh`
+      không có DST nên hai quy tắc DST-01/DST-02 hiện chưa kích hoạt; một múi giờ CÓ DST sẽ kích
+      hoạt chúng.
+    scenarios_stale: [SC01, SC02, SC08, SC34, SC50]
+    gates_downgraded: [G2, G3, G4]
+    source_ref: "AMD-B08; contracts/state/run.yaml §7"
+
+evidence_ledger_note_vi: >
+  Bằng chứng hiện có ở phiên này chỉ có cấp E0 và chỉ là `SELF_VALIDATION` của PC09 cộng ba
+  AUDIT_REPORT độc lập của `auditor-A1` (A1-R1, A1-R2, A1-R3) nằm NGOÀI repo. E1–E4 là `NOT_RUN`
+  ở mọi scenario, do chưa có code, chưa có harness và chưa có bất kỳ dịch vụ ngoài nào được gọi.
+  Không cổng nào được nâng bằng suy diễn từ một cấp thấp hơn.

@@ -1,0 +1,381 @@
+# Research Radar — State machine của report (chỉ status/quality; nội dung là của PC04)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-state-report
+version: 0.3.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §8.2
+  - SRC-PLAN §9.2
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §3.5
+  - SRC-SPEC §8.2
+  - SRC-SPEC §9.1
+  - SRC-SPEC §12 AC-05, AC-08
+requirement_refs: [REQ-AC05, REQ-AC08, REQ-AC09, REQ-AC15, REQ-CTAG, REQ-D23, REQ-D27, REQ-D28, REQ-D29, REQ-D57, REQ-S8.2-09, REQ-S8.3-01, REQ-S10.4-03]
+decision_refs: [B01, B04, B14, B17, AMD-B01, AMD-B04, ADR-0004, CR-PC04-08, CR-PC04-09, "R-03 (A1-R1)", "F-A1R2-01", "FIX3 rulings (2026-09-06T19:05Z)"]
+invariant_refs: [I05, I06, I07, I12, I13]
+producers: [MOD-report-service]
+consumers: [MOD-web-ui, MOD-delivery-service, MOD-telegram-adapter, MOD-job-service]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/data/entities.yaml
+  - contracts/errors.yaml
+  - contracts/retry-policy.yaml
+  - contracts/state/run.yaml
+  - contracts/state/delivery.yaml
+  - "contracts/reporting/time-and-tags.md (PC04, chưa tồn tại tại thời điểm viết)"
+  - "contracts/reporting/selection.md (PC04, chưa tồn tại tại thời điểm viết)"
+  - "contracts/schemas/report.schema.json (PC04, chưa tồn tại tại thời điểm viết)"
+scope: >-
+  File này CHỈ đóng vòng đời `status` và trường `quality` của một report: `building → published`, nhánh
+  `aborted`. Nó khóa publish là một transaction CAS và liệt kê những gì PHẢI được kiểm tại CAS, nhưng NỘI DUNG
+  của từng phép kiểm (coverage predecessor tính thế nào, chọn item ra sao, hướng đang nổi tính bằng gì, backfill
+  tiêu thụ khi nào) thuộc PC04. Mọi chỗ trong file này nói "theo PC04" là ranh giới sở hữu, KHÔNG phải chỗ trống.
+  File này KHÔNG định nghĩa `report.schema.json`, KHÔNG định nghĩa selection và KHÔNG định nghĩa first-announcement.
+verification: "EV-PC03-01/02/03/04 (SELF_VALIDATION): transition lint + reachability + đối chiếu mã lỗi và operation ID."
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Enum và ranh giới sở hữu
+# ---------------------------------------------------------------------------
+enums:
+  status:
+    values: [building, published, aborted]
+    source_refs: [SRC-PLAN §8.2, "contracts/data/entities.yaml ENT-report.status"]
+  abort_reason:
+    values: [empty_period, tag_version_stale, embedding_generation_mismatch, cas_conflict, builder_failure, cancelled]
+    nullable: true
+    check_vi: "NOT NULL KHI VÀ CHỈ KHI `status = 'aborted'` (ruling FIX3, CR-PC04-08/CR-PC04-09; PC02 FIX3 khai cột trên ENT-report)."
+    added_in: "FIX1 (PKT-PC03-FIX1)"
+    rationale_vi: >-
+      `aborted` một mình không phân biệt được sáu tình huống rất khác nhau — đặc biệt `empty_period` (một kỳ
+      RỖNG HỢP LỆ, coverage vẫn tiến) với `builder_failure` (một sự cố). Không có trường này thì T-RP-07 và
+      T-RP-06 để lại cùng một dấu vết trên bảng `report`, và người đọc không biết kỳ đó rỗng hay hỏng.
+  quality:
+    values: [complete, partial]
+    source_refs: [SRC-PLAN §8.2, B17]
+    note_vi: >-
+      `quality` là TRƯỜNG RIÊNG với `status` (SRC-PLAN §8.2). Một report có thể `published` + `partial`. Không
+      bao giờ nhồi chất lượng vào enum trạng thái — đó chính là lỗi `stopped_limit` mà B02 phải gỡ.
+
+initial_state: building
+terminal_states: [published, aborted]
+non_terminal_states: [building]
+
+ownership_boundary:
+  owned_by_pc03_vi:
+    - "Vòng đời `status`: building → published | aborted, và các guard về thời điểm."
+    - "`quality` là trường riêng; điều kiện để `complete` so với `partial`."
+    - "Publish là transaction CAS; DANH SÁCH những thứ phải kiểm tại CAS."
+    - "Xử lý `TAG_VERSION_STALE`, `EMBEDDING_GENERATION_MISMATCH`, `CONFLICT`."
+    - "Hành vi kỳ rỗng ở mức trạng thái: có coverage record, không digest, không report hiển thị."
+    - "Builder crash và bản build treo."
+  owned_by_pc04_vi:
+    - "Cách tính coverage `[from, to)` và chọn `to`; sổ coverage authoritative."
+    - "Selection: chọn item nào, alias/exclusion precedence, similarity metric, threshold."
+    - "Vector density, cửa sổ so sánh, min sample, cold-start, tie-break (B14)."
+    - "First-announcement và reference logic sau merge identity (I07)."
+    - "Backfill N ngày, manual rescan, ledger tiêu thụ."
+    - "`contracts/schemas/report.schema.json` và nội dung `report_item`."
+  interface_contract_vi: >-
+    PC04 phải cung cấp cho PC03 đúng ba vị từ boolean, tính được trước CAS và không có side effect:
+    `coverage_predecessor_matches(expected_predecessor_id)`,
+    `tag_config_version_matches(expected_tag_config_version_id)`,
+    `embedding_generation_matches(expected_embedding_generation_id)`.
+    Nếu PC04 cần thêm vị từ, đó là một CR về phía PC04, không phải sửa file này.
+
+# ---------------------------------------------------------------------------
+# 2. Bảng transition
+# ---------------------------------------------------------------------------
+transitions:
+
+  - id: T-RP-01
+    from: "(chưa tồn tại)"
+    event: build_started
+    operation_id: report.build
+    guard_vi: >-
+      Run ở `status = running, phase = reporting` VÀ `storage.health = healthy`. Idempotency theo
+      `report_build_id`: cùng build_id không tạo hai bản dựng.
+    to: building
+    transaction_vi: "Ghi `report(status = building)` + snapshot input có version (tag_config_version, embedding_generation, coverage predecessor kỳ vọng)."
+    effects_vi:
+      - "Chọn mục là TRUY VẤN DỮ LIỆU, không phải việc của AI (SRC-SPEC §10.1)."
+      - "Target được chọn mà thiếu summary được xếp hàng qua `analysis.enqueue_tasks` và ghi `pending_item_ledger` (B17)."
+    forbidden_vi:
+      - "Xếp hàng summary cho target KHÔNG được chọn (B17: chỉ target được builder CHỌN tại thời điểm build)."
+      - "Tiến coverage ở bước này (coverage chỉ tiến tại commit publish — B04)."
+      - "Tiêu thụ backfill ở bước này."
+    oracle_vi: "Sau build: `report.status = 'building'`, `coverage_window` không tăng, `backfill_ledger` không tăng."
+    scenario_refs: [SC05, SC08, SC22, SC24]
+    error_codes: [VALIDATION_ERROR, TAG_VERSION_STALE, EMBEDDING_GENERATION_MISMATCH, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I06, I12]
+
+  - id: T-RP-02
+    from: building
+    event: publish_cas_success
+    operation_id: report.publish
+    guard_vi: >-
+      CAS THẮNG trên `coverage_window.predecessor_window_id` (ux_coverage_window_predecessor) VÀ ba vị từ của PC04 đều
+      đúng: coverage predecessor khớp, `tag_config_version` khớp, `embedding_generation` khớp. Có ít nhất một
+      `report_item`.
+    to: published
+    abort_reason: null
+    abort_reason_note_vi: "NULL bắt buộc: CHECK của ENT-report là NOT NULL iff status='aborted'."
+    quality_rule_vi: "`quality = complete` khi `pending_item_ledger` cho kỳ này RỖNG; ngược lại `partial`."
+    transaction_vi: >-
+      MỘT transaction ghi cùng nhau (SRC-PLAN §9.2): `report(status=published, published_at, content_hash,
+      tag_config_version_id, embedding_generation_id, quality)` + `report_item` + first-announcement ledger +
+      `coverage_window` + backfill consumption + `outbox_intent` (delivery intent) + `run(status/outcome)`.
+    effects_vi:
+      - "ĐÂY là điểm ĐÓNG BĂNG TAG (B01/AMD-B01/ADR-0004): `tag_config_version_id` trở nên bất biến. 'Thời điểm gửi' của C03 được đọc lại là 'thời điểm publish report'."
+      - "Coverage TIẾN đúng tại đây và chỉ tại đây (B04)."
+      - "`content_hash` = sha256 của JCS nội dung đã publish — oracle cho 'delivery không đổi nội dung' (I05)."
+      - "Delivery intent nằm TRONG transaction (outbox pattern, SRC-PLAN §5.1); việc gửi xảy ra sau, ở vòng đời khác (I09)."
+    forbidden_vi:
+      - "Gọi mạng (Telegram) bên trong transaction SQLite (SRC-PLAN §5.1)."
+      - "Sửa nội dung report sau publish (I05, entities.yaml §pc02_commitment: mọi cột bất biến sau published)."
+      - "Publish một coverage window chồng lấn hoặc để hở (I06)."
+      - "`quality = complete` khi còn pending item (B17)."
+      - "Delivery ghi vào bảng `report`."
+    oracle_vi: >-
+      AC-08: sau publish, `coverage_window.window_from` = `coverage_window.window_to` của kỳ predecessor; `outbox_intent` tồn tại;
+      `report.content_hash` không đổi ở mọi thời điểm sau đó, kể cả khi delivery `failed`.
+    scenario_refs: [SC08, SC09, SC19]
+    error_codes: [TAG_VERSION_STALE, EMBEDDING_GENERATION_MISMATCH, CONFLICT, IDEMPOTENCY_CONFLICT, VALIDATION_ERROR, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I06, I07, I09, I12]
+
+  - id: T-RP-03
+    from: building
+    event: tag_version_stale
+    operation_id: report.publish
+    guard_vi: "`tag_config_version` hiện hành KHÁC version đã dùng để chọn, phát hiện tại CAS. Còn `report_build_rebuild_attempts` (2)."
+    to: aborted
+    abort_reason: tag_version_stale
+    abort_reason_note_vi: "Bản build bị bỏ vì `tag_config_version` đã đổi; rebuild là một `report_build_id` MỚI."
+    transaction_vi: "Ghi `report(status = aborted)`. KHÔNG ghi coverage, KHÔNG tiêu thụ backfill, KHÔNG tạo outbox intent."
+    effects_vi:
+      - "Rebuild là một `report_build_id` MỚI với version mới (T-RP-01)."
+      - "Report đã publish TRƯỚC ĐÓ không bị mutate (I05)."
+    forbidden_vi:
+      - "Tự sửa report đã publish để khớp tag mới (B01: 'không tự sửa report đã publish')."
+      - "Publish bằng version cũ sau khi đã phát hiện stale."
+      - "Rebuild vô hạn — hết ngân sách thì run kết thúc `outcome = partial` với lý do rõ."
+    oracle_vi: "SC05/SC19: đổi tag ngay trước CAS ⇒ publish trả `TAG_VERSION_STALE`; `content_hash` của report publish trước đó không đổi; bản rebuild mang version mới."
+    scenario_refs: [SC05, SC19]
+    error_codes: [TAG_VERSION_STALE]
+    invariant_refs: [I05]
+
+  - id: T-RP-04
+    from: building
+    event: embedding_generation_mismatch
+    operation_id: report.build
+    guard_vi: "Vector của hai generation (hoặc hai dimension) bị đem so sánh trong cùng một lần selection."
+    to: aborted
+    abort_reason: embedding_generation_mismatch
+    abort_reason_note_vi: "Selection bị chặn trước commit vì vector khác generation/dimension (I12)."
+    transaction_vi: "Ghi `report(status = aborted)`. Không ghi gì khác."
+    effects_vi:
+      - "Selection bị CHẶN TRƯỚC commit publish (SRC-PLAN §10)."
+      - "Trong lúc rebuild generation: dùng generation CŨ, hoặc chặn selection CÓ LÝ DO — không trộn (SRC-PLAN §9.3)."
+    forbidden_vi:
+      - "Cosine giữa vector khác dimension/model (I12)."
+      - "Trộn vector mới và cũ."
+      - "Gọi API để thay embedding local âm thầm (D48)."
+    oracle_vi: "SC24: xen kẽ hai generation trước commit ⇒ publish bị chặn, `COUNT(report WHERE status='published')` không tăng."
+    scenario_refs: [SC24]
+    error_codes: [EMBEDDING_GENERATION_MISMATCH]
+    invariant_refs: [I12]
+
+  - id: T-RP-05
+    from: building
+    event: cas_lost
+    operation_id: report.publish
+    guard_vi: "Một publisher khác đã ghi trước trên cùng predecessor. Còn `cas_conflict_retries` (3)."
+    to: aborted
+    abort_reason: cas_conflict
+    abort_reason_note_vi: "Thua CAS trên predecessor coverage; publisher thua phải ĐỌC LẠI, không publish kỳ chồng."
+    transaction_vi: "Rollback hoàn toàn; ghi `report(status = aborted)` cho bản build thua."
+    effects_vi:
+      - "Publisher thua CAS phải ĐỌC LẠI predecessor mới rồi dựng lại; KHÔNG publish kỳ chồng (SRC-PLAN §9.2)."
+      - "Backfill KHÔNG bị tiêu thụ bởi bản build thua."
+    forbidden_vi:
+      - "Publish một kỳ chồng lấn."
+      - "Thử lại CAS mà không đọc lại predecessor."
+      - "Tiêu thụ backfill cho bản thua."
+    oracle_vi: "SC08: hai publisher đồng thời ⇒ đúng một `coverage_window` mới; `backfill_ledger` không tăng cho bên thua."
+    scenario_refs: [SC08]
+    error_codes: [CONFLICT]
+    invariant_refs: [I06]
+
+  - id: T-RP-06
+    from: building
+    event: builder_crash_or_stale
+    guard_vi: "Bản build ở `building` quá `report_build_stale_after` mà không có publish (builder chết, tiến trình bị kill)."
+    to: aborted
+    abort_reason: builder_failure
+    abort_reason_note_vi: "Builder chết hoặc bản build treo quá `report_build_stale_after`."
+    transaction_vi: "Ghi `report(status = aborted)`. Không đụng coverage, backfill, ledger."
+    effects_vi:
+      - "Run về `queued` ở phase `reporting` (T-RUN-22); rebuild với build_id MỚI."
+      - "AMD-B04 nguyên tắc: 'Không tiêu thụ backfill chỉ vì builder bị crash hoặc model lỗi'."
+    forbidden_vi:
+      - "Tiêu thụ backfill vì builder crash (B04)."
+      - "Để bản build treo ở `building` vĩnh viễn (sẽ chặn kỳ sau qua CAS)."
+    oracle_vi: "SC22: kill builder giữa chừng ⇒ `backfill_ledger` không tăng, `coverage_window` không tăng, report cũ không đổi."
+    scenario_refs: [SC22, SC08]
+    error_codes: [STORAGE_WRITE_FAILED, INTERNAL]
+    invariant_refs: [I05, I06]
+
+  - id: T-RP-07
+    from: building
+    event: empty_period
+    operation_id: report.publish
+    guard_vi: >-
+      Không có `report_item` nào được chọn VÀ không có lỗi thiếu dữ liệu (run `limit_hit = false`,
+      `cursor_invalidated = false`, không có `SOURCE_METADATA_UNAVAILABLE` chưa xử lý).
+    to: aborted
+    abort_reason: empty_period
+    abort_reason_note_vi: "Kỳ RỖNG HỢP LỆ — KHÔNG phải lỗi. Coverage VẪN TIẾN; chỉ không có report hiển thị và không có digest (AMD-B04)."
+    quality_rule_vi: "Không áp dụng — không có report hiển thị nên không có `quality`."
+    transaction_vi: >-
+      MỘT transaction ghi: `coverage_window(report_id = NULL)` + `run(status=completed, outcome=empty)`.
+      Bản build được đánh `aborted` vì KHÔNG trở thành report hiển thị. KHÔNG tạo `outbox_intent`.
+    effects_vi:
+      - "AMD-B04 nguyên văn: 'Không gửi báo cáo rỗng. Kỳ rỗng vẫn ghi một hàng coverage trong sổ coverage authoritative và ghi vào trạng thái run.'"
+      - "Coverage vẫn TIẾN ⇒ kỳ sau có `coverage_from` (I06)."
+    forbidden_vi:
+      - "Tạo digest rỗng (REQ-D57)."
+      - "Tạo report hiển thị rỗng."
+      - "Bỏ qua coverage record (sẽ tạo lỗ hổng — AMD-B04 'Nếu Owner bác bỏ')."
+      - "Hiển thị kỳ rỗng là 'không có nghiên cứu mới' (REQ-S8.3-01, I13)."
+    oracle_vi: >-
+      REQ-AC08 oracle bổ sung của AMD-B04: sau một kỳ rỗng, `coverage_from` của kỳ kế tiếp BẰNG `coverage_to` của
+      kỳ rỗng (không hở). `COUNT(outbox_intent WHERE type='report_digest')` cho kỳ rỗng = 0.
+    scenario_refs: [SC08, SC15]
+    error_codes: [CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I06, I13]
+    note_vi: >-
+      Lựa chọn thiết kế: dùng `aborted` cho kỳ rỗng thay vì thêm một trạng thái thứ tư. Lý do: SRC-PLAN §8.2 khai
+      đúng ba trạng thái, và `aborted` ở đây nghĩa đúng là "bản dựng không trở thành report hiển thị". Sự thật
+      nghiệp vụ "kỳ này rỗng" nằm ở `coverage_window(report_id = NULL)` + `run.outcome = empty`, đúng nơi
+      AMD-B04 đặt nó. PROVISIONAL; nếu PC04 cần phân biệt "aborted vì rỗng" với "aborted vì lỗi" ở mức report,
+      đó là CR-PC03-06.
+
+  - id: T-RP-08
+    plan_row_ref: "bổ sung FIX1 — giá trị `cancelled` của abort_reason (ruling FIX3) phải có đường tới"
+    from: building
+    event: run_cancelled
+    operation_id: run.cancel
+    guard_vi: >-
+      Owner gọi `run.cancel` trong khi một bản build đang ở `building` cho run đó.
+      `contracts/state/run.yaml` T-RUN-17b/T-RUN-17c đã cam kết "chặn publish mới"; hàng này là mặt report
+      của cam kết đó.
+    to: aborted
+    abort_reason: cancelled
+    abort_reason_note_vi: "Bản build bị bỏ vì Owner hủy run, KHÔNG phải vì lỗi kỹ thuật nào."
+    transaction_vi: "Ghi `report(status = aborted, abort_reason = cancelled)`. KHÔNG ghi coverage, KHÔNG tiêu thụ backfill, KHÔNG tạo outbox intent."
+    effects_vi:
+      - "Coverage KHÔNG tiến (chỉ tiến tại commit publish — B04)."
+      - "Dữ liệu đã commit của run (post, work, analysis) KHÔNG bị xóa (contracts/state/run.yaml T-RUN-17b)."
+    forbidden_vi:
+      - "Cho `report.publish` của một run đã `cancelled` đi tiếp."
+      - "Tiêu thụ backfill hay tiến coverage khi hủy."
+      - "Xóa report đã publish ở các kỳ TRƯỚC (I05)."
+    oracle_vi: "Sau cancel: `report.status='aborted'` và `abort_reason='cancelled'`; `COUNT(coverage_window)` không tăng; `report.publish(build_id)` bị từ chối `CONFLICT`."
+    scenario_refs: [SC20, SC35]
+    error_codes: [CONFLICT, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I06]
+
+# ---------------------------------------------------------------------------
+# 3. Publish = CAS transaction: danh sách kiểm bắt buộc
+# ---------------------------------------------------------------------------
+publish_cas:
+  operation_id: report.publish
+  idempotency_key: report_build_id
+  idempotency_anchor:
+    finding_ref: F-A1R2-01
+    decision_ref: "FIX3 rulings — bảng field-level"
+    persisted_on_vi: >-
+      `report.report_build_id` — string (UUIDv4), NOT NULL, `UNIQUE(owner_id, report_build_id)`.
+      PC02 FIX3 khai cột này trên ENT-report; PC03 FIX1 trích dẫn nó ở đây.
+    why_it_matters_vi: >-
+      Trước FIX1, `publish_cas` khai `idempotency_key: report_build_id` nhưng KHÔNG entity nào giữ giá trị đó
+      (F-A1R2-01: `report_build_id` xuất hiện 11× trong time-and-tags.md, 7× ở đây, 6× trong ports.yaml và
+      **0×** trong entities.yaml). Một khóa idempotency không được PERSIST thì không chống được replay: sau một
+      ACK bị mất, server không có cách nào biết build này đã publish chưa, và có thể publish kỳ thứ hai —
+      đúng thứ CAS trên predecessor phải ngăn. Cột + UNIQUE là điều làm quy tắc replay dưới đây kiểm được.
+  idempotency_rule_vi: >-
+    Publish lại CÙNG `report_build_id`: server tra `UNIQUE(owner_id, report_build_id)`;
+    (1) có hàng `status='published'` ⇒ trả CHÍNH report đó, KHÔNG publish lần hai, KHÔNG tiến coverage,
+    KHÔNG tạo delivery intent thứ hai, `content_hash` không đổi;
+    (2) có hàng `status='aborted'` ⇒ `CONFLICT` — bản build đã bị bỏ, rebuild phải mang `report_build_id` MỚI
+    (xem forbidden_transitions: `aborted → published` bị cấm);
+    (3) có hàng `status='building'` do một tiến trình khác giữ ⇒ `CONFLICT`, người gọi đọc lại rồi quyết định;
+    (4) không có hàng nào ⇒ đây là một build chưa từng tồn tại ⇒ `NOT_FOUND` (publish không tự tạo build).
+  replay_oracle_vi: >-
+    Crash sau COMMIT của transaction publish, trước khi response về tới caller; gọi lại `report.publish` với
+    cùng `report_build_id` ⇒ `COUNT(report WHERE status='published')` KHÔNG tăng,
+    `COUNT(coverage_window)` KHÔNG tăng, `COUNT(outbox_intent WHERE kind='report_digest')` KHÔNG tăng,
+    và `report.content_hash` bằng giá trị trước lần gọi lại."
+  checks_in_order:
+    - {order: 1, check: coverage_predecessor, owned_by: PC04, guard_vi: "`window_from` của kỳ mới BẰNG `window_to` của predecessor kỳ vọng; `ux_coverage_window_predecessor` chống hai kỳ cùng nối sau một kỳ.", on_fail: CONFLICT, invariant_refs: [I06]}
+    - {order: 2, check: tag_config_version, owned_by: PC04, guard_vi: "`tag_config_version_id` hiện hành bằng version đã dùng để chọn (điểm đóng băng tag — B01).", on_fail: TAG_VERSION_STALE, invariant_refs: [I05]}
+    - {order: 3, check: embedding_generation, owned_by: PC04, guard_vi: "`embedding_generation_id` active bằng generation đã dùng để tính similarity; dimension khớp.", on_fail: EMBEDDING_GENERATION_MISMATCH, invariant_refs: [I12]}
+    - {order: 4, check: analysis_generation, owned_by: PC06, guard_vi: "Mọi `report_item` trỏ tới một hàng `analysis` `valid` thuộc generation đã ghi trong snapshot input.", on_fail: VALIDATION_ERROR, invariant_refs: [I04]}
+    - {order: 5, check: pending_items_determine_quality, owned_by: PC03, guard_vi: "`quality = complete` ⟺ `pending_item_ledger` cho kỳ này rỗng (B17).", on_fail: VALIDATION_ERROR, invariant_refs: [I13]}
+    - {order: 6, check: storage_health, owned_by: PC03, guard_vi: "`storage.health = healthy`.", on_fail: STORAGE_WRITE_FAILED, invariant_refs: [I02]}
+  rows_written_together_vi: >-
+    report, report_item, first-announcement ledger, coverage_window, backfill consumption,
+    tag_config_version_id (cột bất biến trên report), outbox_intent, run.status/outcome.
+    Danh sách chính xác các cột/bảng do PC04 chốt; PC03 chỉ khóa rằng chúng nằm trong CÙNG MỘT transaction.
+  after_publish_immutability_vi: >-
+    Sau `published`, MỌI cột của `report` là bất biến (entities.yaml §pc02_commitment). Delivery KHÔNG ghi vào
+    bảng `report` (B01: 'delivery không bao giờ thay đổi nội dung report đã publish'). Oracle: `content_hash`
+    trước và sau mọi hoạt động delivery bằng nhau.
+  loser_procedure_vi: >-
+    Publisher thua CAS: rollback, `aborted`, ĐỌC LẠI predecessor mới, dựng lại với `report_build_id` mới, thử lại
+    tối đa `cas_conflict_retries` lần. KHÔNG bao giờ ghi đè hay publish chồng.
+
+# ---------------------------------------------------------------------------
+# 4. Transition bị cấm
+# ---------------------------------------------------------------------------
+forbidden_transitions:
+  - {from: published, to: "bất kỳ", condition_vi: "mọi trường hợp", reason_vi: "I05 — không thay nội dung âm thầm sau publish; entities.yaml khóa bất biến.", counterexample_vi: "Delivery ghi `delivered_at` vào bảng report ⇒ `content_hash` đổi ⇒ FAIL.", error_code_if_attempted: CONFLICT}
+  - {from: published, to: published, condition_vi: "publish lần hai cho cùng build_id", reason_vi: "Idempotent: trả report đã publish, không tạo hàng mới.", counterexample_vi: "Hai hàng report cho cùng report_build_id ⇒ FAIL.", error_code_if_attempted: IDEMPOTENCY_CONFLICT}
+  - {from: aborted, to: published, condition_vi: "mọi trường hợp", reason_vi: "Rebuild là một build_id MỚI, không phải hồi sinh bản cũ.", counterexample_vi: "Publish một report_build_id đã aborted ⇒ phải bị từ chối.", error_code_if_attempted: CONFLICT}
+  - {from: building, to: published, condition_vi: "khi chưa chạy đủ 6 phép kiểm của publish_cas", reason_vi: "Bỏ qua một phép kiểm nghĩa là bỏ qua một invariant.", counterexample_vi: "Publish khi embedding generation vừa đổi ⇒ phải EMBEDDING_GENERATION_MISMATCH.", error_code_if_attempted: EMBEDDING_GENERATION_MISMATCH}
+  - {from: building, to: published, condition_vi: "với `quality = complete` khi còn pending item", reason_vi: "B17 — `completed` đòi mọi item được chọn đã có summary hoặc được đánh dấu pending tường minh.", counterexample_vi: "2 item thiếu summary nhưng report `quality = complete` ⇒ FAIL.", error_code_if_attempted: VALIDATION_ERROR}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "khi `storage.health != healthy`", reason_vi: "Không tuyên bố đã persist khi DB không ghi được (SRC-PLAN §8.4).", counterexample_vi: "Disk-full giữa publish: đọc lại sau khôi phục phải thấy trạng thái TRƯỚC.", error_code_if_attempted: STORAGE_WRITE_FAILED}
+
+# ---------------------------------------------------------------------------
+# 5. Kỳ rỗng — phát biểu gọn để PC04 và PC07 trích dẫn
+# ---------------------------------------------------------------------------
+empty_period_behaviour:
+  decision_refs: [B04, AMD-B04, REQ-D57]
+  rules:
+    - "Có `coverage_window` (report_id = NULL). Coverage TIẾN."
+    - "KHÔNG có report hiển thị."
+    - "KHÔNG có digest, KHÔNG có `outbox_intent` loại `report_digest`."
+    - "`run.outcome = empty`, hiển thị là 'không có nội dung phù hợp' — KHÁC 'đợt thất bại' và KHÁC 'không có nghiên cứu mới' (REQ-S8.3-01, REQ-S8.2-09)."
+    - "Sổ pending item và sổ backfill KHÔNG bị ảnh hưởng bởi việc kỳ này rỗng (B04)."
+  oracle_vi: "Chuỗi kỳ A(có nội dung) → B(rỗng) → C(có nội dung): `A.window_to = B.window_from`, `B.window_to = C.window_from`, không hở không chồng; `COUNT(delivery)` cho B = 0."
+  invariant_refs: [I06, I13]
+
+# ---------------------------------------------------------------------------
+# 6. Invariant sở hữu (phần state)
+# ---------------------------------------------------------------------------
+invariants_owned:
+  - id: I05
+    statement_vi: "(phần state) Report lưu tag version và không thay nội dung âm thầm sau publish."
+    owner_transition: [T-RP-02, T-RP-03, T-RP-06, "forbidden_transitions hàng 1"]
+    positive_oracle_vi: "`content_hash` của report `published` bằng nhau ở mọi thời điểm sau đó, kể cả sau khi delivery `failed`/`unknown`."
+    counterexample_vi: "PHẢI FAIL: delivery ghi trạng thái gửi vào bảng `report` ⇒ `content_hash` đổi; hoặc rebuild sau TAG_VERSION_STALE ghi đè report cũ."
+  - id: I13
+    statement_vi: "(phần report) Empty và partial hiển thị riêng, không gộp thành 'không có nghiên cứu mới'."
+    owner_transition: [T-RP-02, T-RP-07]
+    positive_oracle_vi: "Ba read model khác nhau: kỳ rỗng (không có report), report `partial` với pending list, report `complete`."
+    counterexample_vi: "PHẢI FAIL: UI render kỳ rỗng và report `partial` bằng cùng một nhãn."

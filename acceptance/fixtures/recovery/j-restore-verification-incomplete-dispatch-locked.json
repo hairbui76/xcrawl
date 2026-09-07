@@ -1,0 +1,135 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-j",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D58"
+    ],
+    "decision_refs": [
+      "B11",
+      "ADR-0005"
+    ],
+    "invariant_refs": [
+      "I15",
+      "I13"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "j",
+  "title_vi": "Đối soát chưa xong → dispatch vẫn khóa",
+  "scenario_refs": [
+    "SC42",
+    "SC27"
+  ],
+  "invariant_refs": [
+    "I15",
+    "I13"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "storage_health": "recovery_required",
+    "restore_record": {
+      "id": "RR-03",
+      "new_restore_generation": 6,
+      "integrity_check_outcome": "ok",
+      "counts_observed": {
+        "saved_item": 40,
+        "report": 12,
+        "first_announced_ledger": 31
+      },
+      "manifest_counts": {
+        "saved_item": 40,
+        "report": 12,
+        "first_announced_ledger": 31
+      },
+      "leases_revoked": 2,
+      "operator_acknowledgement": null
+    },
+    "unreviewed_outbox": [
+      {
+        "id": "OI-09",
+        "dispatch_state": "pending",
+        "restore_generation": 6
+      }
+    ],
+    "note_vi": "Toàn vẹn và counts đều đạt, nhưng mệnh đề 4 (intent chưa được Operator xét) và mệnh đề 7 (chưa có xác nhận của Operator) chưa đúng."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.reconcile_after_restore",
+      "edge_assertion": "allowed",
+      "input": {
+        "restore_id": "RR-03"
+      }
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "edge_assertion": "allowed"
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "edge_assertion": "allowed",
+      "input": {
+        "claim_request_id": "CR-88"
+      }
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "RESTORE_UNVERIFIED",
+      "unmet_clauses": [
+        4,
+        7
+      ],
+      "detail_vi": "Trả về đúng mệnh đề nào của reconciliation_complete chưa đạt — không chỉ 'chưa xong'."
+    },
+    "seq2": {
+      "error_code": "RESTORE_UNVERIFIED",
+      "messages_sent": 0
+    },
+    "seq3": {
+      "error_code": "RESTORE_UNVERIFIED"
+    },
+    "storage_health_after": "recovery_required",
+    "dispatcher_unlocked_at": null
+  },
+  "forbidden_effects": [
+    "Mở dispatch khi reconciliation_complete còn false",
+    "Mở khóa theo thời gian hoặc sau một số lần thử",
+    "Coi 'integrity ok + counts khớp' là đủ — thiếu bước xác nhận của con người",
+    "Gửi OI-09 vì nó đã mang generation hiện tại"
+  ],
+  "oracle_vi": "reconciliation_complete(RR-03) == false; outbound send == 0; storage.health vẫn 'recovery_required'; restore_record.dispatcher_unlocked_at vẫn null."
+}

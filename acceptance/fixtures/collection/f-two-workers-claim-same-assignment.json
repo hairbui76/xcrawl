@@ -1,0 +1,242 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-f-two-workers-claim-same-assignment",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-D11",
+      "REQ-S9.3-07"
+    ],
+    "decision_refs": [
+      "B05"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I10"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "Stale writer rejection. Điểm khóa: kiểm epoch nằm TRƯỚC mọi write; worker epoch cũ không commit được gì.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "f-two-workers-claim-same-assignment",
+  "title_vi": "Hai worker cùng claim ⇒ epoch cũ bị từ chối, không dữ liệu nào đổi",
+  "scenario_refs": [
+    "SC20"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I10"
+  ],
+  "preconditions_vi": {
+    "assignment": "lease_epoch=1 do worker A giữ; lease hết hạn vì A mất heartbeat"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/claim"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "claim-worker-b-0001-aaaa"
+      },
+      "request_body": {
+        "claim_request": {
+          "request_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+          "schema_version": "0.1.0",
+          "claim_request_id": "claim-worker-b-0001-aaaa",
+          "worker_instance_id": "V7JG55M6ZK6C9H823ZT8DXWY7B",
+          "worker_kind": "collector",
+          "capabilities": {
+            "collector_online": true,
+            "chrome_profile_ready": true,
+            "x_session_state": "ok",
+            "embedding_supported": false,
+            "collector_version": "0.1.0"
+          },
+          "max_assignments": 1
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 200,
+      "response_body": {
+        "assignment": {
+          "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "phase": "collecting",
+          "trigger_type": "scheduled",
+          "catch_up_window": null,
+          "lease": {
+            "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+            "lease_epoch": 2,
+            "ttl_s": 120,
+            "heartbeat_interval_s": 30,
+            "expires_at": "2026-09-07T08:02:00.000Z"
+          },
+          "capability_requirements": {
+            "requires_chrome_profile": true,
+            "requires_x_session_ok": true
+          },
+          "search_config": {
+            "tags": [
+              "protein folding",
+              "graph neural networks"
+            ],
+            "tag_config_version_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+            "source_limits": {
+              "author_thread_only": true,
+              "external_replies": "excluded",
+              "image_only_post_policy": "post_only_no_id_guess",
+              "chrome_scope": "x_only",
+              "paper_metadata_source": "server_api",
+              "max_thread_context_posts": 50
+            }
+          },
+          "stop_conditions": {
+            "max_posts": 200,
+            "max_duration_s": 1800,
+            "evaluation": "first_of_either",
+            "on_challenge": "report_stop_and_halt",
+            "on_blocked": "report_stop_and_halt_no_rotation"
+          },
+          "checkpoint": {
+            "phase": "collecting",
+            "cursor_token": "cursor-page-0",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 12,
+            "items_ingested_total": 12,
+            "checkpoint_sequence": 3
+          },
+          "is_resume": false,
+          "x_coverage_note_vi": "Chỉ quan sát được phần feed tìm kiếm trả về trong ngân sách 200 bài / 30 phút; phần feed ngoài cửa sổ đó KHÔNG được quét."
+        }
+      },
+      "validate_response_against": "contracts/schemas/worker-assignment.schema.json",
+      "note_vi": "Worker B claim sau khi lease của A hết hạn: server tăng epoch 1→2 và cấp lease mới."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "worker.heartbeat",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/heartbeat"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>"
+      },
+      "request_body": {
+        "heartbeat_request": {
+          "request_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "schema_version": "0.1.0",
+          "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "observed_progress": {
+            "posts_seen_in_run": 30,
+            "posts_submitted_in_run": 12,
+            "elapsed_s": 400
+          },
+          "x_session_state": "ok"
+        }
+      },
+      "validate_request_against": "contracts/schemas/worker-assignment.schema.json",
+      "response_status": 409,
+      "response_body": {
+        "code": "STALE_LEASE",
+        "scope": "request",
+        "retry_class": "none",
+        "message_safe": "Yêu cầu dùng phiên làm việc đã cũ và bị từ chối.",
+        "correlation_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+        "details_safe": {
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_epoch_seen": 1,
+          "lease_epoch_current": 2
+        },
+        "retry_after_ms": null
+      },
+      "validate_response_against": "contracts/http/openapi.yaml#/components/schemas/ErrorEnvelope",
+      "note_vi": "Worker A (epoch 1) gửi heartbeat: 409 STALE_LEASE. KHÔNG gia hạn lease, KHÔNG đổi dữ liệu."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-worker-a-0002-aaaa"
+      },
+      "response_status": 409,
+      "response_body": {
+        "code": "STALE_LEASE",
+        "scope": "request",
+        "retry_class": "none",
+        "message_safe": "Yêu cầu dùng phiên làm việc đã cũ và bị từ chối.",
+        "correlation_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+        "details_safe": {
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_epoch_seen": 1,
+          "lease_epoch_current": 2
+        },
+        "retry_after_ms": null
+      },
+      "validate_response_against": "contracts/http/openapi.yaml#/components/schemas/ErrorEnvelope",
+      "note_vi": "Worker A cố nộp lô đã thu thập được: 409, KHÔNG hàng post nào được ghi. Kiểm epoch nằm TRƯỚC mọi write trong cùng transaction."
+    }
+  ],
+  "durable_rows_expected": [
+    "assignment_lease: hàng epoch=1 chuyển state='expired'; hàng mới epoch=2 state='held'.",
+    "run.current_lease_epoch = 2.",
+    "post: KHÔNG có hàng nào được thêm bởi sự kiện 2 và 3.",
+    "ingest_receipt: KHÔNG có hàng nào cho `batch-worker-a-0002-aaaa`."
+  ],
+  "forbidden_effects": [
+    "Chấp nhận bất kỳ write nào từ lease epoch cũ (I10).",
+    "Ghi một phần rồi mới phát hiện epoch cũ.",
+    "Cấp hai lease `held` cho cùng job.",
+    "Dùng lại một epoch đã cấp."
+  ],
+  "oracle_vi": "COUNT(post) và hash file DB KHÔNG đổi qua sự kiện 2 và 3. COUNT(assignment_lease WHERE job_id=JOB AND state='held') = 1."
+}

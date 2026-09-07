@@ -1,0 +1,140 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-e",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D55",
+      "REQ-AC12",
+      "REQ-S7.3-06"
+    ],
+    "decision_refs": [
+      "B11"
+    ],
+    "invariant_refs": [
+      "I08",
+      "I15"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "e",
+  "title_vi": "Hash của saved_snapshot trước backup == sau restore",
+  "scenario_refs": [
+    "SC12"
+  ],
+  "invariant_refs": [
+    "I08",
+    "I15"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "saved_items": [
+      {
+        "id": "SI-01",
+        "target_ref": {
+          "kind": "work",
+          "canonical_id": "arxiv:2601.00001"
+        },
+        "snapshot_sha256": "<H1>"
+      },
+      {
+        "id": "SI-02",
+        "target_ref": {
+          "kind": "post",
+          "canonical_id": "x:1790000000000000001"
+        },
+        "snapshot_sha256": "<H2>"
+      }
+    ],
+    "note_vi": "Sau khi backup, bài gốc của SI-02 bị xóa trên X."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-web-ui",
+      "operation": "save.create",
+      "edge_assertion": "allowed",
+      "input": {
+        "target_ref": {
+          "kind": "post",
+          "canonical_id": "x:1790000000000000001"
+        },
+        "source": "app"
+      }
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.create_snapshot",
+      "edge_assertion": "allowed",
+      "input": {
+        "snapshot_request_id": "SR-01"
+      }
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.restore_snapshot",
+      "edge_assertion": "allowed",
+      "input": {
+        "backup_snapshot_id": "BS-03",
+        "restore_request_id": "RR-02"
+      }
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-backup-cli",
+      "operation": "backup.reconcile_after_restore",
+      "edge_assertion": "allowed",
+      "input": {
+        "restore_id": "RR-02"
+      }
+    },
+    {
+      "seq": 5,
+      "actor": "MOD-web-ui",
+      "operation": "save.list",
+      "edge_assertion": "allowed"
+    }
+  ],
+  "expected": {
+    "seq5": {
+      "count": 2,
+      "snapshot_sha256_SI-01": "<H1>",
+      "snapshot_sha256_SI-02": "<H2>"
+    },
+    "source_deleted_on_x_still_readable": true,
+    "reconciliation_complete_before_seq4": true
+  },
+  "forbidden_effects": [
+    "Snapshot bị tính lại từ dữ liệu hiện tại (hash sẽ đổi)",
+    "Mất SI-02 vì bài gốc đã bị xóa trên X",
+    "Thay đổi saved_snapshot trong quá trình restore"
+  ],
+  "oracle_vi": "sha256 của từng saved_snapshot trước backup bằng đúng sha256 sau restore; COUNT(saved_item) khớp manifest.counts."
+}

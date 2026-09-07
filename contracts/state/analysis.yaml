@@ -1,0 +1,443 @@
+# Research Radar — State machine của một analysis item (attempt ≠ result)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-state-analysis
+version: 0.4.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §8.2
+  - SRC-PLAN §9.3
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §9.2
+  - SRC-SPEC §9.3
+  - SRC-SPEC §10.1
+  - SRC-SPEC §10.2
+  - SRC-SPEC §12 AC-06, AC-11
+requirement_refs: [REQ-AC06, REQ-AC10, REQ-AC11, REQ-D20, REQ-D21, REQ-D25, REQ-D26, REQ-D42, REQ-D43, REQ-D44, REQ-S9.2-03, REQ-S9.3-03, REQ-S9.3-04, REQ-S10.4-02, REQ-A5]
+decision_refs: [B07, B12, B13, B16, AMD-B07, AMD-B12, ADR-0001, ADR-0008, ADR-0010, CR-PC06-01, CR-PC09-04, "R-03 (A1-R1)", "R5-04 (FIX5)"]
+invariant_refs: [I04, I10, I11, I14, I16]
+producers: [MOD-analysis-service]
+consumers: [MOD-analysis-worker, MOD-ai-adapter, MOD-report-service, MOD-web-ui]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/data/entities.yaml
+  - contracts/errors.yaml
+  - contracts/retry-policy.yaml
+  - contracts/state/run.yaml
+scope: >-
+  File này đóng vòng đời TRẠNG THÁI của một analysis item: `pending → running → valid`, cùng nhánh `retry_wait`,
+  `failed` và `unknown_attempt`. Nó khóa sự TÁCH BIỆT giữa attempt (`analysis_attempt`) và kết quả (`analysis`,
+  chỉ hàng `status = valid`) theo B07/ADR-0008, tham chiếu ngân sách retry sang contracts/retry-policy.yaml, và
+  viết timeline cho trường hợp worker chết sau khi provider đã chạy. File này KHÔNG định nghĩa nội dung prompt,
+  schema kết quả hay quy tắc semantic validation — đó là PC06 (`contracts/ai/tasks.yaml`,
+  `contracts/schemas/analysis-result.schema.json`).
+verification: "EV-PC03-01/02/03/04 (SELF_VALIDATION): transition lint + reachability + đối chiếu mã lỗi và operation ID."
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Attempt vs Result — nền tảng của mọi thứ dưới đây
+# ---------------------------------------------------------------------------
+attempt_result_separation:
+  decision_refs: [B07, AMD-B07, ADR-0008]
+  invariant_refs: [I04, I16]
+  statement_vi: >-
+    Hai bảng, hai vòng đời. `analysis_attempt` (ENT-analysis-attempt) ghi MỌI lần thử, kể cả lỗi và không rõ kết
+    quả. `analysis` (ENT-analysis) chỉ chứa KẾT QUẢ; hàng `valid` là kết quả đã được chấp nhận. KHÔNG có đường
+    nào biến một attempt thành kết quả (I16 của PC02).
+  states_live_where_vi: >-
+    QUAN TRỌNG: các trạng thái `pending`, `running`, `retry_wait`, `failed`, `unknown_attempt` KHÔNG BAO GIỜ xuất
+    hiện trong cột `analysis.status` — entities.yaml đã khóa `analysis.status ∈ {valid, superseded_by_merge}`.
+    Chúng là trạng thái của TASK, mang bởi `analysis_attempt` cộng với trạng thái hàng đợi task
+    (`contracts/ai/tasks.yaml`, PC06). File này định nghĩa NGỮ NGHĨA của các trạng thái đó và các transition;
+    PC06 chọn cách lưu.
+  analysis_key_vi: >-
+    Khóa của một kết quả gồm: `owner_id`, `target_key` (canonical id của target), `task_type`,
+    `source_fingerprint`, `prompt_version`, `schema_version`, `generation_number` (entities.yaml §analysis).
+    Đổi TAG KHÔNG đổi key ⇒ không gọi lại AI (REQ-AC06, I04). Đổi provider/model KHÔNG tự invalidate.
+  uniqueness_vi: "`ux_analysis_valid_key` (partial UNIQUE WHERE status='valid') — tối đa MỘT kết quả hợp lệ cho mỗi key."
+  oracle_vi: >-
+    Bỏ rồi thêm lại tag: `COUNT(analysis_attempt)` delta = 0 và provider call counter delta = 0 cho cùng
+    (analysis_key, generation). Hai worker cùng submit một key: chỉ một hàng `valid`, hàng thứ hai
+    `IDEMPOTENCY_CONFLICT`.
+
+# ---------------------------------------------------------------------------
+# 2. Enum
+# ---------------------------------------------------------------------------
+enums:
+  item_state:
+    values: [pending, running, retry_wait, valid, failed, unknown_attempt]
+    source_refs: [SRC-PLAN §8.2]
+  attempt_outcome:
+    values: [accepted, schema_invalid, provider_error, provider_unavailable, timeout_unknown, cancelled_stale_lease]
+    source_refs: ["contracts/data/entities.yaml ENT-analysis-attempt.outcome"]
+  task_type:
+    values: [label, summary, direction_phrasing]
+    source_refs: ["contracts/data/entities.yaml ENT-analysis.task_type"]
+    note_vi: >-
+      `contracts/ports.yaml analysis.enqueue_tasks` viết ba giá trị là `open_labeling` | `summary` |
+      `emerging_direction_phrasing`. Tên có thẩm quyền là của entities.yaml (ruling R-03): `label` | `summary` |
+      `direction_phrasing`. Xem CR-PC03-05.
+
+initial_state: pending
+terminal_states: [valid, failed]
+quasi_terminal_states: [unknown_attempt]
+non_terminal_states: [pending, running, retry_wait, unknown_attempt]
+
+terminal_state_rule:
+  id: TSR-A01
+  statement_vi: >-
+    `valid` và `failed` không phát sinh side effect. `valid` là TERMINAL **TRONG PHẠM VI MỘT GENERATION**:
+    hai transition DUY NHẤT rời khỏi nó là `T-AN-12` (Owner bấm phân tích lại, hoặc paper có phiên bản mới —
+    D26) và `T-AN-13` (merge identity làm hai kết quả va chạm khóa). Cả hai đều KHÔNG sửa hàng `valid` cũ:
+    T-AN-12 mở một GENERATION MỚI và giữ nguyên bản cũ; T-AN-13 chỉ đặt một trong hai hàng thành
+    `superseded_by_merge`. Từ `failed` cũng terminal trong phạm vi một run; item được ghi vào
+    `pending_item_ledger` và có thể được xem lại ở kỳ sau với nhãn phát hiện muộn (B04, PC04).
+  wording_correction_vi: >-
+    SỬA Ở FIX4 (ruling R5-04, finding CR-PC09-04). Câu cũ viết "Từ `valid` KHÔNG CÓ transition đi ra" trong
+    khi bảng transition của chính file này có T-AN-12 và T-AN-13 đi ra từ `valid`. Mâu thuẫn nội bộ đó khiến
+    lint reachability và người đọc rút ra hai kết luận khác nhau. Điều thực sự đúng — và là điều SRC-PLAN §11
+    PC03 cho phép bằng cụm "trừ comment retry via new generation" — là `valid` terminal TRONG MỘT GENERATION,
+    không phải terminal tuyệt đối.
+  generation_scope_vi: >-
+    "Trong phạm vi một generation" nghĩa là: với một `analysis_key` cố định (gồm `generation_number`), sau khi
+    đạt `valid` thì không còn lời gọi provider nào nữa và hàng đó bất biến. Một generation MỚI là một
+    `analysis_key` KHÁC, nên nó không vi phạm `ux_analysis_valid_key` và không phá I04.
+  oracle_vi: >-
+    Sau khi item đạt `valid`: provider call counter cho cùng `(analysis_key, generation)` không tăng nữa.
+    Ngược lại, `analysis.request_reanalysis` ĐƯỢC PHÉP làm counter tăng — nhưng dưới một `generation_number`
+    mới, và `COUNT(analysis WHERE target=X AND status='valid')` khi đó bằng 2 với hai generation khác nhau
+    (REQ-AC06 chỉ cấm gọi lại khi ĐỔI TAG, không cấm reanalysis có chủ đích).
+
+# ---------------------------------------------------------------------------
+# 3. Bảng transition
+# ---------------------------------------------------------------------------
+transitions:
+
+  - id: T-AN-01
+    from: pending
+    event: task_enqueued
+    operation_id: analysis.enqueue_tasks
+    guard_vi: >-
+      Target đã COMMIT ở server (B12/AMD-B12: worker không nhận dữ liệu trực tiếp từ collector) VÀ chưa có kết
+      quả `valid` cho cùng `analysis_key` + `generation`.
+    to: pending
+    transaction_vi: "Ghi hàng task (PC06) với `analysis_key` là idempotency key. Cùng key ⇒ không tạo task trùng."
+    effects_vi:
+      - "Ingest commit ⇒ xếp hàng `label`. Report builder xếp hàng `summary` cho các target ĐÃ CHỌN tại thời điểm build (B17)."
+    forbidden_vi:
+      - "Tạo task cho dữ liệu chưa commit (cạnh COL→AW đã bị xóa, AMD-B12)."
+      - "Xếp hàng lại khi đã có kết quả `valid` cùng key (REQ-AC06: 0 lần gọi AI)."
+    oracle_vi: "AC-06: bỏ/thêm lại tag ⇒ `COUNT(task mới) = 0` cho cùng key và generation."
+    scenario_refs: [SC06, SC22]
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I04]
+
+  - id: T-AN-02
+    from: pending
+    event: worker_claim
+    operation_id: analysis.claim_task
+    guard_vi: >-
+      Worker khai capability provider phù hợp VÀ `storage.health = healthy` (không `recovery_required` — I15) VÀ
+      chưa có lease `held` cho task này.
+    to: running
+    transaction_vi: "Ghi cùng nhau: `assignment_lease` (epoch+1) + trạng thái task `running` + `analysis_attempt(started_at = giờ server)`."
+    effects_vi:
+      - "`analysis_attempt.attempt_number` tăng đơn điệu trong (owner_id, analysis_generation_id)."
+      - "`started_at` dùng GIỜ SERVER, không dùng đồng hồ worker (entities.yaml)."
+      - "Credential được cấp theo phạm vi TASK (B13/ADR-0010): worker chỉ nhận credential của provider cho task này."
+    forbidden_vi:
+      - "Cấp hai lease cho một task (idempotency `claim_request_id`)."
+      - "Cấp toàn bộ secrets cho worker (B13, NC-03)."
+      - "Claim khi `storage.health = recovery_required` (I15)."
+    oracle_vi: "Hai worker claim cùng lúc ⇒ một lease; `COUNT(analysis_attempt)` tăng đúng 1."
+    scenario_refs: [SC28, SC17]
+    error_codes: [UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STALE_LEASE, RESTORE_UNVERIFIED, STORAGE_WRITE_FAILED]
+    invariant_refs: [I01, I04, I10, I15]
+
+  - id: T-AN-03
+    from: running
+    event: result_accepted
+    operation_id: analysis.submit_result
+    guard_vi: >-
+      `lease_epoch` hiện hành VÀ output qua ĐỦ HAI cửa: (a) schema validation theo
+      `contracts/schemas/analysis-result.schema.json`, và (b) SEMANTIC validation theo PC06
+      (`contracts/ai/tasks.yaml`) — citation trỏ tới target đã cho, `author_claim`/`source_verified`/`ai_inference`
+      tách riêng, `evidence_level` không vượt nguồn thực có, comparator thiếu ghi `unknown` (B16).
+    to: valid
+    transaction_vi: >-
+      `TXN-analysis-accept` (PC02): ghi cùng nhau `analysis(status = valid, payload, payload_hash,
+      accepted_from_attempt_id)` + `analysis_attempt(outcome = accepted, ended_at)`. UNIQUE partial
+      `ux_analysis_valid_key` bảo đảm chỉ một kết quả cho mỗi key.
+    effects_vi:
+      - "`payload` BẤT BIẾN sau commit."
+      - "`usage_tokens_in/out = NULL` nghĩa là `unknown` — hợp lệ cho đường CLI (REQ-D44, I14)."
+    forbidden_vi:
+      - "Ghi output sai schema thành `valid` (SRC-PLAN §8.2)."
+      - "Bỏ qua semantic validation và chấp nhận vì 'JSON hợp lệ' (REQ-D43)."
+      - "Ghi `usage = 0` thay cho `unknown` (I14)."
+      - "Nâng `evidence_level` khi nguồn tương ứng chưa tồn tại."
+      - "Chấp nhận submit từ lease cũ (I10)."
+    oracle_vi: >-
+      AC-11: fixture chỉ có post ⇒ `evidence_level = post_only` và mọi claim có provenance.
+      Fixture sai schema ⇒ `COUNT(analysis WHERE status='valid') = 0`.
+    scenario_refs: [SC10, SC11, SC17, SC28]
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, STALE_LEASE, WORKER_LEASE_EXPIRED, IDEMPOTENCY_CONFLICT, AI_OUTPUT_INVALID, STORAGE_WRITE_FAILED]
+    invariant_refs: [I04, I11, I14]
+    deferred_to_pc06_vi: >-
+      Quy tắc semantic cụ thể (danh sách kiểm tra grounding, ngưỡng citation, cách so khớp comparator) do PC06
+      định nghĩa. File này chỉ khóa RÀNG BUỘC: `valid` CHỈ đạt được sau khi CẢ HAI cửa đều pass; PC06 không được
+      nới điều kiện này, chỉ được làm chặt hơn.
+
+  - id: T-AN-04
+    from: running
+    event: output_invalid
+    operation_id: analysis.submit_result
+    guard_vi: "Output sai schema hoặc trượt semantic validation, VÀ `attempt_number < analysis_attempts_per_item` (2)."
+    to: retry_wait
+    transaction_vi: "Ghi `analysis_attempt(outcome = schema_invalid, error_code = AI_OUTPUT_INVALID, ended_at)` + trạng thái task `retry_wait` + `next_attempt_at`. KHÔNG ghi hàng `analysis`."
+    effects_vi: ["Input của task giữ nguyên để thử lại; `next_attempt_at` chống vòng lặp nóng."]
+    forbidden_vi:
+      - "Commit output sai thành `valid`."
+      - "Đưa transcript vào log/details (SRC-PLAN §5.1)."
+      - "Retry ở tầng adapter (RP-02: adapter retry = 0)."
+    oracle_vi: "`COUNT(analysis_attempt WHERE outcome='schema_invalid')` bằng đúng số lần trượt; `COUNT(analysis)` = 0."
+    scenario_refs: [SC11]
+    error_codes: [AI_OUTPUT_INVALID]
+    invariant_refs: [I04]
+
+  - id: T-AN-05
+    from: running
+    event: provider_unavailable
+    operation_id: ai.run_inference_task
+    guard_vi: >-
+      Provider không dùng được (CLI không khởi động, mất mạng, quota), tức KHÔNG có inference nào chạy, VÀ còn
+      `provider_unavailable_waits` (3).
+    to: retry_wait
+    transaction_vi: "Ghi `analysis_attempt(outcome = provider_unavailable, error_code = AI_PROVIDER_UNAVAILABLE)` + `retry_wait` + `next_attempt_at` theo `provider_unavailable_backoff`."
+    effects_vi:
+      - "Ngân sách RIÊNG, không tiêu thụ `analysis_attempts_per_item` — vì chưa có output nào để đánh giá (retry-policy §provider_unavailable_waits)."
+      - "`usage` ghi `unknown` (NULL)."
+    forbidden_vi:
+      - "Tự bật provider fallback khi Owner chưa cấu hình (REQ-S9.3-04)."
+      - "Ghi usage = 0 (I14)."
+      - "Trộn ngân sách này với ngân sách D43."
+    oracle_vi: "Provider down có/không fallback cấu hình: với fallback, `analysis.provider_name` là provider thứ hai; không có fallback, outbound call tới provider thứ hai = 0."
+    scenario_refs: [SC16, SC28]
+    error_codes: [AI_PROVIDER_UNAVAILABLE, RATE_LIMITED, CAPABILITY_DENIED]
+    invariant_refs: [I14]
+
+  - id: T-AN-06
+    from: retry_wait
+    event: retry_due
+    guard_vi: "`now >= next_attempt_at` VÀ `storage.health = healthy` VÀ còn ngân sách của lớp lỗi tương ứng."
+    to: pending
+    transaction_vi: "Ghi trạng thái task `pending` + `next_attempt_at = NULL`."
+    effects_vi: ["Task quay lại hàng đợi và có thể do worker KHÁC claim."]
+    forbidden_vi:
+      - "Hồi lại ngân sách khi đổi worker — ngân sách gắn với (analysis_key, generation), không gắn với worker."
+      - "Chuyển về `pending` khi hết ngân sách (phải sang `failed`)."
+    oracle_vi: "Ép một worker chập chờn: tổng `COUNT(analysis_attempt)` cho một key không bao giờ vượt `analysis_attempts_per_item` + `provider_unavailable_waits`."
+    scenario_refs: [SC28]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I04]
+
+  - id: T-AN-07
+    from: retry_wait
+    event: budget_exhausted
+    guard_vi: "Hết `analysis_attempts_per_item` (với AI_OUTPUT_INVALID) hoặc hết `provider_unavailable_waits` (với AI_PROVIDER_UNAVAILABLE)."
+    to: failed
+    transaction_vi: "Ghi trạng thái task `failed` + `pending_item_ledger` (item thiếu summary) + `next_attempt_at = NULL`."
+    effects_vi:
+      - "Mục đó thiếu summary và BỊ ĐÁNH DẤU; report thành `quality = partial` với pending list (REQ-S9.3-03, B17)."
+      - "Run chuyển `phase = reporting` với outcome dự kiến `partial` (T-RUN-05)."
+    forbidden_vi:
+      - "Bỏ item khỏi report mà không ghi pending (B04: pending ledger độc lập con trỏ kỳ)."
+      - "Đưa run sang `failed` vì một số item lỗi (REQ-S9.3-03)."
+    oracle_vi: "Fixture AI lỗi 2/5 mục ⇒ `COUNT(pending_item_ledger) = 2`, report `quality = partial`, run `(completed, partial, null)`."
+    scenario_refs: [SC22]
+    error_codes: [AI_OUTPUT_INVALID, AI_PROVIDER_UNAVAILABLE]
+    invariant_refs: [I04, I13]
+
+  - id: T-AN-08
+    from: running
+    event: attempt_outcome_unknown
+    operation_id: analysis.report_attempt_unknown
+    guard_vi: >-
+      Worker chết hoặc mất kết nối SAU khi provider có thể đã chạy (crash sau khi gọi, hoặc timeout sau khi
+      request đã ra). Không phân biệt được "đã chạy" với "chưa chạy".
+      **Hết giờ inference cũng vào đây** (CR-PC06-01): `ai_inference_timeout_label` = 120 s,
+      `ai_inference_timeout_summary` = 300 s, `ai_inference_timeout_direction_phrasing` = 180 s
+      (contracts/retry-policy.yaml, PROVISIONAL). Timeout transport là KHÔNG BIẾT KẾT QUẢ, KHÔNG phải rollback
+      (SRC-PLAN §5.1) — vì vậy nó dẫn tới `unknown_attempt`, KHÔNG phải `failed`.
+    to: unknown_attempt
+    transaction_vi: "Ghi `analysis_attempt(outcome = timeout_unknown, cost_uncertain = true, ended_at có thể NULL)` + trạng thái task `unknown_attempt`. Idempotency theo `attempt_id`."
+    effects_vi:
+      - "KHÔNG có hàng `analysis` nào được tạo (I16)."
+      - "`cost_uncertain = true` được GIỮ vĩnh viễn trên attempt đó, kể cả sau khi item về sau đạt `valid`."
+    forbidden_vi:
+      - "Tuyên bố chưa phát sinh chi phí (SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN) — kể cả khi nguyên nhân là hết giờ: model có thể đã chạy xong và hoá đơn đã phát sinh."
+      - "Coi timeout là `failed`: `failed` nghĩa là ĐÃ BIẾT kết quả và nó sai; timeout nghĩa là KHÔNG BIẾT."
+      - "Đặt timeout inference >= `lease_ttl_analysis` (900 s): lease sẽ hết trước và tín hiệu `unknown_attempt` bị mất (retry-policy RPC-09)."
+      - "Sửa attempt cũ khi chạy lại — lần chạy lại ghi attempt MỚI."
+      - "Hứa inference bên ngoài chạy ĐÚNG MỘT lần (SRC-PLAN §8.2 nói rõ: chỉ bảo đảm không tạo hai KẾT QUẢ ĐÃ COMMIT cùng key)."
+    oracle_vi: "SC28: crash sau provider completion ⇒ `COUNT(analysis_attempt WHERE cost_uncertain = true) = 1`, `COUNT(analysis WHERE status='valid') = 0`."
+    scenario_refs: [SC28]
+    error_codes: [AI_ATTEMPT_UNCERTAIN, VALIDATION_ERROR, STALE_LEASE, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I04, I14, I16]
+
+  - id: T-AN-09
+    from: unknown_attempt
+    event: auto_rerun_within_policy
+    guard_vi: >-
+      Còn `analysis_unknown_attempt_auto_rerun` (1) VÀ còn `analysis_attempts_per_item`. Lần tự chạy lại này
+      TIÊU THỤ một đơn vị của `analysis_attempts_per_item`.
+    to: pending
+    transaction_vi: "Ghi trạng thái task `pending`. Attempt cũ KHÔNG bị sửa."
+    effects_vi:
+      - "SRC-PLAN §10 cho phép: 'tái chạy theo policy ghi attempt mới'."
+      - "Khác hẳn `delivery.state = unknown` (không bao giờ tự chạy lại): hậu quả xấu nhất ở đây là TỐN PHÍ, còn ở delivery là NGƯỜI NHẬN THẤY TIN TRÙNG — không quan sát được và không hoàn tác được."
+    forbidden_vi:
+      - "Chạy lại quá một lần tự động — lần thứ hai phải do Owner bấm `analysis.request_reanalysis`."
+      - "Xóa hoặc ghi đè attempt `unknown`."
+    oracle_vi: "Sau một lần tự chạy lại: `COUNT(analysis_attempt) = 2`, attempt đầu vẫn `cost_uncertain = true`."
+    scenario_refs: [SC28]
+    error_codes: []
+    invariant_refs: [I14]
+
+  - id: T-AN-10
+    from: unknown_attempt
+    event: auto_rerun_budget_exhausted
+    guard_vi: "Hết `analysis_unknown_attempt_auto_rerun` hoặc hết `analysis_attempts_per_item`."
+    to: failed
+    transaction_vi: "Ghi trạng thái task `failed` + `pending_item_ledger`."
+    effects_vi: ["Item hiển thị là 'chưa xác định / chưa có phân tích', KHÔNG hiển thị là 'không có nghiên cứu' (I13)."]
+    forbidden_vi: ["Gộp `unknown_attempt` vào cùng một nhãn hiển thị với `failed` do schema sai (I13)."]
+    oracle_vi: "UI phân biệt được 'phân tích lỗi' với 'lần thử không rõ kết quả'."
+    scenario_refs: [SC28, SC15]
+    error_codes: [AI_ATTEMPT_UNCERTAIN]
+    invariant_refs: [I13, I14]
+
+  - id: T-AN-11
+    from: running
+    event: lease_expired_or_cancelled
+    guard_vi: "`now > assignment_lease.expires_at + heartbeat_grace`, hoặc run bị cancel, hoặc `backup.reconcile_after_restore` thu hồi lease."
+    to: pending
+    transaction_vi: "Ghi `analysis_attempt(outcome = cancelled_stale_lease)` + `assignment_lease.state ∈ {expired, revoked}` + epoch+1 + trạng thái task `pending`."
+    effects_vi:
+      - "Worker cũ bị từ chối `STALE_LEASE`/`WORKER_LEASE_EXPIRED` ở mọi submit sau đó."
+      - "Nếu worker cũ ĐÃ gọi provider, kết quả của nó KHÔNG được chấp nhận — nhưng chi phí có thể đã phát sinh; attempt đó giữ nguyên làm bằng chứng."
+    forbidden_vi:
+      - "Chấp nhận `analysis.submit_result` từ lease cũ (I10)."
+      - "Xóa attempt của lease cũ."
+    oracle_vi: "SC20: worker epoch cũ submit ⇒ `STALE_LEASE`, `COUNT(analysis WHERE status='valid')` không đổi."
+    scenario_refs: [SC20, SC28]
+    error_codes: [WORKER_LEASE_EXPIRED, STALE_LEASE, RESTORE_UNVERIFIED]
+    invariant_refs: [I04, I10]
+
+  - id: T-AN-12
+    from: valid
+    event: owner_requests_reanalysis
+    operation_id: analysis.request_reanalysis
+    guard_vi: "Owner bấm phân tích lại (`manual`), hoặc paper có phiên bản mới (`new_paper_version`) — D26."
+    to: pending
+    transaction_vi: "Tạo `analysis_generation` MỚI + task mới. Hàng `analysis` cũ GIỮ NGUYÊN (D26: 'giữ bản cũ')."
+    effects_vi:
+      - "Đây KHÔNG phải một transition của item cũ mà là khởi tạo một item ở generation mới; ghi ở đây để bảng có đường ra khỏi `valid` một cách tường minh (SRC-PLAN §11 PC03: 'trừ comment retry via new generation')."
+      - "Đổi tag KHÔNG kích hoạt operation này (REQ-AC06: 0 lần gọi AI)."
+    forbidden_vi:
+      - "Xóa hoặc sửa kết quả `valid` cũ (bất biến, entities.yaml §immutability)."
+      - "Coi việc đổi provider/model là lý do tự invalidate (SRC-PLAN §9.3: giữ kết quả cũ tới khi Owner yêu cầu)."
+    oracle_vi: "Sau reanalysis: `COUNT(analysis WHERE target=X) = 2` với hai `generation_number`; report chọn generation theo policy của PC04."
+    scenario_refs: [SC06]
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I04]
+
+  - id: T-AN-13
+    from: valid
+    event: identity_merge_key_collision
+    operation_id: identity.merge_works
+    guard_vi: "Sau khi merge identity, hai hàng `valid` va chạm cùng `analysis_key` (target_key đổi sang work thắng)."
+    to: valid
+    transaction_vi: "`TXN-identity-merge` (PC02) đặt một hàng thành `analysis.status = superseded_by_merge`; hàng còn lại giữ `valid`."
+    effects_vi:
+      - "`moved_by_merge_id` trỏ tới `identity_merge_audit`."
+      - "Đây là giá trị DUY NHẤT khác `valid` mà cột `analysis.status` được phép mang (entities.yaml)."
+    forbidden_vi:
+      - "Xóa một trong hai kết quả."
+      - "Merge khi số hàng phải chuyển vượt `identity_merge_max_moved_rows` (100000, PROVISIONAL, CR-PC02-05) ⇒ phải thành `identity_conflict`."
+    oracle_vi: "Fixture `a-merge-doi-arxiv.json`: sau merge, đúng một hàng `valid` cho key va chạm, hàng kia `superseded_by_merge`, audit trail đầy đủ."
+    scenario_refs: [SC07, SC23]
+    error_codes: [IDENTITY_CONFLICT, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I03, I04]
+
+# ---------------------------------------------------------------------------
+# 4. Transition bị cấm
+# ---------------------------------------------------------------------------
+forbidden_transitions:
+  - {from: unknown_attempt, to: valid, condition_vi: "mọi trường hợp", reason_vi: "Attempt không bao giờ là kết quả (I16). Muốn có kết quả thì phải chạy lại và submit output đã validate.", counterexample_vi: "Server 'khôi phục' kết quả từ log của worker rồi ghi thành valid ⇒ FAIL.", error_code_if_attempted: AI_ATTEMPT_UNCERTAIN}
+  - {from: failed, to: valid, condition_vi: "trong cùng generation, không qua T-AN-06", reason_vi: "Hết ngân sách nghĩa là hết; muốn nữa thì generation mới.", counterexample_vi: "Submit lại sau khi item đã failed và ngân sách cạn ⇒ phải bị từ chối.", error_code_if_attempted: CONFLICT}
+  - {from: running, to: valid, condition_vi: "khi chỉ pass schema mà chưa pass semantic validation", reason_vi: "REQ-D43: đường CLI thêm bước bóc JSON khỏi transcript và KIỂM SCHEMA — 'JSON đúng schema' không phải toàn bộ hợp đồng (SRC-PLAN §5).", counterexample_vi: "Output đúng schema nhưng citation trỏ tới một target khác ⇒ phải bị từ chối AI_OUTPUT_INVALID.", error_code_if_attempted: AI_OUTPUT_INVALID}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "bởi worker mang lease_epoch cũ", reason_vi: "I10.", counterexample_vi: "Hai worker cùng key: hàng thứ hai bị từ chối, `COUNT(analysis valid) = 1`.", error_code_if_attempted: STALE_LEASE}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "kích hoạt bởi việc đổi tag", reason_vi: "Đổi tag không đổi analysis key (AMD-B07, I04) ⇒ không gọi AI lại (REQ-AC06).", counterexample_vi: "Bỏ rồi thêm lại tag T: provider call counter delta phải bằng 0.", error_code_if_attempted: null}
+
+# ---------------------------------------------------------------------------
+# 5. Ngân sách (tham chiếu, không định nghĩa lại)
+# ---------------------------------------------------------------------------
+retry_budget_refs:
+  file: contracts/retry-policy.yaml
+  entries:
+    - {budget: analysis_attempts_per_item, value_vi: "2 lần thử tổng cho mỗi (analysis_key, generation)", applies_to_error: AI_OUTPUT_INVALID, retried_by: server}
+    - {budget: provider_unavailable_waits, value_vi: "3 lần chờ, ngân sách riêng", applies_to_error: AI_PROVIDER_UNAVAILABLE, retried_by: server}
+    - {budget: analysis_unknown_attempt_auto_rerun, value_vi: "1 lần tự chạy lại", applies_to_error: AI_ATTEMPT_UNCERTAIN, retried_by: server}
+    - {budget: lease_ttl_analysis, value_vi: "900 s", applies_to_error: WORKER_LEASE_EXPIRED, retried_by: server}
+    - {budget: heartbeat_interval_analysis, value_vi: "60 s", applies_to_error: null, retried_by: worker}
+    - {budget: ai_inference_timeout_label, value_vi: "120 s cho task_type `label`", applies_to_error: AI_ATTEMPT_UNCERTAIN, retried_by: worker}
+    - {budget: ai_inference_timeout_summary, value_vi: "300 s cho task_type `summary`", applies_to_error: AI_ATTEMPT_UNCERTAIN, retried_by: worker}
+    - {budget: ai_inference_timeout_direction_phrasing, value_vi: "180 s cho task_type `direction_phrasing`", applies_to_error: AI_ATTEMPT_UNCERTAIN, retried_by: worker}
+    - {budget: ai_inference_timeout_semantics, value_vi: "Hết giờ ⇒ `unknown_attempt`, TIÊU THỤ một đơn vị của `analysis_attempts_per_item`, không mở ngân sách mới", applies_to_error: AI_ATTEMPT_UNCERTAIN, retried_by: worker}
+  split_rule_vi: >-
+    Adapter (`ai.run_inference_task`) retry = 0. Toàn bộ ngân sách nằm ở tầng task, mỗi lần thử là một hàng
+    `analysis_attempt`. Nhờ vậy D43 ('thử lại một lần') được giữ nguyên và số lần gọi model đếm được trực tiếp
+    bằng SQL, không cần đếm ở tầng mạng (RP-02 của retry-policy).
+
+# ---------------------------------------------------------------------------
+# 6. Timeline: crash sau khi provider đã hoàn tất
+# ---------------------------------------------------------------------------
+crash_after_provider_completion_timeline:
+  scenario_ref: SC28
+  steps:
+    - {t: t0, event_vi: "claim_task ⇒ lease + analysis_attempt(started_at)", durable_rows_vi: "analysis_attempt(outcome chưa xác định)", crash_yields_vi: "lease hết hạn ⇒ cancelled_stale_lease", recovery_vi: "task về pending"}
+    - {t: t1, event_vi: "adapter gửi request tới provider; đồng hồ deadline theo task_type bắt đầu chạy (120/300/180 s)", durable_rows_vi: "như t0", crash_yields_vi: "KHÔNG BIẾT request đã tới chưa", recovery_vi: "unknown_attempt, cost_uncertain = true"}
+    - {t: t2, event_vi: "provider chạy xong, trả response — HOẶC deadline hết trước khi response về", durable_rows_vi: "như t0", crash_yields_vi: "ĐÃ tốn phí, kết quả mất; hết giờ cho cùng kết luận: KHÔNG BIẾT", recovery_vi: "unknown_attempt; tự chạy lại tối đa 1 lần (analysis_unknown_attempt_auto_rerun)"}
+    - {t: t3, event_vi: "adapter bóc JSON, kiểm schema cục bộ", durable_rows_vi: "như t0", crash_yields_vi: "Như t2", recovery_vi: "Như t2"}
+    - {t: t4, event_vi: "submit_result: server kiểm schema + semantic", durable_rows_vi: "như t0", crash_yields_vi: "Chưa commit ⇒ không có hàng analysis", recovery_vi: "Retry theo ngân sách"}
+    - {t: t5, event_vi: "COMMIT analysis(valid) + attempt(accepted)", durable_rows_vi: "analysis + attempt, cùng transaction", crash_yields_vi: "Đã bền; ACK có thể mất", recovery_vi: "Submit lại cùng analysis_key + attempt_id ⇒ idempotent; payload khác ⇒ IDEMPOTENCY_CONFLICT"}
+  guarantee_vi: >-
+    Bảo đảm được phát biểu chính xác (SRC-PLAN §8.2): hệ thống bảo đảm KHÔNG tạo hai KẾT QUẢ ĐÃ COMMIT cùng key.
+    Hệ thống KHÔNG hứa inference bên ngoài chạy đúng một lần, và KHÔNG hứa không phát sinh phí lặp.
+  invariant_refs: [I04, I14, I16]
+
+# ---------------------------------------------------------------------------
+# 7. Invariant sở hữu
+# ---------------------------------------------------------------------------
+invariants_owned:
+  - id: I04
+    statement_vi: "Analysis hợp lệ bất biến theo generation; đổi tag không gọi AI lại; retry không tạo hai kết quả hợp lệ cùng key."
+    owner_transition: [T-AN-01, T-AN-03, T-AN-06, T-AN-12, T-AN-13]
+    positive_oracle_vi: "AC-06: bỏ/thêm lại tag ⇒ provider call counter delta = 0. Hai worker submit cùng key ⇒ một hàng valid."
+    counterexample_vi: >-
+      PHẢI FAIL: `analysis_key` bao gồm `tag_config_version` ⇒ đổi tag sinh key mới ⇒ gọi AI lại, phá AC-06.
+      Hoặc: bỏ `ux_analysis_valid_key` partial UNIQUE ⇒ retry sau lỗi tạo hàng `valid` thứ hai.
+  - id: I14
+    statement_vi: "Usage không biết là `unknown`, không ghi thành 0; fallback chỉ theo policy được owner cấu hình."
+    owner_transition: [T-AN-03, T-AN-05, T-AN-08]
+    positive_oracle_vi: "Đường CLI không trả token count ⇒ `usage_tokens_in/out IS NULL`; không có provider thứ hai được gọi khi Owner chưa cấu hình."
+    counterexample_vi: "PHẢI FAIL: ghi 0 vào `usage_tokens_in` khi CLI không báo cáo — báo cáo chi phí sẽ nói 'miễn phí' cho một thứ có thể đã tốn tiền."
+  - id: I16
+    statement_vi: "(PC02) Attempt không bao giờ là kết quả."
+    owner_transition: [T-AN-04, T-AN-08, T-AN-11, "forbidden_transitions hàng 1"]
+    positive_oracle_vi: "Truy vấn 'kết quả phân tích của target X' chỉ đọc `analysis WHERE status='valid'`; view trên `analysis_attempt` cho kết quả rỗng."
+    counterexample_vi: "PHẢI FAIL: một đường code đọc `analysis_attempt` rồi render như kết quả khi bảng `analysis` rỗng."

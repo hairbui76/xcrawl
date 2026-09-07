@@ -1,0 +1,477 @@
+{
+  "fixture_id": "FX-ID-A",
+  "title": "Merge sau ingest: hai work rời rạc được nối bằng bằng chứng DOI↔arXiv",
+  "purpose": "Chứng minh B06: hai cột UNIQUE không phát hiện được trùng lặp bổ sung nhau; merge là thao tác nghiệp vụ có bằng chứng và audit, và không đụng tới snapshot lịch sử (I17).",
+  "scenario_refs": [
+    "SC07",
+    "SC09"
+  ],
+  "invariant_refs": [
+    "I03",
+    "I17"
+  ],
+  "decision_refs": [
+    "B06",
+    "B15"
+  ],
+  "requirement_refs": [
+    "REQ-D17",
+    "REQ-AC07",
+    "REQ-AC09"
+  ],
+  "source_refs": [
+    "SRC-PLAN §3 B06",
+    "SRC-PLAN §9.1",
+    "SRC-PLAN §7 I03"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKA100000000000000000",
+          "canonical_doi": null,
+          "canonical_arxiv_id": "2501.01234",
+          "identity_state": "active",
+          "metadata_state": "partial",
+          "first_discovered_at": "2026-09-05T08:00:00.000Z",
+          "ingest_sequence": 101,
+          "current_work_version_id": "01JWVERA100000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA100000000000000000",
+            "target_key": "work:01JW0RKA100000000000000000",
+            "canonical": {
+              "arxiv_base": "2501.01234"
+            },
+            "identity_state": "active"
+          }
+        },
+        {
+          "id": "01JW0RKA200000000000000000",
+          "canonical_doi": "10.1000/xyz",
+          "canonical_arxiv_id": null,
+          "identity_state": "active",
+          "metadata_state": "complete",
+          "first_discovered_at": "2026-09-05T09:00:00.000Z",
+          "ingest_sequence": 140,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000",
+            "canonical": {
+              "doi": "10.1000/xyz"
+            },
+            "identity_state": "active"
+          }
+        }
+      ],
+      "work_version": [
+        {
+          "id": "01JWVERA100000000000000000",
+          "work_id": "01JW0RKA100000000000000000",
+          "version_label": "v1",
+          "version_scheme": "arxiv",
+          "is_current": true,
+          "observed_at": "2026-09-05T08:00:00.000Z"
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASA10000000000000000",
+          "id_scheme": "arxiv",
+          "id_value_normalized": "2501.01234",
+          "id_value_raw": "arXiv:2501.01234v1",
+          "work_id": "01JW0RKA100000000000000000",
+          "evidence_source": "post_link",
+          "confidence": "asserted_by_source",
+          "evidence_ref": {
+            "post_id": "01JP0STA100000000000000000",
+            "retrieved_at": "2026-09-05T08:00:00.000Z"
+          }
+        },
+        {
+          "id": "01JA11ASA20000000000000000",
+          "id_scheme": "doi",
+          "id_value_normalized": "10.1000/xyz",
+          "id_value_raw": "https://doi.org/10.1000/XYZ",
+          "work_id": "01JW0RKA200000000000000000",
+          "evidence_source": "post_link",
+          "confidence": "asserted_by_source",
+          "evidence_ref": {
+            "post_id": "01JP0STA200000000000000000",
+            "retrieved_at": "2026-09-05T09:00:00.000Z"
+          }
+        }
+      ],
+      "post": [
+        {
+          "id": "01JP0STA100000000000000000",
+          "x_post_id": "1900000000000000001",
+          "discovered_at": "2026-09-05T08:00:00.000Z",
+          "ingest_sequence": 100,
+          "identity_resolution": "resolved_linked",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STA100000000000000000",
+            "target_key": "post:01JP0STA100000000000000000",
+            "x_post_id": "1900000000000000001",
+            "identity_resolution": "resolved_linked"
+          }
+        },
+        {
+          "id": "01JP0STA200000000000000000",
+          "x_post_id": "1900000000000000002",
+          "discovered_at": "2026-09-05T09:00:00.000Z",
+          "ingest_sequence": 139,
+          "identity_resolution": "resolved_linked",
+          "_target": {
+            "kind": "post",
+            "post_id": "01JP0STA200000000000000000",
+            "target_key": "post:01JP0STA200000000000000000",
+            "x_post_id": "1900000000000000002",
+            "identity_resolution": "resolved_linked"
+          }
+        }
+      ],
+      "post_work": [
+        {
+          "id": "01JPWA10000000000000000000",
+          "post_id": "01JP0STA100000000000000000",
+          "work_id": "01JW0RKA100000000000000000",
+          "link_evidence": "explicit_url_in_post"
+        },
+        {
+          "id": "01JPWA20000000000000000000",
+          "post_id": "01JP0STA200000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "link_evidence": "explicit_url_in_post"
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YA10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA100000000000000000",
+            "target_key": "work:01JW0RKA100000000000000000"
+          },
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "source_fingerprint": "F_W1_v1",
+          "payload_hash": {
+            "symbolic": "H_AN1",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "analyzed_at": "2026-09-05T08:30:00.000Z"
+        },
+        {
+          "id": "01JANA1YA20000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000"
+          },
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "source_fingerprint": "F_W2_v1",
+          "payload_hash": {
+            "symbolic": "H_AN2",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "analyzed_at": "2026-09-05T09:30:00.000Z"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAPA100000000000000000",
+          "target_kind": "work",
+          "target_key_at_save": "work:01JW0RKA100000000000000000",
+          "analysis_id_at_save": "01JANA1YA10000000000000000",
+          "content_hash": {
+            "symbolic": "H_S1",
+            "computed_by": "sha256(JCS(saved_snapshot.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "created_at": "2026-09-05T10:00:00.000Z"
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "01JSAVEDA10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA100000000000000000",
+            "target_key": "work:01JW0RKA100000000000000000"
+          },
+          "state": "active",
+          "save_channel": "app",
+          "saved_at": "2026-09-05T10:00:00.000Z",
+          "saved_snapshot_id": "01JSNAPA100000000000000000",
+          "moved_by_merge_id": null
+        }
+      ],
+      "identity_merge_audit": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-05T10:30:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "research.fetch_work_metadata",
+      "description": "OpenAlex trả bản ghi W2741809807 khai báo tường minh cùng lúc doi=10.1000/xyz và arxiv=2501.01234.",
+      "produces_evidence": {
+        "id_scheme": "openalex",
+        "id_value_normalized": "W2741809807",
+        "asserts": [
+          "doi:10.1000/xyz",
+          "arxiv:2501.01234"
+        ],
+        "evidence_source": "openalex_api"
+      },
+      "performed_by": "MOD-research-connector"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-05T10:31:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.merge_works",
+      "description": "Tra cứu §3 cho ra hai work; bằng chứng đủ và không có mâu thuẫn canonical (W1 không có DOI) ⇒ merge.",
+      "transaction": "TXN-identity-merge",
+      "performed_by": "MOD-identity-service"
+    }
+  ],
+  "expected": {
+    "winner_work_id": "01JW0RKA200000000000000000",
+    "winner_selection_rule": "only_candidate_with_canonical_doi",
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKA200000000000000000",
+          "identity_state": "active",
+          "canonical_doi": "10.1000/xyz",
+          "canonical_arxiv_id": "2501.01234",
+          "first_discovered_at": "2026-09-05T08:00:00.000Z",
+          "metadata_state": "complete",
+          "current_work_version_id": "01JWVERA100000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000",
+            "canonical": {
+              "doi": "10.1000/xyz",
+              "arxiv_base": "2501.01234"
+            },
+            "identity_state": "active"
+          }
+        },
+        {
+          "id": "01JW0RKA100000000000000000",
+          "identity_state": "merged",
+          "merged_into_work_id": "01JW0RKA200000000000000000",
+          "canonical_arxiv_id": "2501.01234",
+          "canonical_doi": null,
+          "_note": "Hàng thua KHÔNG bị xóa; giữ giá trị canonical cũ làm bằng chứng, được loại khỏi UNIQUE nhờ partial index WHERE identity_state <> 'merged'.",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA100000000000000000",
+            "target_key": "work:01JW0RKA100000000000000000",
+            "identity_state": "merged"
+          }
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASA10000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "superseded_by_merge_id": "01JMERGEA10000000000000000",
+          "id_value_raw": "arXiv:2501.01234v1"
+        },
+        {
+          "id": "01JA11ASA20000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "superseded_by_merge_id": null
+        },
+        {
+          "id": "01JA11ASA30000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "id_scheme": "openalex",
+          "id_value_normalized": "W2741809807",
+          "evidence_source": "openalex_api",
+          "confidence": "confirmed_by_two_sources",
+          "_created_in_transaction": "TXN-identity-merge"
+        }
+      ],
+      "work_version": [
+        {
+          "id": "01JWVERA100000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "version_label": "v1",
+          "is_current": true
+        }
+      ],
+      "post_work": [
+        {
+          "id": "01JPWA10000000000000000000",
+          "post_id": "01JP0STA100000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "moved_by_merge_id": "01JMERGEA10000000000000000"
+        },
+        {
+          "id": "01JPWA20000000000000000000",
+          "post_id": "01JP0STA200000000000000000",
+          "work_id": "01JW0RKA200000000000000000",
+          "moved_by_merge_id": null
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YA10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000"
+          },
+          "status": "valid",
+          "moved_by_merge_id": "01JMERGEA10000000000000000",
+          "payload_hash": {
+            "symbolic": "H_AN1",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "Không va chạm ux_analysis_valid_key vì source_fingerprint khác (F_W1_v1 ≠ F_W2_v1)."
+        },
+        {
+          "id": "01JANA1YA20000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000"
+          },
+          "status": "valid",
+          "moved_by_merge_id": null,
+          "payload_hash": {
+            "symbolic": "H_AN2",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          }
+        }
+      ],
+      "saved_item": [
+        {
+          "id": "01JSAVEDA10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKA200000000000000000",
+            "target_key": "work:01JW0RKA200000000000000000"
+          },
+          "state": "active",
+          "moved_by_merge_id": "01JMERGEA10000000000000000",
+          "saved_snapshot_id": "01JSNAPA100000000000000000",
+          "saved_at": "2026-09-05T10:00:00.000Z"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAPA100000000000000000",
+          "target_key_at_save": "work:01JW0RKA100000000000000000",
+          "analysis_id_at_save": "01JANA1YA10000000000000000",
+          "content_hash": {
+            "symbolic": "H_S1",
+            "computed_by": "sha256(JCS(saved_snapshot.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "KHÔNG đổi một byte. target_key_at_save vẫn trỏ work thua — đó là bằng chứng lịch sử, không phải con trỏ hiện hành (I17)."
+        }
+      ],
+      "identity_merge_audit": [
+        {
+          "id": "01JMERGEA10000000000000000",
+          "winner_work_id": "01JW0RKA200000000000000000",
+          "loser_work_id": "01JW0RKA100000000000000000",
+          "winner_selection_rule": "only_candidate_with_canonical_doi",
+          "performed_by": "system_automatic_on_evidence",
+          "linking_evidence": {
+            "id_scheme": "openalex",
+            "id_value_normalized": "W2741809807",
+            "evidence_source": "openalex_api"
+          },
+          "moved_counts": {
+            "identity_alias": 1,
+            "post_work": 1,
+            "work_version": 1,
+            "work_label": 0,
+            "analysis": 1,
+            "saved_item": 1,
+            "report_item_pointer": 0,
+            "first_announced": null
+          },
+          "preserved_counts": {
+            "saved_snapshot": 1,
+            "ingest_receipt": 0,
+            "published_report_item": 0
+          },
+          "merged_at": "2026-09-05T10:31:00.000Z"
+        }
+      ]
+    },
+    "counts": {
+      "work__total": 2,
+      "work__identity_state_active": 1,
+      "work__identity_state_merged": 1,
+      "identity_alias__total": 3,
+      "identity_alias__pointing_to_merged_work": 0,
+      "post": 2,
+      "post_work": 2,
+      "analysis__status_valid": 2,
+      "saved_item__state_active": 1,
+      "saved_snapshot": 1,
+      "identity_merge_audit": 1,
+      "identity_conflict__state_open": 0
+    },
+    "hash_oracles": [
+      {
+        "assert": "saved_snapshot[S1].content_hash sau merge == trước merge",
+        "symbolic": "H_S1"
+      },
+      {
+        "assert": "sha256(JCS(saved_snapshot[S1].payload)) == saved_snapshot[S1].content_hash tại mọi thời điểm"
+      },
+      {
+        "assert": "analysis[AN1].payload_hash sau merge == trước merge",
+        "symbolic": "H_AN1"
+      }
+    ],
+    "preserved": {
+      "tables_with_zero_delta": [
+        "saved_snapshot",
+        "ingest_receipt",
+        "analysis_attempt",
+        "post"
+      ]
+    }
+  },
+  "forbidden_effects": [
+    "UPDATE bất kỳ cột nào của saved_snapshot (kể cả target_key_at_save, content_hash).",
+    "DELETE hàng work W1 hoặc bất kỳ identity_alias nào.",
+    "Tạo work thứ ba.",
+    "Merge khi linking_evidence rỗng hoặc đến từ suy luận AI.",
+    "Ghi lại report_item của một report đã publish.",
+    "Để lại identity_alias trỏ tới work có identity_state = 'merged'.",
+    "Đặt merged_into_work_id trỏ tới một work cũng đang 'merged' (độ sâu phải là 1)."
+  ]
+}

@@ -1,0 +1,303 @@
+{
+  "$schema": "https://research-radar.local/fixtures/collection-fixture.v1",
+  "x-contract": {
+    "contract_id": "CT-fixture-collection-a-feed-layout-changed",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §11 PC05",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §9.3"
+    ],
+    "requirement_refs": [
+      "REQ-A1",
+      "REQ-A7",
+      "REQ-S9.3-02",
+      "REQ-S8.3-03",
+      "REQ-AC15"
+    ],
+    "decision_refs": [
+      "B05",
+      "AMD-B05",
+      "AMD-B02",
+      "CR-PC05-01",
+      "FIX3 rulings (2026-09-06T19:05Z)"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I10",
+      "I13"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/http/openapi.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/schemas/ingest-receipt.schema.json",
+      "contracts/schemas/ingest-batch.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "Collector bóc được 12/40 bài rồi mất trường bắt buộc vì X đổi bố cục. Fixture khóa hành vi: commit phần ĐÃ bóc được, rồi DỪNG và BÁO bằng mã RIÊNG `SOURCE_LAYOUT_CHANGED` — không đoán trường thiếu, không thử parser thay thế, không luân chuyển gì. Cập nhật ở FIX1: CR-PC05-01 đã được ruling FIX3 chấp nhận, nên fixture không còn dùng `source_blocked` làm giá trị thay thế và không còn mang `pending_cr`.",
+    "verification": "EV-PC05-02 (SELF_VALIDATION): mọi body có `validate_body_against` được validate bằng jsonschema Draft 2020-12 với registry các file schema cục bộ. Đây là fixture TĨNH: KHÔNG cần X live (SRC-PLAN §11 PC05).",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "actor_rule": "Mỗi `events[].actor` là một caller ĐƯỢC PHÉP của operation theo contracts/ports.yaml.caller_modules và contracts/modules.yaml.allowed_edges (ruling R-02). `performed_by` là service THỰC HIỆN transaction và KHÔNG phải một khẳng định về cạnh gọi."
+  },
+  "fixture_id": "a-feed-layout-changed",
+  "title_vi": "Bố cục feed đổi ⇒ parser suy giảm, đợt dừng và báo — không đoán, không lách",
+  "scenario_refs": [
+    "SC03",
+    "SC15"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I10",
+    "I13"
+  ],
+  "preconditions_vi": {
+    "run": "status=running, phase=collecting",
+    "checkpoint": "acked_through_ingest_sequence=0",
+    "storage.health": "healthy"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "http": {
+        "method": "post",
+        "path": "/v1/ingest/batches"
+      },
+      "performed_by": "MOD-ingest-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "batch-2026-09-07-0001-aaaa"
+      },
+      "response_status": 200,
+      "response_body": {
+        "receipt": {
+          "receipt_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "request_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+          "idempotency_key": "batch-2026-09-07-0001-aaaa",
+          "payload_hash": "sha256:c17edaae86e4016a583e098582f6dbf3eccade8ef83747df9ba617ded9d31309",
+          "schema_version": "0.1.0",
+          "status": "committed",
+          "receipt_kind": "batch_ingest",
+          "run_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "job_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "lease_epoch": 1,
+          "committed_at": "2026-09-07T08:01:12.480Z",
+          "counts": {
+            "received": 12,
+            "inserted": 12,
+            "deduplicated": 0,
+            "quarantined": 0,
+            "rejected": 0,
+            "works_linked": 12,
+            "max_ingest_sequence": 12
+          },
+          "accepted_items": [
+            {
+              "x_post_id": "1900000000000000001",
+              "post_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 1,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            },
+            {
+              "x_post_id": "1900000000000000002",
+              "post_id": "73YCH102BFJ8NDMYFV64SS8TK7",
+              "outcome": "inserted",
+              "discovered_at": "2026-09-07T08:01:12.480Z",
+              "ingest_sequence": 2,
+              "target_ref": {
+                "kind": "work",
+                "key": "work:10.1000/xyz"
+              }
+            }
+          ],
+          "checkpoint_ack": {
+            "checkpoint_id": "8G712YS7CWVX6AD3G8FSAP1ZMM",
+            "checkpoint_sequence": 1,
+            "cursor_token": "cursor-page-1",
+            "cursor_state": "valid",
+            "acked_through_ingest_sequence": 12,
+            "items_ingested_total": 12
+          },
+          "receipt_hash": "sha256:fc56dbc6d4652b315b86b71c8d688c1ccdea9c5f1fd07763d2659fde2e2fc49a",
+          "storage_state": "healthy",
+          "warnings": []
+        }
+      },
+      "validate_response_against": "contracts/schemas/ingest-receipt.schema.json",
+      "note_vi": "Phần ĐÃ bóc được vẫn commit bình thường; 12 hàng post bền. `accepted_items` rút gọn còn 2 mục đại diện."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/stop"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "stop-2026-09-07-0001-aaaa"
+      },
+      "request_body": {
+        "request_id": "WMV5P2DB00F1TE174C3XYTN38R",
+        "schema_version": "0.1.0",
+        "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "stop_report_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+        "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+        "lease_epoch": 1,
+        "stop_reason": "source_layout_changed",
+        "missing_required_fields": [
+          "author.handle",
+          "published_at"
+        ],
+        "posts_seen": 40,
+        "posts_parsed_ok": 12,
+        "last_acked_ingest_sequence": 12,
+        "note_vi": "Bố cục feed đổi: 28/40 bài thiếu trường bắt buộc. Dừng theo ST-7 của contracts/ops/collector-probe.md; mã lỗi `SOURCE_LAYOUT_CHANGED` (contracts/errors.yaml)."
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 409,
+      "response_body": {
+        "error": {
+          "code": "SOURCE_LAYOUT_CHANGED",
+          "scope": "run",
+          "retry_class": "none",
+          "message_safe": "Đợt chạy dừng vì bố cục nguồn đã thay đổi và không đọc được dữ liệu. Cần cập nhật bộ đọc.",
+          "correlation_id": "01JBQZ9K7M3N4P5Q6R7S8T9VWX",
+          "details_safe": {
+            "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+            "phase": "collecting",
+            "stop_reason": "source_layout_changed",
+            "missing_required_fields": [
+              "author.handle",
+              "published_at"
+            ],
+            "posts_seen": 40,
+            "posts_parsed_ok": 12
+          },
+          "retry_after_ms": null
+        },
+        "run": {
+          "status": "blocked",
+          "phase": "collecting",
+          "outcome": null,
+          "stop_reason": "source_layout_changed",
+          "unblock_condition_vi": "Bộ đọc cần được cập nhật cho bố cục mới của feed X (thiếu `author.handle`, `published_at`). Sau khi sửa, Owner gọi run.resume với unblock_reason, hoặc tạo run mới."
+        },
+        "alert_intent_created": true,
+        "alert_intent_id": "01JBQZ9K7M3N4P5Q6R7S8T9VWY"
+      },
+      "note_vi": "`SOURCE_LAYOUT_CHANGED` là mã RIÊNG (CR-PC05-01, ruling FIX3): 'vào được nhưng không đọc được' khác 'không cho vào' vì hành động gỡ khác hẳn — cái này cần người phát triển sửa bộ đọc. Khác với `X_ACCESS_BLOCKED`, mã này TẠO một alert intent, vì cần người chú ý ngay. `run.yaml` T-RUN-24."
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "http": {
+        "method": "post",
+        "path": "/v1/workers/assignments/{assignment_id}/stop"
+      },
+      "performed_by": "MOD-job-service",
+      "request_headers": {
+        "X-Schema-Version": "0.1.0",
+        "X-Request-Id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+        "Authorization": "Bearer <collector_token — KHÔNG BAO GIỜ ghi giá trị thật vào fixture>",
+        "Idempotency-Key": "stop-2026-09-07-0001-aaaa"
+      },
+      "request_body": {
+        "request_id": "01JBQZ9K7M3N4P5Q6R7S8TAVWZ",
+        "schema_version": "0.1.0",
+        "assignment_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+        "stop_report_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+        "lease_id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+        "lease_epoch": 1,
+        "stop_reason": "source_layout_changed",
+        "missing_required_fields": [
+          "author.handle",
+          "published_at"
+        ],
+        "posts_seen": 40,
+        "posts_parsed_ok": 12,
+        "last_acked_ingest_sequence": 12,
+        "note_vi": "Bố cục feed đổi: 28/40 bài thiếu trường bắt buộc. Dừng theo ST-7 của contracts/ops/collector-probe.md; mã lỗi `SOURCE_LAYOUT_CHANGED` (contracts/errors.yaml)."
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 409,
+      "response_body": {
+        "error": {
+          "code": "SOURCE_LAYOUT_CHANGED",
+          "scope": "run",
+          "retry_class": "none",
+          "message_safe": "Đợt chạy dừng vì bố cục nguồn đã thay đổi và không đọc được dữ liệu. Cần cập nhật bộ đọc.",
+          "correlation_id": "01JBQZ9K7M3N4P5Q6R7S8T9VWX",
+          "details_safe": {
+            "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+            "phase": "collecting",
+            "stop_reason": "source_layout_changed",
+            "missing_required_fields": [
+              "author.handle",
+              "published_at"
+            ],
+            "posts_seen": 40,
+            "posts_parsed_ok": 12
+          },
+          "retry_after_ms": null
+        },
+        "run": {
+          "status": "blocked",
+          "phase": "collecting",
+          "outcome": null,
+          "stop_reason": "source_layout_changed",
+          "unblock_condition_vi": "Bộ đọc cần được cập nhật cho bố cục mới của feed X (thiếu `author.handle`, `published_at`). Sau khi sửa, Owner gọi run.resume với unblock_reason, hoặc tạo run mới."
+        },
+        "alert_intent_created": false,
+        "alert_intent_id": "01JBQZ9K7M3N4P5Q6R7S8T9VWY"
+      },
+      "note_vi": "Báo lại CÙNG `stop_report_id` (idempotency `assignment_id + stop_report_id` của ports.yaml): KHÔNG tạo alert thứ hai. Đây là oracle của 'một alert intent mỗi run' trong ruling FIX3."
+    }
+  ],
+  "durable_rows_expected": [
+    "post: +12 hàng (phần bóc được đầy đủ trường).",
+    "ingest_receipt: +1 hàng, counts.inserted = 12.",
+    "checkpoint: +1 hàng, acked_through_ingest_sequence = 12, cursor_state = 'valid'.",
+    "run: status = 'blocked', stop_reason = 'source_layout_changed', unblock_condition_vi NOT NULL và liệt kê tên trường thiếu.",
+    "outbox_intent WHERE kind='run_alert' AND run_id=RUN: ĐÚNG 1 hàng, kể cả sau sự kiện 3."
+  ],
+  "forbidden_effects": [
+    "Đoán giá trị cho 28 bài thiếu trường (I03: không đoán ID; nguyên tắc tương tự cho mọi trường bắt buộc).",
+    "Ingest 28 bài đó với trường rỗng hoặc trường bịa để 'đủ schema'.",
+    "Thử parser thay thế, đổi user-agent, hay 'chế độ tương thích' để bóc tiếp (SRC-SPEC §2.3).",
+    "Luân chuyển account/proxy (REQ-S9.3-02).",
+    "Tự retry: `retry_class = none` — bố cục sẽ không tự đổi lại.",
+    "Tự chuyển `blocked` về `queued` theo thời gian; đường thoát duy nhất là run.resume với unblock_reason (run.yaml T-RUN-23).",
+    "Tạo alert intent thứ hai cho cùng run.",
+    "Dùng `X_ACCESS_BLOCKED` cho tình huống này: nó nghĩa là bị chặn truy cập, và sẽ để một lỗi SỬA ĐƯỢC nằm chờ như một lỗi không sửa được.",
+    "Hiển thị run này là 'không có nghiên cứu mới' (REQ-S8.3-03, I13)."
+  ],
+  "oracle_vi": "COUNT(post) tăng đúng 12, không phải 40. run.status='blocked' và stop_reason='source_layout_changed'. COUNT(outbox_intent kind='run_alert' AND run_id=RUN) = 1 sau CẢ sự kiện 2 và 3. Trace mạng sau sự kiện 2 không có request tới X. UI hiển thị lý do khác với `empty` và khác với `source_blocked`."
+}

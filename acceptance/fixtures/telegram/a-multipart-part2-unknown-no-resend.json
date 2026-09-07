@@ -1,0 +1,212 @@
+{
+  "fixture_id": "FX-TG-A",
+  "title": "Digest hai phần: part 2 timeout → unknown, part 1 vẫn sent, KHÔNG gửi lại",
+  "purpose": "AMD-B03 và DP-02: một part unknown KHÔNG được gửi lại chỉ vì aggregate chưa sent; part đã sent cũng không bị gửi lại.",
+  "scenario_refs": [
+    "SC14"
+  ],
+  "invariant_refs": [
+    "I09",
+    "I13"
+  ],
+  "decision_refs": [
+    "B03",
+    "AMD-B03"
+  ],
+  "requirement_refs": [
+    "REQ-AC14",
+    "REQ-S9.3-06"
+  ],
+  "source_refs": [
+    "SRC-PLAN §8.3",
+    "contracts/state/delivery.yaml DP-02, DP-03, T-DL-04",
+    "contracts/telegram/delivery.md §5.3"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "report": [
+        {
+          "id": "01JREP0RT10000000000000000",
+          "status": "published",
+          "quality": "complete",
+          "content_hash": {
+            "symbolic": "H_RP",
+            "computed_by": "sha256(JCS(report_content))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          }
+        }
+      ],
+      "outbox_intent": [
+        {
+          "id": "01J0VTB0X10000000000000000",
+          "intent_type": "telegram_digest",
+          "dispatch_state": "claimed",
+          "subject_ref": {
+            "report_id": "01JREP0RT10000000000000000"
+          }
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 3
+        }
+      ],
+      "delivery": [
+        {
+          "id": "01JDE11V100000000000000000",
+          "report_id": "01JREP0RT10000000000000000",
+          "channel": "telegram",
+          "state": "sending",
+          "telegram_link_generation": 3
+        }
+      ],
+      "delivery_part": [
+        {
+          "id": "01JDPART000000000000000000",
+          "delivery_id": "01JDE11V100000000000000000",
+          "part_index": 0,
+          "state": "pending",
+          "payload_hash": {
+            "symbolic": "H_PART0",
+            "computed_by": "sha256(JCS(part0_payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          }
+        },
+        {
+          "id": "01JDPART100000000000000000",
+          "delivery_id": "01JDE11V100000000000000000",
+          "part_index": 1,
+          "state": "pending",
+          "payload_hash": {
+            "symbolic": "H_PART1",
+            "computed_by": "sha256(JCS(part1_payload))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          }
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T20:00:00.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "transition": "T-DL-01",
+      "description": "Ghi attempt cho part 0 TRƯỚC network call, rồi gọi telegram.send_payload."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T20:00:01.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.record_receipt",
+      "transition": "T-DL-02",
+      "description": "Part 0 trả về message_id ⇒ sent."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T20:00:02.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "transition": "T-DL-01",
+      "description": "Ghi attempt cho part 1 TRƯỚC network call, rồi gọi."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T20:00:32.000Z",
+      "event_type": "network_timeout",
+      "description": "Kết nối timeout sau khi request đã rời máy chủ. KHÔNG biết Telegram đã nhận hay chưa."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-06T20:00:32.500Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.mark_unknown",
+      "transition": "T-DL-04",
+      "description": "Part 1 → unknown."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-06T20:05:00.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "description": "Vòng quét outbox tiếp theo: dispatcher thấy aggregate chưa sent. ĐÂY là chỗ dễ sai — nó KHÔNG được gửi lại gì."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "delivery_part": [
+        {
+          "id": "01JDPART000000000000000000",
+          "state": "sent",
+          "provider_message_id": "1001",
+          "_note": "Không bị gửi lại (đã có receipt)."
+        },
+        {
+          "id": "01JDPART100000000000000000",
+          "state": "unknown",
+          "provider_message_id": null,
+          "_note": "Giữ nguyên; chỉ delivery.decide_unknown mới đưa nó ra khỏi đây."
+        }
+      ],
+      "delivery": [
+        {
+          "id": "01JDE11V100000000000000000",
+          "state": "unknown",
+          "_note": "Aggregate suy ra theo DP-03: unknown > sent."
+        }
+      ],
+      "report": [
+        {
+          "id": "01JREP0RT10000000000000000",
+          "content_hash": {
+            "symbolic": "H_RP",
+            "computed_by": "sha256(JCS(report_content))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          },
+          "_note": "Không đổi (I05)."
+        }
+      ]
+    },
+    "counts": {
+      "delivery_part__state_sent": 1,
+      "delivery_part__state_unknown": 1,
+      "delivery_attempt__total": 2,
+      "automatic_resend_of_unknown_part": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 2,
+      "note": "Đúng 2 lần gọi cho 2 part. Sự kiện 6 KHÔNG sinh lời gọi thứ ba."
+    },
+    "ui_labels": {
+      "delivery_status_label": "Chưa xác định — có thể đã gửi",
+      "forbidden_labels": [
+        "Đã gửi Telegram",
+        "Không gửi được"
+      ],
+      "why_vi": "I13: aggregate có part unknown thì KHÔNG được hiện là đã gửi."
+    }
+  },
+  "forbidden_effects": [
+    "Gửi lại part 1 tự động (forbidden_transitions: unknown → sending tự động).",
+    "Gửi lại part 0 vì aggregate chưa sent.",
+    "Hiển thị aggregate là 'Đã gửi' hoặc 'Không gửi được'.",
+    "Đổi run.status/run.outcome vì kết quả delivery (I09).",
+    "Đổi report.content_hash."
+  ]
+}

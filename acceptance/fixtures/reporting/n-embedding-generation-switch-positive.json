@@ -1,0 +1,444 @@
+{
+  "fixture_id": "FX-RP-N",
+  "title": "Đổi model embedding: dựng G2 → kiểm đủ vector → chuyển active NGUYÊN TỬ → selection chỉ dùng G2",
+  "purpose": "Mặt DƯƠNG của I12. Fixture (l) đã khóa mặt âm (trộn generation bị chặn); fixture này khóa đường đi ĐÚNG: trong lúc dựng G2 mọi selection vẫn dùng G1, việc chuyển active bị chặn khi chưa đủ vector, và sau khi chuyển thì không selection nào còn nhìn thấy G1. Không có thời điểm nào một lần selection nhìn thấy cả hai generation.",
+  "scenario_refs": [
+    "SC52"
+  ],
+  "invariant_refs": [
+    "I12",
+    "I05",
+    "I06"
+  ],
+  "decision_refs": [
+    "B04"
+  ],
+  "requirement_refs": [
+    "REQ-D48",
+    "REQ-D49",
+    "REQ-D50",
+    "REQ-D59",
+    "REQ-S7.3-03",
+    "REQ-OQ09",
+    "REQ-A3"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.4 D48, D49, D50, D59",
+    "SRC-SPEC §7.3",
+    "SRC-PLAN §9.3",
+    "SRC-PLAN §7 I12",
+    "acceptance/scenarios.yaml SC52"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml",
+    "contracts/state/report.yaml",
+    "acceptance/scenarios.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "operation_name_note_vi": "Tên operation trong fixture này lấy nguyên văn từ contracts/ports.yaml, là naming authority cho operation (baseline §3): `embedding.start_generation_rebuild` và `embedding.activate_generation`. acceptance/scenarios.yaml SC52 → event_order hiện viết hai tên KHÁC không tồn tại trong ports.yaml; chuyển PC09 sửa qua CR-PC04-11. Lịch sử cụ thể của hai tên cũ nằm ở evidence/handoffs/PC04-handoff.md (addendum PKT-PC04-FIX3), không lặp lại ở đây để prose hợp đồng không chứa token đã chết.",
+  "given": {
+    "settings": {
+      "reporting.default_similarity_threshold": 0.8,
+      "reporting.threshold_calibration_state": "uncalibrated"
+    },
+    "instrumentation_vi": "Một bộ đếm bọc quanh hàm similarity, ghi lại (generation_a, generation_b) của MỌI phép cosine. Oracle chính của SC52 đọc bộ đếm này.",
+    "rows": {
+      "embedding_generation": [
+        {
+          "id": "01JEMBGEN10000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "model_name": "multilingual-e5-small",
+          "model_version": "1.0.0",
+          "dimension": 4,
+          "normalization": "l2",
+          "state": "active",
+          "expected_vector_count": 4,
+          "built_vector_count": 4,
+          "created_at": "2026-09-01T02:00:00.000Z",
+          "activated_at": "2026-09-01T02:30:00.000Z"
+        }
+      ],
+      "tag_vector": [
+        {
+          "id": "01JTGV10000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "subject_type": "tag",
+          "subject_id": "01JTAGGNN00000000000000000",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "vector": "<blob len 4>",
+          "_note_vi": "Vector của tag ở G1. Fixture văn bản không mang blob thật."
+        }
+      ],
+      "work_label": [
+        {
+          "id": "01JWKBA1000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "target_kind": "work",
+          "target_work_id": "01JWRKN1000000000000000000",
+          "target_post_id": null,
+          "target_key": "work:01JWRKN1000000000000000000",
+          "label_text": "graph neural networks",
+          "analysis_id": "01JANAN1000000000000000000",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "vector": "<blob len 4>",
+          "created_at": "2026-09-02T01:00:00.000Z"
+        },
+        {
+          "id": "01JWKBA2000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "target_kind": "work",
+          "target_work_id": "01JWRKN2000000000000000000",
+          "target_post_id": null,
+          "target_key": "work:01JWRKN2000000000000000000",
+          "label_text": "molecular property prediction",
+          "analysis_id": "01JANAN2000000000000000000",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "vector": "<blob len 4>",
+          "created_at": "2026-09-02T01:00:00.000Z"
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWNN0000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "sequence": 70,
+          "window_from": "2026-09-12T01:00:00.000Z",
+          "window_to": "2026-09-13T01:00:00.000Z",
+          "ingest_sequence_from": 8000,
+          "ingest_sequence_to": 8100,
+          "predecessor_window_id": null,
+          "report_id": null,
+          "advanced_at": "2026-09-13T01:00:05.000Z"
+        }
+      ]
+    },
+    "_precondition_vi": "G1 active với 4 vector (1 tag + 2 nhãn + 1 alias). Owner sắp đổi model."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-13T02:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "settings.update_config",
+      "performed_by": "MOD-settings-service",
+      "description": "Owner đổi model embedding sang multilingual-e5-base 2.0.0. REQ-D48: đổi model là phải TÍNH LẠI TOÀN KHO."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-13T02:00:05.000Z",
+      "actor": "MOD-settings-service",
+      "operation": "embedding.start_generation_rebuild",
+      "performed_by": "MOD-embedding-service",
+      "description": "Tạo G2 ở state='building' với dimension 8. G1 VẪN active — ux_embedding_generation_active chỉ cho MỘT hàng active, và G2 chưa phải hàng đó."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-13T02:05:00.000Z",
+      "actor": "MOD-tag-service",
+      "operation": "embedding.generate_vectors",
+      "performed_by": "MOD-embedding-service",
+      "description": "Sinh vector G2 cho tag/alias/exclusion. Model LOCAL ở server (REQ-D50); không API key, không CLI."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-13T02:20:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "embedding.generate_vectors",
+      "performed_by": "MOD-embedding-service",
+      "description": "Sinh vector G2 cho toàn bộ work_label. built_vector_count tăng dần."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-13T03:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "performed_by": "MOD-report-service",
+      "description": "MỘT kỳ báo cáo được dựng GIỮA LÚC rebuild. Selection đọc embedding.get_active_generation → vẫn là G1. Vector G2 tồn tại nhưng KHÔNG được dùng (SRC-PLAN §9.3)."
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-13T03:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "performed_by": "MOD-report-service",
+      "transaction": "publish",
+      "description": "Publish kỳ này với embedding_generation_id = G1."
+    },
+    {
+      "seq": 7,
+      "at": "2026-09-13T03:10:00.000Z",
+      "actor": "MOD-embedding-service",
+      "operation": "embedding.activate_generation",
+      "performed_by": "MOD-embedding-service",
+      "description": "THỬ chuyển active khi built_vector_count (2) < expected_vector_count (4) → BỊ TỪ CHỐI. Đây là guard của SC52: 'chuyển generation khi chưa đủ vector bị từ chối'."
+    },
+    {
+      "seq": 8,
+      "at": "2026-09-13T03:40:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "embedding.generate_vectors",
+      "performed_by": "MOD-embedding-service",
+      "description": "Hoàn tất phần vector còn lại: built_vector_count = expected_vector_count = 4."
+    },
+    {
+      "seq": 9,
+      "at": "2026-09-13T04:00:00.000Z",
+      "actor": "MOD-embedding-service",
+      "operation": "embedding.activate_generation",
+      "performed_by": "MOD-embedding-service",
+      "transaction": "activate_generation",
+      "description": "Chuyển active G1 → G2 trong MỘT transaction: G2 state='active', G1 state='retired'. ux_embedding_generation_active ép đúng một hàng active tại mọi thời điểm quan sát được."
+    },
+    {
+      "seq": 10,
+      "at": "2026-09-13T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "performed_by": "MOD-report-service",
+      "description": "Kỳ kế tiếp: selection đọc active generation → G2. Chỉ vector G2 được dùng."
+    },
+    {
+      "seq": 11,
+      "at": "2026-09-13T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "performed_by": "MOD-report-service",
+      "transaction": "publish",
+      "description": "Publish với embedding_generation_id = G2."
+    }
+  ],
+  "expected": {
+    "after_event_6": {
+      "rows": {
+        "report": [
+          {
+            "id": "01JRPTN1000000000000000000",
+            "owner_id": "01JW0WNER00000000000000000",
+            "report_build_id": "3a7d1e02-8c4b-4f19-9d2e-5b6a7c8d9e01",
+            "embedding_generation_id": "01JEMBGEN10000000000000000",
+            "status": "published",
+            "abort_reason": null,
+            "quality": "complete",
+            "coverage_from": "2026-09-13T01:00:00.000Z",
+            "coverage_to": "2026-09-13T02:50:00.000Z",
+            "tag_config_version_id": "01JTCVN1000000000000000000",
+            "published_at": "2026-09-13T03:00:05.000Z",
+            "content_hash": "sha256:d2df48317af2fa3b3cb1ff08928b30ec9aa84e76bf46a2d1939aae837c3b5b8e",
+            "_note_vi": "Dựng GIỮA lúc rebuild nhưng mang G1 — generation đang build không được dùng."
+          }
+        ],
+        "embedding_generation": [
+          {
+            "id": "01JEMBGEN10000000000000000",
+            "owner_id": "01JW0WNER00000000000000000",
+            "state": "active",
+            "built_vector_count": 4,
+            "expected_vector_count": 4
+          },
+          {
+            "id": "01JEMBGEN20000000000000000",
+            "owner_id": "01JW0WNER00000000000000000",
+            "state": "building",
+            "built_vector_count": 2,
+            "expected_vector_count": 4,
+            "dimension": 8,
+            "normalization": "l2",
+            "model_name": "multilingual-e5-base",
+            "model_version": "2.0.0"
+          }
+        ]
+      },
+      "counts": {
+        "embedding_generation[state='active']": 1,
+        "cosine_comparisons_between_G1_and_G2": 0,
+        "report[embedding_generation_id=G2]": 0
+      }
+    },
+    "after_event_7": {
+      "error_expectation": {
+        "operation": "embedding.activate_generation",
+        "error_code": "EMBEDDING_GENERATION_MISMATCH",
+        "guard_vi": "built_vector_count >= expected_vector_count (entities.yaml: 'Guard chuyển active: built >= expected')."
+      },
+      "counts": {
+        "embedding_generation[state='active']": 1,
+        "embedding_generation[id=G2 AND state='active']": 0
+      },
+      "row_oracles": [
+        "Từ chối KHÔNG đổi state của G1 hay G2; không có transaction nào commit."
+      ]
+    },
+    "after_event_9": {
+      "rows": {
+        "embedding_generation": [
+          {
+            "id": "01JEMBGEN10000000000000000",
+            "owner_id": "01JW0WNER00000000000000000",
+            "state": "retired",
+            "activated_at": "2026-09-01T02:30:00.000Z",
+            "_note_vi": "G1 được GIỮ LẠI, không xóa: vector và report cũ vẫn tra được (REQ-S7.3-03)."
+          },
+          {
+            "id": "01JEMBGEN20000000000000000",
+            "owner_id": "01JW0WNER00000000000000000",
+            "state": "active",
+            "built_vector_count": 4,
+            "expected_vector_count": 4,
+            "activated_at": "2026-09-13T04:00:00.000Z"
+          }
+        ]
+      },
+      "counts": {
+        "embedding_generation[state='active']": 1,
+        "embedding_generation": 2,
+        "tag_vector[embedding_generation_id=G1]": 1,
+        "tag_vector[embedding_generation_id=G2]": 1,
+        "work_label[embedding_generation_id=G1]": 2,
+        "work_label[embedding_generation_id=G2]": 2
+      },
+      "row_oracles": [
+        "Chuyển active là MỘT transaction: không có thời điểm quan sát được nào có 0 hoặc 2 hàng active.",
+        "Hàng work_label và tag_vector của G1 KHÔNG bị xóa (REQ-D48 giữ bản cũ; SRC-PLAN §9.3)."
+      ]
+    },
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTN2000000000000000000",
+      "report_build_id": "5c9f2a14-7d3e-4a2b-8e1f-6c7d8e9f0a12",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNN2000000000000000000",
+        "sequence": 72,
+        "coverage_from": "2026-09-13T02:50:00.000Z",
+        "coverage_to": "2026-09-13T12:50:00.000Z",
+        "ingest_sequence_from": 8200,
+        "ingest_sequence_to": 8400,
+        "predecessor_window_id": "01JCWNN1000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVN1000000000000000000",
+        "sequence": 73,
+        "content_hash": "sha256:84bf48dd39a7de7e4196b17c37bf00b53cda039d28a7700e00b410643be25078",
+        "frozen_at": "2026-09-13T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN20000000000000000",
+        "model_name": "multilingual-e5-base",
+        "model_version": "2.0.0",
+        "dimension": 8,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMN100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKN1000000000000000000",
+            "target_key": "work:01JWRKN1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKN1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGGNN00000000000000000",
+              "tag_text": "graph neural networks",
+              "matched_via": "tag",
+              "score": 0.9105,
+              "threshold_applied": 0.8,
+              "matched_label_text": "graph neural networks"
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAN1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:5a3fa81e7f64bca5498cf7159174b2e7ac5bebc7b5522daba6784f3899d87789",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-02T02:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-13T03:00:00.000Z",
+          "ingest_sequence": 8210
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCN1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "generation_reset",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN20000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null
+      },
+      "built_at": "2026-09-13T13:00:00.000Z",
+      "published_at": "2026-09-13T13:00:05.000Z",
+      "content_hash": "sha256:ced3e2997254175a3ba9d0ca5d8d37b1dad4c20fe6426edb903f2cb7539a65cb",
+      "evidence_refs": []
+    },
+    "counts": {
+      "cosine_comparisons_between_G1_and_G2": 0,
+      "report[embedding_generation_id=G1]": 1,
+      "report[embedding_generation_id=G2]": 1,
+      "report[embedding_generation_id IN (G1,G2) same row]": 0
+    },
+    "row_oracles": [
+      "ORACLE CHÍNH (SC52): số phép cosine giữa hai generation khác nhau = 0 trong TOÀN BỘ chuỗi 11 sự kiện.",
+      "Báo cáo trước bước 9 mang G1; báo cáo sau mang G2; KHÔNG báo cáo nào mang cả hai.",
+      "Khối hướng nổi của kỳ sau mang insufficient_reason='generation_reset': các kỳ trước thuộc G1 KHÔNG được dùng làm nền so sánh mật độ (selection.md §8.5).",
+      "Report RP1 (G1) KHÔNG bị sửa sau khi chuyển generation (I05).",
+      "coverage_window nối liền qua lần chuyển generation: window_from của kỳ sau = window_to của kỳ trước (I06)."
+    ]
+  },
+  "forbidden_effects": [
+    "Chuyển active khi built_vector_count < expected_vector_count.",
+    "Trộn vector G1 và G2 trong một lần selection (I12).",
+    "Dùng vector G2 cho selection trong lúc G2 còn state='building'.",
+    "Gọi API/CLI ngoài để sinh embedding thay cho model local (REQ-D48, REQ-D50).",
+    "Xóa vector hoặc hàng generation của G1 sau khi chuyển.",
+    "Sửa report đã publish để đổi embedding_generation_id của nó (I05).",
+    "Dùng kỳ thuộc G1 làm nền so sánh mật độ cho kỳ thuộc G2 (selection.md §8.5)."
+  ],
+  "_evidence_level_required": "E2",
+  "field_names_verified_against": {
+    "file": "contracts/data/entities.yaml",
+    "sha256": "209cf03e169aeffb4e1a95d74ca852186a391e65f1825c7ce0e81e8ae5eb5ece",
+    "_note_vi": "Mọi cột trong given.rows và expected.rows tồn tại tại hash này; 0 marker pending_cr."
+  }
+}

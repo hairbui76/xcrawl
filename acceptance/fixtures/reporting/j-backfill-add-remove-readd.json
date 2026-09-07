@@ -1,0 +1,154 @@
+{
+  "fixture_id": "FX-RP-J",
+  "title": "Backfill: thêm tag → tiêu thụ; bỏ tag; thêm LẠI → activation mới nhưng KHÔNG cấp backfill lần hai",
+  "purpose": "Khóa quy tắc add–remove–re-add của SRC-PLAN §9.2 bằng subscription_identity_hash thay vì tag.id: re-add sinh tag.id mới nên khóa theo tag.id sẽ tương đương 'cấp lại mỗi lần'.",
+  "scenario_refs": [
+    "SC37"
+  ],
+  "invariant_refs": [
+    "I06"
+  ],
+  "decision_refs": [
+    "B04",
+    "AMD-B04"
+  ],
+  "requirement_refs": [
+    "REQ-D28",
+    "REQ-OQ04",
+    "REQ-S8.2-04"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.5 D28",
+    "SRC-SPEC §8.2 hàng 4",
+    "SRC-PLAN §9.2"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "settings": {
+      "reporting.backfill_days": 7,
+      "reporting.backfill_days_status": "PROVISIONAL (REQ-OQ04)"
+    },
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWNJ0000000000000000000",
+          "sequence": 40,
+          "window_from": "2026-09-08T01:00:00.000Z",
+          "window_to": "2026-09-08T13:00:00.000Z",
+          "ingest_sequence_from": 4000,
+          "ingest_sequence_to": 4100,
+          "predecessor_window_id": null
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-08T14:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.create",
+      "description": "Thêm tag 'graph neural networks' lần đầu → tag_id = tag_v1.",
+      "produces": {
+        "backfill_ledger": {
+          "id": "01JBFDJ1000000000000000000",
+          "tag_id": "01JTAGGNN00000000000000000",
+          "subscription_identity_hash": "sha256:2981554723c43055016f6ae53cfe2117efb80bdc47144811cb9886e517cf400b",
+          "activation_sequence": 1,
+          "backfill_days": 7,
+          "entitlement": "granted",
+          "entitlement_reason": "first_activation",
+          "consumed_in_report_id": null
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-09T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Kỳ có coverage_from = 2026-09-08T13:00Z; phần nới backfill kéo tập ứng viên của tag_v1 lùi 7 ngày tới 2026-09-01T13:00Z và tìm được 3 mục → entitlement được tiêu thụ TRONG commit này."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-15T02:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.delete",
+      "description": "Bỏ tag → tag_v1.state = 'removed'. Hàng backfill_ledger KHÔNG bị xóa."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-20T02:00:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "tag.create",
+      "description": "Thêm LẠI đúng chữ 'graph neural networks' → tag_id MỚI = tag_v2, cùng subscription_identity_hash.",
+      "produces": {
+        "backfill_ledger": {
+          "id": "01JBFDJ2000000000000000000",
+          "tag_id": "01JTAGGNN20000000000000000",
+          "subscription_identity_hash": "sha256:2981554723c43055016f6ae53cfe2117efb80bdc47144811cb9886e517cf400b",
+          "activation_sequence": 2,
+          "backfill_days": 7,
+          "entitlement": "denied_already_consumed",
+          "entitlement_reason": "Subscription identity này đã tiêu thụ backfill ở activation trước; muốn đào sâu thì dùng tag.rescan_corpus (SRC-SPEC §8.2 hàng 4).",
+          "consumed_in_report_id": null
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-20T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Kỳ sau khi re-add: KHÔNG nới ứng viên, coverage_from không bị kéo lùi."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "backfill_ledger": [
+        {
+          "id": "01JBFDJ1000000000000000000",
+          "activation_sequence": 1,
+          "entitlement": "consumed",
+          "consumed_in_report_id": "01JRPTJ1000000000000000000",
+          "consumed_at": "2026-09-09T13:00:05.000Z"
+        },
+        {
+          "id": "01JBFDJ2000000000000000000",
+          "activation_sequence": 2,
+          "entitlement": "denied_already_consumed",
+          "entitlement_reason": "Subscription identity này đã tiêu thụ backfill ở activation trước; muốn đào sâu thì dùng tag.rescan_corpus (SRC-SPEC §8.2 hàng 4).",
+          "consumed_in_report_id": null
+        }
+      ]
+    },
+    "counts": {
+      "backfill_ledger[subscription_identity_hash=SUBH AND consumed_in_report_id IS NOT NULL]": 1,
+      "backfill_ledger[subscription_identity_hash=SUBH]": 2
+    },
+    "row_oracles": [
+      "Sau event 2: candidate_range của tag_v1 = [coverage_from − 7 ngày, coverage_to); coverage_window.window_from của kỳ đó vẫn = predecessor.window_to (backfill KHÔNG lùi biên coverage).",
+      "Sau event 5: candidate_range = [coverage_from, coverage_to) — không nới.",
+      "ux_backfill_subscription_consumed = UNIQUE(owner_id, subscription_identity_hash) WHERE consumed_in_report_id IS NOT NULL giữ 'đúng một lần'.",
+      "Muốn đào sâu hơn, owner dùng tag.rescan_corpus (SRC-SPEC §8.2 hàng 4), không phải bỏ–thêm lại tag."
+    ]
+  },
+  "forbidden_effects": [
+    "Cấp entitlement backfill lần thứ hai cho cùng subscription_identity_hash.",
+    "Khóa entitlement theo tag.id (mỗi re-add sinh tag.id mới → cấp lại vô hạn).",
+    "Kéo lùi coverage_window.window_from vì backfill (phải nới tập ứng viên, không nới cửa sổ).",
+    "Xóa hàng backfill_ledger khi tag bị bỏ."
+  ]
+}

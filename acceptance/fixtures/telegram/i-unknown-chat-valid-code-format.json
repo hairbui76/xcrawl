@@ -1,0 +1,191 @@
+{
+  "fixture_id": "FX-TG-I",
+  "title": "Chat lạ gửi chuỗi ĐÚNG định dạng mã → được đối chiếu (ngoại lệ B09)",
+  "purpose": "B09/AMD-B09: ngoại lệ HẸP để §5.1 bước 4 hoạt động mà không phá vỡ §11.3. Chỉ chuỗi đúng định dạng mới được đối chiếu; sai mã vẫn im lặng.",
+  "scenario_refs": [
+    "SC18",
+    "SC47"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B09",
+    "AMD-B09"
+  ],
+  "requirement_refs": [
+    "REQ-D35",
+    "REQ-S11.3-01",
+    "REQ-S11.3-02"
+  ],
+  "source_refs": [
+    "SRC-PLAN §3 B09",
+    "contracts/telegram/commands.yaml § linking → validation_exception"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "telegram_link_code": [
+        {
+          "id": "01JTGC0DE10000000000000000",
+          "state": "active",
+          "expires_at": "2026-09-07T00:45:00.000Z",
+          "code_hash": {
+            "symbolic": "H_CODE",
+            "computed_by": "sha256(mã thô)",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          }
+        }
+      ],
+      "telegram_link": [],
+      "telegram_link_attempt": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T00:30:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "message_text": "xin chào",
+      "description": "Chat lạ gửi văn bản thường ⇒ KHÔNG khớp regex ⇒ bỏ im lặng, KHÔNG đối chiếu gì."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T00:31:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "message_text": "RR-ZZZZZZZZ",
+      "description": "Đúng định dạng nhưng SAI mã ⇒ được đối chiếu rồi bỏ im lặng."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T00:32:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "message_text": "RR-7QK2M4XB",
+      "description": "Đúng định dạng VÀ đúng mã ⇒ liên kết thành công."
+    }
+  ],
+  "expected": {
+    "after_event_1": {
+      "counts": {
+        "code_lookup_performed": 0,
+        "domain_rows_changed": 0,
+        "telegram_link_attempt__total": 0
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 0,
+        "telegram.answerCallbackQuery": 0
+      },
+      "log_disposition": "dropped_unlinked",
+      "rows": {
+        "telegram_link_attempt": []
+      },
+      "note_vi": "Chuỗi KHÔNG khớp định dạng ⇒ KHÔNG ghi hàng `telegram_link_attempt`. Nếu ghi, bảng này thành nhật ký mọi tin nhắn của người lạ — điều mà entities.yaml cấm tường minh."
+    },
+    "after_event_2": {
+      "counts": {
+        "code_lookup_performed": 1,
+        "domain_rows_changed": 0,
+        "telegram_link__total": 0,
+        "telegram_link_attempt__total": 1
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 0,
+        "telegram.answerCallbackQuery": 0,
+        "note": "Sai mã vẫn IM LẶNG — không nói 'mã sai', không nói 'mã hết hạn'."
+      },
+      "log_disposition": "link_code_attempt",
+      "rows": {
+        "telegram_link_attempt": [
+          {
+            "chat_id_hash": {
+              "symbolic": "H_CHAT_B",
+              "computed_by": "sha256(chat_id)"
+            },
+            "attempted_at": "2026-09-07T00:31:00.000Z",
+            "outcome": "format_match_code_invalid",
+            "link_code_id": null,
+            "_note": "Khớp định dạng nhưng không mã nào khớp ⇒ link_code_id NULL."
+          }
+        ]
+      }
+    },
+    "after_event_3": {
+      "rows": {
+        "telegram_link": [
+          {
+            "id": "01JTG11NK10000000000000000",
+            "state": "active",
+            "generation": 1
+          }
+        ],
+        "telegram_link_code": [
+          {
+            "id": "01JTGC0DE10000000000000000",
+            "state": "consumed"
+          }
+        ],
+        "telegram_link_attempt": [
+          {
+            "attempted_at": "2026-09-07T00:31:00.000Z",
+            "outcome": "format_match_code_invalid",
+            "link_code_id": null
+          },
+          {
+            "attempted_at": "2026-09-07T00:32:00.000Z",
+            "outcome": "format_match_code_valid",
+            "link_code_id": "01JTGC0DE10000000000000000"
+          }
+        ]
+      },
+      "counts": {
+        "telegram_link__state_active": 1,
+        "telegram_link_attempt__total": 2
+      },
+      "outbound_call_counts": {
+        "telegram.sendMessage": 1,
+        "telegram.answerCallbackQuery": 0,
+        "note": "Tin xác nhận — phản hồi DUY NHẤT hợp lệ cho chat chưa liên kết."
+      }
+    },
+    "rate_limit": {
+      "value": 5,
+      "unit": "attempts_per_chat_per_hour",
+      "status": "PROVISIONAL",
+      "counter_source": "contracts/data/entities.yaml ENT-telegram-link-attempt",
+      "counter_query_vi": "COUNT(telegram_link_attempt WHERE chat_id_hash = H AND attempted_at trong cửa sổ trượt 1 giờ)",
+      "over_limit_vi": "Vượt ngưỡng ⇒ VẪN im lặng và NGỪNG đối chiếu; ghi hàng `outcome = 'rate_limited_not_checked'`. Không bao giờ trả RATE_LIMITED cho chat chưa liên kết.",
+      "retention_vi": "30 ngày PROVISIONAL (CR-PC02-17) — ngoại lệ có chủ ý của REQ-D58 vì bảng chứa dấu vết của người không phải owner."
+    }
+  },
+  "forbidden_effects": [
+    "Đối chiếu chuỗi không đúng định dạng.",
+    "Trả lời 'mã sai' hoặc 'mã hết hạn'.",
+    "Cho ngoại lệ này chạy bất kỳ lệnh nào khác.",
+    "Trả RATE_LIMITED cho chat chưa liên kết.",
+    "Ghi hàng telegram_link_attempt cho tin KHÔNG khớp định dạng mã.",
+    "Lưu chat_id thô của chat chưa liên kết (chỉ lưu chat_id_hash)."
+  ],
+  "closed_cr": {
+    "id": "CR-PC07-02",
+    "closed_by": "entities.yaml ENT-telegram-link-attempt (PKT-PC02-FIX3)",
+    "note_vi": "Trước đây fixture này mang marker `pending_cr` vì không bảng nào lưu bộ đếm rate limit của B09. Bảng `telegram_link_attempt` nay là nguồn đếm, nên marker được gỡ và oracle trỏ thẳng vào bảng."
+  }
+}

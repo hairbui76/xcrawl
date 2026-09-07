@@ -1,0 +1,348 @@
+{
+  "fixture_id": "FX-RP-F",
+  "title": "Ba kỳ lịch bị bỏ lỡ (máy tắt) → một run chạy bù → ĐÚNG MỘT cửa sổ coverage bao trùm cả ba",
+  "purpose": "Khóa REQ-D15/REQ-AC02 ở phía báo cáo: gộp đợt quá hạn không được tạo ba cửa sổ, và cũng không được để hở. Đồng thời khóa tie-break khi hai mục cùng mili giây (§1.3).",
+  "scenario_refs": [
+    "SC02",
+    "SC08"
+  ],
+  "invariant_refs": [
+    "I06"
+  ],
+  "decision_refs": [
+    "B04",
+    "B08",
+    "AMD-B04",
+    "AMD-B08"
+  ],
+  "requirement_refs": [
+    "REQ-AC02",
+    "REQ-D13",
+    "REQ-D15",
+    "REQ-D16",
+    "REQ-D27",
+    "REQ-AC08"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.3 D15, D16",
+    "SRC-SPEC §8.2 hàng 8",
+    "SRC-SPEC §12 AC-02",
+    "SRC-PLAN §9.2"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "owner_timezone_iana": "Asia/Ho_Chi_Minh",
+    "schedule": {
+      "times_owner_local": [
+        "08:00",
+        "20:00"
+      ],
+      "status": "PROVISIONAL (REQ-OQ06)"
+    },
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWNF0000000000000000000",
+          "sequence": 7,
+          "window_from": "2026-09-07T01:00:00.000Z",
+          "window_to": "2026-09-07T13:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 1200,
+          "predecessor_window_id": "01JCWNF9000000000000000000"
+        }
+      ],
+      "work": [
+        {
+          "id": "01JWRKF1000000000000000000",
+          "first_discovered_at": "2026-09-10T02:15:00.000Z",
+          "ingest_sequence": 1201,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKF1000000000000000000",
+            "target_key": "work:01JWRKF1000000000000000000",
+            "identity_state": "active"
+          }
+        },
+        {
+          "id": "01JWRKF2000000000000000000",
+          "first_discovered_at": "2026-09-10T02:15:00.000Z",
+          "ingest_sequence": 1202,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKF2000000000000000000",
+            "target_key": "work:01JWRKF2000000000000000000",
+            "identity_state": "active"
+          },
+          "_note": "CÙNG mili giây với F1 — thứ tự phải do ingest_sequence quyết định (time-and-tags.md §1.3)."
+        },
+        {
+          "id": "01JWRKF3000000000000000000",
+          "first_discovered_at": "2026-09-10T02:16:00.000Z",
+          "ingest_sequence": 1203,
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKF3000000000000000000",
+            "target_key": "work:01JWRKF3000000000000000000",
+            "identity_state": "active"
+          }
+        }
+      ],
+      "tag": [
+        {
+          "id": "01JTAGPFD00000000000000000",
+          "text": "protein folding",
+          "state": "active"
+        }
+      ]
+    },
+    "note": "Máy tắt từ 2026-09-07T13:00Z tới 2026-09-10T02:00Z. Ba mốc lịch (20:00, 08:00, 20:00 giờ owner) bị bỏ lỡ."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-10T02:00:00.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "scheduler.evaluate_due",
+      "description": "Máy thức. Ba mốc quá hạn được phát hiện."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-10T02:00:01.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "job.coalesce_overdue",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Ba mốc quá hạn GỘP thành MỘT run (REQ-D15). Không chạy dồn ba đợt.",
+      "performed_by": "MOD-job-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-10T02:15:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] F1 và F2 được cấp cùng discovered_at nhưng ingest_sequence khác nhau.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-10T02:30:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Build snapshot: watermark liền mạch W = 1203 → ingest_sequence_to = 1204."
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-10T02:30:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "MỘT cửa sổ coverage nối ngay sau FW0, bao trùm toàn bộ khoảng máy tắt."
+    }
+  ],
+  "expected": {
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTF1000000000000000000",
+      "report_build_id": "ba7aa57f-dac6-4c7b-a70d-5ec1a9d4b2e9",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNF1000000000000000000",
+        "sequence": 8,
+        "coverage_from": "2026-09-07T13:00:00.000Z",
+        "coverage_to": "2026-09-10T02:16:00.000Z",
+        "ingest_sequence_from": 1200,
+        "ingest_sequence_to": 1204,
+        "predecessor_window_id": "01JCWNF0000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVF0000000000000000000",
+        "sequence": 9,
+        "content_hash": "sha256:9144866df337bc51e5277bf10d306c6446f23fd9380f5a9b1e8984e1c7b7a2ec",
+        "frozen_at": "2026-09-10T02:30:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEMF100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKF1000000000000000000",
+            "target_key": "work:01JWRKF1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKF1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.9201,
+              "threshold_applied": 0.8
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAF1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:169d4a380f794ea648fcc14e31e272655e6611d9728bf9f029f21a129d20a72a",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-10T02:25:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-10T02:15:00.000Z",
+          "ingest_sequence": 1201
+        },
+        {
+          "report_item_id": "01JRTEMF200000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKF2000000000000000000",
+            "target_key": "work:01JWRKF2000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKF2000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.9201,
+              "threshold_applied": 0.8
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAF2000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:aa5f464e9b1248cc71bf7427e9b6d5950a80cbc22ccc278a673f1cd504b00453",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-10T02:25:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-10T02:15:00.000Z",
+          "ingest_sequence": 1202
+        },
+        {
+          "report_item_id": "01JRTEMF300000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKF3000000000000000000",
+            "target_key": "work:01JWRKF3000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKF3000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.8503,
+              "threshold_applied": 0.8
+            }
+          ],
+          "late_discovery": false,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAF3000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:68eb90c0c8dc1af741e2840bb8888ed0ec182c5bb1e45ca30267aeaccb42e5b6",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-10T02:25:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-10T02:16:00.000Z",
+          "ingest_sequence": 1203
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCF1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "below_min_sample",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": "Khoảng máy tắt không quan sát được; coverage nêu dữ liệu ĐÃ quan sát."
+      },
+      "built_at": "2026-09-10T02:30:00.000Z",
+      "published_at": "2026-09-10T02:30:05.000Z",
+      "content_hash": "sha256:3921d397084acdda744ccded640da07a8326111c574586094f3e948595d9171e",
+      "evidence_refs": []
+    },
+    "counts": {
+      "coverage_window added by events 1..5": 1,
+      "run created by event 2": 1,
+      "report[status='published'] added": 1
+    },
+    "row_oracles": [
+      "Cửa sổ mới có window_from = FW0.window_to → không hở qua ba mốc bị bỏ lỡ (REQ-AC08).",
+      "F1 xếp TRƯỚC F2 vì cùng best_score (0.9201) và cùng discovered_at, tie-break bằng ingest_sequence (selection.md §7.1 khóa 4). Kết quả tái lập được, không phụ thuộc thứ tự truy vấn.",
+      "Không gửi bù các digest cũ (REQ-D16): chỉ MỘT delivery intent cho kỳ gộp."
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo ba cửa sổ coverage cho ba mốc lịch bị bỏ lỡ.",
+    "Tạo ba report và ba digest (REQ-D16 cấm gửi bù báo cáo cũ).",
+    "Để hở một khoảng giữa FW0.window_to và cửa sổ mới.",
+    "Sắp F1/F2 theo thứ tự trả về của truy vấn thay vì theo ingest_sequence."
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "fixture_id": "FX-RP-L",
+  "title": "Embedding generation đổi giữa chừng → selection bị CHẶN, không trộn vector",
+  "purpose": "Khóa I12 và SRC-PLAN §9.3: không cosine giữa hai generation; không rơi về generation cũ; không bỏ qua tag thiếu vector.",
+  "scenario_refs": [
+    "SC24"
+  ],
+  "invariant_refs": [
+    "I12",
+    "I05"
+  ],
+  "decision_refs": [
+    "B04"
+  ],
+  "requirement_refs": [
+    "REQ-D48",
+    "REQ-D50",
+    "REQ-S10.1-02"
+  ],
+  "source_refs": [
+    "SRC-PLAN §9.3",
+    "SRC-PLAN §7 I12",
+    "SRC-PLAN §10 EMBEDDING_GENERATION_MISMATCH",
+    "SRC-SPEC §3.4 D48"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "embedding_generation": [
+        {
+          "id": "01JEMBGEN10000000000000000",
+          "model_name": "multilingual-e5-small",
+          "model_version": "1.0.0",
+          "dimension": 4,
+          "normalization": "l2",
+          "state": "active"
+        },
+        {
+          "id": "01JEMBGEN20000000000000000",
+          "model_name": "multilingual-e5-base",
+          "model_version": "1.0.0",
+          "dimension": 8,
+          "normalization": "l2",
+          "state": "building",
+          "expected_vector_count": 4200,
+          "built_vector_count": 1900
+        }
+      ],
+      "work_label": [
+        {
+          "target_key": "work:01JWRKQ1000000000000000000",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": true
+        },
+        {
+          "target_key": "work:01JWRKQ2000000000000000000",
+          "embedding_generation_id": "01JEMBGEN20000000000000000",
+          "_vector_present": true,
+          "_note": "Nhãn thuộc generation ĐANG BUILD — không được dùng cho selection."
+        },
+        {
+          "target_key": "work:01JWRKQ3000000000000000000",
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "_vector_present": false,
+          "_note": "vector NULL vì đang tính; phải bị loại khỏi labels(X), KHÔNG coi là không khớp vĩnh viễn."
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "01JCWNQ0000000000000000000",
+          "sequence": 60,
+          "window_from": "2026-09-12T01:00:00.000Z",
+          "window_to": "2026-09-12T13:00:00.000Z",
+          "ingest_sequence_from": 6000,
+          "ingest_sequence_to": 6100,
+          "predecessor_window_id": null
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-13T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Build snapshot đọc embedding.get_active_generation → EMB (generation 1)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-13T13:00:02.000Z",
+      "actor": "MOD-embedding-service",
+      "operation": "embedding.activate_generation",
+      "description": "Generation 2 đủ vector và được kích hoạt NGUYÊN TỬ giữa build và commit."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-13T13:00:04.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Guard phát hiện active generation đã đổi → EMBEDDING_GENERATION_MISMATCH, rollback."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-13T13:00:20.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Rebuild hoàn toàn với generation 2. Mọi kỳ trước thuộc generation 1 không dùng làm nền mật độ."
+    }
+  ],
+  "expected": {
+    "error_expectation": {
+      "operation": "report.publish",
+      "error_code": "EMBEDDING_GENERATION_MISMATCH",
+      "registered_in": "contracts/ports.yaml report.publish.error_codes (đã tồn tại)"
+    },
+    "counts": {
+      "report[status='published'] added by events 1..3": 0,
+      "report_item added by events 1..3": 0,
+      "coverage_window added by events 1..3": 0,
+      "cosine comparisons between EMB and EMB2 vectors": 0
+    },
+    "row_oracles": [
+      "work:Q3 (vector NULL) bị loại khỏi labels(X) ở kỳ này và VẪN là ứng viên ở kỳ sau khi vector có (selection.md §5 mục 5) — không bị đánh dấu 'không khớp'.",
+      "work:Q2 (generation 2) KHÔNG được dùng trong selection của build ở event 1.",
+      "Sau rebuild ở event 4, khối hướng nổi mang evidence_state='insufficient_evidence' với insufficient_reason='generation_reset' (selection.md §8.4).",
+      "Không có report đã publish nào bị sửa (I05)."
+    ],
+    "negative_case": {
+      "description": "Trường hợp âm: một tag có tag_vector ở generation 1 nhưng THIẾU ở generation 2.",
+      "expected": "Selection bị chặn với EMBEDDING_GENERATION_MISMATCH. CẤM rơi về generation 1 cho riêng tag đó, CẤM bỏ qua tag đó và publish như thể nó không khớp gì."
+    }
+  },
+  "forbidden_effects": [
+    "Tính cosine giữa vector khác embedding_generation_id, khác dimension hoặc khác model.",
+    "Rơi về generation cũ cho riêng những tag thiếu vector ở generation mới.",
+    "Publish một kỳ trộn hai generation.",
+    "Coi vector NULL là điểm tương đồng 0 (phải loại khỏi tập, không phải cho điểm).",
+    "Dùng kỳ thuộc generation khác làm nền so sánh mật độ (I12)."
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "fixture_id": "FX-TG-NEG-3",
+  "title": "Negative: target union đặt cả hai id",
+  "purpose": "Tagged union phải đặt ĐÚNG MỘT id (B06); hai cột nullable với một UNIQUE mơ hồ chính là lỗi mà PC02 cấm.",
+  "scenario_refs": [
+    "SC48"
+  ],
+  "invariant_refs": [
+    "I08"
+  ],
+  "decision_refs": [
+    "B01"
+  ],
+  "requirement_refs": [
+    "REQ-D55"
+  ],
+  "source_refs": [
+    "contracts/schemas/saved-snapshot.schema.json"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/saved-snapshot.schema.json",
+  "expected_validation": "reject",
+  "expected_violation": {
+    "json_pointer": "/saved_item/target",
+    "reason": "additionalProperties: false trên nhánh post ⇒ work_id không hợp lệ"
+  },
+  "saved": {
+    "schema_version": "0.1.0",
+    "saved_item": {
+      "id": "01JSAVED100000000000000000",
+      "owner_id": "01J0WNER100000000000000000",
+      "target": {
+        "kind": "post",
+        "post_id": "01JP0ST1000000000000000000",
+        "work_id": "01JW0RK1000000000000000000"
+      },
+      "target_key": "post:01JP0ST1000000000000000000",
+      "state": "active",
+      "saved_at": "2026-09-05T21:00:00.000Z",
+      "unsaved_at": null,
+      "save_channel": "app",
+      "saved_snapshot_id": "01JSNAP1000000000000000000",
+      "source_report_item_id": "01JR1TEM100000000000000000",
+      "idempotency_key": null,
+      "moved_by_merge_id": null
+    },
+    "snapshot": {
+      "id": "01JSNAP1000000000000000000",
+      "owner_id": "01J0WNER100000000000000000",
+      "target_kind": "post",
+      "target_key_at_save": "post:01JP0ST1000000000000000000",
+      "analysis_id_at_save": "01JANA1Y100000000000000000",
+      "created_at": "2026-09-05T21:00:00.000Z",
+      "content": {
+        "content_version": "0.1.0",
+        "target": {
+          "kind": "post",
+          "post_id": "01JP0ST1000000000000000000",
+          "target_key": "post:01JP0ST1000000000000000000"
+        },
+        "display_title": "Post chỉ có ảnh chụp paper",
+        "summary": {
+          "content_vi": "Nội dung đọc được từ chính post.",
+          "novelty_vi": "Suy luận: có thể là hướng mới.",
+          "limitation_vi": "Chỉ có post, không có abstract.",
+          "comparator": "unknown",
+          "claim_kinds": [
+            "ai_inference"
+          ]
+        },
+        "evidence_level": "post_only",
+        "matched_tags": [
+          {
+            "tag_text": "graph neural networks",
+            "similarity": 0.74
+          }
+        ],
+        "source_posts": [
+          {
+            "x_post_id": "1900000000000000030",
+            "author_handle": "alice",
+            "url": "https://x.com/alice/status/1900000000000000030",
+            "text": "Bài này thú vị (ảnh chụp trang đầu).",
+            "published_at": "2026-09-05T09:00:00.000Z",
+            "discovered_at": "2026-09-05T11:00:01.000Z"
+          }
+        ]
+      },
+      "content_hash": "sha256:17f5b05314cd477a75c2cc6535d1bd5c1af04f04efdd69fe199b1ec4e4f95d74"
+    }
+  },
+  "forbidden_effects": [
+    "Chấp nhận snapshot không hợp lệ rồi 'sửa' ở tầng domain.",
+    "Ghi saved_item khi snapshot không validate."
+  ]
+}

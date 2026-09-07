@@ -1,0 +1,393 @@
+# Research Radar — State machine của storage health (SRC-PLAN §8.4)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-state-storage
+version: 0.2.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §3.1
+  - SRC-PLAN §8.4
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §7.3
+  - SRC-SPEC §9.3
+  - SRC-SPEC §12 AC-12, AC-15
+requirement_refs: [REQ-AC12, REQ-AC15, REQ-D58, REQ-S8.3-03, REQ-S9.3-08, REQ-S13-09]
+decision_refs: [B11, AMD-B11, ADR-0005, "R-01 (A1-R1)", "R-03 (A1-R1)", "R-04 (A1-R1)"]
+invariant_refs: [I02, I13, I15]
+producers: [MOD-data-store, MOD-health-service, MOD-backup-service]
+consumers: [MOD-job-service, MOD-ingest-service, MOD-analysis-service, MOD-report-service, MOD-delivery-service, MOD-web-ui, MOD-backup-cli]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/modules.yaml
+  - contracts/errors.yaml
+  - contracts/retry-policy.yaml
+  - contracts/state/run.yaml
+  - contracts/state/delivery.yaml
+  - contracts/ops/deployment.md
+  - "contracts/ops/backup-restore.md (PC08, chưa tồn tại tại thời điểm viết)"
+scope: >-
+  File này đóng bốn trạng thái ghi được của data store, điều kiện vào/ra từng trạng thái, thứ bị TỪ CHỐI ở mỗi
+  trạng thái (claim, ACK, publish, dispatch), kênh readiness ĐỘC LẬP DB, cách UI phân biệt last-known state với
+  trạng thái mới chưa lưu được, và cổng đối soát sau restore. Quy trình backup/restore chi tiết, RPO/RTO và
+  manifest thuộc PC08 (`contracts/ops/backup-restore.md`); file này chỉ khóa phần TRẠNG THÁI và các guard.
+verification: "EV-PC03-01/02/03/04 (SELF_VALIDATION): transition lint + reachability + đối chiếu mã lỗi và operation ID."
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Enum
+# ---------------------------------------------------------------------------
+enums:
+  storage_health:
+    values: [healthy, write_blocked, maintenance, recovery_required]
+    source_refs: [SRC-PLAN §8.4, "contracts/ports.yaml storage.get_health"]
+
+initial_state: healthy
+terminal_states: []
+non_terminal_states: [healthy, write_blocked, maintenance, recovery_required]
+note_on_terminality_vi: >-
+  Storage health KHÔNG có trạng thái terminal: một process đang chạy luôn ở một trong bốn trạng thái, và mọi
+  trạng thái đều có đường ra. Lint reachability áp dụng đầy đủ; lint "terminal không có hàng đi ra" không áp
+  dụng vì tập terminal rỗng.
+
+# ---------------------------------------------------------------------------
+# 2. Ý nghĩa từng trạng thái + cái gì bị từ chối
+# ---------------------------------------------------------------------------
+states:
+
+  - name: healthy
+    meaning_vi: "Data store nhận và commit được mutation. Trạng thái vận hành bình thường."
+    refuses: []
+    allows_vi: "Mọi operation."
+    readiness_signal_vi: "`health.get_readiness` xanh cho storage."
+
+  - name: write_blocked
+    meaning_vi: >-
+      Không ghi được: hết ổ đĩa, lỗi I/O, DB unavailable. Dữ liệu ĐÃ COMMIT vẫn đọc được (WAL an toàn); chỉ
+      đường GHI bị chặn.
+    refuses:
+      - {what: worker_claim, operations: [worker.claim_assignment, analysis.claim_task], error_code: STORAGE_WRITE_FAILED, reason_vi: "Cấp lease là một write; cấp mà không ghi được lease xuống đĩa là đúng thứ I02 cấm. Grace = 0 giây (retry-policy)."}
+      - {what: mutation_ack, operations: [ingest.submit_batch, ingest.commit_checkpoint, analysis.submit_result, delivery.record_receipt], error_code: STORAGE_WRITE_FAILED, reason_vi: "KHÔNG ACK mutation chưa commit (I02, SRC-PLAN §8.4)."}
+      - {what: publish, operations: [report.build, report.publish], error_code: STORAGE_WRITE_FAILED, reason_vi: "Publish là một transaction nhiều bảng; không có nửa vời."}
+      - {what: dispatch, operations: [delivery.dispatch_next], error_code: STORAGE_WRITE_FAILED, reason_vi: "Attempt phải COMMIT TRƯỚC network call (SRC-PLAN §8.3); không commit được ⇒ không được gọi mạng."}
+      - {what: schedule_enqueue, operations: [job.enqueue_scheduled_run, job.coalesce_overdue], error_code: STORAGE_WRITE_FAILED, reason_vi: "Tạo run là một write; occurrence quá hạn vẫn được gộp sau khi hồi phục (CU-01)."}
+    allows_vi: "Đọc: `run.list`, `run.get`, `report.list`, `report.get`, `delivery.get_status`, `ingest.get_receipt`, `health.*`, `storage.get_health`."
+    readiness_signal_vi: "`health.get_readiness` ĐỎ cho storage; `health.get_liveness` vẫn trả `up` (kênh độc lập DB)."
+    forbidden_vi:
+      - "Tuyên bố đã persist lỗi vào DB (SRC-PLAN §8.4; contracts/errors.yaml §EPR-01)."
+      - "Tiến cursor / `acked_through_ingest_sequence` (I02)."
+      - "Cố ghi tiếp khi hết ổ và làm hỏng file SQLite (REQ-S9.3-08)."
+
+  - name: maintenance
+    meaning_vi: >-
+      Cửa sổ bảo trì CÓ CHỦ ĐÍCH do Operator mở: tạo snapshot backup (`VACUUM INTO` / Online Backup API),
+      migration schema, hoặc `data.purge_all` (operation này được PC01 thêm theo ruling R-04 của Coordinator
+      trong PKT-PC01-FIX2; đã có mặt trong contracts/ports.yaml bản sha256
+      485213cb1f822a62cabf0994f05fb6a663c63fcefa489ef03d7a7ca86a817206, và ports.yaml giới hạn nó chỉ chạy được
+      khi `storage.health = maintenance` — file này là phía trạng thái của cùng ràng buộc đó).
+      Khác `write_blocked` ở chỗ đây là trạng thái MONG MUỐN.
+    refuses:
+      - {what: worker_claim, operations: [worker.claim_assignment, analysis.claim_task], error_code: STORAGE_WRITE_FAILED, reason_vi: "Không giao việc mới trong cửa sổ bảo trì; run đang chạy được để chạy hết hoặc bị hủy có chủ đích trước khi vào maintenance."}
+      - {what: publish, operations: [report.publish], error_code: STORAGE_WRITE_FAILED, reason_vi: "Snapshot phải nhất quán; publish giữa chừng làm snapshot chứa nửa kỳ."}
+      - {what: dispatch, operations: [delivery.dispatch_next], error_code: STORAGE_WRITE_FAILED, reason_vi: "Side effect ngoài không được xảy ra trong cửa sổ snapshot (khôi phục sẽ không biết đã gửi hay chưa)."}
+    allows_vi: "Đọc như `write_blocked`, cộng các operation của `backup.*` và migration."
+    readiness_signal_vi: "`health.get_readiness` VÀNG cho storage với lý do `maintenance` — KHÁC đỏ, để Operator phân biệt sự cố với việc mình đang làm (I13)."
+    forbidden_vi:
+      - "Vào `maintenance` mà không có hành động explicit của Operator."
+      - "Backup bằng cách copy riêng file DB (WAL là một phần trạng thái bền — SRC-PLAN §3.1, AMD-B11)."
+
+  - name: recovery_required
+    meaning_vi: >-
+      Vừa restore từ snapshot, CHƯA đối soát. Dữ liệu đọc được nhưng KHÔNG được coi là nhất quán với thế giới
+      bên ngoài: outbox trong snapshot có thể đã gửi rồi, lease trong snapshot đã vô nghĩa, `first_announced`
+      có thể lệch.
+    refuses:
+      - {what: worker_claim, operations: [worker.claim_assignment, analysis.claim_task], error_code: RESTORE_UNVERIFIED, reason_vi: "Worker claim bị dừng cho tới khi reconcile (I15, NC-10)."}
+      - {what: dispatch, operations: [delivery.dispatch_next], error_code: RESTORE_UNVERIFIED, reason_vi: "Outbox cũ KHÔNG replay (I15) — người nhận sẽ thấy hàng loạt digest cũ."}
+      - {what: publish, operations: [report.build, report.publish], error_code: RESTORE_UNVERIFIED, reason_vi: "Coverage và first-announcement chưa được xác minh; publish sẽ ghi đè lịch sử bằng dữ liệu chưa đối soát."}
+      - {what: schedule_enqueue, operations: [job.enqueue_scheduled_run, job.coalesce_overdue], error_code: RESTORE_UNVERIFIED, reason_vi: "Không chạy lại job side effect (I15)."}
+      - {what: first_announced_reset, operations: [], error_code: RESTORE_UNVERIFIED, reason_vi: "`first_announced` KHÔNG bị reset trước khi kiểm tra toàn vẹn (I15, AMD-B11)."}
+    allows_vi: "Đọc, cộng `backup.verify_snapshot` và `backup.reconcile_after_restore`."
+    readiness_signal_vi: "`health.get_readiness` ĐỎ cho dispatcher và scheduler với lý do `recovery_required`."
+    forbidden_vi:
+      - "Có bất kỳ đường TỰ ĐỘNG nào rời trạng thái này (NC-10: không có đường tự động resume dispatcher)."
+      - "Mở khóa theo thời gian."
+
+# ---------------------------------------------------------------------------
+# 3. Bảng transition
+# ---------------------------------------------------------------------------
+transitions:
+
+  - id: T-ST-01
+    from: healthy
+    event: write_failure_detected
+    operation_id: storage.get_health
+    guard_vi: "Một mutation thất bại vì I/O, hết dung lượng, hoặc DB unavailable."
+    to: write_blocked
+    transaction_vi: >-
+      KHÔNG có transaction DB. Trạng thái này được giữ TRONG BỘ NHỚ tiến trình và phát qua kênh health độc lập.
+      Cố ghi trạng thái 'không ghi được' vào DB đang không ghi được là mâu thuẫn (SRC-PLAN §8.4).
+    effects_vi:
+      - "Ngừng nhận job mới NGAY (grace = 0)."
+      - "Không ACK mutation nào."
+      - "`health.get_readiness` chuyển đỏ; `health.get_liveness` vẫn `up`."
+      - "Caller nhận `STORAGE_WRITE_FAILED` với `correlation_id` sinh trong bộ nhớ (errors.yaml §EPR-01)."
+    forbidden_vi:
+      - "Tuyên bố đã persist lỗi (SRC-PLAN §8.4)."
+      - "Tiếp tục cấp assignment."
+      - "Ghi hỏng file SQLite (REQ-S9.3-08)."
+    oracle_vi: >-
+      SC26 disk-full: `ingest_receipt` cho batch đang bay KHÔNG tồn tại; readiness đỏ; liveness `up`;
+      hash file DB không đổi trong cửa sổ.
+    scenario_refs: [SC26]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I02, I13]
+
+  - id: T-ST-02
+    from: write_blocked
+    event: probe_success_streak
+    operation_id: storage.get_health
+    guard_vi: >-
+      `storage_recovery_probe_consecutive_success` (3) probe LIÊN TIẾP thành công, mỗi probe cách nhau
+      `storage_recovery_probe` (30 s). Probe là một write NHỎ vào bảng probe riêng, KHÔNG phải mutation nghiệp vụ.
+    to: healthy
+    transaction_vi: "Probe cuối commit thành công; trạng thái trong bộ nhớ chuyển `healthy`."
+    effects_vi:
+      - "Mở lại claim, ACK, publish, dispatch."
+      - "Run đang dở: nếu lease đã hết hạn ⇒ T-RUN-14 đưa về `queued`; nếu lease còn ⇒ worker tiếp từ checkpoint đã ACK."
+      - "Occurrence lịch quá hạn trong lúc chặn được gộp thành MỘT run (CU-01)."
+    forbidden_vi:
+      - "Rời `write_blocked` sau một probe đơn lẻ (ổ gần đầy dao động — retry-policy §storage_recovery_probe_consecutive_success)."
+      - "Coi việc đọc được là bằng chứng ghi được."
+    oracle_vi: "SC36: sau khi dọn ổ, cần ≥ 90 s (3 × 30 s) mới rời `write_blocked`; run tiếp tục từ đúng `acked_through_ingest_sequence` cũ."
+    scenario_refs: [SC26, SC36]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I02]
+
+  - id: T-ST-03
+    from: healthy
+    event: operator_opens_maintenance
+    operation_id: backup.create_snapshot
+    guard_vi: "Hành động EXPLICIT của Operator (`backup_operator` scope). Không có đường tự động vào maintenance."
+    to: maintenance
+    transaction_vi: "Ghi một hàng maintenance window (trạng thái vẫn ghi được ở thời điểm này) + chuyển cờ trong bộ nhớ."
+    effects_vi:
+      - "Snapshot dùng SQLite Online Backup API hoặc `VACUUM INTO` — an toàn với WAL (AMD-B11/ADR-0005)."
+      - "Manifest ghi hash file DB, phiên bản schema, artifact và cấu hình embedding."
+    forbidden_vi:
+      - "Copy riêng file DB mà bỏ WAL (SRC-PLAN §3.1: có thể mất transaction đã commit)."
+      - "Vào maintenance khi đang có publish dở dang — hủy hoặc chờ, không cắt ngang."
+    oracle_vi: "AC-12: snapshot hash trước/sau restart bằng nhau; manifest khớp count và hash của Saved, report, ledger."
+    scenario_refs: [SC12, SC27]
+    error_codes: [UNAUTHORIZED, VALIDATION_ERROR, STORAGE_WRITE_FAILED]
+    invariant_refs: [I15]
+
+  - id: T-ST-04
+    from: maintenance
+    event: maintenance_window_closed
+    operation_id: backup.verify_snapshot
+    guard_vi: "Snapshot đã tạo và verify xong (hoặc migration hoàn tất), Operator đóng cửa sổ."
+    to: healthy
+    transaction_vi: "Ghi kết thúc maintenance window."
+    effects_vi: ["Mở lại claim/publish/dispatch."]
+    forbidden_vi: ["Đóng cửa sổ khi verify chưa pass."]
+    oracle_vi: "`backup.verify_snapshot` trả pass trước khi trạng thái rời `maintenance`."
+    scenario_refs: [SC27]
+    error_codes: [RESTORE_UNVERIFIED, VALIDATION_ERROR]
+    invariant_refs: [I15]
+
+  - id: T-ST-05
+    from: maintenance
+    event: restore_executed
+    operation_id: backup.restore_snapshot
+    guard_vi: "Restore vào môi trường đích với xác nhận gõ tay của Operator."
+    to: recovery_required
+    transaction_vi: "Ghi `restore_record(restore_id)` + chuyển `storage.health = recovery_required`."
+    effects_vi:
+      - "Dispatcher và worker claim BỊ DỪNG (ports.yaml `backup.restore_snapshot`)."
+      - "Outbox cũ KHÔNG replay; `first_announced` KHÔNG bị reset (I15, AMD-B11)."
+      - "MỌI lease trong snapshot bị coi là stale bất kể `expires_at` (run.yaml §LM-08)."
+    forbidden_vi:
+      - "Bỏ qua trạng thái này và về thẳng `healthy` (NC-10)."
+      - "Restore vào môi trường đang chạy mà không có khóa side effect (AMD-B11)."
+    oracle_vi: "SC27: sau restore, `storage.health = 'recovery_required'`; số outbound send TRƯỚC reconcile = 0."
+    scenario_refs: [SC27]
+    error_codes: [RESTORE_UNVERIFIED, UNAUTHORIZED, NOT_FOUND, VALIDATION_ERROR]
+    invariant_refs: [I15]
+
+  - id: T-ST-06
+    from: recovery_required
+    event: reconcile_completed
+    operation_id: backup.reconcile_after_restore
+    guard_vi: >-
+      `backup.reconcile_after_restore` chạy xong VÀ ba việc đã làm CÓ CHỦ ĐÍCH: (a) thu hồi mọi stale lease,
+      (b) quyết định với từng delivery cũ trong outbox (giữ hay hủy), (c) kiểm toàn vẹn `first_announced`,
+      coverage ledger và Saved theo manifest.
+    to: healthy
+    transaction_vi: "Ghi kết quả đối soát: `assignment_lease.state = revoked` cho mọi lease cũ; quyết định outbox; rồi mới chuyển `storage.health = healthy`. Idempotency `restore_id`."
+    effects_vi:
+      - "ĐÂY là cổng duy nhất mở lại side effect (I15)."
+      - "Sau reconcile, run đang dở trong snapshot ở `queued` với lease epoch mới."
+    forbidden_vi:
+      - "Mở khóa mà chưa quyết định với outbox cũ."
+      - "Reset `first_announced` mà không kiểm tra toàn vẹn (AMD-B11)."
+      - "Đường tự động: không có (NC-10)."
+    oracle_vi: >-
+      SC27: sau reconcile, `COUNT(assignment_lease WHERE state='held') = 0`; count và hash của Saved, report và
+      ledger khớp manifest; số outbound send trước reconcile = 0.
+    scenario_refs: [SC27]
+    error_codes: [RESTORE_UNVERIFIED, VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, STORAGE_WRITE_FAILED]
+    invariant_refs: [I15]
+
+  - id: T-ST-07
+    from: recovery_required
+    event: write_failure_during_recovery
+    guard_vi: "Ổ đích cũng không ghi được trong lúc đang ở `recovery_required`."
+    to: write_blocked
+    transaction_vi: "KHÔNG có transaction; cờ trong bộ nhớ."
+    effects_vi:
+      - "Ưu tiên: `write_blocked` là vấn đề CẤP BÁCH hơn (không làm gì được cả)."
+      - "`restore_record` vẫn tồn tại; sau khi ghi được lại, trạng thái quay về `recovery_required` (T-ST-08), KHÔNG về `healthy`."
+    forbidden_vi: ["Mất dấu vết rằng đang cần reconcile — đó là cách outbox cũ được replay ngoài ý muốn."]
+    oracle_vi: "Sau khi ghi được lại, `storage.health = 'recovery_required'` chứ không phải `healthy`."
+    scenario_refs: [SC26, SC27]
+    error_codes: [STORAGE_WRITE_FAILED, RESTORE_UNVERIFIED]
+    invariant_refs: [I15]
+
+  - id: T-ST-08
+    from: write_blocked
+    event: probe_success_with_pending_restore
+    guard_vi: "Như T-ST-02 nhưng tồn tại một `restore_record` chưa reconcile."
+    to: recovery_required
+    transaction_vi: "Cờ trong bộ nhớ; đọc `restore_record` để biết còn nợ reconcile."
+    effects_vi: ["Không bao giờ 'quên' một restore chưa đối soát chỉ vì có một sự cố ổ đĩa xen vào."]
+    forbidden_vi: ["Về `healthy` khi còn `restore_record` chưa reconcile."]
+    oracle_vi: "Inject disk-full ngay sau restore rồi khôi phục: `storage.health = 'recovery_required'`, dispatcher vẫn khóa."
+    scenario_refs: [SC26, SC27]
+    error_codes: [RESTORE_UNVERIFIED]
+    invariant_refs: [I15]
+
+  - id: T-ST-09
+    from: write_blocked
+    event: operator_opens_maintenance_to_fix
+    operation_id: backup.create_snapshot
+    guard_vi: "Operator chủ động vào cửa sổ bảo trì để xử lý (dọn ổ, migrate, restore). Không có `restore_record` treo."
+    to: maintenance
+    transaction_vi: "Cờ trong bộ nhớ; hàng maintenance window được ghi khi ghi được lại."
+    effects_vi: ["Cho phép chạy `backup.*` mà không mở lại claim/dispatch."]
+    forbidden_vi: ["Dùng đường này để lách sang `healthy`."]
+    oracle_vi: "Từ `maintenance`, `worker.claim_assignment` vẫn bị từ chối."
+    scenario_refs: [SC26]
+    error_codes: [UNAUTHORIZED, STORAGE_WRITE_FAILED]
+    invariant_refs: [I15]
+
+# ---------------------------------------------------------------------------
+# 4. Transition bị cấm
+# ---------------------------------------------------------------------------
+forbidden_transitions:
+  - {from: recovery_required, to: healthy, condition_vi: "không qua backup.reconcile_after_restore", reason_vi: "I15, NC-10 — không có đường tự động resume dispatcher.", counterexample_vi: "Khởi động lại tiến trình server sau restore và trạng thái về `healthy` ⇒ outbox cũ được gửi ⇒ FAIL.", error_code_if_attempted: RESTORE_UNVERIFIED}
+  - {from: write_blocked, to: healthy, condition_vi: "sau một probe đơn lẻ", reason_vi: "Ổ gần đầy dao động; rời trạng thái quá sớm làm claim mở rồi lại đóng, nhiễu trạng thái run.", counterexample_vi: "Một probe thành công rồi mutation kế tiếp lại thất bại ⇒ FAIL.", error_code_if_attempted: STORAGE_WRITE_FAILED}
+  - {from: write_blocked, to: healthy, condition_vi: "khi còn `restore_record` chưa reconcile", reason_vi: "Phải quay về `recovery_required` (T-ST-08), không được quên nợ đối soát.", counterexample_vi: "Disk-full ngay sau restore rồi khôi phục ⇒ nếu về `healthy` thì dispatcher chạy ⇒ FAIL.", error_code_if_attempted: RESTORE_UNVERIFIED}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "được ghi vào DB như điều kiện để trạng thái có hiệu lực", reason_vi: "SRC-PLAN §8.4 — nếu không ghi được lỗi vào DB thì KHÔNG tuyên bố đã persist lỗi; trạng thái sống trong bộ nhớ + kênh health.", counterexample_vi: "Hệ thống chờ ghi được hàng `storage_health` mới chịu từ chối claim ⇒ trong lúc chờ vẫn cấp lease ⇒ FAIL I02.", error_code_if_attempted: STORAGE_WRITE_FAILED}
+  - {from: healthy, to: maintenance, condition_vi: "tự động, không có hành động Operator", reason_vi: "Maintenance là cửa sổ CÓ CHỦ ĐÍCH; tự vào sẽ dừng dịch vụ không báo trước.", counterexample_vi: "Cron tự mở maintenance để backup và dừng claim giữa một đợt đang chạy ⇒ FAIL.", error_code_if_attempted: UNAUTHORIZED}
+
+# ---------------------------------------------------------------------------
+# 5. Kênh readiness độc lập DB
+# ---------------------------------------------------------------------------
+independent_health_channel:
+  decision_refs: ["SRC-PLAN §8.4"]
+  rules:
+    - id: HC-01
+      rule_vi: >-
+        `health.get_liveness` phải trả lời được KỂ CẢ KHI DB không ghi được và kể cả khi DB không đọc được. Nó
+        chỉ trả `up` + phiên bản schema; không đọc bảng nghiệp vụ nào (ports.yaml).
+    - id: HC-02
+      rule_vi: >-
+        `health.get_readiness` báo trạng thái từng module TỪ BỘ NHỚ tiến trình: storage health, scheduler,
+        dispatcher (có bị khóa vì recovery không), embedding generation, connector nguồn, worker online/offline.
+    - id: HC-03
+      rule_vi: >-
+        `storage.get_health` là port `internal` chỉ tồn tại trong tiến trình server. Collector KHÔNG có đường tới
+        đây (NC-05: `CAPABILITY_DENIED`, không phải `UNAUTHORIZED`).
+    - id: HC-04
+      rule_vi: >-
+        Ba kênh trên là FALLBACK bắt buộc của quy tắc EPR-01 (contracts/errors.yaml): nhờ chúng, không mã lỗi nào
+        cần một hàng DB mới để được coi là đã báo.
+  oracle_vi: >-
+    Disk-full injection: `health.get_liveness` trả `up`; `health.get_readiness` báo storage đỏ; error envelope
+    trả về caller có `correlation_id`; số hàng của mọi bảng nghiệp vụ không đổi.
+  scenario_refs: [SC26]
+  invariant_refs: [I13]
+
+# ---------------------------------------------------------------------------
+# 6. UI read model: last-known vs chưa lưu được
+# ---------------------------------------------------------------------------
+ui_read_model:
+  requirement_vi: "SRC-PLAN §8.4 nguyên văn: 'UI phải phân biệt last-known state với trạng thái mới chưa lưu được.'"
+  rules:
+    - id: UI-01
+      rule_vi: >-
+        Mọi màn hình hiển thị trạng thái nghiệp vụ (Runs, Run detail, Reports, Delivery status) phải kèm một
+        trường `as_of` (timestamp UTC ms của lần đọc DB thành công gần nhất) và một cờ `storage_health`.
+    - id: UI-02
+      rule_vi: >-
+        Khi `storage_health != healthy`, UI hiển thị dữ liệu LAST-KNOWN kèm nhãn tường minh rằng đây là trạng
+        thái đọc lúc `as_of` và các thay đổi mới CHƯA lưu được. KHÔNG hiển thị như trạng thái hiện tại.
+    - id: UI-03
+      rule_vi: >-
+        Hành động mutation trên UI bị VÔ HIỆU HÓA (không phải thất bại im lặng) khi `storage_health != healthy`,
+        kèm lý do đọc được.
+    - id: UI-04
+      rule_vi: >-
+        Bốn trạng thái của I13 — incomplete (partial), empty, failed, unknown — hiển thị RIÊNG. `storage_health`
+        là chiều THỨ NĂM, độc lập: một run `completed/empty` đọc trong lúc `write_blocked` vẫn là `empty`, chỉ
+        kèm nhãn "dữ liệu tính tới `as_of`".
+  forbidden_vi:
+    - "Hiển thị một trạng thái đọc từ cache như thể vừa đọc từ DB."
+    - "Nút mutation im lặng không làm gì."
+    - "Gộp 'không đọc được' với 'không có dữ liệu' (REQ-S8.3-01, I13)."
+  oracle_vi: "Assertion state-to-view: với mỗi tổ hợp (run state, storage_health), snapshot render khác nhau và `as_of` luôn có mặt."
+  scenario_refs: [SC15, SC26]
+  invariant_refs: [I13]
+
+# ---------------------------------------------------------------------------
+# 7. Cổng đối soát sau restore (tham chiếu PC08)
+# ---------------------------------------------------------------------------
+post_restore_reconciliation_gate:
+  owned_by_pc03_vi: "Trạng thái `recovery_required` tồn tại; nó CHẶN claim/dispatch/publish/scheduler; nó chỉ rời được qua `backup.reconcile_after_restore`; mọi lease trong snapshot là stale."
+  owned_by_pc08_vi: >-
+    Nội dung cụ thể của việc đối soát: quy trình verify manifest, RPO/RTO, cách quyết định với từng delivery cũ,
+    danh sách kiểm toàn vẹn `first_announced` / coverage / Saved. Xem `contracts/ops/backup-restore.md` (PC08).
+  interface_contract_vi: >-
+    PC08 phải cung cấp một vị từ boolean `reconciliation_complete(restore_id)` không có side effect, và
+    `backup.reconcile_after_restore` chỉ chuyển `storage.health = healthy` khi vị từ đó đúng.
+  invariant_refs: [I15]
+
+# ---------------------------------------------------------------------------
+# 8. Invariant sở hữu
+# ---------------------------------------------------------------------------
+invariants_owned:
+  - id: I02
+    statement_vi: "(phần storage) ACK chỉ sau commit; không ACK khi không ghi được."
+    owner_transition: [T-ST-01, T-ST-02]
+    positive_oracle_vi: "Disk-full: mọi mutation trả `STORAGE_WRITE_FAILED`, `COUNT(ingest_receipt)` không tăng, hash file DB không đổi."
+    counterexample_vi: >-
+      PHẢI FAIL: server ACK một batch rồi mới cố ghi và thất bại. Collector tiến con trỏ, dữ liệu mất vĩnh viễn
+      mà không ai biết.
+  - id: I13
+    statement_vi: "(phần storage) 'không đọc/ghi được' hiển thị RIÊNG với 'không có dữ liệu'."
+    owner_transition: [T-ST-01, "UI-02", "UI-04", "HC-02"]
+    positive_oracle_vi: "Readiness đỏ + UI hiển thị last-known kèm `as_of`; không màn hình nào nói 'không có nghiên cứu mới'."
+    counterexample_vi: "PHẢI FAIL: khi DB không đọc được, Runs hiển thị danh sách rỗng và người dùng hiểu là không có đợt nào."
+  - id: I15
+    statement_vi: "Restore không tự gửi lại outbox cũ, chạy lại job side effect hoặc reset `first_announced` mà không kiểm tra."
+    owner_transition: [T-ST-05, T-ST-06, T-ST-07, T-ST-08, "forbidden_transitions hàng 1 và 3"]
+    positive_oracle_vi: >-
+      SC27: restore vào môi trường sạch ⇒ số outbound send trước reconcile = 0;
+      `COUNT(assignment_lease WHERE state='held')` sau reconcile = 0; hash ledger khớp manifest.
+    counterexample_vi: >-
+      PHẢI FAIL: một đường mà `storage.health` về `healthy` không qua `backup.reconcile_after_restore` — ví dụ
+      khởi động lại tiến trình sau restore, hoặc một sự cố disk-full xen vào rồi hồi phục thẳng về `healthy`
+      (đó là lý do T-ST-08 tồn tại).

@@ -1,0 +1,744 @@
+# Research Radar — Budget, timeout, lease và chính sách retry (mọi số có đơn vị + lý do)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-policy-retry
+version: 0.5.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §5
+  - SRC-PLAN §5.1
+  - SRC-PLAN §8.1
+  - SRC-PLAN §8.3
+  - SRC-PLAN §8.4
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §3.3
+  - SRC-SPEC §9.2
+  - SRC-SPEC §9.3
+  - SRC-SPEC §13.1
+requirement_refs:
+  - REQ-D11
+  - REQ-D13
+  - REQ-D15
+  - REQ-D16
+  - REQ-D43
+  - REQ-D44
+  - REQ-AC01
+  - REQ-AC02
+  - REQ-AC03
+  - REQ-AC04
+  - REQ-AC14
+  - REQ-S9.2-01
+  - REQ-S9.3-01
+  - REQ-S9.3-03
+  - REQ-S9.3-04
+  - REQ-S9.3-06
+  - REQ-S9.3-07
+  - REQ-S9.3-08
+  - REQ-A1
+  - REQ-A5
+  - REQ-A6
+  - REQ-A7
+  - REQ-OQ05
+  - REQ-OQ06
+decision_refs: [B02, B03, B05, B07, B08, B10, B13, AMD-B02, AMD-B03, AMD-B05, AMD-B08, AMD-B10, ADR-0002, ADR-0007, ADR-0008, ADR-0010]
+invariant_refs: [I02, I04, I09, I10, I13, I14, I15]
+producers: [MOD-job-service, MOD-scheduler, MOD-ingest-service, MOD-analysis-service, MOD-report-service, MOD-delivery-service, MOD-data-store]
+consumers: [MOD-x-collector, MOD-analysis-worker, MOD-ai-adapter, MOD-research-connector, MOD-telegram-adapter, MOD-web-ui, MOD-backup-service]
+dependencies:
+  - contracts/errors.yaml
+  - contracts/state/run.yaml
+  - contracts/state/analysis.yaml
+  - contracts/state/report.yaml
+  - contracts/state/delivery.yaml
+  - contracts/state/storage.yaml
+  - contracts/ops/deployment.md
+  - contracts/data/entities.yaml
+scope: >-
+  File này đóng mọi con số về thời gian, số lần thử và ngưỡng mà PC03 sở hữu: lease/heartbeat/epoch, claim,
+  ingest, phân tích, provider, Telegram, connector nghiên cứu, lịch và catch-up, run-now, và probe phục hồi
+  storage. Mỗi mục nêu ai retry (server hay worker) và khi nào TUYỆT ĐỐI không retry. Số PROVISIONAL là số cấu
+  hình được, đổi không cần amendment, nhưng phải có lý do — không có "TBD" (baseline §3).
+  File này KHÔNG định nghĩa mã trạng thái HTTP (PC05), rate limit thật của arXiv/OpenAlex (KC, REQ-A6) hay
+  chi phí AI (PC06).
+verification: >-
+  EV-PC03-05 (SELF_VALIDATION): script lint khẳng định mọi mục trong `budgets` có `value` (hoặc `values`),
+  `unit`, `rationale_vi`, `status`, `retried_by`; và mọi `retry_budget_ref` xuất hiện trong contracts/errors.yaml
+  và contracts/state/*.yaml đều tồn tại ở đây.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Nguyên tắc
+# ---------------------------------------------------------------------------
+principles:
+  - id: RP-01
+    statement_vi: >-
+      Timeout transport là KHÔNG BIẾT KẾT QUẢ, không phải rollback. Trước khi retry một mutation, caller phải tra
+      receipt (`ingest.get_receipt`, `delivery.get_status`) hoặc replay đúng theo hợp đồng idempotent.
+    source_refs: [SRC-PLAN §5.1]
+  - id: RP-02
+    statement_vi: >-
+      Retry ở đúng MỘT tầng. Nếu tầng dưới (adapter, HTTP client) đã retry thì tầng trên không retry nữa, để số
+      lần gọi thật không nhân lên. Với AI: adapter retry = 0, toàn bộ ngân sách nằm ở tầng task (mục `budgets`).
+    source_refs: [SRC-SPEC §9.3, REQ-D43]
+  - id: RP-03
+    statement_vi: >-
+      Mọi backoff là exponential có jitter và có trần. Jitter mặc định ±20% (full-jitter không dùng vì hệ một
+      người dùng cần thời điểm dự đoán được cho fake-clock test).
+  - id: RP-04
+    statement_vi: >-
+      Không có budget thì không được retry. Một mã lỗi `retryable_with_budget` mà không trỏ tới một mục trong
+      `budgets` là lỗi hợp đồng, phát hiện bằng lint EV-PC03-05.
+  - id: RP-05
+    statement_vi: >-
+      Số PROVISIONAL trong file này là tham số cấu hình runtime (lưu ở `settings`), không phải hằng số biên dịch.
+      Owner đổi được sau M0 mà không cần amendment (REQ-OQ05, REQ-OQ06, REQ-A1).
+
+# ---------------------------------------------------------------------------
+# 2. Khi nào TUYỆT ĐỐI không retry (danh sách đóng)
+# ---------------------------------------------------------------------------
+never_retry:
+  - condition_vi: "`delivery_part.state = unknown` — kết quả gửi ra ngoài không xác định."
+    reason_vi: "Retry có thể tạo tin trùng ở phía người nhận, thứ hệ thống không quan sát được (AMD-B03)."
+    escape_hatch: "delivery.decide_unknown (Operator quyết định, ghi rõ đã chấp nhận nguy cơ trùng)."
+    error_codes: [TELEGRAM_SEND_UNCERTAIN]
+    invariant_refs: [I09, I13]
+  - condition_vi: "`run.status = needs_user`."
+    reason_vi: "Hạn chế còn nguyên thì thử lại chỉ làm X siết thêm (REQ-S5.4-05, REQ-A7)."
+    escape_hatch: "run.resume (chỉ trong app, B10/AMD-B10), sau khi phiên được kiểm là không còn challenge."
+    error_codes: [X_CHALLENGE_REQUIRED]
+    invariant_refs: [I10]
+  - condition_vi: "`stop_reason = rate_limited` — nguồn X vừa báo giới hạn nhịp."
+    reason_vi: >-
+      SRC-SPEC §9.3 (XN): dừng đợt, ghi lý do, không luân chuyển gì để lách. Thử lại trong cùng đợt là lách
+      ở mức độ nhẹ hơn, không phải khác loại.
+    escape_hatch: "Đợt theo lịch kế tiếp, chạy bình thường không cần Owner can thiệp (contracts/state/run.yaml T-RUN-25)."
+    error_codes: [RATE_LIMITED]
+    budget_ref: x_rate_limit_in_run_retries
+  - condition_vi: "`run.status = blocked`."
+    reason_vi: "Retry tự động là bước đầu của việc luân chuyển account/proxy, thứ bị cấm (REQ-S9.3-02)."
+    escape_hatch: >-
+      `run.resume` từ `blocked` với `unblock_reason` BẮT BUỘC — owner TUYÊN BỐ điều kiện chặn đã hết
+      (ruling CR-PC03-02, đã giải; contracts/state/run.yaml T-RUN-23). Hệ thống không tự phán đoán và
+      không thử lại để dò. Hoặc `run.cancel` rồi tạo run mới.
+    error_codes: [X_ACCESS_BLOCKED]
+  - condition_vi: "`storage.health ∈ {write_blocked, recovery_required}`."
+    reason_vi: "Retry ghi vào một store không ghi được chỉ tạo tải và có nguy cơ hỏng file (REQ-S9.3-08, I15)."
+    escape_hatch: "storage_recovery_probe (đọc, không ghi) và backup.reconcile_after_restore."
+    error_codes: [STORAGE_WRITE_FAILED, RESTORE_UNVERIFIED]
+    invariant_refs: [I15]
+  - condition_vi: "`IDEMPOTENCY_CONFLICT`, `VALIDATION_ERROR`, `UNAUTHORIZED`, `UNAUTHORIZED_COMMAND`, `CAPABILITY_DENIED`, `FORBIDDEN_EDGE`, `STALE_LEASE`, `NOT_FOUND`."
+    reason_vi: "Lặp lại y hệt cho cùng kết quả; cần đổi đầu vào, đổi quyền, hoặc claim lại."
+    escape_hatch: "Không có; sửa nguyên nhân."
+  - condition_vi: "`IDENTITY_CONFLICT`."
+    reason_vi: "Không merge đoán (B15, I03); retry không tạo thêm thông tin."
+    escape_hatch: "identity.resolve_conflict (Owner)."
+  - condition_vi: "Lease đã hết hạn hoặc đã bị thu hồi."
+    reason_vi: "Worker cũ commit là vi phạm I10."
+    escape_hatch: "worker.claim_assignment / analysis.claim_task để lấy lease mới."
+
+# ---------------------------------------------------------------------------
+# 3. Budgets
+# ---------------------------------------------------------------------------
+budgets:
+
+  # ------------------------------------------------------------ lease/claim
+  lease_ttl_collector:
+    value: 120
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; nhất quán với contracts/ops/deployment.md (heartbeat_interval=30s, online_threshold=90s)"
+    applies_to: [worker.claim_assignment, worker.heartbeat, ingest.submit_batch, ingest.commit_checkpoint]
+    retried_by: server
+    rationale_vi: >-
+      Bằng 4 × `heartbeat_interval` (30 s) và lớn hơn `online_threshold` (90 s). Phải LỚN HƠN ngưỡng offline, nếu
+      không server sẽ tuyên bố worker offline trong khi lease vẫn còn hiệu lực — hai nguồn sự thật mâu thuẫn.
+      120 s cho phép lỡ ba nhịp heartbeat (mạng nhà chập chờn) trước khi thu hồi việc.
+  lease_ttl_analysis:
+    value: 900
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-D42, REQ-A5"
+    applies_to: [analysis.claim_task, analysis.heartbeat, analysis.submit_result]
+    retried_by: server
+    rationale_vi: >-
+      Một lần gọi model qua CLI/ACP có thể chạy hàng phút; TTL phải phủ được lần gọi dài nhất cộng thời gian bóc
+      JSON. 15 phút là trần thực tế: dài hơn thì một worker chết giữ task quá lâu, ngắn hơn thì task bị thu hồi
+      giữa lúc model đang chạy và sinh AI_ATTEMPT_UNCERTAIN không cần thiết.
+  heartbeat_interval_collector:
+    value: 30
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "Đã chốt ở contracts/ops/deployment.md (PC01); PC03 THAM CHIẾU, không định nghĩa lại."
+    applies_to: [worker.heartbeat]
+    retried_by: worker
+    rationale_vi: "Xem contracts/ops/deployment.md §6. PC03 chỉ ràng buộc: lease_ttl_collector ≥ 4 × giá trị này."
+  heartbeat_interval_analysis:
+    value: 60
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [analysis.heartbeat]
+    retried_by: worker
+    rationale_vi: >-
+      Task phân tích chạy lâu và ít, không cần nhịp 30 s. 60 s cho 15 nhịp trong một TTL 900 s — đủ để phát hiện
+      chết máy trong vòng ~3 phút mà không tạo tải.
+  heartbeat_grace:
+    value: 30
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [worker.heartbeat, analysis.heartbeat]
+    retried_by: server
+    rationale_vi: >-
+      Lease chỉ bị coi là hết hạn khi `now > expires_at + heartbeat_grace`. Một nhịp lỡ vì GC hay đứt mạng ngắn
+      không được biến thành thu hồi lease, vì thu hồi kéo theo chi phí claim lại và có thể sinh attempt trùng.
+  lease_expiry_sweep_interval:
+    value: 15
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [job.enqueue_scheduled_run, worker.claim_assignment]
+    retried_by: server
+    rationale_vi: >-
+      Chu kỳ server quét lease quá hạn để tăng epoch và đưa run về `queued`. Nhỏ hơn nhiều so với TTL để độ trễ
+      phát hiện không cộng dồn đáng kể; đủ lớn để không quét liên tục trên một DB SQLite một người dùng.
+  claim_request_timeout:
+    value: 10
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [worker.claim_assignment, analysis.claim_task]
+    retried_by: worker
+    rationale_vi: >-
+      Deadline của một lời gọi claim. Quá hạn ⇒ worker coi là KHÔNG BIẾT đã được cấp lease chưa (RP-01) và phải
+      gọi lại với CÙNG `claim_request_id`; idempotency của ports.yaml bảo đảm không cấp hai lease.
+  claim_idle_backoff:
+    values: [5, 15, 45]
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [worker.claim_assignment, analysis.claim_task]
+    retried_by: worker
+    rationale_vi: >-
+      Khi không có việc, worker giãn dần nhịp hỏi rồi giữ ở 45 s. Trần 45 s giữ độ trễ khởi động một đợt theo lịch
+      dưới một phút (REQ-AC01) mà không polling nóng.
+  lease_epoch_rule:
+    value: 1
+    unit: increment_per_grant
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.1, I10"
+    applies_to: [worker.claim_assignment, analysis.claim_task, run.resume, backup.reconcile_after_restore]
+    retried_by: server
+    rationale_vi: >-
+      `lease_epoch` tăng đúng 1 mỗi lần CẤP lease (kể cả cấp lại sau resume) và mỗi lần THU HỒI có chủ đích
+      (cancel, reconcile). Đơn điệu tăng là điều kiện để `STALE_LEASE` phân biệt được writer cũ; không bao giờ
+      dùng lại một epoch.
+
+  # ------------------------------------------------------------------ ingest
+  ingest_batch_attempts:
+    value: 3
+    unit: attempts_total
+    status: PROVISIONAL
+    decision_ref: "PC03; AMD-B05, I02"
+    applies_to: [ingest.submit_batch]
+    retried_by: worker
+    error_codes: [INGEST_ACK_LOST, RATE_LIMITED]
+    rationale_vi: >-
+      Một lần thử ban đầu + hai lần thử lại. Retry ở đây rẻ và an toàn vì idempotency key + payload hash bảo đảm
+      không ingest trùng; ba lần đủ vượt một sự cố mạng ngắn của mạng gia đình. Hết ba lần ⇒ collector giữ lô
+      trong bộ nhớ và báo `worker.report_stop`; KHÔNG tiến checkpoint.
+    precondition_vi: "Trước mỗi lần thử lại, worker BẮT BUỘC gọi `ingest.get_receipt` (RP-01, SRC-PLAN §5.1)."
+  ingest_batch_backoff:
+    values: [2, 8, 32]
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [ingest.submit_batch]
+    retried_by: worker
+    rationale_vi: "Hệ số 4, jitter ±20%. Trần 32 s giữ tổng thời gian một lô hỏng dưới ~45 s để không ăn hết ngân sách thời gian của đợt."
+  ingest_batch_max_items:
+    value: 200
+    unit: items
+    status: PROVISIONAL
+    decision_ref: "Đã chốt ở contracts/data/entities.yaml §limits (PC02); PC03 THAM CHIẾU."
+    applies_to: [ingest.submit_batch]
+    retried_by: worker
+    rationale_vi: >-
+      Xem entities.yaml. PC03 chỉ thêm ràng buộc vận hành: nếu `per_run_post_limit` nhỏ hơn thì giới hạn đợt thắng,
+      và một lô không bao giờ vượt phần còn lại của ngân sách đợt.
+  checkpoint_commit_cadence:
+    value: 1
+    unit: checkpoint_per_acked_batch
+    status: PROVISIONAL
+    decision_ref: "PC03; I02, REQ-S9.2-01, AMD-B05"
+    applies_to: [ingest.commit_checkpoint, ingest.submit_batch]
+    retried_by: server
+    rationale_vi: >-
+      Checkpoint được ghi TRONG CÙNG transaction với batch (TXN-ingest-batch của PC02), nên nhịp là một checkpoint
+      cho một batch đã ACK. Không có nhịp theo thời gian: checkpoint theo thời gian sẽ đi trước dữ liệu bền và phá I02.
+
+  # ---------------------------------------------------------------- analysis
+  analysis_attempts_per_item:
+    value: 2
+    unit: attempts_total_per_analysis_key_generation
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-D43 ('thử lại một lần'), B07/AMD-B07, ADR-0008"
+    applies_to: [analysis.submit_result, ai.run_inference_task]
+    retried_by: server
+    error_codes: [AI_OUTPUT_INVALID]
+    rationale_vi: >-
+      Một lần thử ban đầu + đúng MỘT lần thử lại, giữ nguyên cam kết D43. Ngân sách gắn với
+      (analysis_key, generation), KHÔNG gắn với worker: đổi worker không làm ngân sách hồi lại, nếu không một máy
+      chập chờn sẽ gọi model vô hạn. Hết ngân sách ⇒ item `failed`, report `quality = partial` (B17).
+    split_rule_vi: >-
+      Tầng adapter (`ai.run_inference_task`) retry = 0 (RP-02). Toàn bộ hai lần thử nằm ở tầng task, mỗi lần ghi
+      một hàng `analysis_attempt` với `attempt_number` đơn điệu tăng. Nhờ vậy `COUNT(analysis_attempt)` là oracle
+      trực tiếp cho "số lần gọi model", không cần đếm ở tầng mạng.
+  provider_unavailable_waits:
+    value: 3
+    unit: waits_total
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §10 AI_PROVIDER_UNAVAILABLE, REQ-S9.3-04"
+    applies_to: [ai.run_inference_task, ai.probe_provider_capability]
+    retried_by: server
+    error_codes: [AI_PROVIDER_UNAVAILABLE]
+    rationale_vi: >-
+      Ngân sách RIÊNG với `analysis_attempts_per_item` vì `AI_PROVIDER_UNAVAILABLE` nghĩa là KHÔNG có inference
+      nào chạy (không phát sinh chi phí, không có output để đánh giá). Trộn hai ngân sách sẽ đốt hết quyền thử lại
+      của D43 chỉ vì CLI chưa khởi động được. Ba lần chờ phủ được một lần khởi động lại máy hoặc một lần mất mạng
+      ngắn; hết ba lần ⇒ item `failed`.
+    forbidden_vi: "KHÔNG tự bật provider fallback nếu Owner chưa cấu hình (REQ-S9.3-04)."
+  provider_unavailable_backoff:
+    values: [60, 300, 900]
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [ai.run_inference_task]
+    retried_by: server
+    rationale_vi: >-
+      Hệ số 5, jitter ±20%. Tổng cửa sổ ~21 phút: đủ để người dùng bật lại CLI hoặc mạng hồi, ngắn hơn nhiều so
+      với khoảng cách hai đợt theo lịch (12 giờ) nên không kéo một đợt sang đợt sau.
+  analysis_unknown_attempt_auto_rerun:
+    value: 1
+    unit: automatic_reruns_total
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN ('tái chạy theo policy ghi attempt mới')"
+    applies_to: [analysis.report_attempt_unknown, analysis.claim_task]
+    retried_by: server
+    error_codes: [AI_ATTEMPT_UNCERTAIN]
+    rationale_vi: >-
+      SRC-PLAN §10 cho phép chạy lại theo policy, khác với `delivery.state = unknown` (không bao giờ tự chạy lại). Lý do
+      của sự khác biệt: hậu quả xấu nhất của một analysis không rõ là TỐN PHÍ, còn của một delivery không rõ là
+      NGƯỜI NHẬN THẤY TIN TRÙNG — cái sau không thể hoàn tác và không quan sát được. Một lần tự chạy lại là mức
+      thấp nhất còn hữu ích; lần thứ hai phải do Owner bấm `analysis.request_reanalysis`.
+      Lần chạy lại ghi attempt MỚI, không sửa attempt cũ, và attempt cũ giữ `cost_uncertain = true` (I14).
+    consumes_vi: "Lần tự chạy lại này TIÊU THỤ một đơn vị của `analysis_attempts_per_item`."
+  ai_inference_timeout_label:
+    value: 120
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "CR-PC06-01 (Coordinator amendment, 2026-09-06)"
+    applies_to: [ai.run_inference_task, analysis.claim_task]
+    task_type: label
+    retried_by: worker
+    error_codes: [AI_ATTEMPT_UNCERTAIN]
+    rationale_vi: >-
+      Gắn nhãn mở là tác vụ NGẮN: đầu vào là một post cộng abstract, đầu ra là một danh sách nhãn có
+      cấu trúc. 120 giây phủ được cả đường CLI (khởi động tiến trình + nạp model) mà vẫn cắt sớm một
+      lần treo. Đặt cao hơn nữa chỉ kéo dài thời gian trước khi hệ thống thừa nhận là nó không biết.
+  ai_inference_timeout_summary:
+    value: 300
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "CR-PC06-01 (Coordinator amendment, 2026-09-06)"
+    applies_to: [ai.run_inference_task, analysis.claim_task]
+    task_type: summary
+    retried_by: worker
+    error_codes: [AI_ATTEMPT_UNCERTAIN]
+    rationale_vi: >-
+      Summary đọc nhiều đầu vào nhất (abstract hoặc toàn văn) và sinh nhiều token nhất, nên có ngân
+      sách thời gian lớn nhất trong ba tác vụ. 5 phút là biên rộng cho một model chạy cục bộ trên máy
+      cá nhân; vẫn nhỏ hơn nhiều `lease_ttl_analysis` (900 s) nên timeout xảy ra TRƯỚC khi lease hết
+      hạn — thứ tự đó quan trọng: nếu lease hết trước, task bị thu hồi và ta mất hẳn khả năng phân biệt
+      "model treo" với "worker chết".
+  ai_inference_timeout_direction_phrasing:
+    value: 180
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "CR-PC06-01 (Coordinator amendment, 2026-09-06)"
+    applies_to: [ai.run_inference_task, analysis.claim_task]
+    task_type: direction_phrasing
+    retried_by: worker
+    error_codes: [AI_ATTEMPT_UNCERTAIN]
+    rationale_vi: >-
+      Diễn đạt hướng đang nổi nhận đầu vào ĐÃ TÍNH SẴN (mật độ vector do PC04 tính) và chỉ diễn đạt lại
+      thành câu — AI KHÔNG tự đánh giá tính mới (SRC-SPEC §2.3). Vì vậy nó nằm giữa `label` và `summary`:
+      đầu vào nhỏ nhưng đầu ra là văn xuôi.
+  ai_inference_timeout_semantics:
+    value: 1
+    unit: rule
+    status: PROVISIONAL
+    decision_ref: "CR-PC06-01; SRC-PLAN §5.1"
+    applies_to: [ai.run_inference_task]
+    retried_by: worker
+    rationale_vi: >-
+      Ba timeout trên là timeout TRANSPORT, và theo SRC-PLAN §5.1 timeout transport là KHÔNG BIẾT KẾT QUẢ,
+      KHÔNG phải rollback. Hết giờ ⇒ attempt vào `unknown_attempt` với `cost_uncertain = true`
+      (contracts/state/analysis.yaml T-AN-08), KHÔNG phải `failed` và KHÔNG được tuyên bố là chưa phát sinh
+      phí — model có thể đã chạy xong và hoá đơn đã phát sinh. Timeout TIÊU THỤ một đơn vị của
+      `analysis_attempts_per_item`; nó KHÔNG mở một ngân sách mới. Việc chạy lại (nếu có) đi theo
+      `analysis_unknown_attempt_auto_rerun` = 1.
+    forbidden_vi:
+      - "Coi timeout là 'chưa gọi' rồi gọi lại ngoài ngân sách."
+      - "Ghi `usage = 0` cho một attempt hết giờ (I14) — không biết thì là `unknown`."
+      - "Đặt timeout >= `lease_ttl_analysis`: lease sẽ hết trước và ta mất khả năng phân biệt treo với chết."
+  research_connector_attempts:
+    value: 2
+    unit: attempts_total
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-A6 (KC)"
+    applies_to: [research.fetch_work_metadata]
+    retried_by: server
+    error_codes: [SOURCE_METADATA_UNAVAILABLE]
+    rationale_vi: >-
+      Metadata thiếu KHÔNG chặn đợt chạy: target vẫn tồn tại ở mức `post_only` (REQ-D33). Vì vậy ngân sách nhỏ
+      là đúng — thà đi tiếp với evidence level thấp còn hơn kéo dài phase `enriching`.
+  research_connector_backoff:
+    values: [5, 30]
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [research.fetch_work_metadata]
+    retried_by: server
+    rationale_vi: "Jitter ±20%. Tổng ~35 s cho một target, nhân với số target vẫn nằm trong một phase enriching hợp lý."
+  research_connector_rate_limit:
+    value: null
+    values: {arxiv_requests_per_window: null, arxiv_window_seconds: null, openalex_requests_per_window: null, openalex_window_seconds: null, min_interval_ms: 3000}
+    unit: requests_per_window
+    status: PLACEHOLDER_KC
+    decision_ref: "REQ-A6 (KC — 'đọc tài liệu chính thức khi triển khai'); OWNER_DECISION_REQUIRED không áp dụng: đây là dữ kiện bên ngoài, không phải quyết định sản phẩm."
+    applies_to: [research.fetch_work_metadata, research.get_connector_health]
+    retried_by: server
+    error_codes: [RATE_LIMITED]
+    rationale_vi: >-
+      Hạn mức thật của arXiv và OpenAlex là GIẢ ĐỊNH CHƯA KIỂM CHỨNG (REQ-A6, trạng thái KC). Không được bịa số.
+      Cho tới khi PC05 đọc tài liệu chính thức và điền, connector chạy dưới một sàn an toàn duy nhất:
+      `min_interval_ms = 3000` (≤ 1 request mỗi 3 giây cho mỗi nguồn) — con số này PROVISIONAL và cố tình bảo thủ,
+      lấy từ thông lệ "1 request/3s" mà arXiv nêu trong hướng dẫn sử dụng API công khai; nó chỉ là sàn để hệ thống
+      không chạy không giới hạn, KHÔNG phải tuyên bố về hạn mức thật.
+      `Retry-After` do nguồn trả về luôn THẮNG mọi giá trị ở đây.
+    blocked_scope_vi: "PC05 phải điền bốn giá trị null trước khi module research connector được coi là CONTRACT_READY (SRC-PLAN §10)."
+
+  # ---------------------------------------------------------------- report
+  report_build_rebuild_attempts:
+    value: 2
+    unit: rebuilds_total_per_run
+    status: PROVISIONAL
+    decision_ref: "PC03; B01/AMD-B01, SRC-PLAN §9.2"
+    applies_to: [report.build, report.publish]
+    retried_by: server
+    error_codes: [TAG_VERSION_STALE]
+    rationale_vi: >-
+      Đổi tag ngay trước CAS commit là hiếm và không lặp lại có hệ thống. Hai lần dựng lại đủ vượt một lần đổi
+      tag của người dùng; nhiều hơn nữa nghĩa là người dùng đang sửa tag liên tục, khi đó dừng lại và ghi outcome
+      `partial` với lý do rõ là hành vi đúng, không phải dựng vô hạn.
+  cas_conflict_retries:
+    value: 3
+    unit: retries_total
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §9.2 ('publisher thua CAS phải đọc lại')"
+    applies_to: [report.publish, embedding.activate_generation, tag.freeze_config_version]
+    retried_by: server
+    error_codes: [CONFLICT]
+    rationale_vi: >-
+      Hệ một người dùng nên tranh chấp CAS gần như chỉ đến từ hai tiến trình nội bộ (ví dụ một run theo lịch và
+      một run thủ công). Ba lần đọc-lại-rồi-thử-lại là dư; hết ba lần nghĩa là có lỗi thiết kế, phải dừng và báo.
+    precondition_vi: "Mỗi lần thử lại BẮT BUỘC đọc lại predecessor mới, không dùng giá trị cũ."
+  cas_conflict_backoff:
+    values: [200, 800, 3200]
+    unit: milliseconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [report.publish]
+    retried_by: server
+    rationale_vi: "Hệ số 4, jitter ±20%. Đơn vị mili giây vì tranh chấp CAS trong một tiến trình là ngắn."
+
+  report_build_stale_after:
+    value: 900
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.2, AMD-B04"
+    applies_to: [report.build, report.publish]
+    retried_by: server
+    rationale_vi: >-
+      Một bản dựng ở `report.status = building` quá 15 phút mà chưa publish được coi là builder đã chết và bị
+      đánh `aborted` (T-RP-06). Chọn 15 phút vì việc dựng là truy vấn dữ liệu cục bộ trên SQLite một người dùng,
+      hiếm khi quá vài giây; 15 phút là biên rất rộng để không cắt nhầm một bản dựng đang chờ task summary.
+      Bản dựng treo phải bị dọn vì nó chiếm predecessor và sẽ chặn kỳ sau qua CAS.
+    forbidden_vi: "Dọn bản treo KHÔNG được tiêu thụ backfill hay tiến coverage (AMD-B04)."
+
+  # -------------------------------------------------------------- delivery
+  telegram_send_attempts:
+    value: 4
+    unit: attempts_total_per_delivery_part
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-S9.3-06, AMD-B03"
+    applies_to: [delivery.dispatch_next, telegram.send_payload]
+    retried_by: server
+    error_codes: [TELEGRAM_PERMANENT_FAILURE, RATE_LIMITED]
+    rationale_vi: >-
+      Áp dụng CHO MỖI `delivery_part`, không cho aggregate: một digest nhiều phần không được gửi lại phần đã có
+      receipt. Bốn lần trong cửa sổ ~1 giờ phủ được một lần mất mạng nhà thông thường. Ngân sách này KHÔNG áp dụng
+      cho part ở `unknown` — part đó không bao giờ tự gửi lại (mục `never_retry`).
+  telegram_send_backoff:
+    values: [5, 30, 300, 1800]
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [delivery.dispatch_next]
+    retried_by: server
+    rationale_vi: >-
+      Hệ số ~6, jitter ±20%. Bậc cuối 30 phút để một digest không kẹt cả ngày. `Retry-After` của Telegram thắng
+      mọi giá trị ở đây.
+  telegram_send_max_window:
+    value: 21600
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [delivery.dispatch_next]
+    retried_by: server
+    rationale_vi: >-
+      6 giờ kể từ `delivery.created_at`. Quá hạn ⇒ part chuyển `failed` dù còn attempt, vì một digest cũ hơn nửa
+      ngày đã mất giá trị thời sự và khoảng cách hai đợt theo lịch là 12 giờ (REQ-OQ06). App vẫn giữ report (I09).
+  telegram_attempt_before_send:
+    value: 1
+    unit: durable_row_before_network_call
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.3 ('Ghi attempt trước network call')"
+    applies_to: [delivery.dispatch_next]
+    retried_by: server
+    rationale_vi: >-
+      Bắt buộc: một hàng attempt (delivery_part_id + attempt_seq) COMMIT trước khi mở kết nối. Nếu tiến trình chết
+      ngay sau đó, hệ thống biết rằng CÓ THỂ đã gửi và đưa part vào `unknown` thay vì gửi lại mù.
+  delivery_alert_per_run:
+    value: 1
+    unit: alert_intent_per_run
+    status: XN_derived
+    decision_ref: "REQ-AC04, REQ-S9.3-01 ('gửi một cảnh báo')"
+    applies_to: [delivery.create_intent, worker.report_stop]
+    retried_by: server
+    rationale_vi: >-
+      Không phải budget mà là giới hạn cứng lấy thẳng từ đặc tả: `logical_delivery_key = run_alert_id + channel`
+      với UNIQUE, nên lần báo `worker.report_stop` thứ hai của cùng run KHÔNG tạo intent thứ hai.
+
+  delivery_sender_lease_ttl:
+    value: 120
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.3"
+    applies_to: [delivery.dispatch_next]
+    retried_by: server
+    rationale_vi: >-
+      Dispatcher phải giữ lease trước khi đưa một part sang `sending`; nếu không, hai tiến trình dispatch sẽ gửi
+      trùng và phía Telegram không có cách nào phát hiện. 120 s phủ được một lần gọi `sendMessage` chậm cộng
+      thời gian ghi receipt, và bằng `lease_ttl_collector` để chỉ có một hằng số lease ngắn trong hệ thống.
+    epoch_rule_vi: "Cùng cơ chế epoch với `assignment_lease`; lease cũ ⇒ STALE_LEASE, không ghi gì."
+
+  # --------------------------------------------------------------- storage
+  storage_recovery_probe:
+    value: 30
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.4"
+    applies_to: [storage.get_health, health.get_readiness]
+    retried_by: server
+    error_codes: [STORAGE_WRITE_FAILED]
+    rationale_vi: >-
+      Chu kỳ thăm dò khả năng ghi khi `storage.health = write_blocked`. Probe là một write NHỎ, có giới hạn, vào
+      một bảng probe riêng — không phải mutation nghiệp vụ — nên lặp lại an toàn. 30 s đủ nhanh để hồi phục sau
+      khi người dùng dọn ổ đĩa, đủ chậm để không ghi liên tục lên một ổ đang đầy.
+  storage_recovery_probe_consecutive_success:
+    value: 3
+    unit: consecutive_probes
+    status: PROVISIONAL
+    decision_ref: PC03
+    applies_to: [storage.get_health]
+    retried_by: server
+    rationale_vi: >-
+      Cần 3 probe liên tiếp thành công (≈ 90 s) mới rời `write_blocked`. Một probe thành công đơn lẻ trên ổ gần
+      đầy hay dao động, và việc rời trạng thái quá sớm sẽ mở lại claim rồi lại chặn — làm nhiễu trạng thái run.
+  storage_write_blocked_grace_before_refusing_claims:
+    value: 0
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; SRC-PLAN §8.4 ('ngừng nhận job mới')"
+    applies_to: [worker.claim_assignment, analysis.claim_task]
+    retried_by: server
+    rationale_vi: >-
+      Bằng 0 một cách có chủ đích: ngay khi phát hiện không ghi được, KHÔNG cấp assignment mới. Giá trị dương sẽ
+      cấp lease mà không ghi được lease xuống đĩa — đúng thứ I02 cấm.
+
+  x_rate_limit_in_run_retries:
+    value: 0
+    unit: retries
+    status: XN_derived
+    decision_ref: "SRC-SPEC §9.3 (XN); ruling CR-PC10-02"
+    applies_to: [worker.report_stop, worker.claim_assignment]
+    retried_by: not_applicable
+    error_codes: [RATE_LIMITED]
+    rationale_vi: >-
+      Bằng 0 một cách CÓ CHỦ ĐÍCH, và đây là một trong số ít con số trong file này KHÔNG phải PROVISIONAL:
+      SRC-SPEC §9.3 đã chốt (XN) "Rate limit / bị chặn → dừng đợt, ghi lý do, không luân chuyển gì để lách".
+      Một giá trị dương sẽ là chính thứ đặc tả cấm — thử lại sau khi nguồn vừa bảo chậm lại chỉ khác việc
+      lách ở mức độ, không khác ở bản chất.
+    what_counts_as_retry_vi: >-
+      "Retry" của tình huống này là ĐỢT THEO LỊCH KẾ TIẾP (`schedule_slots_default`, cách nhau 12 giờ), không
+      phải một lần gọi lại trong cùng run. Vì vậy KHÔNG có backoff nào ở đây: không có lời gọi nào để giãn.
+    forbidden_vi:
+      - "Rút ngắn khoảng cách tới đợt kế tiếp vì đợt vừa rồi bị giới hạn (đó là retry trá hình)."
+      - "Đẩy run sang `blocked` — đợt kế tiếp phải chạy được mà không cần Owner can thiệp (T-RUN-25)."
+
+  # ------------------------------------------------------- lịch và catch-up
+  schedule_coalescing_window:
+    value: 0
+    unit: seconds_lookahead
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-D15, REQ-AC02"
+    applies_to: [job.coalesce_overdue, scheduler.evaluate_due]
+    retried_by: server
+    rationale_vi: >-
+      Cửa sổ gộp là "mọi occurrence có `resolved_utc_instant <= now` chưa sinh run", tức lookahead = 0 giây:
+      KHÔNG gộp trước một mốc chưa tới hạn, vì làm vậy sẽ chạy sớm hơn "mốc sớm nhất được chạy" (D13).
+  schedule_catch_up_lookback_max:
+    value: 604800
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-D15, REQ-D16, REQ-S8.2-08"
+    applies_to: [scheduler.evaluate_due, job.coalesce_overdue]
+    retried_by: server
+    rationale_vi: >-
+      7 ngày. Occurrence quá hạn quá 7 ngày được đánh `skipped_stale` và KHÔNG gộp vào run bù, vì D16 đã cấm gửi
+      bù báo cáo cũ và một cửa sổ quan sát dài hơn một tuần không còn là "tin mới". Con số trùng với N = 7 ngày
+      backfill (baseline §5 OQ defaults) để người dùng chỉ phải nhớ một khoảng thời gian.
+    forbidden_vi: "Không chạy dồn nhiều run cho các occurrence quá hạn (REQ-S8.2-08: 6 đợt quá hạn ⇒ MỘT run)."
+  schedule_max_runs_per_catch_up:
+    value: 1
+    unit: runs
+    status: XN_derived
+    decision_ref: "REQ-D15, REQ-AC02, REQ-S8.2-08"
+    applies_to: [job.coalesce_overdue]
+    retried_by: server
+    rationale_vi: "Lấy thẳng từ đặc tả: nhiều đợt quá hạn gộp thành MỘT run duy nhất; khoảng bao trùm ghi vào run metadata."
+  run_now_debounce:
+    value: 60
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "PC03; REQ-D10, B10"
+    applies_to: [run.run_now]
+    retried_by: server
+    rationale_vi: >-
+      Hai lần bấm "chạy ngay" cách nhau dưới 60 s với `request_id` KHÁC nhau vẫn trả về run hiện có thay vì tạo
+      run thứ hai. Idempotency theo `request_id` chỉ chống double-submit của cùng một lần bấm; debounce chống
+      người dùng bấm lại vì sốt ruột. 60 s đủ để UI hiện trạng thái mới.
+  run_now_active_run_policy:
+    value: coalesce
+    unit: policy
+    status: PROVISIONAL
+    decision_ref: "PC03; contracts/ports.yaml run.run_now ('trả run đang có'), B10/AMD-B10"
+    applies_to: [run.run_now]
+    retried_by: server
+    rationale_vi: >-
+      GỘP, không từ chối: khi đã có một run chưa kết thúc, `run.run_now` trả về `run_id` đang có kèm lý do và
+      KHÔNG tạo run mới, KHÔNG đổi trạng thái run đó. Chọn gộp thay vì trả lỗi vì ports.yaml đã cam kết
+      "bấm lặp trả run đang có" và vì trả lỗi sẽ khiến người dùng bấm tiếp. Với run đang `needs_user` hoặc
+      `blocked`, gộp có nghĩa là KHÔNG resume (AMD-B10).
+  per_run_post_limit:
+    value: 200
+    unit: posts
+    status: PROVISIONAL
+    decision_ref: "baseline §5 OQ defaults; REQ-OQ05, REQ-AC03"
+    applies_to: [worker.claim_assignment, worker.report_stop]
+    retried_by: not_applicable
+    rationale_vi: >-
+      Giới hạn mỗi đợt theo số bài. Owner chốt số thật sau M0 (REQ-OQ05). Đạt giới hạn ⇒ `stop_reason =
+      limit_reached`, KHÔNG phải lỗi (AMD-B02).
+  per_run_duration_limit:
+    value: 1800
+    unit: seconds
+    status: PROVISIONAL
+    decision_ref: "baseline §5 OQ defaults ('200 posts hoặc 30 phút, cái nào tới trước'); REQ-OQ05"
+    applies_to: [worker.claim_assignment, worker.report_stop]
+    retried_by: not_applicable
+    rationale_vi: >-
+      30 phút thu thập. Điều kiện dừng là OR: chạm ngưỡng nào trước thì dừng theo ngưỡng đó, và `run` ghi
+      `limit_kind` để phân biệt (REQ-A7 yêu cầu điều kiện dừng rõ ràng).
+  schedule_slots_default:
+    values: ["08:00", "20:00"]
+    unit: local_time_hh_mm
+    status: PROVISIONAL
+    decision_ref: "baseline §5 OQ defaults (từ ví dụ trong SRC-SPEC §8.2); REQ-OQ06"
+    applies_to: [scheduler.evaluate_due]
+    retried_by: not_applicable
+    rationale_vi: >-
+      Hai mốc mỗi ngày theo giờ địa phương của `schedule_timezone`. Lấy từ ví dụ của đặc tả, chưa phải lựa chọn
+      của Owner (REQ-OQ06). Cách 12 giờ nên mọi budget ở trên đều gọn trong một khoảng giữa hai đợt.
+
+# ---------------------------------------------------------------------------
+# 4. Ai retry cái gì (bảng tổng hợp)
+# ---------------------------------------------------------------------------
+who_retries:
+  - {scope_vi: "Nộp lô ingest", retried_by: worker, budget: ingest_batch_attempts, precondition_vi: "tra ingest.get_receipt trước"}
+  - {scope_vi: "Claim assignment/task", retried_by: worker, budget: claim_idle_backoff, precondition_vi: "cùng claim_request_id"}
+  - {scope_vi: "Heartbeat", retried_by: worker, budget: heartbeat_interval_collector, precondition_vi: "epoch hiện hành"}
+  - {scope_vi: "Gọi model", retried_by: server, budget: analysis_attempts_per_item, precondition_vi: "adapter retry = 0 (RP-02)"}
+  - {scope_vi: "Provider không dùng được", retried_by: server, budget: provider_unavailable_waits, precondition_vi: "không tự bật fallback"}
+  - {scope_vi: "Metadata nghiên cứu", retried_by: server, budget: research_connector_attempts, precondition_vi: "tôn trọng min_interval_ms"}
+  - {scope_vi: "Dựng lại report", retried_by: server, budget: report_build_rebuild_attempts, precondition_vi: "build_id mới"}
+  - {scope_vi: "CAS publish", retried_by: server, budget: cas_conflict_retries, precondition_vi: "đọc lại predecessor"}
+  - {scope_vi: "Gửi Telegram", retried_by: server, budget: telegram_send_attempts, precondition_vi: "ghi attempt trước network call; part unknown KHÔNG gửi lại"}
+  - {scope_vi: "Thu hồi lease quá hạn", retried_by: server, budget: lease_expiry_sweep_interval, precondition_vi: "tăng epoch"}
+  - {scope_vi: "Thăm dò storage", retried_by: server, budget: storage_recovery_probe, precondition_vi: "probe riêng, không phải mutation nghiệp vụ"}
+  - {scope_vi: "Đợt quá hạn", retried_by: server, budget: schedule_catch_up_lookback_max, precondition_vi: "gộp thành một run"}
+
+# ---------------------------------------------------------------------------
+# 5. Bất biến của chính file này
+# ---------------------------------------------------------------------------
+consistency_constraints:
+  - id: RPC-01
+    constraint: "lease_ttl_collector >= 4 * heartbeat_interval_collector"
+    holds: "120 >= 120"
+  - id: RPC-02
+    constraint: "lease_ttl_collector > online_threshold (contracts/ops/deployment.md = 90s)"
+    holds: "120 > 90"
+  - id: RPC-03
+    constraint: "lease_ttl_analysis >= 4 * heartbeat_interval_analysis"
+    holds: "900 >= 240"
+  - id: RPC-04
+    constraint: "lease_expiry_sweep_interval < heartbeat_grace"
+    holds: "15 < 30"
+  - id: RPC-05
+    constraint: "sum(telegram_send_backoff) <= telegram_send_max_window"
+    holds: "5+30+300+1800 = 2135 <= 21600"
+  - id: RPC-06
+    constraint: "sum(provider_unavailable_backoff) < khoảng cách hai schedule slot (43200s)"
+    holds: "60+300+900 = 1260 < 43200"
+  - id: RPC-07
+    constraint: "storage_write_blocked_grace_before_refusing_claims == 0"
+    holds: "0 == 0 (I02)"
+  - id: RPC-08
+    constraint: "analysis_unknown_attempt_auto_rerun <= analysis_attempts_per_item - 1"
+    holds: "1 <= 1"
+  - id: RPC-09
+    constraint: "max(ai_inference_timeout_*) < lease_ttl_analysis"
+    holds: "300 < 900"
+    why_vi: >-
+      Timeout inference PHẢI xảy ra trước khi lease hết hạn. Ngược lại thì lease bị thu hồi trước, task quay
+      về `pending` với `cancelled_stale_lease`, và ta mất hẳn tín hiệu `unknown_attempt`/`cost_uncertain` —
+      tức mất luôn thông tin rằng chi phí CÓ THỂ đã phát sinh.
+  - id: RPC-10
+    constraint: "ai_inference_timeout_label <= ai_inference_timeout_direction_phrasing <= ai_inference_timeout_summary"
+    holds: "120 <= 180 <= 300"
+    why_vi: "Thứ tự phản ánh kích thước đầu vào/đầu ra của ba tác vụ; không có tác vụ nào được rộng rãi hơn `summary`."

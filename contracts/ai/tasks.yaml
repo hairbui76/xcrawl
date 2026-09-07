@@ -1,0 +1,433 @@
+# =============================================================================
+# CT-ai-tasks — Hợp đồng ba tác vụ AI của Research Radar
+# =============================================================================
+contract_id: CT-ai-tasks
+version: 0.1.0
+status: draft
+owner_role: AI contract owner
+source_refs:
+  - "SRC-SPEC §3.5 D19, D20, D21, D22, D25, D26"
+  - "SRC-SPEC §3.7 D39, D40, D41, D43, D44, D51"
+  - "SRC-SPEC §3.8 A5"
+  - "SRC-SPEC §8.1 (ba lớp tách rời)"
+  - "SRC-SPEC §10.1, §10.2, §10.3, §10.4"
+  - "SRC-SPEC §11.4 (dữ liệu không đáng tin cậy)"
+  - "SRC-SPEC §12 AC-06, AC-10, AC-11, AC-16, AC-17"
+  - "SRC-PLAN §3 B07, B13, B16, B17"
+  - "SRC-PLAN §5.1 (wire rules)"
+  - "SRC-PLAN §7 I04, I11, I14"
+  - "SRC-PLAN §8.2, §9.3, §10"
+  - "SRC-PLAN §11 PC06"
+requirement_refs:
+  [REQ-D19, REQ-D20, REQ-D21, REQ-D22, REQ-D25, REQ-D26, REQ-D39, REQ-D40, REQ-D41,
+   REQ-D43, REQ-D44, REQ-D51, REQ-D53, REQ-D54, REQ-A5, REQ-AC06, REQ-AC10, REQ-AC11,
+   REQ-AC16, REQ-AC17, REQ-P0-05, REQ-P0-06, REQ-S10.1-03, REQ-S10.4-02, REQ-S10.4-03]
+decision_refs: [B07, B13, B16, B17, AMD-B07, AMD-B16, AMD-B17, ADR-0008, ADR-0010]
+invariant_refs: [I04, I11, I14, I16]
+producers: [MOD-analysis-service]
+consumers: [MOD-analysis-worker, MOD-ai-adapter, MOD-report-service, MOD-web-ui]
+dependencies:
+  - contracts/schemas/analysis-result.schema.json
+  - contracts/ai/providers.yaml
+  - contracts/ai/grounding.md
+  - contracts/data/entities.yaml
+  - contracts/state/analysis.yaml
+  - contracts/retry-policy.yaml
+  - contracts/errors.yaml
+  - contracts/ports.yaml
+  - contracts/reporting/selection.md
+scope: >-
+  Ba tác vụ AI và chỉ ba: gắn nhãn chủ đề mở, summary theo D20, và diễn đạt khối "hướng đang
+  nổi". Với mỗi tác vụ: lớp model, hình dạng input (kể cả cách bọc nội dung không đáng tin),
+  output schema, thành phần analysis key, trigger phân tích lại, chính sách đổi provider, các
+  bước validate (bóc JSON, schema, ngữ nghĩa), ngân sách thử lại, timeout, và cách ghi usage.
+  KHÔNG định nghĩa adapter (providers.yaml), KHÔNG định nghĩa rubric grounding (grounding.md),
+  KHÔNG định nghĩa embedding (chạy local ở server, xem contracts/reporting/selection.md §5).
+verification: >-
+  E0 SELF_VALIDATION ở gói PC06: EV-PC06-01 (YAML parse + metaschema + fixture dương/âm),
+  EV-PC06-02 (mọi error code / operation / entity được trích dẫn có tồn tại),
+  EV-PC06-03 (analysis key khớp ADR-0008 và entities.yaml). E1–E4 `NOT_RUN`.
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# -----------------------------------------------------------------------------
+# 0. Thẩm quyền đặt tên và những gì KHÔNG phải task AI
+# -----------------------------------------------------------------------------
+naming_authority:
+  ruling: "R-03 / CR-PC03-05"
+  authoritative_file: contracts/data/entities.yaml
+  task_type_values: [label, summary, direction_phrasing]
+  statement_vi: >-
+    Tên có thẩm quyền của `task_type` là của `contracts/data/entities.yaml`
+    (ENT-analysis.task_type, ENT-analysis-generation.task_type, ENT-analysis-task.task_type):
+    `label` | `summary` | `direction_phrasing`. File này dùng đúng ba tên đó làm `task_id`.
+  aliases_seen_elsewhere_vi: >-
+    TASK_PACKET PKT-PC06 mô tả ba tác vụ bằng tên dài `label_open_topics` | `summarize_work` |
+    `phrase_emerging_direction`. Đó là **mô tả**, không phải giá trị enum; PC06 dùng tên của
+    entities.yaml.
+  ports_yaml_convergence_vi: >-
+    CR-PC03-05 ĐÃ được PC01 áp: `contracts/ports.yaml` → `analysis.enqueue_tasks` nay viết
+    `label` | `summary` | `direction_phrasing`, khớp entities.yaml. Trước FIX3 nó viết
+    `open_labeling` | `emerging_direction_phrasing`; ghi lại ở đây để một người đọc bản cũ hiểu
+    vì sao có hai cách viết trong lịch sử. PC06 không phải sửa gì.
+  alias_map:
+    label: {ports_yaml_before_fix3: open_labeling, packet_descriptive: label_open_topics}
+    summary: {ports_yaml_before_fix3: summary, packet_descriptive: summarize_work}
+    direction_phrasing: {ports_yaml_before_fix3: emerging_direction_phrasing, packet_descriptive: phrase_emerging_direction}
+
+not_ai_tasks:
+  - item_vi: "Sinh vector embedding cho nhãn và tag"
+    why_vi: "Model local ở server, KHÔNG dùng API key và KHÔNG dùng CLI (SRC-SPEC §10.1 hàng 2, REQ-D48, REQ-D50). Chính vì thế luồng không-API-key hoàn tất được (REQ-AC16)."
+    owner: "MOD-embedding-service; xem contracts/reporting/selection.md §5"
+  - item_vi: "Chọn mục nào vào báo cáo"
+    why_vi: "Truy vấn dữ liệu, không phải việc của AI (SRC-SPEC §10.1). Gọi model để hỏi 'bài này có khớp tag không' vi phạm REQ-D22 và làm chi phí AI tỉ lệ số bài × số tag."
+    owner: "MOD-report-service; contracts/reporting/selection.md §1, §4"
+  - item_vi: "Tính mật độ vector và chọn thành viên của một hướng"
+    why_vi: "Đã tính xong ở contracts/reporting/selection.md §8 trước khi task `direction_phrasing` được tạo. AI chỉ diễn đạt (CR-PC04-05)."
+    owner: MOD-report-service
+  - item_vi: "Quyết định hai bản ghi có phải một công trình"
+    why_vi: "B15 + SRC-SPEC §11.4: AI không có `evidence_source` hợp lệ cho identity (contracts/data/identity.md §9)."
+    owner: MOD-identity-service
+  - item_vi: "Đánh giá tính mới khoa học"
+    why_vi: "SRC-SPEC §2.3 ngoài phạm vi; REQ-D54 nhãn là 'ứng viên để đọc sâu'."
+    owner: "không ai — cố ý không làm"
+
+# -----------------------------------------------------------------------------
+# 1. Quy ước chung cho mọi task
+# -----------------------------------------------------------------------------
+common:
+  output_schema: contracts/schemas/analysis-result.schema.json
+  output_schema_id: "https://research-radar.local/schemas/analysis-result.schema.json"
+  schema_version: "0.1.0"
+
+  adapter_contract_vi: >-
+    Giao ước của adapter là `prompt + schema → JSON đúng schema` (SRC-SPEC §10.2) — nhưng
+    "JSON đúng schema" KHÔNG phải toàn bộ hợp đồng (SRC-PLAN §5, `contracts/state/analysis.yaml`
+    forbidden_transitions). Một kết quả chỉ hợp lệ sau khi qua ĐỦ bốn bước §4: bóc JSON, kiểm
+    schema, kiểm ngữ nghĩa, rồi mới commit.
+
+  analysis_key:
+    decision_refs: [B07, AMD-B07, ADR-0008]
+    source_of_truth: "contracts/data/entities.yaml → ENT-analysis.analysis_key.components"
+    components: [owner_id, target_key, task_type, source_fingerprint, prompt_version, schema_version, generation_number]
+    excluded_deliberately:
+      - "tag / tag_config_version — đổi tag KHÔNG đổi key, do đó không gọi lại AI (REQ-AC06, I04). Đây là điều làm AC-06 đúng."
+      - "provider / model — đổi provider KHÔNG tự invalidate; giữ kết quả cũ tới khi Owner yêu cầu reanalysis (ADR-0008 §6)."
+      - "report_id — một analysis dùng lại được ở nhiều kỳ báo cáo."
+    uniqueness_vi: "`ux_analysis_valid_key` (partial UNIQUE WHERE status='valid'): tối đa MỘT kết quả hợp lệ cho mỗi key."
+    oracle_vi: >-
+      REQ-AC06: bỏ rồi thêm lại tag ⇒ `COUNT(analysis_generation)` delta = 0,
+      `COUNT(analysis_attempt)` delta = 0, provider call counter delta = 0 cho cùng
+      (analysis_key, generation).
+
+  reanalysis_triggers:
+    allowed:
+      - {reason: owner_reanalysis, trigger_vi: "Owner bấm 'phân tích lại' (REQ-D26)", operation_id: analysis.request_reanalysis}
+      - {reason: new_work_version, trigger_vi: "Paper có phiên bản mới (arXiv vN+1) — entities.yaml ENT-work-version.reanalysis_rule", operation_id: analysis.request_reanalysis}
+      - {reason: prompt_version_change, trigger_vi: "Đổi `prompt_version` của task. CẢNH BÁO CHI PHÍ: sinh key mới cho TOÀN KHO (ADR-0008 §Hệ quả tiêu cực)", operation_id: analysis.request_reanalysis}
+      - {reason: schema_version_change, trigger_vi: "Đổi `schema_version` của analysis-result", operation_id: analysis.request_reanalysis}
+    forbidden:
+      - "Đổi tag (thêm, bớt, sửa alias, sửa exclusion) — KHÔNG phải lý do hợp lệ (REQ-AC06, I04, entities.yaml ENT-analysis-generation.reason)."
+      - "Đổi provider hoặc model — giữ kết quả cũ (ADR-0008 §6). Owner muốn chạy lại thì bấm tay, và đó là `owner_reanalysis`."
+      - "Đổi `tag_config_version`, đổi `embedding_generation`, hoặc publish một kỳ báo cáo mới."
+    reason_enum_source: "contracts/data/entities.yaml → ENT-analysis-generation.reason"
+    note_vi: >-
+      Reanalysis luôn tạo `analysis_generation` MỚI; bản cũ được GIỮ (REQ-D26). Từ `valid`
+      không có transition đi ra (`contracts/state/analysis.yaml` TSR-A01) — generation mới là
+      một item khác, không phải một transition của item cũ.
+
+  provider_switch_policy:
+    decision_refs: [ADR-0008]
+    rule_vi: >-
+      Đổi provider hoặc model trong Settings KHÔNG làm mất hiệu lực kết quả cũ và KHÔNG tự động
+      xếp hàng chạy lại. Kết quả cũ giữ nguyên `provider_name` / `model_name` của lần chạy đã
+      tạo ra nó (metadata truy vết, không thuộc key).
+    rationale_vi: >-
+      Đây là mặc định RẺ NHẤT và có thể đảo. Phương án ngược lại — đổi model thì invalidate toàn
+      kho — biến một thao tác Settings thành một hóa đơn AI cho toàn bộ dữ liệu, trái §10.4.
+    ui_obligation_vi: "Settings phải nói rõ: đổi model chỉ áp dụng cho phân tích MỚI (chuyển PC07)."
+
+  retry_budget:
+    source_of_truth: contracts/retry-policy.yaml
+    restated_here: false
+    statement_vi: >-
+      PC06 KHÔNG định nghĩa lại con số. Toàn bộ ngân sách nằm ở `contracts/retry-policy.yaml` và
+      ngữ nghĩa transition ở `contracts/state/analysis.yaml`. Bảng dưới chỉ TRÍCH DẪN.
+    split_rule_vi: >-
+      **Adapter (`ai.run_inference_task`) retry = 0.** Toàn bộ ngân sách nằm ở tầng task; mỗi
+      lần thử ghi một hàng `analysis_attempt` với `attempt_number` đơn điệu tăng. Nhờ vậy cam kết
+      D43 ("thử lại một lần") được giữ nguyên và `COUNT(analysis_attempt)` là oracle trực tiếp
+      cho "số lần gọi model" — không phải đếm ở tầng mạng. Adapter tự retry sẽ nhân đôi số lần
+      gọi model mà SQL không nhìn thấy: đó là hành vi bị cấm.
+    budgets_cited:
+      - {budget: analysis_attempts_per_item, value: 2, unit: attempts_total_per_analysis_key_generation, error_code: AI_OUTPUT_INVALID, retried_by: server}
+      - {budget: provider_unavailable_waits, value: 3, unit: waits_total, error_code: AI_PROVIDER_UNAVAILABLE, retried_by: server, note_vi: "Ngân sách RIÊNG: chưa có inference nào chạy nên không được đốt quyền thử lại của D43."}
+      - {budget: analysis_unknown_attempt_auto_rerun, value: 1, unit: automatic_reruns_total, error_code: AI_ATTEMPT_UNCERTAIN, retried_by: server, note_vi: "Lần tự chạy lại này TIÊU THỤ một đơn vị của `analysis_attempts_per_item` (retry-policy.yaml `consumes_vi`)."}
+      - {budget: lease_ttl_analysis, value: 900, unit: seconds, error_code: WORKER_LEASE_EXPIRED, retried_by: server}
+      - {budget: heartbeat_interval_analysis, value: 60, unit: seconds, error_code: null, retried_by: worker}
+    forbidden_vi:
+      - "Adapter tự thử lại (làm số lần gọi model không đếm được bằng SQL)."
+      - "Trộn `provider_unavailable_waits` vào `analysis_attempts_per_item`."
+      - "Tự bật provider fallback khi Owner chưa cấu hình (errors.yaml AI_PROVIDER_UNAVAILABLE.forbidden_vi)."
+      - "Hồi ngân sách khi đổi worker — ngân sách gắn với (analysis_key, generation), không gắn với máy."
+
+  usage_recording:
+    decision_refs: [B13, ADR-0010]
+    invariant_refs: [I14]
+    rule_vi: >-
+      `usage.unknown = true` ⇒ `tokens_in`, `tokens_out`, `cost_micro_usd` đều là `null`.
+      Schema ép điều này ở mức cấu trúc, nên "ghi 0 thay cho unknown" bị từ chối trước khi tới
+      tầng nghiệp vụ. Đường CLI/ACP thường xuyên rơi vào nhánh này (REQ-D44) và đó là **hợp lệ**.
+    forbidden_vi:
+      - "Ghi `0` khi không biết (I14)."
+      - "Suy ra token count bằng cách tự đếm ký tự rồi trình bày như số của provider."
+      - "Ẩn một attempt `cost_uncertain = true` khỏi bảng usage (SRC-PLAN §10 AI_ATTEMPT_UNCERTAIN: không được tuyên bố 'chưa phát sinh phí')."
+
+  untrusted_content_framing:
+    source_refs: ["SRC-SPEC §11.4", "SRC-PLAN §7 I11"]
+    rule_vi: >-
+      Mọi nội dung từ X và từ paper vào prompt như **dữ liệu có ranh giới rõ**, không bao giờ là
+      chỉ dẫn. Chi tiết tư thế phòng thủ ở `contracts/ai/grounding.md` §5.
+    block_shape_vi: >-
+      Mỗi nguồn là một khối có `source_id` đi kèm, mở bằng một dấu phân cách sinh ngẫu nhiên cho
+      mỗi lần chạy (nonce) và đóng bằng đúng dấu đó. Nội dung nguồn được escape để không thể
+      chứa dấu phân cách. Nonce KHÔNG được lấy từ nội dung nguồn.
+    hard_property_vi: >-
+      Tính chất mạnh nhất không đến từ câu chữ prompt mà từ **kiến trúc**: adapter không có tool
+      nào để gọi, không có credential nào ngoài credential của đúng task, và output bị ràng buộc
+      bằng schema. Một prompt injection thành công nhất cũng chỉ tạo ra JSON sai ngữ nghĩa, và
+      bước §4 sẽ loại nó (ADR-0010, capabilities.yaml ACT-ai-adapter).
+
+# -----------------------------------------------------------------------------
+# 2. Ba task
+# -----------------------------------------------------------------------------
+tasks:
+
+  # ---------------------------------------------------------------- label
+  - task_id: label
+    title_vi: Gắn nhãn chủ đề mở
+    source_refs: ["SRC-SPEC §3.4 D22", "SRC-SPEC §10.1 hàng 1", "SRC-SPEC §8.1 lớp 1"]
+    requirement_refs: [REQ-D22, REQ-P0-05, REQ-AC06]
+    layer_vi: "Lớp 1 của SRC-SPEC §8.1 — 'bài này nói về cái gì'. KHÔNG hỏi 'có khớp tag hiện tại không'."
+    runs_on: MOD-analysis-worker
+    when_vi: "Một lần lúc thu thập, sau khi ingest đã COMMIT ở server (B12/ADR-0001). Worker không nhận dữ liệu chưa commit từ collector."
+    enqueued_by: {operation_id: analysis.enqueue_tasks, caller: MOD-ingest-service}
+    volume_vi: "Lớn — mọi post/work (SRC-SPEC §10.1)."
+    model_class: cheap
+    model_class_rationale_vi: "REQ-D40: model rẻ cho gắn nhãn vì số lượng lớn; model mạnh dành cho summary số lượng ít."
+    prompt_version: "1.0.0"
+    schema_version: "0.1.0"
+    result_shape_ref: "analysis-result.schema.json → $defs.result_label"
+    input:
+      required: [analysis_key, target_ref, sources]
+      fields:
+        - {name: analysis_key, type: object, note_vi: "Bảy thành phần §1."}
+        - {name: target_ref, type: object, note_vi: "Tagged union work|post theo contracts/schemas/target.schema.json."}
+        - {name: sources, type: array, note_vi: "Mỗi phần tử: {source_id, kind: post|work_version, text, source_hash, retrieved_at}. `source_hash` = post.source_snapshot_hash hoặc work_version.content_fingerprint."}
+        - {name: max_evidence_level, type: string, note_vi: "Mức cao nhất được phép khai, tính từ nguồn THỰC SỰ có mặt (§3)."}
+      forbidden_fields_vi:
+        - "Bất kỳ secret, token, hay credential nào (I11)."
+        - "Danh sách tag hiện hành của owner — nhãn phải MỞ, độc lập subscription (REQ-D22). Đưa tag vào prompt là cách vi phạm AC-06 tinh vi nhất."
+        - "Nội dung của owner chưa công bố, dữ liệu Saved, hay báo cáo kỳ trước."
+    inference_timeout: {value: 120, unit: seconds, status: PROVISIONAL, rationale_vi: "Input ngắn (một post hoặc một abstract) trên model rẻ. 120 s phủ được cả đường CLI khởi động chậm mà vẫn còn dư nhiều so với `lease_ttl_analysis` = 900 s."}
+    scenario_refs: [SC06, SC16, SC17]
+
+  # ---------------------------------------------------------------- summary
+  - task_id: summary
+    title_vi: Summary theo hình dạng D20
+    source_refs: ["SRC-SPEC §3.5 D19, D20, D21", "SRC-SPEC §10.1 hàng 3", "SRC-SPEC §10.3"]
+    requirement_refs: [REQ-D19, REQ-D20, REQ-D21, REQ-AC10, REQ-AC11, REQ-P0-06]
+    layer_vi: "Nội dung hiển thị ngay tại mục báo cáo (REQ-D19)."
+    runs_on: MOD-analysis-worker
+    when_vi: >-
+      B17/AMD-B17: enqueue cho các target **được report builder CHỌN tại thời điểm build**, không
+      phải cho mọi bài trong kho. Target được chọn mà thiếu summary vẫn vào `report_item` với
+      `summary_state = 'pending'` và được ghi `pending_item_ledger`; report mang `quality: partial`.
+    enqueued_by: {operation_id: analysis.enqueue_tasks, caller: MOD-report-service}
+    volume_vi: "Nhỏ — chỉ mục vào báo cáo (SRC-SPEC §10.1 và §10.4: đây là cơ chế kiểm soát chi phí)."
+    model_class: strong
+    model_class_rationale_vi: "REQ-D40: model mạnh cho summary vì số lượng ít và chất lượng quyết định giá trị sản phẩm."
+    prompt_version: "1.0.0"
+    schema_version: "0.1.0"
+    result_shape_ref: "analysis-result.schema.json → $defs.result_summary"
+    d20_shape:
+      required_parts_vi:
+        - "`content` — nội dung công trình."
+        - "`difference_from_existing` — điểm khác với cái đã có, kèm `comparator` là một `source_id` THẬT hoặc `unknown` (B16)."
+        - "`limitation_line` — MỘT dòng hạn chế."
+      matched_tags_line_vi: >-
+        Dòng "khớp tag nào" của D20 **KHÔNG do AI sinh**. Nó được tra từ dữ liệu:
+        `report_item.selection_reason.matched_tags` (contracts/reporting/time-and-tags.md §5.3).
+        Đưa việc này cho AI sẽ tạo một đường thứ hai làm "tag đang khớp" khác với kết quả
+        selection thật — chính là điều SRC-SPEC §10.1 cấm.
+      ac10_self_sufficiency_vi: >-
+        REQ-AC10: người đọc phải quyết định được mà không cần mở nguồn. Vì vậy `content`,
+        `difference_from_existing`, `limitation_line`, `evidence_level` và dòng tag (dữ liệu) đều
+        bắt buộc có mặt ở read model của PC07.
+    input:
+      required: [analysis_key, target_ref, sources, max_evidence_level]
+      fields:
+        - {name: sources, type: array, note_vi: "Như task `label`, cộng abstract/toàn văn nếu có. `comparator` chỉ được trỏ tới một `source_id` NẰM TRONG mảng này."}
+        - {name: prior_analysis_ref, type: object, nullable: true, note_vi: "Chỉ khi reanalysis vì `new_work_version`: cho phép model biết bản trước tồn tại. KHÔNG được dùng để sao chép kết luận cũ."}
+      forbidden_fields_vi:
+        - "Danh sách tag (như task `label`)."
+        - "Điểm tương đồng, thứ hạng, hay bất kỳ đầu ra nào của selection — AI không được biết vì sao mục này được chọn, để không viết summary chiều theo tag."
+        - "Số liệu mật độ vector."
+    inference_timeout: {value: 300, unit: seconds, status: PROVISIONAL, rationale_vi: "Input dài nhất (toàn văn) trên model mạnh. 300 s là mức một lần gọi dài thực tế mà vẫn còn 600 s dư trong `lease_ttl_analysis` = 900 s cho bóc JSON, validate và submit."}
+    scenario_refs: [SC10, SC11, SC16, SC17, SC28]
+
+  # ------------------------------------------------------ direction_phrasing
+  - task_id: direction_phrasing
+    title_vi: Diễn đạt khối "hướng đang nổi"
+    source_refs: ["SRC-SPEC §3.5 D53, D54", "SRC-SPEC §10.1 hàng 4", "SRC-SPEC §10.3"]
+    requirement_refs: [REQ-D53, REQ-D54, REQ-P0-07]
+    satisfies_cr: CR-PC04-05
+    layer_vi: "CHỈ diễn đạt. Kết quả đã được tính xong bởi contracts/reporting/selection.md §8 trước khi task này tồn tại."
+    runs_on: MOD-analysis-worker
+    when_vi: "Một lần mỗi kỳ, chỉ cho `emerging_direction` có `evidence_state = 'sufficient'`."
+    enqueued_by: {operation_id: analysis.enqueue_tasks, caller: MOD-report-service}
+    volume_vi: "1 mỗi kỳ (SRC-SPEC §10.1 hàng 4)."
+    model_class: strong
+    prompt_version: "1.0.0"
+    schema_version: "0.1.0"
+    result_shape_ref: "analysis-result.schema.json → $defs.result_direction_phrasing"
+    input:
+      required: [analysis_key, direction_ref, member_target_keys, density, parameters]
+      fields:
+        - {name: direction_ref, type: string, note_vi: "emerging_direction.id đã tính."}
+        - {name: member_target_keys, type: array, note_vi: "Đã cố định. Output PHẢI lặp lại ĐÚNG tập này (SV-05)."}
+        - {name: density, type: object, note_vi: "density_now / density_prior / density_delta / density_ratio đã tính (selection.md §8.3 BƯỚC 8)."}
+        - {name: member_titles, type: array, nullable: true, note_vi: "Tiêu đề để câu văn đọc được; KHÔNG cho phép thêm thành viên."}
+      forbidden_fields_vi:
+        - "Vector thô hoặc centroid — AI không có việc gì phải tính lại."
+        - "Danh sách ứng viên bị LOẠI khỏi nhóm — không được mời model 'xem lại'."
+    hard_constraints_vi:
+      - "AI KHÔNG chọn thành viên: `member_refs` phải bằng đúng `member_target_keys` đầu vào (SV-05)."
+      - "AI KHÔNG tính mật độ: mọi con số trong câu văn phải khớp `density` đầu vào (SV-05)."
+      - "Nhãn LUÔN là hằng số `ứng viên để đọc sâu` (REQ-D54). 'phát hiện mới', 'đột phá', 'hướng nghiên cứu mới' bị cấm (SV-06)."
+      - "Khối này KHÔNG phụ thuộc AI để tồn tại: task lỗi hoặc không có provider ⇒ khối vẫn hiển thị với danh sách thành viên và số liệu, chỉ thiếu câu văn (`phrasing_analysis_id = null` trong report.schema.json)."
+    inference_timeout: {value: 180, unit: seconds, status: PROVISIONAL, rationale_vi: "Input nhỏ và có cấu trúc; 180 s dư cho model mạnh kể cả đường CLI."}
+    scenario_refs: [SC16, SC17]
+
+# -----------------------------------------------------------------------------
+# 3. Mức bằng chứng tối đa được phép khai
+# -----------------------------------------------------------------------------
+evidence_level_ceiling:
+  source_refs: ["SRC-SPEC §3.5 D21", "SRC-SPEC §10.3", "SRC-SPEC §12 AC-11"]
+  rule_vi: >-
+    `max_evidence_level` được server tính từ nguồn THỰC SỰ đưa vào input, không do model khai và
+    không do worker khai.
+  computation:
+    - {condition_vi: "Chỉ có `post` trong sources", ceiling: post_only}
+    - {condition_vi: "Có `work_version` với `abstract_text` NOT NULL", ceiling: abstract}
+    - {condition_vi: "Có toàn văn đã lấy được (ngoài phạm vi MVP hiện tại — chưa có nguồn nào cấp)", ceiling: full_text}
+  enforcement_vi: >-
+    Output khai `evidence_level` cao hơn `max_evidence_level` bị từ chối bằng `AI_OUTPUT_INVALID`
+    (kiểm SV-04). entities.yaml đã ghi: "Cấm nâng cấp mức nếu nguồn tương ứng chưa tồn tại".
+  mvp_note_vi: >-
+    Ở MVP, `full_text` trên thực tế KHÔNG đạt được vì không có bước tải toàn văn nào trong
+    SRC-SPEC §6.1. Giá trị vẫn có trong enum để không phải migrate enum khi thêm nguồn, nhưng
+    một fixture khai `full_text` phải FAIL.
+
+# -----------------------------------------------------------------------------
+# 4. Bốn bước validate — "JSON đúng schema" không phải toàn bộ hợp đồng
+# -----------------------------------------------------------------------------
+validation_pipeline:
+  source_refs: ["SRC-SPEC §3.7 D43", "SRC-SPEC §10.2", "SRC-PLAN §5", "contracts/state/analysis.yaml forbidden_transitions"]
+  steps:
+    - step: 1
+      name: json_extraction
+      where: MOD-ai-adapter (máy cá nhân)
+      applies_to_family: [cli_acp]
+      rule_vi: >-
+        Đường API key trả JSON trực tiếp. Đường CLI/ACP phải BÓC JSON ra khỏi transcript
+        (REQ-D43). Thuật toán ở `contracts/ai/providers.yaml` §json_extraction; nó phải tất định
+        và phải từ chối khi có nhiều hơn một ứng viên JSON.
+      on_fail: {error_code: AI_OUTPUT_INVALID, attempt_outcome: schema_invalid}
+    - step: 2
+      name: schema_validation
+      where: "MOD-ai-adapter (cục bộ, sớm) VÀ MOD-analysis-service (có thẩm quyền, tại analysis.submit_result)"
+      rule_vi: >-
+        Validate theo `analysis-result.schema.json` với `additionalProperties: false` ở mọi object.
+        Kiểm ở cả hai nơi: adapter kiểm sớm để tiết kiệm một vòng mạng, server kiểm lại vì server
+        là bên có thẩm quyền (SRC-PLAN §6.1: worker chỉ ĐỀ XUẤT kết quả).
+      on_fail: {error_code: AI_OUTPUT_INVALID, attempt_outcome: schema_invalid}
+    - step: 3
+      name: semantic_validation
+      where: MOD-analysis-service
+      rule_vi: "Bảy kiểm tra SV-01…SV-07 dưới đây. Chúng KHÔNG diễn đạt được bằng JSON Schema."
+      on_fail: {error_code: AI_OUTPUT_INVALID, attempt_outcome: schema_invalid}
+    - step: 4
+      name: commit
+      where: MOD-analysis-service
+      rule_vi: >-
+        Ghi `analysis(status='valid')` + `analysis_attempt(outcome='accepted')` trong CÙNG một
+        transaction (contracts/state/analysis.yaml T-AN-03, t5 của timeline). Idempotency theo
+        `analysis_key + attempt_id`; cùng key payload khác ⇒ `IDEMPOTENCY_CONFLICT`.
+
+  semantic_checks:
+    - id: SV-01
+      name: analysis_key_matches_assignment
+      rule_vi: "`analysis_key` trong output PHẢI bằng từng thành phần với key của task đã giao. Model không được tự đổi target, task_type hay generation."
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = analysis_key_mismatch`."
+    - id: SV-02
+      name: citations_reference_provided_sources
+      rule_vi: >-
+        Mọi `citation_refs[*]`, `evidence_refs[*]` và `comparator` → `source_ref` PHẢI nằm trong
+        `input_source_ids`. Citation trỏ tới một id không được cấp — kể cả một id có thật trong
+        kho — là FAIL.
+      rationale_vi: "Đây là hàng rào chính chống 'citation không tồn tại'. Fixture (c)."
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = citation_unknown_source`."
+    - id: SV-03
+      name: claim_kind_requires_citation
+      rule_vi: >-
+        `author_claim` và `source_verified` PHẢI có ≥ 1 citation (schema đã ép); ngoài ra
+        `source_verified` chỉ hợp lệ khi `evidence_level >= abstract` — một phát biểu không thể
+        "kiểm được từ nguồn" khi nguồn duy nhất là một post (REQ-AC11).
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = unsupported_claim_kind`."
+    - id: SV-04
+      name: evidence_level_within_ceiling
+      rule_vi: "`evidence_level` ≤ `max_evidence_level` của input (§3)."
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = evidence_level_overclaim`."
+    - id: SV-05
+      name: direction_members_and_numbers_unchanged
+      rule_vi: >-
+        Với `direction_phrasing`: `member_refs` bằng đúng tập `member_target_keys` đầu vào (cùng
+        số phần tử, cùng phần tử), và mọi con số xuất hiện trong `text` phải khớp `density` đầu
+        vào. AI diễn đạt, không tính lại (CR-PC04-05).
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = direction_members_altered`."
+    - id: SV-06
+      name: forbidden_novelty_phrasing
+      rule_vi: >-
+        Với `direction_phrasing`: `text` không được chứa các cụm khẳng định tính mới khoa học.
+        Danh sách chặn (`PROVISIONAL`, khớp không phân biệt hoa thường, chuẩn hóa NFC):
+        "phát hiện mới", "đột phá", "lần đầu tiên chứng minh", "hướng nghiên cứu mới",
+        "breakthrough", "first to show", "novel discovery".
+      rationale_vi: >-
+        REQ-D54 và SRC-SPEC §2.3: AI KHÔNG đánh giá tính mới khoa học. Danh sách chặn là hàng rào
+        thô và cố ý thô — nó không bắt được mọi cách diễn đạt, nên nó đi kèm rubric review của
+        `contracts/ai/grounding.md` §6, không thay thế rubric đó.
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = forbidden_novelty_phrasing`."
+    - id: SV-07
+      name: version_consistency
+      rule_vi: "`schema_version` ở envelope = `analysis_key` → `schema_version`; `prompt_version` = phiên bản prompt của task đã giao."
+      on_fail_vi: "AI_OUTPUT_INVALID, `validation_failure_kind = version_mismatch`."
+
+  forbidden_vi:
+    - "Commit output sai schema thành `valid` (SRC-PLAN §8.2)."
+    - "Bóc một JSON bất kỳ ra khỏi transcript rồi bỏ qua các field kiểm chứng (REQ-D43, errors.yaml AI_OUTPUT_INVALID.forbidden_vi)."
+    - "Đánh dấu item `valid` khi mới pass schema mà chưa pass SV-01…SV-07 (contracts/state/analysis.yaml forbidden_transitions: running → valid khi chỉ pass schema)."
+    - "Đưa transcript hoặc đoạn JSON của model vào message/details của lỗi (errors.yaml redaction_vi)."
+
+# -----------------------------------------------------------------------------
+# 5. Ánh xạ lỗi
+# -----------------------------------------------------------------------------
+error_map:
+  source_of_truth: contracts/errors.yaml
+  entries:
+    - {error_code: AI_OUTPUT_INVALID, when_vi: "Bước 1, 2 hoặc 3 thất bại", attempt_outcome: schema_invalid, budget: analysis_attempts_per_item}
+    - {error_code: AI_PROVIDER_UNAVAILABLE, when_vi: "Adapter không khởi động được provider (binary thiếu, chưa đăng nhập, mạng, quota)", attempt_outcome: provider_unavailable, budget: provider_unavailable_waits}
+    - {error_code: AI_ATTEMPT_UNCERTAIN, when_vi: "Worker chết sau khi model có thể đã chạy, trước `analysis.submit_result`", attempt_outcome: timeout_unknown, budget: analysis_unknown_attempt_auto_rerun, note_vi: "`cost_uncertain = true`; CẤM tuyên bố chưa phát sinh phí."}
+    - {error_code: CAPABILITY_DENIED, when_vi: "Adapter bị yêu cầu làm việc ngoài inference (gọi tool, fetch URL, gửi Telegram)", attempt_outcome: provider_error, budget: null, note_vi: "capabilities.yaml ACT-ai-adapter DC-AI-01…03."}
+    - {error_code: STALE_LEASE, when_vi: "Worker submit với lease/epoch cũ", attempt_outcome: cancelled_stale_lease, budget: null, invariant_refs: [I10]}
+    - {error_code: WORKER_LEASE_EXPIRED, when_vi: "Lease hết hạn khi đang chạy", attempt_outcome: cancelled_stale_lease, budget: lease_ttl_analysis}
+    - {error_code: IDEMPOTENCY_CONFLICT, when_vi: "Nộp lại cùng analysis_key với payload KHÁC", attempt_outcome: null, budget: null, invariant_refs: [I04]}

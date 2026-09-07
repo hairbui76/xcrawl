@@ -1,0 +1,229 @@
+{
+  "fixture_id": "FX-ID-D",
+  "title": "Save đồng thời từ app và Telegram cho cùng target → đúng một Saved",
+  "purpose": "REQ-AC13 và I08: UNIQUE partial trên khóa union là trọng tài; transaction thua rollback cả snapshot và trả already_saved.",
+  "scenario_refs": [
+    "SC13"
+  ],
+  "invariant_refs": [
+    "I08"
+  ],
+  "decision_refs": [
+    "B01"
+  ],
+  "requirement_refs": [
+    "REQ-D38",
+    "REQ-D55",
+    "REQ-AC13"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.6 D38",
+    "SRC-SPEC §8.2 dòng 10",
+    "SRC-PLAN §7 I08",
+    "contracts/data/entities.yaml#transactions/TXN-save-target"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKD100000000000000000",
+          "canonical_arxiv_id": "2505.05555",
+          "identity_state": "active",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKD100000000000000000",
+            "target_key": "work:01JW0RKD100000000000000000",
+            "canonical": {
+              "arxiv_base": "2505.05555"
+            },
+            "identity_state": "active"
+          }
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YD10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKD100000000000000000",
+            "target_key": "work:01JW0RKD100000000000000000"
+          },
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "evidence_level": "abstract",
+          "payload_hash": {
+            "symbolic": "H_ANd",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          }
+        }
+      ],
+      "report": [
+        {
+          "id": "01JREP0RTD1000000000000000",
+          "status": "published",
+          "quality": "complete",
+          "published_at": "2026-09-05T20:00:00.000Z"
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEMD10000000000000000",
+          "report_id": "01JREP0RTD1000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKD100000000000000000",
+            "target_key": "work:01JW0RKD100000000000000000"
+          },
+          "item_type": "new_discovery",
+          "analysis_id": "01JANA1YD10000000000000000"
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NKD1000000000000000",
+          "state": "active",
+          "generation": 1
+        }
+      ],
+      "saved_item": [],
+      "saved_snapshot": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-05T20:10:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "save.create",
+      "transaction": "TXN-save-target",
+      "description": "Người dùng bấm Save trong Report detail.",
+      "request": {
+        "target": {
+          "kind": "work",
+          "work_id": "01JW0RKD100000000000000000",
+          "target_key": "work:01JW0RKD100000000000000000"
+        },
+        "save_channel": "app",
+        "source_report_item_id": "01JR1TEMD10000000000000000"
+      },
+      "performed_by": "MOD-saved-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-05T20:10:00.002Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "save.create",
+      "transaction": "TXN-save-target",
+      "description": "Cùng lúc, callback Save trên Telegram cho đúng mục đó.",
+      "request": {
+        "target": {
+          "kind": "work",
+          "work_id": "01JW0RKD100000000000000000",
+          "target_key": "work:01JW0RKD100000000000000000"
+        },
+        "save_channel": "telegram",
+        "source_report_item_id": "01JR1TEMD10000000000000000",
+        "idempotency_key": "tg-cb-01JD000000000000000001"
+      },
+      "performed_by": "MOD-saved-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-05T20:10:01.000Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "save.create",
+      "description": "Người dùng bấm thêm 4 lần nữa trên Telegram, cùng idempotency_key.",
+      "repeat": 4,
+      "performed_by": "MOD-saved-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "saved_item": [
+        {
+          "id": "01JSAVEDD10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKD100000000000000000",
+            "target_key": "work:01JW0RKD100000000000000000"
+          },
+          "state": "active",
+          "save_channel": "app|telegram",
+          "_save_channel_note": "Kênh của transaction THẮNG. Fixture không khẳng định kênh nào thắng — thứ tự commit không tất định; oracle là SỐ HÀNG, không phải kênh.",
+          "saved_snapshot_id": "01JSNAPD100000000000000000",
+          "source_report_item_id": "01JR1TEMD10000000000000000"
+        }
+      ],
+      "saved_snapshot": [
+        {
+          "id": "01JSNAPD100000000000000000",
+          "target_key_at_save": "work:01JW0RKD100000000000000000",
+          "analysis_id_at_save": "01JANA1YD10000000000000000",
+          "content_hash": {
+            "symbolic": "H_Sd",
+            "computed_by": "sha256(JCS(saved_snapshot.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "analysis_id_at_save PHẢI bằng report_item.analysis_id của mục đang đọc, không phải bản analysis mới nhất."
+        }
+      ]
+    },
+    "counts": {
+      "saved_item__total": 1,
+      "saved_item__state_active": 1,
+      "saved_snapshot": 1,
+      "telegram_bot_responses": 5,
+      "orphan_saved_snapshot": 0
+    },
+    "responses": [
+      {
+        "event_seq": 1,
+        "or": "event_seq 2",
+        "result": "created",
+        "body": {
+          "already_saved": false
+        }
+      },
+      {
+        "event_seq": "kênh thua",
+        "result": "already_saved",
+        "body": {
+          "already_saved": true,
+          "saved_item_id": "01JSAVEDD10000000000000000"
+        },
+        "note": "Transaction thua rollback TOÀN BỘ, kể cả saved_snapshot vừa chèn; không để lại snapshot mồ côi."
+      },
+      {
+        "event_seq": 3,
+        "result": "already_saved x4",
+        "note": "ux_saved_idempotency trả hàng cũ; bot vẫn phản hồi mỗi lần bấm (REQ-D38)."
+      }
+    ],
+    "hash_oracles": [
+      {
+        "assert": "Chỉ tồn tại một content_hash cho target work:01JW0RKD100000000000000000 sau khi cả 6 request kết thúc",
+        "symbolic": "H_Sd"
+      }
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo hàng saved_item thứ hai ở state='active' cho cùng target_key.",
+    "Để lại saved_snapshot mồ côi từ transaction thua.",
+    "Dùng UNIQUE(owner_id, target_work_id, target_post_id): với target post, NULL ≠ NULL nên ràng buộc này KHÔNG chặn trùng.",
+    "Check-then-insert không khóa thay cho UNIQUE.",
+    "Retry chèn sau khi va chạm UNIQUE.",
+    "Bot im lặng ở 4 lần bấm sau."
+  ]
+}

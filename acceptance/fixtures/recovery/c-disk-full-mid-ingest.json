@@ -1,0 +1,136 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-c",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-S9.3-08",
+      "REQ-AC03"
+    ],
+    "decision_refs": [
+      "B05"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I13"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "c",
+  "title_vi": "Hết ổ đĩa giữa lúc ingest → không ACK, cursor không đổi, readiness đỏ",
+  "scenario_refs": [
+    "SC26"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I13"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "storage_health": "healthy",
+    "run": {
+      "id": "RUN-11",
+      "phase": "collecting"
+    },
+    "checkpoint_before": {
+      "cursor": "c-120",
+      "acked_through_ingest_sequence": 120
+    },
+    "fault_vi": "Ổ đĩa đầy ngay giữa transaction của lô thứ hai."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "edge_assertion": "allowed",
+      "input": {
+        "batch_idempotency_key": "BK-12",
+        "item_count": 20
+      },
+      "fault": "disk_full_during_commit"
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-health-service",
+      "operation": "storage.get_health",
+      "edge_assertion": "allowed"
+    },
+    {
+      "seq": 3,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.get_receipt",
+      "edge_assertion": "allowed",
+      "input": {
+        "batch_idempotency_key": "BK-12"
+      }
+    },
+    {
+      "seq": 4,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.commit_checkpoint",
+      "edge_assertion": "allowed",
+      "input": {
+        "proposed_acked_through_ingest_sequence": 140,
+        "item_count": 0,
+        "reason": "segment_close"
+      }
+    }
+  ],
+  "expected": {
+    "seq1": {
+      "error_code": "STORAGE_WRITE_FAILED",
+      "acked": false
+    },
+    "seq2": {
+      "storage_health": "write_blocked"
+    },
+    "seq3": {
+      "result": "not_committed"
+    },
+    "seq4": {
+      "error_code": "STORAGE_WRITE_FAILED"
+    },
+    "checkpoint_after": {
+      "cursor": "c-120",
+      "acked_through_ingest_sequence": 120
+    },
+    "readiness": {
+      "storage": "red",
+      "liveness": "up"
+    }
+  },
+  "forbidden_effects": [
+    "ACK lô chưa commit",
+    "Tiến cursor hoặc acked_through_ingest_sequence",
+    "Tuyên bố đã persist lỗi vào DB đang không ghi được (SRC-PLAN §8.4)",
+    "Ghi tiếp và làm hỏng file SQLite (REQ-S9.3-08)",
+    "Hiển thị 'không có nghiên cứu mới' thay cho 'không ghi được' (I13)"
+  ],
+  "oracle_vi": "COUNT(ingest_receipt) không tăng; sha256 file DB không đổi trong cửa sổ lỗi; health.get_readiness đỏ cho storage trong khi health.get_liveness vẫn trả 'up'."
+}

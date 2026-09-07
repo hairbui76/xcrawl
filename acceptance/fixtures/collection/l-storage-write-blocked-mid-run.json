@@ -1,0 +1,264 @@
+{
+  "fixture_id": "l-storage-write-blocked-mid-run",
+  "title": "`storage.health = write_blocked` giữa run rồi hồi phục; nhánh còn restore chưa đối soát",
+  "purpose": "SC36. Hai nhánh: (A) hồi phục bình thường → `healthy`; (B) còn `restore_record` chưa đối soát → `recovery_required`, KHÔNG phải `healthy` (T-ST-08). Thiếu nhánh B thì một sự cố ổ đĩa xen vào sau restore sẽ 'rửa sạch' nợ đối soát và phá I15.",
+  "scenario_refs": [
+    "SC36"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I13",
+    "I15"
+  ],
+  "decision_refs": [
+    "B11",
+    "AMD-B11"
+  ],
+  "requirement_refs": [
+    "REQ-S9.3-08",
+    "REQ-S8.3-03",
+    "REQ-D07"
+  ],
+  "source_refs": [
+    "SRC-PLAN §8.1",
+    "SRC-PLAN §11 PC05",
+    "SRC-SPEC §5.2",
+    "SRC-SPEC §9.2",
+    "SRC-SPEC §9.3"
+  ],
+  "fixture_format_version": "1.0.0",
+  "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+  "contract_refs": [
+    "contracts/state/storage.yaml",
+    "contracts/state/run.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "x-contract": {
+    "contract_id": "CT-fixture-l-storage-write-blocked-mid-run",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-PLAN §8.1",
+      "SRC-PLAN §11 PC05"
+    ],
+    "requirement_refs": [
+      "REQ-S9.3-08",
+      "REQ-S8.3-03",
+      "REQ-D07"
+    ],
+    "decision_refs": [
+      "B11",
+      "AMD-B11"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I13",
+      "I15"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-job-service",
+      "MOD-ingest-service"
+    ],
+    "dependencies": [
+      "contracts/state/storage.yaml",
+      "contracts/state/run.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "SC36. Hai nhánh: (A) hồi phục bình thường → `healthy`; (B) còn `restore_record` chưa đối soát → `recovery_required`, KHÔNG phải `healthy` (T-ST-08). Thiếu nhánh B thì một sự cố ổ đĩa xen vào sau restore sẽ 'rửa sạch' nợ đối soát và phá I15.",
+    "verification": "EV-PC05-07 (SELF_VALIDATION) + evidence/tools/e0_check.py E0-14/E0-15 (đọc-only). Fixture TĨNH, chạy offline, `evidence_status: NOT_RUN`.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "annotation_rule": "R4-01: mọi khóa dưới `given.rows.<entity>[]` / `expected.rows.<entity>[]` hoặc là cột có thật trong contracts/data/entities.yaml, hoặc bắt đầu bằng `_`, hoặc mang `pending_cr`."
+  },
+  "given": {
+    "rows": {
+      "run": [
+        {
+          "id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "trigger_type": "scheduled",
+          "phase": "collecting",
+          "status": "running",
+          "outcome": null,
+          "stop_reason": null,
+          "current_lease_epoch": 1,
+          "created_at": "2026-09-07T08:00:00.000Z"
+        }
+      ],
+      "ingest_receipt": [
+        {
+          "id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "receipt_kind": "batch_ingest",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "max_ingest_sequence": 20,
+          "committed_at": "2026-09-07T08:10:00.000Z",
+          "_note": "Lô cuối ĐÃ commit trước sự cố."
+        }
+      ],
+      "checkpoint": [
+        {
+          "id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "phase": "collecting",
+          "sequence": 1,
+          "cursor_state": "valid",
+          "acked_through_ingest_sequence": 20,
+          "items_ingested_total": 20,
+          "created_at": "2026-09-07T08:10:00.000Z"
+        }
+      ]
+    },
+    "_storage_health": "healthy"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T08:11:00.000Z",
+      "actor": "MOD-health-service",
+      "operation": "storage.get_health",
+      "description": "`healthy → write_blocked` (T-ST-01). Trạng thái sống trong BỘ NHỚ tiến trình: không thể ghi 'không ghi được' vào một DB đang không ghi được.",
+      "performed_by": "MOD-data-store",
+      "response_status": 200,
+      "response_body": {
+        "storage_health": "write_blocked",
+        "observed_at": "2026-09-07T08:11:00.000Z"
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T08:12:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Lô kế tiếp bị từ chối; KHÔNG ACK.",
+      "performed_by": "MOD-ingest-service",
+      "response_status": 503,
+      "response_body": {
+        "code": "STORAGE_WRITE_FAILED",
+        "scope": "storage",
+        "retry_class": "retryable_with_budget",
+        "message_safe": "Hệ thống tạm thời không ghi được dữ liệu. Đã dừng nhận việc mới.",
+        "correlation_id": "9XGPKVJCD94JQ768HNREVKT4N1",
+        "details_safe": {
+          "storage_health": "write_blocked",
+          "failed_operation_id": "ingest.submit_batch",
+          "observed_at": "2026-09-07T08:12:00.000Z"
+        },
+        "retry_after_ms": 30000
+      }
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T08:12:500.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "description": "Không cấp assignment mới (grace = 0).",
+      "performed_by": "MOD-job-service",
+      "response_status": 503,
+      "_note": "`storage_write_blocked_grace_before_refusing_claims = 0`."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T08:13:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "health.get_liveness",
+      "description": "Kênh ĐỘC LẬP DB vẫn trả lời.",
+      "performed_by": "MOD-health-service",
+      "response_status": 200,
+      "response_body": {
+        "status": "up"
+      }
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-07T08:13:500.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "health.get_readiness",
+      "description": "Readiness ĐỎ cho storage.",
+      "performed_by": "MOD-health-service",
+      "response_status": 200,
+      "response_body": {
+        "storage": "write_blocked",
+        "dispatcher": "halted"
+      }
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-07T08:16:00.000Z",
+      "actor": "MOD-health-service",
+      "operation": "storage.get_health",
+      "description": "NHÁNH A — ba probe liên tiếp thành công (3 × 30 s) ⇒ `healthy` (T-ST-02).",
+      "performed_by": "MOD-data-store",
+      "response_status": 200,
+      "response_body": {
+        "storage_health": "healthy"
+      },
+      "_branch": "A"
+    },
+    {
+      "seq": 7,
+      "at": "2026-09-07T08:16:500.000Z",
+      "actor": "MOD-health-service",
+      "operation": "storage.get_health",
+      "description": "NHÁNH B — nếu tồn tại `restore_record` chưa đối soát thì về `recovery_required`, KHÔNG phải `healthy` (T-ST-08).",
+      "performed_by": "MOD-data-store",
+      "response_status": 200,
+      "response_body": {
+        "storage_health": "recovery_required"
+      },
+      "_branch": "B",
+      "_given_restore_record_id": "1N8EBKA451WAFZY09DG6KBJWDS"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "run": [
+        {
+          "id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "status": "queued",
+          "outcome": null,
+          "stop_reason": "worker_lost",
+          "_note": "Về `queued` khi lease hết hạn (T-RUN-14/20); KHÔNG `failed` chỉ vì storage tạm không ghi được."
+        }
+      ],
+      "ingest_receipt": [
+        {
+          "id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "max_ingest_sequence": 20,
+          "_note": "Không hàng receipt MỚI nào trong khoảng write_blocked."
+        }
+      ],
+      "checkpoint": [
+        {
+          "id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "sequence": 1,
+          "acked_through_ingest_sequence": 20,
+          "_note": "Không tiến trong khoảng write_blocked (I02)."
+        }
+      ]
+    },
+    "counts": {
+      "ingest_receipt_created_during_block": 0,
+      "assignment_lease_granted_during_block": 0
+    },
+    "_branch_A_storage_health": "healthy",
+    "_branch_B_storage_health": "recovery_required"
+  },
+  "forbidden_effects": [
+    "Ghi run thành `failed` vì storage tạm thời không ghi được.",
+    "Về `healthy` khi còn `restore_record` chưa đối soát (nhánh B).",
+    "Tuyên bố đã persist lỗi trong khi DB đang không ghi được (errors.yaml §EPR-01).",
+    "ACK một mutation chưa commit.",
+    "Cấp assignment mới trong khoảng `write_blocked`."
+  ],
+  "oracle_vi": "Trong khoảng `write_blocked`: mọi mutation trả `STORAGE_WRITE_FAILED`, `COUNT(ingest_receipt)` không tăng, `checkpoint.acked_through_ingest_sequence` không đổi, hash file DB không đổi; `health.get_liveness` vẫn `up` trong khi `health.get_readiness` đỏ. Nhánh B: `storage.health='recovery_required'`."
+}

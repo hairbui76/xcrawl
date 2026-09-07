@@ -1,0 +1,283 @@
+{
+  "fixture_id": "FX-RP-E",
+  "title": "Analysis về muộn → mục nằm sổ pending, kỳ sau hiện với nhãn 'phát hiện muộn'",
+  "purpose": "Khóa I06 và AMD-B17: pending item độc lập con trỏ kỳ; con trỏ tiến KHÔNG làm mất mục.",
+  "scenario_refs": [
+    "SC22"
+  ],
+  "invariant_refs": [
+    "I06"
+  ],
+  "decision_refs": [
+    "B04",
+    "B17",
+    "AMD-B04",
+    "AMD-B17"
+  ],
+  "requirement_refs": [
+    "REQ-AC10",
+    "REQ-D19",
+    "REQ-S10.1-03",
+    "REQ-S10.4-03"
+  ],
+  "source_refs": [
+    "SRC-PLAN §9.2",
+    "SRC-PLAN §7 I06",
+    "SRC-SPEC §10.4"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWNE0000000000000000000",
+          "sequence": 1,
+          "window_from": "2026-09-05T00:00:00.000Z",
+          "window_to": "2026-09-06T00:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 700,
+          "predecessor_window_id": null
+        }
+      ],
+      "work": [
+        {
+          "id": "01JWRKE1000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKE1000000000000000000",
+            "target_key": "work:01JWRKE1000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T02:00:00.000Z",
+          "ingest_sequence": 705
+        },
+        {
+          "id": "01JWRKE2000000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JWRKE2000000000000000000",
+            "target_key": "work:01JWRKE2000000000000000000",
+            "identity_state": "active"
+          },
+          "first_discovered_at": "2026-09-06T02:00:01.000Z",
+          "ingest_sequence": 706
+        }
+      ],
+      "analysis": [
+        {
+          "target_key": "work:01JWRKE2000000000000000000",
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "payload_hash": "sha256:dabf1230d4cc52f894eb306c78b9e4feadc1a10fca1f3df1e28581c7db57e0d7"
+        }
+      ],
+      "tag": [
+        {
+          "id": "01JTAGPFD00000000000000000",
+          "text": "protein folding",
+          "state": "active"
+        }
+      ]
+    },
+    "note": "work E1 đã được CHỌN (khớp tag) nhưng task summary chưa trả kết quả tại thời điểm publish kỳ 2."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Selection chọn E1 và E2. E1 thiếu summary → analysis.enqueue_tasks."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Commit kỳ 2: report quality='partial'; pending_item_ledger(E1, missing_summary, state='pending'); coverage tiến."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "[actor = caller hợp lệ theo ports.yaml; performed_by = service thực thi] Summary của E1 về, MUỘN so với publish kỳ 2. Kỳ 2 KHÔNG bị sửa (I05).",
+      "performed_by": "MOD-analysis-service"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Kỳ 3: E1 là ứng viên nhờ hàng pending, dù discovered_at nằm NGOÀI cửa sổ kỳ 3."
+    }
+  ],
+  "expected": {
+    "after_event_2": {
+      "counts": {
+        "report[id=ERP1].quality='partial'": 1,
+        "pending_item_ledger[state='pending']": 1,
+        "report_item[report_id=ERP1]": 2
+      },
+      "row_oracles": [
+        "report_item của E1 có summary_state='pending' — mục KHÔNG bị ẩn (AMD-B17).",
+        "pending_item_ledger[E1].reason = 'missing_summary'."
+      ],
+      "rows": {
+        "coverage_window": [
+          {
+            "id": "01JCWNE1000000000000000000",
+            "sequence": 2,
+            "window_from": "2026-09-06T00:00:00.000Z",
+            "window_to": "2026-09-06T13:00:00.000Z",
+            "ingest_sequence_from": 700,
+            "ingest_sequence_to": 800,
+            "predecessor_window_id": "01JCWNE0000000000000000000"
+          }
+        ]
+      }
+    },
+    "report": {
+      "schema_version": "0.1.0",
+      "report_id": "01JRPTE2000000000000000000",
+      "report_build_id": "1dd56d68-5e80-45f1-95f1-296c83def2b9",
+      "owner_id": "01JW0WNER00000000000000000",
+      "status": "published",
+      "quality": "complete",
+      "coverage": {
+        "coverage_window_id": "01JCWNE2000000000000000000",
+        "sequence": 3,
+        "coverage_from": "2026-09-06T13:00:00.000Z",
+        "coverage_to": "2026-09-07T12:40:00.000Z",
+        "ingest_sequence_from": 800,
+        "ingest_sequence_to": 950,
+        "predecessor_window_id": "01JCWNE1000000000000000000"
+      },
+      "tag_config_version": {
+        "tag_config_version_id": "01JTCVE0000000000000000000",
+        "sequence": 4,
+        "content_hash": "sha256:d40699885b725b8e3e783201e35442c53901595319d143ca23181021667ef89d",
+        "frozen_at": "2026-09-07T13:00:05.000Z"
+      },
+      "selection_version": "0.1.0",
+      "embedding_generation": {
+        "embedding_generation_id": "01JEMBGEN10000000000000000",
+        "model_name": "multilingual-e5-small",
+        "model_version": "1.0.0",
+        "dimension": 4,
+        "normalization": "l2"
+      },
+      "items": [
+        {
+          "report_item_id": "01JRTEME100000000000000000",
+          "target": {
+            "kind": "work",
+            "work_id": "01JWRKE1000000000000000000",
+            "target_key": "work:01JWRKE1000000000000000000",
+            "identity_state": "active"
+          },
+          "target_key": "work:01JWRKE1000000000000000000",
+          "item_type": "new_discovery",
+          "matched_tags": [
+            {
+              "tag_id": "01JTAGPFD00000000000000000",
+              "tag_text": "protein folding",
+              "matched_via": "tag",
+              "score": 0.8842,
+              "threshold_applied": 0.8,
+              "matched_label_text": "protein structure prediction"
+            }
+          ],
+          "late_discovery": true,
+          "selected_via_backfill": false,
+          "identity_state": "active",
+          "summary_state": "present",
+          "analysis": {
+            "analysis_id": "01JANAE1000000000000000000",
+            "task_type": "summary",
+            "generation_number": 1,
+            "payload_hash": "sha256:1e97e94e8711c707e1303c1f83dc9d67073fb03e3f81b6df01c4fe6f37c0c5c3",
+            "evidence_level": "abstract",
+            "analyzed_at": "2026-09-06T18:00:00.000Z",
+            "analysis_result_schema_id": "https://research-radar.local/schemas/analysis-result.schema.json"
+          },
+          "discovered_at": "2026-09-06T02:00:00.000Z",
+          "ingest_sequence": 705,
+          "pending_since_window_sequence": 2
+        }
+      ],
+      "emerging_directions": [
+        {
+          "direction_id": "01JDRCE1000000000000000000",
+          "evidence_state": "insufficient_evidence",
+          "label": "ứng viên để đọc sâu",
+          "insufficient_reason": "below_min_sample",
+          "member_target_keys": [],
+          "parameters": {
+            "metric": "cosine",
+            "radius": 0.8,
+            "min_members": 3,
+            "comparison_window_k": 4,
+            "min_prior_windows": 2,
+            "min_delta": 2.0,
+            "prior_floor": 1.0,
+            "rounding_decimals": 4,
+            "parameters_status": "PROVISIONAL_BOOTSTRAP"
+          },
+          "embedding_generation_id": "01JEMBGEN10000000000000000",
+          "excluded_quarantined_target_keys": [],
+          "phrasing_analysis_id": null
+        }
+      ],
+      "pending_items": [],
+      "coverage_note": {
+        "observed_data_only": true,
+        "empty_period": false,
+        "threshold_calibration_state": "uncalibrated",
+        "run_stop_reason": null,
+        "source_coverage_limits_note": null
+      },
+      "built_at": "2026-09-07T13:00:00.000Z",
+      "published_at": "2026-09-07T13:00:05.000Z",
+      "content_hash": "sha256:c496eae85e5ffba36bfd7f642ec36e81a5746d9fc3f5b30fb330827fbbf98dc1",
+      "evidence_refs": []
+    },
+    "counts": {
+      "pending_item_ledger[state='pending']": 0,
+      "pending_item_ledger[state='resolved_reported_late']": 1,
+      "pending_item_ledger": 1
+    },
+    "row_oracles": [
+      "report_item[E1 ở kỳ 3].late_discovery = true và item_type vẫn = 'new_discovery' (phát hiện muộn là NHÃN hiển thị, không phải loại mục).",
+      "pending_item_ledger[E1] chuyển 'resolved_reported_late' TRONG cùng transaction publish của kỳ 3.",
+      "E1.discovered_at (2026-09-06T02:00:00.000Z) nằm NGOÀI [coverage_from, coverage_to) của kỳ 3 — đây chính là lý do sổ pending phải độc lập con trỏ kỳ (I06)."
+    ]
+  },
+  "forbidden_effects": [
+    "Xóa hàng pending_item_ledger khi coverage tiến.",
+    "Chỉ xét mục trong cửa sổ mới, làm E1 không bao giờ xuất hiện lại.",
+    "Sửa report kỳ 2 để chèn summary về muộn (I05).",
+    "Đặt report kỳ 2 quality='complete' khi còn mục pending (O-5.3).",
+    "Đổi item_type của E1 thành một giá trị ngoài enum {new_discovery, prior_reference}."
+  ]
+}

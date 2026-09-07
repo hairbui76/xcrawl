@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/ingest-batch.schema.json",
+  "title": "Ingest batch request (collector → backend)",
+  "description": "Payload của mutation `ingest.submit_batch`. Tuân thủ wire rules SRC-PLAN §5.1: request_id, schema_version, idempotency_key, payload_hash, và vì mutation này đang giữ job nên có thêm job_id, lease_id, lease_epoch.",
+  "x-contract": {
+    "contract_id": "CT-schema-ingest-batch",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "data contract owner",
+    "source_refs": [
+      "SRC-PLAN §5.1",
+      "SRC-PLAN §9.1",
+      "SRC-PLAN §10 INGEST_ACK_LOST",
+      "SRC-SPEC §7.1 post",
+      "SRC-SPEC §9.2",
+      "SRC-SPEC §3.2 D31, D33"
+    ],
+    "requirement_refs": [
+      "REQ-D31",
+      "REQ-D33",
+      "REQ-AC04",
+      "REQ-P0-03",
+      "REQ-P0-12"
+    ],
+    "decision_refs": [
+      "B05",
+      "B12",
+      "AMD-B05"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I10"
+    ],
+    "producers": [
+      "MOD-x-collector"
+    ],
+    "consumers": [
+      "MOD-ingest-service",
+      "MOD-identity-service",
+      "MOD-backend-api"
+    ],
+    "dependencies": [
+      "contracts/data/entities.yaml",
+      "contracts/schemas/target.schema.json"
+    ],
+    "source_deletion_note": "Quan sát 'nguồn đã bị xóa' KHÔNG có operation riêng: nó đi qua `ingest.submit_batch` dưới dạng trường `source_deleted_observed_at` của item (xem §defs/ingest_item). Item đó trùng `x_post_id` nên vào `posts_duplicate`, và cập nhật ĐƠN ĐIỆU cột `post.source_deleted_observed_at` (chỉ ghi khi giá trị hiện tại là NULL). Xem contracts/data/entities.yaml §entities/post/immutability/monotonic_fields và §transactions/TXN-ingest-batch. Ruling Coordinator PKT-PC02-FIX1; tên operation từng được cân nhắc rồi bãi bỏ nằm trong handoff, không nằm trong hợp đồng.",
+    "scope": "Chỉ hình dạng request. Ngữ nghĩa transaction ở entities.yaml transactions[TXN-ingest-batch]; hình dạng HTTP và receipt response thuộc PC05.",
+    "verification": "EV-PC02-01 check_schema; EV-PC02-02 một ví dụ positive validate và bốn ví dụ negative bị từ chối.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "payload_hash_definition": "payload_hash = 'sha256:' + hex(sha256(JCS(payload_core))) với payload_core = {\"schema_version\", \"items\", \"client_checkpoint_proposal\"}. CỐ Ý loại request_id, idempotency_key, job_id, lease_id, lease_epoch: một lần retry sinh request_id mới vẫn phải cho cùng payload_hash để server nhận ra là replay chứ không phải IDEMPOTENCY_CONFLICT.",
+    "limits": {
+      "max_items": {
+        "value": 200,
+        "unit": "items",
+        "status": "PROVISIONAL",
+        "rationale": "Bằng giới hạn mỗi đợt PROVISIONAL của baseline §5 OQ defaults (REQ-OQ05); owner chốt số thật sau M0."
+      },
+      "max_text_bytes_per_item": {
+        "value": 65536,
+        "unit": "bytes_utf8",
+        "status": "PROVISIONAL",
+        "rationale": "Đủ cho post dài của X, còn dưới ngưỡng làm phình transaction SQLite. Vượt ngưỡng → item vào items_rejected, KHÔNG cắt cụt âm thầm. Xem CR-PC02-04."
+      },
+      "max_media_refs_per_item": {
+        "value": 8,
+        "unit": "items",
+        "status": "PROVISIONAL",
+        "rationale": "X cho tối đa 4 ảnh ở luồng thường; 8 dự phòng biến thể."
+      },
+      "max_referenced_links_per_item": {
+        "value": 32,
+        "unit": "items",
+        "status": "PROVISIONAL",
+        "rationale": "Đủ cho post liệt kê nhiều link; chặn payload rác."
+      },
+      "max_thread_context_posts": {
+        "value": 50,
+        "unit": "items",
+        "status": "PROVISIONAL",
+        "rationale": "Chỉ thread của chính tác giả (REQ-D31); replies người ngoài không ingest."
+      },
+      "max_payload_bytes": {
+        "value": 8388608,
+        "unit": "bytes",
+        "status": "PROVISIONAL",
+        "rationale": "8 MiB: batch nằm gọn trong một transaction ngắn. Ép ở tầng transport (PC05), không biểu diễn được bằng JSON Schema."
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "schema_version",
+    "idempotency_key",
+    "payload_hash",
+    "job_id",
+    "lease_id",
+    "lease_epoch",
+    "items",
+    "client_checkpoint_proposal"
+  ],
+  "properties": {
+    "request_id": {
+      "$ref": "#/$defs/ulid",
+      "description": "ID của lần gọi này. Retry sinh request_id mới nhưng giữ nguyên idempotency_key."
+    },
+    "schema_version": {
+      "$ref": "#/$defs/semver",
+      "description": "Phiên bản wire schema này. Không dùng 'latest' (SRC-PLAN §5)."
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{16,128}$",
+      "description": "Khóa chống trùng do client cấp. Cùng key + cùng payload_hash → trả receipt đã commit; cùng key + payload_hash khác → IDEMPOTENCY_CONFLICT, không ghi đè (SRC-PLAN §5.1)."
+    },
+    "payload_hash": {
+      "$ref": "#/$defs/sha256",
+      "description": "Xem x-contract.payload_hash_definition."
+    },
+    "job_id": {
+      "$ref": "#/$defs/ulid"
+    },
+    "lease_id": {
+      "$ref": "#/$defs/ulid"
+    },
+    "lease_epoch": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Epoch của lease đang giữ. Epoch cũ → STALE_LEASE, không dữ liệu authoritative nào đổi (I10)."
+    },
+    "run_id": {
+      "$ref": "#/$defs/ulid",
+      "description": "Run mà assignment này thuộc về. Server vẫn tự xác định từ job_id; trường này chỉ để đối chiếu."
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "description": "Mảng post đã thu được. minItems = 1: batch rỗng là lỗi hợp đồng, không phải trạng thái hợp lệ — kết thúc đợt dùng operation stop, không dùng batch rỗng.",
+      "items": {
+        "$ref": "#/$defs/ingest_item"
+      }
+    },
+    "client_checkpoint_proposal": {
+      "$ref": "#/$defs/checkpoint_proposal",
+      "description": "ĐỀ XUẤT của collector. Server chỉ lưu sau khi dữ liệu kèm theo đã commit (I02); server không bao giờ tin con trỏ này là bằng chứng dữ liệu đã bền."
+    },
+    "collector_build": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Phiên bản collector, để chẩn đoán khi layout X đổi. Không ảnh hưởng nghiệp vụ."
+    }
+  },
+  "$defs": {
+    "ulid": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "timestamp_utc_ms": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "https_url": {
+      "type": "string",
+      "pattern": "^https://[^\\s]{1,2040}$",
+      "maxLength": 2048
+    },
+    "ingest_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x_post_id",
+        "author",
+        "url",
+        "text",
+        "collected_at",
+        "media_refs",
+        "referenced_links"
+      ],
+      "properties": {
+        "x_post_id": {
+          "type": "string",
+          "pattern": "^[0-9]{1,25}$",
+          "description": "ID post trên X, dạng string (SRC-PLAN §5.1). Là khóa dedup ingest (AMD-B05)."
+        },
+        "author": {
+          "$ref": "#/$defs/author"
+        },
+        "url": {
+          "$ref": "#/$defs/https_url"
+        },
+        "published_at": {
+          "$ref": "#/$defs/timestamp_utc_ms",
+          "description": "Ngày đăng do X cung cấp. Được phép vắng mặt; KHÔNG suy ra từ collected_at."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 65536,
+          "description": "Nội dung post. Là DỮ LIỆU, không phải lệnh (SRC-SPEC §11.4). maxLength đếm ký tự; giới hạn byte UTF-8 ép ở tầng transport."
+        },
+        "lang": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+          "description": "BCP 47 nếu nguồn cung cấp. Không tự đoán."
+        },
+        "collected_at": {
+          "$ref": "#/$defs/timestamp_utc_ms",
+          "description": "Đồng hồ WORKER — KHÔNG TIN CẬY. Server lưu để chẩn đoán và không bao giờ dùng làm mốc nghiệp vụ; discovered_at là giờ server (SRC-PLAN §9.1)."
+        },
+        "media_refs": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/media_ref"
+          },
+          "description": "Mảng rỗng hợp lệ. Ảnh chụp paper KHÔNG được dùng để đoán ID (REQ-D33)."
+        },
+        "referenced_links": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/referenced_link"
+          },
+          "description": "Đầu vào cho identity resolution, không phải kết luận. Server tự chuẩn hóa theo identity.md §2."
+        },
+        "thread_context": {
+          "$ref": "#/$defs/thread_context"
+        },
+        "source_provenance": {
+          "$ref": "#/$defs/source_provenance"
+        },
+        "source_deleted_observed_at": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/timestamp_utc_ms"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Thời điểm collector QUAN SÁT thấy post này đã bị xóa trên X. Không có operation riêng cho việc đánh dấu xóa nguồn: quan sát đi qua chính `ingest.submit_batch` dưới dạng trường này (ruling Coordinator PKT-PC02-FIX1). Server ghi vào post.source_deleted_observed_at theo quy tắc ĐƠN ĐIỆU: chỉ ghi khi giá trị hiện tại là NULL. Giá trị null hoặc vắng mặt nghĩa là 'không có quan sát', KHÔNG phải 'post còn sống'. Là mốc quan sát của server sau khi nhận (đồng hồ worker vẫn không tin cậy; server có quyền thay bằng committed_at nếu lệch quá ngưỡng của PC05)."
+        }
+      }
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handle"
+      ],
+      "properties": {
+        "handle": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_]{1,15}$",
+          "description": "Không kèm ký tự @."
+        },
+        "display_name": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "x_user_id": {
+          "type": "string",
+          "pattern": "^[0-9]{1,25}$",
+          "description": "Dùng để xác định thread do chính tác giả viết (REQ-D31)."
+        }
+      }
+    },
+    "media_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_type",
+        "url"
+      ],
+      "properties": {
+        "media_type": {
+          "type": "string",
+          "enum": [
+            "photo",
+            "video",
+            "animated_gif",
+            "unknown"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/https_url"
+        },
+        "alt_text": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "referenced_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "$ref": "#/$defs/https_url"
+        },
+        "expanded_url": {
+          "$ref": "#/$defs/https_url",
+          "description": "URL sau khi X đã expand. Collector KHÔNG tự đi theo redirect ngoài policy (PC08)."
+        },
+        "link_kind_hint": {
+          "type": "string",
+          "enum": [
+            "arxiv_abs",
+            "arxiv_pdf",
+            "doi_org",
+            "publisher",
+            "code_repo",
+            "other"
+          ],
+          "description": "GỢI Ý của collector, không phải kết luận identity. Server chuẩn hóa và quyết định (identity.md §3)."
+        }
+      }
+    },
+    "thread_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_author_thread_member"
+      ],
+      "properties": {
+        "is_author_thread_member": {
+          "type": "boolean",
+          "description": "true khi post thuộc thread do chính tác giả viết. Replies của người ngoài KHÔNG được ingest (REQ-D31, REQ-P1-02)."
+        },
+        "thread_root_x_post_id": {
+          "type": "string",
+          "pattern": "^[0-9]{1,25}$"
+        },
+        "position_in_thread": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 49
+        },
+        "thread_size_observed": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      }
+    },
+    "source_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discovery_surface"
+      ],
+      "description": "Nơi collector nhìn thấy post. Cần để ghi giới hạn bao phủ X trong metadata run (B05).",
+      "properties": {
+        "discovery_surface": {
+          "type": "string",
+          "enum": [
+            "search_query",
+            "home_timeline",
+            "author_profile",
+            "thread_expansion"
+          ]
+        },
+        "query_text": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Tag chỉ dùng để TÌM KIẾM, không dùng để lọc (REQ-D24)."
+        },
+        "page_cursor_observed": {
+          "type": "string",
+          "maxLength": 2048
+        }
+      }
+    },
+    "checkpoint_proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase",
+        "cursor_state"
+      ],
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": [
+            "collecting",
+            "enriching",
+            "analyzing",
+            "reporting"
+          ]
+        },
+        "cursor_token": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048,
+          "description": "null hợp lệ khi cursor mất hiệu lực; khi đó cursor_state = 'invalidated' và recovery policy cho phép đọc lại, dedup ở ingest (AMD-B05)."
+        },
+        "cursor_state": {
+          "type": "string",
+          "enum": [
+            "valid",
+            "invalidated"
+          ]
+        },
+        "items_collected_in_run": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "stop_hint": {
+          "type": "string",
+          "enum": [
+            "none",
+            "limit_reached",
+            "captcha",
+            "session_expired",
+            "source_blocked"
+          ],
+          "description": "GỢI Ý; trạng thái run do server quyết (PC03). Collector không tự đặt run sang needs_user."
+        }
+      }
+    }
+  }
+}

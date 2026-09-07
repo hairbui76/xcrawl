@@ -1,0 +1,117 @@
+{
+  "fixture_id": "FX-TG-F",
+  "title": "Callback cũ (revision hoặc generation đã đổi) → KHÔNG Save",
+  "purpose": "CMD-save validation_order bước 3 và 4: callback mang lg/rv cũ bị từ chối bằng câu trả lời an toàn, không Save.",
+  "scenario_refs": [
+    "SC13",
+    "SC46"
+  ],
+  "invariant_refs": [
+    "I08"
+  ],
+  "decision_refs": [
+    "B01"
+  ],
+  "requirement_refs": [
+    "REQ-D38",
+    "REQ-AC13"
+  ],
+  "source_refs": [
+    "contracts/telegram/commands.yaml §CMD-save.validation_order"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 4
+        }
+      ],
+      "report": [
+        {
+          "id": "01JREP0RT10000000000000000",
+          "status": "published",
+          "content_hash": {
+            "symbolic": "H_RP2",
+            "computed_by": "sha256(JCS(report_content_v2))",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          },
+          "_note": "content_hash hiện hành khác với rv trong callback cũ."
+        }
+      ],
+      "report_item": [
+        {
+          "id": "01JR1TEM100000000000000000",
+          "report_id": "01JREP0RT10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RK1000000000000000000",
+            "target_key": "work:01JW0RK1000000000000000000"
+          }
+        }
+      ],
+      "saved_item": []
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T23:00:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "callback_data": "1:01JREP0RT10000000000000000:01JR1TEM100000000000000000:3:aabbccdd",
+      "description": "Callback từ digest cũ: lg = 3 (hiện hành là 4) VÀ rv = aabbccdd (không khớp content_hash hiện hành)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T23:00:00.200Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "telegram.execute_command",
+      "description": "Bước 3 fail trước (lg cũ) ⇒ dừng ngay, không đi tiếp tới save.create."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "saved_item": [],
+      "saved_snapshot": []
+    },
+    "counts": {
+      "saved_item__total": 0,
+      "saved_snapshot__total": 0,
+      "save_create_calls": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 0,
+      "telegram.answerCallbackQuery": 1,
+      "note": "Đúng 1 answerCallbackQuery với câu an toàn; 0 sendMessage."
+    },
+    "reply_vi": "Liên kết Telegram đã thay đổi. Mở ứng dụng để lưu mục này.",
+    "variant_stale_revision": {
+      "description_vi": "Nếu lg đúng nhưng rv sai, dừng ở bước 4 với câu 'Mục này thuộc bản báo cáo cũ. Mở ứng dụng để lưu.'",
+      "counts": {
+        "saved_item__total": 0
+      }
+    }
+  },
+  "forbidden_effects": [
+    "Tạo saved_item từ callback có lg hoặc rv cũ.",
+    "Im lặng hoàn toàn với chat ĐÃ liên kết (người dùng cần biết vì sao không lưu được).",
+    "Tiết lộ nội dung revision mới trong câu trả lời.",
+    "Save một report_item không thuộc report_id trong callback (bước 5)."
+  ]
+}

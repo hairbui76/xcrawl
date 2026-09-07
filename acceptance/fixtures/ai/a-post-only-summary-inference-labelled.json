@@ -1,0 +1,152 @@
+{
+  "fixture_id": "FX-AI-A",
+  "title": "Summary chỉ có post → evidence_level = post_only, mọi phát biểu về tính mới là ai_inference",
+  "purpose": "Khóa REQ-AC11 và grounding.md §2/§3: trần bằng chứng chặn source_verified khi nguồn duy nhất là một post, và 'điểm khác với cái đã có' phải là comparator: unknown chứ không phải baseline bịa.",
+  "scenario_refs": [
+    "SC11"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B16",
+    "AMD-B16"
+  ],
+  "requirement_refs": [
+    "REQ-AC11",
+    "REQ-D20",
+    "REQ-D21",
+    "REQ-S10.3-01",
+    "REQ-S10.3-02"
+  ],
+  "source_refs": [
+    "SRC-SPEC §10.3",
+    "SRC-SPEC §12 AC-11",
+    "SRC-PLAN §3 B16"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/analysis-result.schema.json",
+  "expected_validation": "accept",
+  "given": {
+    "task": {
+      "task_id": "summary",
+      "prompt_version": "1.0.0",
+      "model_class": "strong"
+    },
+    "max_evidence_level": "post_only",
+    "sources": [
+      {
+        "source_id": "post:01JPSTA1000000000000000000",
+        "kind": "post",
+        "source_hash": "sha256:fa3b4e35fc767ad0d9f351d1ae1233a4835277913313e8da90bd12f0c8d30fe9",
+        "text_vi": "Một post giới thiệu paper, không kèm abstract, không có link tới nguồn chuẩn."
+      }
+    ],
+    "note_vi": "Không có work_version nào: metadata chưa về (SOURCE_METADATA_UNAVAILABLE) hoặc post-only (REQ-D33)."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T17:59:00.000Z",
+      "actor": "MOD-report-service",
+      "operation": "analysis.enqueue_tasks",
+      "description": "Report builder chọn target và xếp hàng summary (B17)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Nộp kết quả; server chạy schema + SV-01..SV-07."
+    }
+  ],
+  "expected": {
+    "analysis_result": {
+      "schema_version": "0.1.0",
+      "task_type": "summary",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "summary",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "post_only",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTA1000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "post:01JPSTA1000000000000000000"
+      ],
+      "result": {
+        "content": "Bài giới thiệu một phương pháp huấn luyện mô hình gấp protein với chi phí thấp hơn.",
+        "difference_from_existing": {
+          "text": "Post nói phương pháp rẻ hơn cách làm hiện tại, nhưng không có công trình so sánh nào trong nguồn đã cấp.",
+          "comparator": {
+            "kind": "unknown",
+            "note": "Không có work_version hay abstract nào được cấp cho lần chạy này."
+          }
+        },
+        "limitation_line": "Chỉ đọc được nội dung post; chưa có abstract nên không kiểm được phương pháp hay số liệu.",
+        "peer_review_status": "unknown",
+        "statements": [
+          {
+            "kind": "author_claim",
+            "text": "Tác giả post nói phương pháp giảm chi phí huấn luyện.",
+            "citation_refs": [
+              "post:01JPSTA1000000000000000000"
+            ]
+          },
+          {
+            "kind": "ai_inference",
+            "text": "Hướng này có vẻ gần với nhóm phương pháp chưng cất mô hình.",
+            "citation_refs": []
+          },
+          {
+            "kind": "ai_inference",
+            "text": "Mức độ mới so với công trình trước chưa xác định được từ nguồn hiện có.",
+            "citation_refs": []
+          }
+        ]
+      }
+    },
+    "row_oracles": [
+      "evidence_level = 'post_only' = max_evidence_level (SV-04).",
+      "Không có statement nào mang kind='source_verified' — SV-03 cấm khi evidence_level < abstract.",
+      "comparator.kind = 'unknown': thiếu nguồn so sánh thì GHI THIẾU, không bịa baseline (B16).",
+      "Mọi phát biểu về tính mới mang kind='ai_inference' (REQ-AC11).",
+      "usage.unknown = true và cả ba trường usage là null (I14, đường CLI REQ-D44)."
+    ]
+  },
+  "forbidden_effects": [
+    "Ghi bất kỳ statement nào kind='source_verified' khi chỉ có post (SV-03).",
+    "Đặt evidence_level = 'abstract' hoặc 'full_text' (SV-04).",
+    "Bịa một comparator có source_ref không nằm trong input_source_ids (SV-02).",
+    "Trình bày một phát biểu về tính mới như kết luận thay vì suy luận (REQ-AC11).",
+    "Ghi usage 0 thay cho unknown (I14)."
+  ]
+}

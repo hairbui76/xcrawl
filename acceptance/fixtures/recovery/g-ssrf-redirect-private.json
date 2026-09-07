@@ -1,0 +1,104 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-recovery-g",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "operations contract owner",
+    "source_refs": [
+      "SRC-PLAN §11 PC08",
+      "SRC-PLAN §7 I15",
+      "SRC-SPEC §11",
+      "SRC-SPEC §7.3"
+    ],
+    "requirement_refs": [
+      "REQ-D32",
+      "REQ-D33",
+      "REQ-S11.4-03",
+      "REQ-A6"
+    ],
+    "decision_refs": [
+      "B12",
+      "ADR-0001"
+    ],
+    "invariant_refs": [
+      "I11"
+    ],
+    "producers": [
+      "MOD-backup-service"
+    ],
+    "consumers": [
+      "MOD-backup-cli",
+      "MOD-delivery-service",
+      "MOD-job-service"
+    ],
+    "dependencies": [
+      "contracts/ops/backup-restore.md",
+      "contracts/ops/secrets.md",
+      "contracts/ops/internet-boundary.md",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/state/storage.yaml"
+    ],
+    "scope": "Fixture E0/E1 cho PC08; dữ liệu vào và oracle, chưa chạy.",
+    "verification": "NOT_RUN — chưa có code, chưa có harness.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "g",
+  "title_vi": "URL paper redirect về địa chỉ nội bộ → bị chặn",
+  "scenario_refs": [
+    "SC39"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "post_vi": "Post dẫn một link paper trên host công khai.",
+    "redirect_chain": [
+      "https://public-host.example/paper/1",
+      "https://public-host.example/r/2",
+      "http://127.0.0.1:8080/admin"
+    ],
+    "note_vi": "Bước cuối trỏ về loopback của chính server."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "edge_assertion": "allowed",
+      "input": {
+        "batch_idempotency_key": "BK-55",
+        "item_count": 1
+      },
+      "note_vi": "Collector chỉ GỬI chuỗi URL, không fetch."
+    },
+    {
+      "seq": 2,
+      "actor": "MOD-ingest-service",
+      "operation": "research.fetch_work_metadata",
+      "edge_assertion": "allowed",
+      "input": {
+        "identifier": "arxiv:2601.00099"
+      },
+      "note_vi": "Caller đúng là MOD-ingest-service (ports.yaml caller_modules), không phải MOD-research-connector — connector là OWNER của operation."
+    }
+  ],
+  "expected": {
+    "seq2": {
+      "error_code": "SOURCE_METADATA_UNAVAILABLE",
+      "blocked_at_redirect_step": 3
+    },
+    "connections_to_loopback": 0,
+    "connections_to_private_ranges": 0,
+    "work_state_vi": "work vẫn tồn tại ở mức 'chỉ có post'; không đoán DOI; không xóa abstract cũ nếu đã có.",
+    "scheme_rule_vi": "Bước 3 cũng vi phạm scheme allowlist (http) — hai quy tắc độc lập cùng chặn."
+  },
+  "forbidden_effects": [
+    "Bất kỳ kết nối TCP nào tới 127.0.0.0/8, ::1, 10/8, 172.16/12, 192.168/16, 169.254/16",
+    "Đi theo redirect mà không kiểm lại IP ở từng bước",
+    "Đoán DOI khi không lấy được metadata",
+    "Nhận URL fetch do model hoặc nội dung post chỉ định"
+  ],
+  "oracle_vi": "Đếm kết nối tới dải nội bộ = 0; item nhận SOURCE_METADATA_UNAVAILABLE; evidence level của summary về sau là 'chỉ có post'."
+}

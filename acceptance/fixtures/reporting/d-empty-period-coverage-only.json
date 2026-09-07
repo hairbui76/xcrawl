@@ -1,0 +1,174 @@
+{
+  "fixture_id": "FX-RP-D",
+  "title": "Kỳ rỗng → có hàng coverage, KHÔNG có report hiển thị, KHÔNG có digest",
+  "purpose": "Khóa AMD-B04: nếu kỳ rỗng không để lại dấu vết trong sổ coverage thì coverage_from của kỳ sau không có nguồn và chuỗi cửa sổ bị hở, vi phạm REQ-D27 và I06.",
+  "scenario_refs": [
+    "SC08",
+    "SC15"
+  ],
+  "invariant_refs": [
+    "I06",
+    "I13"
+  ],
+  "decision_refs": [
+    "B04",
+    "AMD-B04",
+    "CR-PC03-06"
+  ],
+  "requirement_refs": [
+    "REQ-D27",
+    "REQ-D57",
+    "REQ-AC08",
+    "REQ-AC15",
+    "REQ-S8.2-09",
+    "REQ-S8.3-01"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.5 D57",
+    "SRC-SPEC §8.2 hàng 9",
+    "SRC-SPEC §8.3",
+    "SRC-PLAN §9.2"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/reporting/time-and-tags.md",
+    "contracts/reporting/selection.md",
+    "contracts/schemas/report.schema.json",
+    "contracts/schemas/target.schema.json",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "embedding_generation": {
+      "embedding_generation_id": "01JEMBGEN10000000000000000",
+      "model_name": "multilingual-e5-small",
+      "model_version": "1.0.0",
+      "dimension": 4,
+      "normalization": "l2"
+    },
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWND1000000000000000000",
+          "sequence": 1,
+          "window_from": "2026-09-05T00:00:00.000Z",
+          "window_to": "2026-09-06T00:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 500,
+          "predecessor_window_id": null,
+          "report_id": "01JRPTD0000000000000000000"
+        }
+      ],
+      "tag": [
+        {
+          "id": "01JTAGPFD00000000000000000",
+          "text": "protein folding",
+          "state": "active"
+        }
+      ]
+    },
+    "note": "Đợt chạy kế tiếp thu thập xong nhưng KHÔNG bài nào khớp tag (SRC-SPEC §8.2 hàng 9).",
+    "report_build_id": "7f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T13:00:00.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Selection trả tập rỗng. Không phải lỗi: run outcome = 'empty' (SRC-PLAN §8.1)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "MỘT transaction ghi coverage_window(report_id = NULL) + run(status=completed, outcome=empty), và đánh bản dựng report(status='aborted', abort_reason='empty_period') — hàng này giữ report_build_id làm receipt cho replay. KHÔNG tạo report hiển thị, KHÔNG gọi delivery.create_intent (REQ-D57)."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T13:00:05.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "transaction": "publish",
+      "description": "Kỳ kế tiếp có nội dung; nối ngay sau cửa sổ rỗng."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "coverage_window": [
+        {
+          "id": "01JCWND2000000000000000000",
+          "sequence": 2,
+          "window_from": "2026-09-06T00:00:00.000Z",
+          "window_to": "2026-09-06T13:00:00.000Z",
+          "ingest_sequence_from": 500,
+          "ingest_sequence_to": 500,
+          "predecessor_window_id": "01JCWND1000000000000000000",
+          "report_id": null
+        },
+        {
+          "id": "01JCWND3000000000000000000",
+          "sequence": 3,
+          "window_from": "2026-09-06T13:00:00.000Z",
+          "window_to": "2026-09-07T12:40:00.000Z",
+          "ingest_sequence_from": 500,
+          "ingest_sequence_to": 611,
+          "predecessor_window_id": "01JCWND2000000000000000000",
+          "report_id": "01JRPTD2000000000000000000"
+        }
+      ],
+      "report": [
+        {
+          "id": "01JRPTD1000000000000000000",
+          "owner_id": "01JW0WNER00000000000000000",
+          "report_build_id": "7f1c2a34-5b6d-4e7f-8a9b-0c1d2e3f4a5b",
+          "status": "aborted",
+          "abort_reason": "empty_period",
+          "published_at": null,
+          "content_hash": null,
+          "_note_vi": "Hàng report của bản dựng kỳ rỗng: KHÔNG published, mang lý do tường minh, và giữ report_build_id làm receipt cho replay (entities.yaml ux_report_owner_build_id)."
+        }
+      ]
+    },
+    "counts": {
+      "coverage_window": 3,
+      "coverage_window[report_id IS NULL]": 1,
+      "report[status='published']": 2,
+      "outbox_intent added by event 2": 0,
+      "delivery added by event 2": 0,
+      "report[status='published'] added by event 2": 0,
+      "report[status='aborted' AND abort_reason='empty_period'] added by event 2": 1
+    },
+    "row_oracles": [
+      "coverage_window[sequence=2].window_from = coverage_window[sequence=1].window_to (không hở).",
+      "coverage_window[sequence=3].window_from = coverage_window[sequence=2].window_to (không hở qua kỳ rỗng).",
+      "Cửa sổ rỗng có ingest_sequence_from = ingest_sequence_to (không mục nào), và window_to > window_from.",
+      "Run mang status='completed', outcome='empty' — KHÁC với 'failed' (SRC-SPEC §8.3).",
+      "Trạng thái nghiệp vụ 'kỳ này rỗng' nằm ở coverage_window(report_id=NULL) + run.outcome='empty', KHÔNG ở một trạng thái report thứ tư (contracts/state/report.yaml T-RP-07 note_vi).",
+      "ORACLE ÂM (idempotency): gọi lại report.publish với CÙNG report_build_id sau event 2 KHÔNG tạo coverage_window thứ hai và KHÔNG trả CONFLICT — nó trả lại kết quả cũ. Đây là lý do kỳ rỗng vẫn để lại một hàng report (time-and-tags.md §4.7.1).",
+      "abort_reason='empty_period' phân biệt được với các lý do abort khác (tag_version_stale, embedding_generation_mismatch, cas_lost, builder_crash_or_stale) — I13.",
+      "report_build_id là cột THẬT của entities.yaml (UNIQUE ux_report_owner_build_id) — sau PC02-FIX3, lập luận của time-and-tags.md §4.7.1 dựa trên một cột tồn tại, không còn là tiền đề trống (F-A1R2-01).",
+      "abort_reason='empty_period' là giá trị trong enum đã ruled: empty_period | tag_version_stale | embedding_generation_mismatch | cas_conflict | builder_failure | cancelled."
+    ],
+    "display_oracles": [
+      "UI hiển thị 'không có nội dung phù hợp'. CẤM hiển thị 'không có nghiên cứu mới' (SRC-SPEC §8.3, I13)."
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo hàng report status='published' cho kỳ rỗng.",
+    "Tạo outbox_intent hoặc delivery cho kỳ rỗng (REQ-D57).",
+    "Bỏ qua kỳ rỗng khiến coverage_window[3].window_from = coverage_window[1].window_to (bỏ mất một đoạn).",
+    "Hiển thị kỳ rỗng giống 'đợt thất bại'.",
+    "Dùng aborted cho kỳ rỗng mà KHÔNG ghi abort_reason (làm 'kỳ rỗng hợp lệ' lẫn với 'build hỏng' — vi phạm I13)."
+  ],
+  "decision_note": "CR-PC03-06 do PC04 quyết (time-and-tags.md §4.7.1): kỳ rỗng ĐỂ LẠI một hàng report(status='aborted', abort_reason='empty_period'). Lý do: report_build_id cần một mỏ neo bền để replay sau mất ACK tra được receipt; coverage_window không có khóa idempotency. PC04 KHÔNG theo khuyến nghị (a) của Coordinator — xem §4.7.1 và unresolved refs của handoff.",
+  "field_names_verified_against": {
+    "file": "contracts/data/entities.yaml",
+    "sha256": "209cf03e169aeffb4e1a95d74ca852186a391e65f1825c7ce0e81e8ae5eb5ece",
+    "note_vi": "Mọi cột trong given.rows và expected.rows đã tồn tại tại hash này; không cần marker pending_cr. entities.yaml đổi hai lần trong lúc PKT-PC04-FIX1 chạy (PC02-FIX3 đang ghi); kiểm lại lần cuối tại hash này."
+  }
+}

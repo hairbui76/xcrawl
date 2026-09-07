@@ -1,0 +1,662 @@
+{
+  "x-contract": {
+    "contract_id": "CT-fixture-boundary-sc49",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "architecture owner",
+    "source_refs": [
+      "SRC-PLAN §6",
+      "SRC-PLAN §7 I01",
+      "SRC-PLAN §7 I11",
+      "SRC-SPEC §6.1",
+      "SRC-SPEC §11.4",
+      "SRC-SPEC §12 AC-17",
+      "SRC-SPEC §12 AC-18"
+    ],
+    "requirement_refs": [
+      "REQ-D01",
+      "REQ-D08",
+      "REQ-D42",
+      "REQ-D50",
+      "REQ-S6.1-01",
+      "REQ-S6.1-02",
+      "REQ-S6.1-03",
+      "REQ-S11.2-01",
+      "REQ-S11.2-02",
+      "REQ-AC17",
+      "REQ-AC18"
+    ],
+    "decision_refs": [
+      "B12",
+      "B13",
+      "AMD-B12",
+      "ADR-0001",
+      "ADR-0010",
+      "R5-01",
+      "R5-02"
+    ],
+    "invariant_refs": [
+      "I01",
+      "I11"
+    ],
+    "producers": [
+      "MOD-backend-api"
+    ],
+    "consumers": [
+      "MOD-web-ui",
+      "MOD-x-collector",
+      "MOD-analysis-worker",
+      "MOD-ai-adapter",
+      "MOD-telegram-adapter",
+      "MOD-backup-cli",
+      "MOD-scheduler"
+    ],
+    "dependencies": [
+      "contracts/modules.yaml",
+      "contracts/capabilities.yaml",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml"
+    ],
+    "scope": "Quét default-deny: một event cho mỗi cạnh bị cấm FE-01..FE-36, mỗi cái mang edge_assertion forbidden và mã lỗi đã pin ở denied_cases tương ứng.",
+    "verification": "NOT_RUN — E0 tĩnh; chưa có code, chưa có harness mạng, chưa có process sandbox.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW"
+  },
+  "fixture_id": "a",
+  "title_vi": "SC49 — quét default-deny trên toàn bộ 36 cạnh bị cấm",
+  "scenario_refs": [
+    "SC49"
+  ],
+  "invariant_refs": [
+    "I01",
+    "I11"
+  ],
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "registry_vi": "contracts/modules.yaml: 36 forbidden_edges (FE-01..FE-36), 36 denied_cases (NC-01..NC-36), 99 allowed_edges.",
+    "principle_vi": "Default deny: cạnh không có trong allowed_edges là bị cấm. denied_cases và forbidden_edges chỉ NÊU TÊN những cạnh dễ bị vi phạm; chúng không phải danh sách đầy đủ các đường bị cấm.",
+    "credentials_vi": "Mỗi caller dùng credential hợp lệ của chính nó. Nếu dùng credential sai thì ca này biến thành ca xác thực và không còn kiểm được ranh giới quyền.",
+    "baseline_counts_vi": "Chụp COUNT(*) của mọi bảng và số outbound call theo host class TRƯỚC bước 1."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "forbidden_edge_ref": "FE-01",
+      "denied_case_ref": "NC-11",
+      "actor": "MOD-web-ui",
+      "callee": "MOD-data-store",
+      "operation": "storage.get_health",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist",
+        "ENF-process-capability"
+      ]
+    },
+    {
+      "seq": 2,
+      "forbidden_edge_ref": "FE-02",
+      "denied_case_ref": "NC-03",
+      "actor": "MOD-web-ui",
+      "callee": "MOD-secret-service",
+      "operation": "secret.issue_task_credential",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test",
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 3,
+      "forbidden_edge_ref": "FE-03",
+      "denied_case_ref": "NC-12",
+      "actor": "MOD-web-ui",
+      "callee": "EXT-ai-provider-api",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist"
+      ],
+      "operation_absent_reason_vi": "Cạnh này không tương ứng một operation trong ports.yaml: `settings.test_provider` là operation HỢP LỆ của MOD-web-ui → MOD-settings-service. Cái bị cấm là trang web tự mở socket tới endpoint provider; oracle là đếm kết nối từ trình duyệt.",
+      "event_type": "local_observation",
+      "event_type_reason_vi": "Trang web tự mở socket tới endpoint provider. Không có operation nào của ports.yaml tương ứng; quan sát tại ranh giới tiến trình/mạng của trình duyệt."
+    },
+    {
+      "seq": 4,
+      "forbidden_edge_ref": "FE-04",
+      "denied_case_ref": "NC-13",
+      "actor": "MOD-web-ui",
+      "callee": "EXT-telegram-api",
+      "operation": "telegram.send_payload",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist"
+      ]
+    },
+    {
+      "seq": 5,
+      "forbidden_edge_ref": "FE-05",
+      "denied_case_ref": "NC-05",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-data-store",
+      "operation": "storage.get_health",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-process-capability",
+        "ENF-network-egress-allowlist"
+      ]
+    },
+    {
+      "seq": 6,
+      "forbidden_edge_ref": "FE-06",
+      "denied_case_ref": "NC-01",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-saved-service",
+      "operation": "save.create",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 7,
+      "forbidden_edge_ref": "FE-07",
+      "denied_case_ref": "NC-14",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-analysis-service",
+      "operation": "analysis.enqueue_tasks",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 8,
+      "forbidden_edge_ref": "FE-08",
+      "denied_case_ref": "NC-15",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-analysis-worker",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-process-capability",
+        "ENF-import-rule"
+      ],
+      "operation_absent_reason_vi": "Cạnh này không tương ứng một operation trong ports.yaml (truy cập tài nguyên/tiến trình trực tiếp); oracle là đếm kết nối và phân tích tĩnh import.",
+      "event_type": "in_process_call",
+      "event_type_reason_vi": "Collector gọi thẳng analysis worker trên cùng máy, không qua API server. Đây là đường mã/IPC cục bộ qua một cạnh không có trong allowed_edges — cùng lớp với expected_error_code FORBIDDEN_EDGE của bảng R5-01."
+    },
+    {
+      "seq": 9,
+      "forbidden_edge_ref": "FE-09",
+      "denied_case_ref": "NC-16",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-secret-service",
+      "operation": "secret.issue_task_credential",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 10,
+      "forbidden_edge_ref": "FE-10",
+      "denied_case_ref": "NC-17",
+      "actor": "MOD-x-collector",
+      "callee": "EXT-telegram-api",
+      "operation": "telegram.send_payload",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist"
+      ]
+    },
+    {
+      "seq": 11,
+      "forbidden_edge_ref": "FE-11",
+      "denied_case_ref": "NC-18",
+      "actor": "MOD-x-collector",
+      "callee": "MOD-tag-service",
+      "operation": "tag.update",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 12,
+      "forbidden_edge_ref": "FE-12",
+      "denied_case_ref": "NC-02",
+      "actor": "MOD-analysis-worker",
+      "callee": "MOD-tag-service",
+      "operation": "tag.update",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test",
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 13,
+      "forbidden_edge_ref": "FE-13",
+      "denied_case_ref": "NC-19",
+      "actor": "MOD-analysis-worker",
+      "callee": "MOD-report-service",
+      "operation": "report.publish",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 14,
+      "forbidden_edge_ref": "FE-14",
+      "denied_case_ref": "NC-20",
+      "actor": "MOD-analysis-worker",
+      "callee": "MOD-saved-service",
+      "operation": "save.create",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 15,
+      "forbidden_edge_ref": "FE-15",
+      "denied_case_ref": "NC-21",
+      "actor": "MOD-analysis-worker",
+      "callee": "MOD-data-store",
+      "operation": "storage.get_health",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-process-capability",
+        "ENF-network-egress-allowlist"
+      ]
+    },
+    {
+      "seq": 16,
+      "forbidden_edge_ref": "FE-16",
+      "denied_case_ref": "NC-04",
+      "actor": "MOD-ai-adapter",
+      "callee": "EXT-telegram-api",
+      "operation": "telegram.send_payload",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist",
+        "ENF-process-capability"
+      ]
+    },
+    {
+      "seq": 17,
+      "forbidden_edge_ref": "FE-17",
+      "denied_case_ref": "NC-22",
+      "actor": "MOD-ai-adapter",
+      "callee": "EXT-x-web",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-process-capability"
+      ],
+      "operation_absent_reason_vi": "Cạnh này không tương ứng một operation trong ports.yaml (truy cập tài nguyên/tiến trình trực tiếp); oracle là đếm kết nối và phân tích tĩnh import.",
+      "event_type": "local_observation",
+      "event_type_reason_vi": "Adapter AI cố điều khiển trình duyệt X. Quan sát bằng process capability và đếm kết nối, không phải bằng response của một operation."
+    },
+    {
+      "seq": 18,
+      "forbidden_edge_ref": "FE-18",
+      "denied_case_ref": "NC-23",
+      "actor": "MOD-ai-adapter",
+      "callee": "MOD-data-store",
+      "operation": "storage.get_health",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-process-capability"
+      ]
+    },
+    {
+      "seq": 19,
+      "forbidden_edge_ref": "FE-19",
+      "denied_case_ref": "NC-07",
+      "actor": "MOD-ai-adapter",
+      "callee": "EXT-arxiv-api",
+      "operation": "research.fetch_work_metadata",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist",
+        "ENF-process-capability"
+      ]
+    },
+    {
+      "seq": 20,
+      "forbidden_edge_ref": "FE-20",
+      "denied_case_ref": "NC-24",
+      "actor": "MOD-research-connector",
+      "callee": "EXT-x-web",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-process-capability"
+      ],
+      "operation_absent_reason_vi": "Cạnh này không tương ứng operation nào: connector cố lấy nội dung X trực tiếp. `network_egress` của nó chỉ có arXiv và OpenAlex; oracle là đếm kết nối tới host của X từ container server.",
+      "event_type": "local_observation",
+      "event_type_reason_vi": "Attempt mở kết nối mạng tới nguồn X từ server. Quan sát bằng đếm kết nối theo host class và bằng egress allowlist, không bằng response của một operation."
+    },
+    {
+      "seq": 21,
+      "forbidden_edge_ref": "FE-21",
+      "denied_case_ref": "NC-08",
+      "actor": "MOD-research-connector",
+      "callee": "EXT-chrome-profile",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-import-rule",
+        "ENF-process-capability"
+      ],
+      "operation_absent_reason_vi": "Cạnh này không tương ứng operation nào: profile Chrome là tài nguyên trên máy cá nhân. Oracle là process capability — image server không cài Chrome.",
+      "event_type": "local_observation",
+      "event_type_reason_vi": "Attempt chạm một tài nguyên cục bộ không tồn tại ở phía server. Quan sát bằng process capability và phân tích tĩnh import."
+    },
+    {
+      "seq": 22,
+      "forbidden_edge_ref": "FE-22",
+      "denied_case_ref": "NC-25",
+      "actor": "MOD-embedding-service",
+      "callee": "EXT-ai-provider-api",
+      "operation": "ai.run_inference_task",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist",
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 23,
+      "forbidden_edge_ref": "FE-23",
+      "denied_case_ref": "NC-26",
+      "actor": "MOD-embedding-service",
+      "callee": "MOD-tag-service",
+      "operation": "tag.update",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 24,
+      "forbidden_edge_ref": "FE-24",
+      "denied_case_ref": "NC-09",
+      "actor": "MOD-scheduler",
+      "callee": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule",
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 25,
+      "forbidden_edge_ref": "FE-25",
+      "denied_case_ref": "NC-27",
+      "actor": "MOD-scheduler",
+      "callee": "MOD-telegram-adapter",
+      "operation": "telegram.send_payload",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 26,
+      "forbidden_edge_ref": "FE-26",
+      "denied_case_ref": "NC-28",
+      "actor": "MOD-scheduler",
+      "callee": "MOD-x-collector",
+      "operation": null,
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-network-egress-allowlist"
+      ],
+      "event_type": "in_process_call",
+      "attempted_action_vi": "Scheduler **đẩy** một assignment xuống collector — mở kết nối vào máy cá nhân để giao việc.",
+      "operation_absent_reason_vi": "Không có operation nào để đặt vào đây, và đó chính là điểm của cạnh này: `worker.claim_assignment` do **MOD-job-service** sở hữu và caller duy nhất của nó là **MOD-x-collector** — nó chạy theo chiều **ngược lại**. Collector không sở hữu và không phơi ra operation nào; máy cá nhân không lắng nghe cổng nào. Ghi tên một operation ở đây sẽ tạo một oracle không chạy được (\"gọi nó rồi khẳng định lỗi\") cho một endpoint không tồn tại. Sửa theo F-A2R1-05.",
+      "event_type_reason_vi": "Scheduler đẩy việc là một lời gọi mã trong tiến trình server qua một cạnh không có trong `allowed_edges`; oracle là import/dependency rule, không phải response của một endpoint."
+    },
+    {
+      "seq": 27,
+      "forbidden_edge_ref": "FE-27",
+      "denied_case_ref": "NC-29",
+      "actor": "MOD-report-service",
+      "callee": "EXT-telegram-api",
+      "operation": "telegram.send_payload",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "CAPABILITY_DENIED",
+      "enforcement": [
+        "ENF-network-egress-allowlist"
+      ]
+    },
+    {
+      "seq": 28,
+      "forbidden_edge_ref": "FE-28",
+      "denied_case_ref": "NC-30",
+      "actor": "MOD-report-service",
+      "callee": "MOD-analysis-service",
+      "operation": "analysis.submit_result",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule",
+        "ENF-api-auth-test"
+      ]
+    },
+    {
+      "seq": 29,
+      "forbidden_edge_ref": "FE-29",
+      "denied_case_ref": "NC-31",
+      "actor": "MOD-telegram-adapter",
+      "callee": "MOD-data-store",
+      "operation": "storage.get_health",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 30,
+      "forbidden_edge_ref": "FE-30",
+      "denied_case_ref": "NC-32",
+      "actor": "MOD-telegram-adapter",
+      "callee": "MOD-tag-service",
+      "operation": "tag.update",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED_COMMAND",
+      "enforcement": [
+        "ENF-command-allowlist",
+        "ENF-api-auth-test"
+      ],
+      "expected_error_code_edge_class": "UNAUTHORIZED",
+      "two_level_note_vi": "Dòng 'sai lớp principal' của bảng R5-01. Ở mức CẠNH, lời gọi bị từ chối như UNAUTHORIZED; ở mức ĐƯỜNG ĐI (ingress Telegram) mã quan sát được trong audit là UNAUTHORIZED_COMMAND, và phía chat KHÔNG nhận phản hồi nào (REQ-S11.3-02, AC-18). Hai giá trị mô tả hai tầng, không mâu thuẫn."
+    },
+    {
+      "seq": 31,
+      "forbidden_edge_ref": "FE-31",
+      "denied_case_ref": "NC-06",
+      "actor": "MOD-telegram-adapter",
+      "callee": "MOD-settings-service",
+      "operation": "settings.update_config",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED_COMMAND",
+      "enforcement": [
+        "ENF-command-allowlist",
+        "ENF-api-auth-test"
+      ],
+      "expected_error_code_edge_class": "UNAUTHORIZED",
+      "two_level_note_vi": "Dòng 'sai lớp principal' của bảng R5-01. Ở mức CẠNH, lời gọi bị từ chối như UNAUTHORIZED; ở mức ĐƯỜNG ĐI (ingress Telegram) mã quan sát được trong audit là UNAUTHORIZED_COMMAND, và phía chat KHÔNG nhận phản hồi nào (REQ-S11.3-02, AC-18). Hai giá trị mô tả hai tầng, không mâu thuẫn."
+    },
+    {
+      "seq": 32,
+      "forbidden_edge_ref": "FE-32",
+      "denied_case_ref": "NC-33",
+      "actor": "MOD-telegram-adapter",
+      "callee": "MOD-secret-service",
+      "operation": "secret.issue_task_credential",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "FORBIDDEN_EDGE",
+      "enforcement": [
+        "ENF-import-rule"
+      ]
+    },
+    {
+      "seq": 33,
+      "forbidden_edge_ref": "FE-33",
+      "denied_case_ref": "NC-34",
+      "actor": "MOD-telegram-adapter",
+      "callee": "MOD-job-service",
+      "operation": "run.resume",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED_COMMAND",
+      "enforcement": [
+        "ENF-command-allowlist",
+        "ENF-api-auth-test"
+      ],
+      "expected_error_code_edge_class": "UNAUTHORIZED",
+      "two_level_note_vi": "Dòng 'sai lớp principal' của bảng R5-01. Ở mức CẠNH, lời gọi bị từ chối như UNAUTHORIZED; ở mức ĐƯỜNG ĐI (ingress Telegram) mã quan sát được trong audit là UNAUTHORIZED_COMMAND, và phía chat KHÔNG nhận phản hồi nào (REQ-S11.3-02, AC-18). Hai giá trị mô tả hai tầng, không mâu thuẫn."
+    },
+    {
+      "seq": 34,
+      "forbidden_edge_ref": "FE-34",
+      "denied_case_ref": "NC-10",
+      "actor": "MOD-backup-cli",
+      "callee": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "RESTORE_UNVERIFIED",
+      "enforcement": [
+        "ENF-storage-health-guard",
+        "ENF-api-auth-test"
+      ],
+      "expected_error_code_edge_class": "FORBIDDEN_EDGE",
+      "two_level_note_vi": "Ở mức CẠNH, MOD-backup-cli không phải caller được phép của operation này trong BẤT KỲ trạng thái nào ⇒ FORBIDDEN_EDGE. RESTORE_UNVERIFIED là mã ở mức TRẠNG THÁI mà operation trả khi guard storage.health = recovery_required chặn; nó là lý do vận hành, không phải phán quyết về cạnh."
+    },
+    {
+      "seq": 35,
+      "forbidden_edge_ref": "FE-35",
+      "denied_case_ref": "NC-35",
+      "actor": "MOD-backup-cli",
+      "callee": "MOD-job-service",
+      "operation": "worker.claim_assignment",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "RESTORE_UNVERIFIED",
+      "enforcement": [
+        "ENF-storage-health-guard",
+        "ENF-api-auth-test"
+      ],
+      "expected_error_code_edge_class": "FORBIDDEN_EDGE",
+      "two_level_note_vi": "Ở mức CẠNH, MOD-backup-cli không phải caller được phép của operation này trong BẤT KỲ trạng thái nào ⇒ FORBIDDEN_EDGE. RESTORE_UNVERIFIED là mã ở mức TRẠNG THÁI mà operation trả khi guard storage.health = recovery_required chặn; nó là lý do vận hành, không phải phán quyết về cạnh."
+    },
+    {
+      "seq": 36,
+      "forbidden_edge_ref": "FE-36",
+      "denied_case_ref": "NC-36",
+      "actor": "EXT-telegram-api",
+      "callee": "MOD-saved-service",
+      "operation": "save.create",
+      "edge_assertion": "forbidden",
+      "credential_vi": "credential HỢP LỆ của caller — ca này kiểm ranh giới QUYỀN, không kiểm xác thực",
+      "expected_error_code": "UNAUTHORIZED",
+      "enforcement": [
+        "ENF-api-auth-test",
+        "ENF-command-allowlist"
+      ]
+    }
+  ],
+  "expected": {
+    "per_edge_vi": "Với cả 36 cạnh: lời gọi bị từ chối với đúng expected_error_code của denied case tương ứng; không hàng nào ở bất kỳ bảng nào đổi; một hàng audit từ chối đã che secrets được ghi.",
+    "error_code_distribution": {
+      "CAPABILITY_DENIED": 15,
+      "UNAUTHORIZED": 9,
+      "FORBIDDEN_EDGE": 7,
+      "UNAUTHORIZED_COMMAND": 3,
+      "RESTORE_UNVERIFIED": 2
+    },
+    "telegram_ingress_vi": "Ba cạnh trả UNAUTHORIZED_COMMAND (FE-30/31/33) KHÔNG được trả lời gì về phía chat — bỏ im lặng (REQ-S11.3-02, AC-18); mã chỉ xuất hiện trong audit nội bộ.",
+    "restore_guarded_vi": "Hai cạnh trả RESTORE_UNVERIFIED (FE-34/35) bị chặn bởi guard trạng thái, không bởi thiếu quyền: cùng caller ĐƯỢC PHÉP sau khi backup.reconcile_after_restore thành công.",
+    "total_row_delta": 0,
+    "total_unexpected_outbound_calls": 0,
+    "two_level_codes_vi": "Năm event (FE-30, FE-31, FE-33, FE-34, FE-35) mang HAI mã: `expected_error_code_edge_class` là mã theo bảng R5-01 cho việc từ chối ở mức CẠNH, và `expected_error_code` là mã chính xác mà đường đi cụ thể trả về. Gate `fixture-actor-edge` đọc mã lớp; oracle nghiệp vụ đọc mã chính xác. Ghi cả hai thay vì chọn một là để không phải làm sai một trong hai: ép năm ca này về đúng ba mã sẽ nói dối về hành vi quan sát được, còn bỏ mã lớp sẽ để gate không đọc được. Xem CR-PC01-09."
+  },
+  "forbidden_effects": [
+    "Bất kỳ cạnh nào trong 36 thực hiện được (default deny bị thủng).",
+    "FE-08 (collector → analysis worker): cho phân tích chạy trên dữ liệu CHƯA commit, phá I02 và AMD-B12.",
+    "FE-22 (embedding → provider AI): phá AC-16, luồng không-API-key không còn đúng.",
+    "Cho MOD-ai-adapter chạm X, arXiv, Telegram hay SQLite (FE-16..FE-19).",
+    "Trả lời chat chưa được phép thay vì bỏ im lặng (FE-30/31/33).",
+    "Nới allowlist egress hoặc thêm cạnh vào allowed_edges để 'chạy được' mà không sửa hợp đồng và review."
+  ],
+  "oracle_vi": "Đếm là oracle. Với mỗi FE-nn: tổng COUNT(*) của mọi bảng trước và sau lời gọi BẰNG NHAU; số outbound call ngoài chính lời gọi bị từ chối = 0; mã lỗi quan sát được BẰNG denied_cases[].expected_error_code đã pin. Ba cơ chế thực thi được kiểm riêng: import/dependency rule (phân tích tĩnh) cho cạnh cùng tiến trình; API auth test cho cạnh qua mạng; process/network capability cho worker trên máy cá nhân. Một cạnh 'không quan sát thấy lỗi' KHÔNG được tính là pass: phải quan sát được sự từ chối.",
+  "coverage_note_vi": "36/36 cạnh có event. Hai cạnh đã có fixture riêng ở acceptance/fixtures/recovery/i-collector-token-calls-save.json (FE-06 và FE-12) — fixture này lặp lại chúng ở mức quét để bảng phủ là liên tục; hai nơi phải cho cùng một mã lỗi (UNAUTHORIZED), nếu lệch thì một trong hai sai.",
+  "not_run_note_vi": "Chưa chạy. Fixture nhất quán với registry KHÔNG chứng minh guard nào chạy (SRC-PLAN §14.2, E0).",
+  "event_type_convention_vi": "R4-02: mọi event phải có khóa `operation`; giá trị `null` được phép **chỉ khi** event mang thêm `event_type`. Hai giá trị dùng ở đây: **`in_process_call`** — lời gọi mã/IPC cục bộ qua một cạnh không có trong `allowed_edges` (oracle: import/dependency rule, phân tích tĩnh); **`local_observation`** — attempt chạm tài nguyên hoặc mở kết nối mạng, không tương ứng operation nào (oracle: đếm kết nối, process capability). Bốn event mang `local_observation` và một mang `in_process_call`; 31 event còn lại có `operation` thật nên không cần khóa này.",
+  "bijection_note_vi": "Mỗi cạnh trong 36 `forbidden_edges` có **đúng một** event ở đây, và bộ (caller, callee) của event bằng đúng định nghĩa cạnh trong `contracts/modules.yaml` cũng như `attempted_edge` của denied case tương ứng. Trước FIX9, `FE-20` và `FE-21` cùng trỏ tới `EXT-chrome-profile`, nên FE-20 không có event nào mô tả đúng cạnh của nó — `E0-10b` vẫn PASS vì check đó chỉ hỏi 'có case được pin hay không', không hỏi 'case có mô tả đúng cạnh hay không'. Gate của W2 nay kiểm song ánh này (CR-PC01-10).",
+  "attempted_edge_operation_rule_vi": "Một event chỉ mang tên `operation` khi **callee sở hữu** operation đó (callee `MOD-*`), hoặc khi callee là hệ thống ngoài `EXT-*` và tên đó là **port nội bộ mà kẻ vi phạm đang cố tạo ra hiệu ứng của nó** (quy ước ghi ở `contracts/modules.yaml` `default_deny.attempted_edge_operation_rule_vi`). Mọi trường hợp khác dùng `operation: null` + `event_type` + `operation_absent_reason_vi`. Sáu event dùng dạng EXT: FE-16, FE-19, FE-04, FE-10, FE-22, FE-27. Sáu event dùng `null`: FE-03, FE-08, FE-17, FE-20, FE-21, FE-26."
+}

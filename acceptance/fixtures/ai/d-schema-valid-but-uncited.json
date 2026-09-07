@@ -1,0 +1,181 @@
+{
+  "fixture_id": "FX-AI-D",
+  "title": "JSON đúng schema nhưng phát biểu source_verified không có citation → SV-03",
+  "purpose": "Schema đã ép citation ≥ 1 cho author_claim/source_verified, nên biến thể này bị chặn ngay ở tầng schema. Fixture giữ CẢ HAI biến thể để chỉ rõ ranh giới schema/ngữ nghĩa.",
+  "scenario_refs": [
+    "SC11"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B16"
+  ],
+  "requirement_refs": [
+    "REQ-AC11",
+    "REQ-D43"
+  ],
+  "source_refs": [
+    "SRC-PLAN §10 AI_OUTPUT_INVALID",
+    "SRC-SPEC §10.3"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/analysis-result.schema.json",
+  "expected_validation": "reject_schema",
+  "expected_violation": {
+    "check_id": "schema:$defs.statement.allOf[0]",
+    "json_pointer": "/result/statements/0/citation_refs",
+    "validation_failure_kind": "unsupported_claim_kind",
+    "error_code": "AI_OUTPUT_INVALID",
+    "attempt_outcome": "schema_invalid",
+    "why_schema_catches_it_vi": "$defs.statement có allOf: kind ∈ {author_claim, source_verified} ⇒ citation_refs.minItems = 1."
+  },
+  "given": {
+    "task": {
+      "task_id": "summary"
+    },
+    "max_evidence_level": "abstract",
+    "input_source_ids": [
+      "work_version:01JWVRA1000000000000000000"
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Bị từ chối ở bước 2 (schema), chưa tới bước 3."
+    }
+  ],
+  "expected": {
+    "rejected_payload": {
+      "schema_version": "0.1.0",
+      "task_type": "summary",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "summary",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "abstract",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTA1000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "work_version:01JWVRA1000000000000000000"
+      ],
+      "result": {
+        "content": "Mô hình đạt kết quả tốt trên tập thử.",
+        "difference_from_existing": {
+          "text": "Tốt hơn baseline.",
+          "comparator": {
+            "kind": "unknown"
+          }
+        },
+        "limitation_line": "Chưa rõ chi phí huấn luyện.",
+        "statements": [
+          {
+            "kind": "source_verified",
+            "text": "Mô hình đạt 92% độ chính xác.",
+            "citation_refs": []
+          }
+        ]
+      }
+    },
+    "semantic_variant": {
+      "description_vi": "Biến thể thứ hai: citation ĐÚNG dạng và có mặt, evidence_level='post_only', nhưng kind='source_verified'. Cái này schema KHÔNG bắt được — chỉ SV-03 bắt (cần biết evidence_level).",
+      "expected_validation": "reject_semantic",
+      "expected_violation": {
+        "check_id": "SV-03",
+        "validation_failure_kind": "unsupported_claim_kind"
+      },
+      "rejected_payload": {
+        "schema_version": "0.1.0",
+        "task_type": "summary",
+        "analysis_key": {
+          "owner_id": "01JW0WNER00000000000000000",
+          "target_key": "work:01JWRKA1000000000000000000",
+          "task_type": "summary",
+          "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+          "prompt_version": "1.0.0",
+          "schema_version": "0.1.0",
+          "generation_number": 1
+        },
+        "provider": {
+          "auth_family": "cli_acp",
+          "provider_name": "example-vendor-cli",
+          "model_name": "m-1"
+        },
+        "evidence_level": "post_only",
+        "usage": {
+          "unknown": true,
+          "tokens_in": null,
+          "tokens_out": null,
+          "cost_micro_usd": null
+        },
+        "attempt_id": "01JATTA1000000000000000000",
+        "produced_at": "2026-09-06T18:00:00.000Z",
+        "input_source_ids": [
+          "post:01JPSTA1000000000000000000"
+        ],
+        "result": {
+          "content": "Mô hình đạt kết quả tốt.",
+          "difference_from_existing": {
+            "text": "Tốt hơn baseline.",
+            "comparator": {
+              "kind": "unknown"
+            }
+          },
+          "limitation_line": "Chưa rõ chi phí.",
+          "statements": [
+            {
+              "kind": "source_verified",
+              "text": "Mô hình đạt 92% độ chính xác.",
+              "citation_refs": [
+                "post:01JPSTA1000000000000000000"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "counts": {
+      "analysis[status='valid'] created": 0
+    },
+    "row_oracles": [
+      "Biến thể 1 FAIL ở tầng schema tại /result/statements/0/citation_refs.",
+      "Biến thể 2 PASS schema và FAIL ở SV-03 — đây chính là lý do tầng ngữ nghĩa phải tồn tại.",
+      "Cả hai đều không tạo hàng analysis nào."
+    ]
+  },
+  "forbidden_effects": [
+    "Chấp nhận một phát biểu source_verified không có nguồn kiểm được.",
+    "Hạ kind xuống ai_inference giúp model rồi commit — sửa output là bịa dữ liệu."
+  ]
+}

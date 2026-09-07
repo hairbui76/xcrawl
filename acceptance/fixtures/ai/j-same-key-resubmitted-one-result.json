@@ -1,0 +1,158 @@
+{
+  "fixture_id": "FX-AI-J",
+  "title": "Nộp lại cùng analysis_key → đúng MỘT kết quả hợp lệ (I04)",
+  "purpose": "Khóa ux_analysis_valid_key và idempotency của analysis.submit_result: cùng key + cùng payload trả receipt cũ; cùng key + payload KHÁC trả IDEMPOTENCY_CONFLICT.",
+  "scenario_refs": [
+    "SC28"
+  ],
+  "invariant_refs": [
+    "I04",
+    "I16"
+  ],
+  "decision_refs": [
+    "B07",
+    "AMD-B07",
+    "ADR-0008"
+  ],
+  "requirement_refs": [
+    "REQ-D25",
+    "REQ-AC06"
+  ],
+  "source_refs": [
+    "SRC-PLAN §5.1 (idempotency)",
+    "SRC-PLAN §7 I04",
+    "contracts/ports.yaml analysis.submit_result"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/analysis-result.schema.json",
+  "expected_validation": "accept",
+  "given": {
+    "task": {
+      "task_id": "summary",
+      "analysis_generation_id": "01JAGENA100000000000000000"
+    },
+    "input_source_ids": [
+      "work_version:01JWVRA1000000000000000000"
+    ]
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Lần nộp thứ nhất: commit analysis(valid) + analysis_attempt(accepted) cùng transaction (t5)."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T18:00:02.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "ACK mất; worker nộp LẠI cùng analysis_key + cùng attempt_id + cùng payload."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T18:00:05.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Một worker khác nộp cùng analysis_key nhưng payload KHÁC."
+    }
+  ],
+  "expected": {
+    "analysis_result": {
+      "schema_version": "0.1.0",
+      "task_type": "summary",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "summary",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "api_key",
+        "provider_name": "example-vendor-api",
+        "model_name": "m-1"
+      },
+      "evidence_level": "abstract",
+      "usage": {
+        "unknown": false,
+        "tokens_in": 1200,
+        "tokens_out": 300,
+        "cost_micro_usd": 450
+      },
+      "attempt_id": "01JATTA1000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "work_version:01JWVRA1000000000000000000"
+      ],
+      "result": {
+        "content": "Tóm tắt ổn định.",
+        "difference_from_existing": {
+          "text": "Không có nguồn so sánh được cấp.",
+          "comparator": {
+            "kind": "unknown"
+          }
+        },
+        "limitation_line": "Chỉ có abstract.",
+        "statements": [
+          {
+            "kind": "source_verified",
+            "text": "Abstract nêu bộ dữ liệu là ImageNet-1k.",
+            "citation_refs": [
+              "work_version:01JWVRA1000000000000000000"
+            ]
+          }
+        ]
+      }
+    },
+    "after_event_2": {
+      "counts": {
+        "analysis[status='valid']": 1,
+        "analysis_attempt": 1
+      },
+      "row_oracles": [
+        "Nộp lại cùng key + cùng payload là IDEMPOTENT: trả receipt cũ, KHÔNG tạo hàng thứ hai.",
+        "payload_hash không đổi."
+      ]
+    },
+    "after_event_3": {
+      "error_expectation": {
+        "operation": "analysis.submit_result",
+        "error_code": "IDEMPOTENCY_CONFLICT"
+      },
+      "counts": {
+        "analysis[status='valid']": 1
+      },
+      "row_oracles": [
+        "Cùng key + payload KHÁC ⇒ IDEMPOTENCY_CONFLICT; hàng đã commit KHÔNG bị ghi đè.",
+        "ux_analysis_valid_key (partial UNIQUE WHERE status='valid') là trọng tài."
+      ]
+    },
+    "counts": {
+      "analysis[status='valid']": 1
+    },
+    "row_oracles": [
+      "usage.unknown = false ⇒ tokens là số thật (đường api_key). Đây là nhánh đối chứng của I14."
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo hàng analysis thứ hai cho cùng analysis_key.",
+    "Ghi đè payload đã commit khi nhận payload khác.",
+    "Coi IDEMPOTENCY_CONFLICT là lỗi tạm rồi retry vô hạn."
+  ]
+}

@@ -1,0 +1,786 @@
+{
+  "fixture_id": "a-happy-path-schedule-to-delivered",
+  "title": "Đường chạy THÀNH CÔNG đầu-cuối: lịch → thu thập → làm giàu → phân tích → publish → gửi",
+  "purpose": "SC50. Đây là scenario ĐỐI CHỨNG DƯƠNG cho toàn bộ chuỗi SRC-SPEC §5.2. 48 scenario trước nó đều là nhánh lỗi hoặc một lát cắt; không cái nào khẳng định rằng một đợt chạy BÌNH THƯỜNG kết thúc đúng. Một bộ hợp đồng chỉ có ca âm không chứng minh được ca dương nào.",
+  "scenario_refs": [
+    "SC50"
+  ],
+  "invariant_refs": [
+    "I02",
+    "I04",
+    "I05",
+    "I06",
+    "I07",
+    "I09",
+    "I12",
+    "I13",
+    "I16"
+  ],
+  "decision_refs": [
+    "B01",
+    "B02",
+    "B04",
+    "B05",
+    "B07",
+    "B12",
+    "B17",
+    "AMD-B02",
+    "AMD-B05",
+    "AMD-B07",
+    "R-01 (A1-R1)",
+    "R5-02 (FIX5)"
+  ],
+  "requirement_refs": [
+    "REQ-S5.2-01",
+    "REQ-P0-03",
+    "REQ-P0-04",
+    "REQ-P0-05",
+    "REQ-P0-06",
+    "REQ-P0-07",
+    "REQ-P0-09",
+    "REQ-S9.2-02",
+    "REQ-S9.2-03",
+    "REQ-S9.2-06",
+    "REQ-S10.4-01",
+    "REQ-D07",
+    "REQ-D22",
+    "REQ-D46",
+    "REQ-D53",
+    "REQ-D54"
+  ],
+  "source_refs": [
+    "SRC-SPEC §5.2",
+    "SRC-SPEC §9.1",
+    "SRC-SPEC §9.2",
+    "SRC-PLAN §8.1",
+    "SRC-PLAN §9.1",
+    "SRC-PLAN §9.2"
+  ],
+  "fixture_format_version": "1.0.0",
+  "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+  "contract_refs": [
+    "contracts/state/run.yaml",
+    "contracts/state/analysis.yaml",
+    "contracts/state/report.yaml",
+    "contracts/state/delivery.yaml",
+    "contracts/http/openapi.yaml",
+    "contracts/data/entities.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "x-contract": {
+    "contract_id": "CT-fixture-e2e-happy-path",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "connector contract owner",
+    "source_refs": [
+      "SRC-SPEC §5.2",
+      "SRC-PLAN §9.2"
+    ],
+    "requirement_refs": [
+      "REQ-S5.2-01",
+      "REQ-P0-03",
+      "REQ-P0-04",
+      "REQ-P0-05",
+      "REQ-P0-06",
+      "REQ-P0-07",
+      "REQ-P0-09",
+      "REQ-S9.2-02",
+      "REQ-S9.2-03",
+      "REQ-S9.2-06",
+      "REQ-S10.4-01",
+      "REQ-D07",
+      "REQ-D22",
+      "REQ-D46",
+      "REQ-D53",
+      "REQ-D54"
+    ],
+    "decision_refs": [
+      "B01",
+      "B02",
+      "B04",
+      "B05",
+      "B07",
+      "B12",
+      "B17",
+      "AMD-B02",
+      "AMD-B05",
+      "AMD-B07",
+      "R-01 (A1-R1)",
+      "R5-02 (FIX5)"
+    ],
+    "invariant_refs": [
+      "I02",
+      "I04",
+      "I05",
+      "I06",
+      "I07",
+      "I09",
+      "I12",
+      "I13",
+      "I16"
+    ],
+    "producers": [
+      "MOD-scheduler",
+      "MOD-x-collector",
+      "MOD-analysis-worker"
+    ],
+    "consumers": [
+      "MOD-job-service",
+      "MOD-ingest-service",
+      "MOD-analysis-service",
+      "MOD-report-service",
+      "MOD-delivery-service"
+    ],
+    "dependencies": [
+      "contracts/state/run.yaml",
+      "contracts/state/analysis.yaml",
+      "contracts/state/report.yaml",
+      "contracts/state/delivery.yaml",
+      "contracts/http/openapi.yaml",
+      "contracts/data/entities.yaml"
+    ],
+    "scope": "SC50. Đây là scenario ĐỐI CHỨNG DƯƠNG cho toàn bộ chuỗi SRC-SPEC §5.2. 48 scenario trước nó đều là nhánh lỗi hoặc một lát cắt; không cái nào khẳng định rằng một đợt chạy BÌNH THƯỜNG kết thúc đúng. Một bộ hợp đồng chỉ có ca âm không chứng minh được ca dương nào.",
+    "verification": "EV-PC05-07 (SELF_VALIDATION) + evidence/tools/e0_check.py E0-14/E0-15 (đọc-only). Fixture TĨNH; toàn bộ chuỗi mock được (fake-clock, collector giả, adapter AI giả, Telegram giả). `evidence_status: NOT_RUN`.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "annotation_rule": "R4-01: mọi khóa dưới `rows.<entity>[]` hoặc là cột có thật trong contracts/data/entities.yaml, hoặc bắt đầu bằng `_`, hoặc mang `pending_cr`.",
+    "no_faults_injected": "Không lỗi nào được inject. Mọi nhánh lỗi thuộc các scenario khác; ở đây chúng phải KHÔNG xảy ra."
+  },
+  "given": {
+    "rows": {
+      "tag_config_version": [
+        {
+          "id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "sequence": 7,
+          "content_hash": "sha256:978c2f8941354cf552831bb8b5b648bb3748e83f5d0a69e3301569af01e1de93",
+          "created_at": "2026-09-07T07:00:00.000Z",
+          "_note": "Ba tag active; version này bị ĐÓNG BĂNG vào report tại commit publish (B01)."
+        }
+      ],
+      "embedding_generation": [
+        {
+          "id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "model_name": "local-multilingual-e5",
+          "model_version": "1.0.0",
+          "dimension": 384,
+          "normalization": "l2",
+          "state": "active",
+          "expected_vector_count": 2,
+          "built_vector_count": 2,
+          "created_at": "2026-09-07T06:00:00.000Z",
+          "activated_at": "2026-09-07T06:30:00.000Z"
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "sequence": 11,
+          "window_from": "2026-09-07T07:00:00.000Z",
+          "window_to": "2026-09-07T08:00:00.000Z",
+          "ingest_sequence_from": 0,
+          "ingest_sequence_to": 100,
+          "predecessor_window_id": null,
+          "report_id": null,
+          "advanced_at": "2026-09-07T08:00:00.000Z",
+          "_note": "Kỳ liền trước; kỳ mới phải nối liền vào window_to của nó (I06)."
+        }
+      ],
+      "schedule_occurrence": [
+        {
+          "id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "due_at": "2026-09-07T08:00:00.000Z",
+          "state": "due",
+          "coalesced_into_run_id": null,
+          "_note": "Mốc lịch 08:00 giờ địa phương, tới hạn."
+        }
+      ]
+    },
+    "_preconditions_vi": "Một owner; ba tag active; một tag_config_version; một embedding generation active; collector online; một adapter AI đã bật."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T08:00:100.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "scheduler.evaluate_due",
+      "description": "Mốc lịch tới hạn. Giờ lịch là mốc SỚM NHẤT ĐƯỢC CHẠY (D13).",
+      "performed_by": "MOD-scheduler"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T08:00:200.000Z",
+      "actor": "MOD-scheduler",
+      "operation": "job.enqueue_scheduled_run",
+      "description": "Tạo run `queued`, `trigger_type='scheduled'`.",
+      "performed_by": "MOD-job-service",
+      "_commit_boundary": "B1: run row"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T08:00:900.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "worker.claim_assignment",
+      "description": "Collector online kéo việc; cấp lease epoch 1; trả checkpoint rỗng-mới.",
+      "performed_by": "MOD-job-service",
+      "_commit_boundary": "B2: assignment_lease + run.status",
+      "_lease_epoch": 1
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-07T08:02:000.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Lô 1: 1 post. Commit post + receipt + checkpoint TRONG MỘT transaction (I02).",
+      "performed_by": "MOD-ingest-service",
+      "_commit_boundary": "B3: TXN-ingest-batch (post + ingest_receipt + checkpoint)",
+      "_idempotency_key": "e2e-batch-0001-aaaaaaaa",
+      "_max_ingest_sequence": 101
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-07T08:04:000.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Lô 2: 1 post. ACK chỉ SAU commit.",
+      "performed_by": "MOD-ingest-service",
+      "_commit_boundary": "B3: TXN-ingest-batch",
+      "_idempotency_key": "e2e-batch-0002-aaaaaaaa",
+      "_max_ingest_sequence": 102
+    },
+    {
+      "seq": 6,
+      "at": "2026-09-07T08:09:000.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "worker.report_stop",
+      "description": "Đạt điểm dừng cấu hình. `stop_reason='limit_reached'` — KHÔNG phải lỗi (AMD-B02). Đóng segment, giữ checkpoint, sang `enriching`.",
+      "performed_by": "MOD-job-service",
+      "_commit_boundary": "B4: run.phase = enriching",
+      "request_body": {
+        "request_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+        "schema_version": "0.1.0",
+        "assignment_id": "73YCH102BFJ8NDMYFV64SS8TK7",
+        "stop_report_id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+        "lease_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+        "lease_epoch": 1,
+        "stop_reason": "limit_reached",
+        "limit_kind": "posts",
+        "last_acked_ingest_sequence": 102,
+        "posts_observed_total": 2,
+        "x_coverage_note_vi": "Dừng theo ngân sách đợt; phần feed sau mốc đó KHÔNG được quét trong đợt này."
+      },
+      "validate_request_against": "contracts/http/openapi.yaml#/components/schemas/StopReport",
+      "response_status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-09-07T08:10:000.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "research.fetch_work_metadata",
+      "description": "Lấy metadata cho hai work qua API TỪ SERVER (D32). Collector KHÔNG chạm arXiv/OpenAlex.",
+      "performed_by": "MOD-research-connector",
+      "_commit_boundary": "B5: work + work_version + post_work"
+    },
+    {
+      "seq": 8,
+      "at": "2026-09-07T08:12:000.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "analysis.enqueue_tasks",
+      "description": "Xếp hàng `label` cho hai target ĐÃ COMMIT (B12).",
+      "performed_by": "MOD-analysis-service"
+    },
+    {
+      "seq": 9,
+      "at": "2026-09-07T08:13:000.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.claim_task",
+      "description": "Analysis worker nhận task; cấp lease; ghi `analysis_attempt`.",
+      "performed_by": "MOD-analysis-service",
+      "_commit_boundary": "B6: analysis_attempt"
+    },
+    {
+      "seq": 10,
+      "at": "2026-09-07T08:15:000.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Kết quả qua CẢ HAI cửa: schema + semantic (PC06). TXN-analysis-accept ghi `analysis(valid)` + `analysis_attempt(accepted)` cùng transaction.",
+      "performed_by": "MOD-analysis-service",
+      "_commit_boundary": "B7: TXN-analysis-accept (analysis + analysis_attempt)",
+      "_task_type": "label"
+    },
+    {
+      "seq": 11,
+      "at": "2026-09-07T08:18:000.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "embedding.generate_vectors",
+      "description": "Embedding LOCAL ở server cho nhãn và tag (D48/D50); không API key.",
+      "performed_by": "MOD-embedding-service"
+    },
+    {
+      "seq": 12,
+      "at": "2026-09-07T08:20:000.000Z",
+      "actor": "MOD-job-service",
+      "operation": "report.build",
+      "description": "Builder CHỌN mục — đây là TRUY VẤN DỮ LIỆU, không phải việc của AI (REQ-S10.1-05). Xếp hàng `summary` cho các mục ĐÃ CHỌN (B17).",
+      "performed_by": "MOD-report-service",
+      "_commit_boundary": "B8: report(status=building, report_build_id)"
+    },
+    {
+      "seq": 13,
+      "at": "2026-09-07T08:22:000.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Summary cho hai mục đã chọn ⇒ không mục nào pending ⇒ `quality='complete'`.",
+      "performed_by": "MOD-analysis-service",
+      "_commit_boundary": "B7: TXN-analysis-accept",
+      "_task_type": "summary"
+    },
+    {
+      "seq": 14,
+      "at": "2026-09-07T08:25:000.000Z",
+      "actor": "MOD-report-service",
+      "operation": "report.publish",
+      "description": "CAS thắng trên predecessor coverage. MỘT transaction ghi: report + report_item + first_announced_ledger + coverage_window + tag_config_version_id bất biến + outbox_intent + run.status/outcome.",
+      "performed_by": "MOD-report-service",
+      "_commit_boundary": "B9: TXN-publish (report + report_item + first_announced + coverage_window + outbox_intent + run)"
+    },
+    {
+      "seq": 15,
+      "at": "2026-09-07T08:25:500.000Z",
+      "actor": "MOD-report-service",
+      "operation": "delivery.create_intent",
+      "description": "Intent nằm TRONG transaction publish (outbox pattern). Việc gửi xảy ra SAU, ở vòng đời khác (I09).",
+      "performed_by": "MOD-delivery-service",
+      "_commit_boundary": "B9 (cùng transaction)"
+    },
+    {
+      "seq": 16,
+      "at": "2026-09-07T08:26:000.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "description": "Ghi attempt TRƯỚC network call (SRC-PLAN §8.3); part → `sending`.",
+      "performed_by": "MOD-delivery-service",
+      "_commit_boundary": "B10: delivery_part attempt"
+    },
+    {
+      "seq": 17,
+      "at": "2026-09-07T08:26:400.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "telegram.send_payload",
+      "description": "Gửi digest tới linked owner.",
+      "performed_by": "MOD-telegram-adapter"
+    },
+    {
+      "seq": 18,
+      "at": "2026-09-07T08:26:800.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.record_receipt",
+      "description": "Nhận message id ⇒ `sent`. Retry sau đó CHỈ trả receipt.",
+      "performed_by": "MOD-delivery-service",
+      "_commit_boundary": "B11: delivery_part(state=sent, provider_message_id)"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "run": [
+        {
+          "id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "trigger_type": "scheduled",
+          "phase": "reporting",
+          "status": "completed",
+          "outcome": "complete",
+          "stop_reason": "limit_reached",
+          "current_lease_epoch": 1,
+          "attempt_count": 1,
+          "posts_observed_total": 2,
+          "posts_ingested_new": 2,
+          "limit_hit": true,
+          "limit_kind": "posts",
+          "cursor_invalidated": false,
+          "next_attempt_at": null,
+          "last_error_code": null,
+          "alert_intent_id": null,
+          "x_coverage_note_vi": "Dừng theo ngân sách đợt; phần feed sau mốc đó KHÔNG được quét trong đợt này.",
+          "created_at": "2026-09-07T08:00:200.000Z",
+          "_note": "`stop_reason='limit_reached'` đi CÙNG `outcome='complete'` — hai trường độc lập (AMD-B02)."
+        }
+      ],
+      "assignment_lease": [
+        {
+          "id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "job_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+          "worker_identity": "collector-local-01",
+          "lease_epoch": 1,
+          "expires_at": "2026-09-07T08:11:00.000Z",
+          "state": "released"
+        }
+      ],
+      "post": [
+        {
+          "id": "9XGPKVJCD94JQ768HNREVKT4N1",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "x_post_id": "1900000000000000501",
+          "discovered_by_run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "ingest_receipt_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+          "ingest_sequence": 101,
+          "discovered_at": "2026-09-07T08:02:00.000Z",
+          "content_state": "present",
+          "is_author_thread_member": true,
+          "_note": "discovered_at là GIỜ SERVER lần đầu chấp nhận (SRC-PLAN §9.1)."
+        },
+        {
+          "id": "P657GMQDTJS3M0B9YYDZRCZ52A",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "x_post_id": "1900000000000000502",
+          "discovered_by_run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "ingest_receipt_id": "YEDFRWZN2T1BW8KH66N70M7DAJ",
+          "ingest_sequence": 102,
+          "discovered_at": "2026-09-07T08:04:00.000Z",
+          "content_state": "present",
+          "is_author_thread_member": true
+        }
+      ],
+      "ingest_receipt": [
+        {
+          "id": "H5RYV3TMNHCTZFEGSX0P3V2CX9",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "receipt_kind": "batch_ingest",
+          "idempotency_key": "e2e-batch-0001-aaaaaaaa",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "job_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+          "lease_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_epoch": 1,
+          "items_received": 1,
+          "posts_inserted": 1,
+          "posts_duplicate": 0,
+          "items_rejected": 0,
+          "works_linked": 1,
+          "checkpoint_id": "BQ20NN4PF3PWS1RJKFARXDCEQV",
+          "max_ingest_sequence": 101,
+          "committed_at": "2026-09-07T08:02:00.000Z"
+        },
+        {
+          "id": "YEDFRWZN2T1BW8KH66N70M7DAJ",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "receipt_kind": "batch_ingest",
+          "idempotency_key": "e2e-batch-0002-aaaaaaaa",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "job_id": "TT9VM8V1Y6XQRMFX2JHKW03S6Y",
+          "lease_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "lease_epoch": 1,
+          "items_received": 1,
+          "posts_inserted": 1,
+          "posts_duplicate": 0,
+          "items_rejected": 0,
+          "works_linked": 1,
+          "checkpoint_id": "R0QHJE9QWCBDPTXK0RZ9T6HF44",
+          "max_ingest_sequence": 102,
+          "committed_at": "2026-09-07T08:04:00.000Z"
+        }
+      ],
+      "checkpoint": [
+        {
+          "id": "BQ20NN4PF3PWS1RJKFARXDCEQV",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "phase": "collecting",
+          "sequence": 1,
+          "cursor_state": "valid",
+          "acked_through_ingest_sequence": 101,
+          "items_ingested_total": 1,
+          "created_at": "2026-09-07T08:02:00.000Z",
+          "created_by_receipt_id": "H5RYV3TMNHCTZFEGSX0P3V2CX9"
+        },
+        {
+          "id": "R0QHJE9QWCBDPTXK0RZ9T6HF44",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3",
+          "phase": "collecting",
+          "sequence": 2,
+          "cursor_state": "valid",
+          "acked_through_ingest_sequence": 102,
+          "items_ingested_total": 2,
+          "created_at": "2026-09-07T08:04:00.000Z",
+          "created_by_receipt_id": "YEDFRWZN2T1BW8KH66N70M7DAJ",
+          "_note": "Đẳng thức I02: giá trị này BẰNG MAX(ingest_receipt.max_ingest_sequence)."
+        }
+      ],
+      "work": [
+        {
+          "id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "canonical_arxiv_id": "2609.01234",
+          "metadata_state": "enriched",
+          "identity_state": "resolved",
+          "first_discovered_at": "2026-09-07T08:02:00.000Z",
+          "ingest_sequence": 101,
+          "content_state": "present"
+        },
+        {
+          "id": "WMV5P2DB00F1TE174C3XYTN38R",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "canonical_doi": "10.1000/e2e.0002",
+          "metadata_state": "enriched",
+          "identity_state": "resolved",
+          "first_discovered_at": "2026-09-07T08:04:00.000Z",
+          "ingest_sequence": 102,
+          "content_state": "present"
+        }
+      ],
+      "analysis_generation": [
+        {
+          "id": "3FTRDDWE7VEMHSGAB72GN546FK",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "target_kind": "work",
+          "target_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "target_key": "work:FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "task_type": "label",
+          "generation_number": 1,
+          "reason": "initial",
+          "requested_at": "2026-09-07T08:12:00.000Z"
+        },
+        {
+          "id": "GRF9A61FM435EJNBRGQ1JY97WW",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "target_kind": "work",
+          "target_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "target_key": "work:FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "task_type": "summary",
+          "generation_number": 1,
+          "reason": "initial",
+          "requested_at": "2026-09-07T08:20:00.000Z"
+        }
+      ],
+      "analysis": [
+        {
+          "id": "X14T7Z6G1DRPBBTC5SCJFQE895",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "analysis_generation_id": "3FTRDDWE7VEMHSGAB72GN546FK",
+          "target_kind": "work",
+          "target_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "target_key": "work:FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "task_type": "label",
+          "source_fingerprint": "sha256:60c5590f72eef292f9545afc28bf63ca91d2016a0a288f90f9a32f89d3fffcaf",
+          "prompt_version": "0.1.0",
+          "schema_version": "0.1.0",
+          "generation_number": 1,
+          "status": "valid",
+          "payload_hash": "sha256:e480182d6d4df0afbc5431beec89c36f176fa1b22252f153fcd338aac22c0fc2",
+          "evidence_level": "abstract",
+          "provider_name": "local-cli",
+          "model_name": "m1",
+          "usage_tokens_in": null,
+          "usage_tokens_out": null,
+          "analyzed_at": "2026-09-07T08:15:00.000Z",
+          "accepted_from_attempt_id": "QKEW1HGJVZ2R5X4EZBPM99RA3Q",
+          "_note": "usage NULL = `unknown`, hợp lệ cho đường CLI (I14). CẤM ghi 0."
+        },
+        {
+          "id": "AASB4RBHEPD784ZDJ213CGK9PE",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "analysis_generation_id": "GRF9A61FM435EJNBRGQ1JY97WW",
+          "target_kind": "work",
+          "target_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "target_key": "work:FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "task_type": "summary",
+          "source_fingerprint": "sha256:60c5590f72eef292f9545afc28bf63ca91d2016a0a288f90f9a32f89d3fffcaf",
+          "prompt_version": "0.1.0",
+          "schema_version": "0.1.0",
+          "generation_number": 1,
+          "status": "valid",
+          "payload_hash": "sha256:bb558b4638d76b2461f5cdeca98bc8b4ba29b652cfa1ca7662c82d15fd171063",
+          "evidence_level": "abstract",
+          "provider_name": "local-cli",
+          "model_name": "m1",
+          "usage_tokens_in": null,
+          "usage_tokens_out": null,
+          "analyzed_at": "2026-09-07T08:22:00.000Z",
+          "accepted_from_attempt_id": "4W3DYANK88Q92P9FCMB562XBG0"
+        }
+      ],
+      "analysis_attempt": [
+        {
+          "id": "QKEW1HGJVZ2R5X4EZBPM99RA3Q",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "analysis_generation_id": "3FTRDDWE7VEMHSGAB72GN546FK",
+          "attempt_number": 1,
+          "outcome": "accepted",
+          "error_code": null,
+          "started_at": "2026-09-07T08:13:00.000Z",
+          "ended_at": "2026-09-07T08:15:00.000Z",
+          "worker_lease_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "cost_uncertain": false,
+          "_note": "Đúng MỘT attempt cho mỗi generation — không retry vì không lỗi nào được inject."
+        },
+        {
+          "id": "4W3DYANK88Q92P9FCMB562XBG0",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "analysis_generation_id": "GRF9A61FM435EJNBRGQ1JY97WW",
+          "attempt_number": 1,
+          "outcome": "accepted",
+          "error_code": null,
+          "started_at": "2026-09-07T08:20:00.000Z",
+          "ended_at": "2026-09-07T08:22:00.000Z",
+          "worker_lease_id": "DHMAQFP0HX86VVAWN9W2Z7YRSN",
+          "cost_uncertain": false
+        }
+      ],
+      "report": [
+        {
+          "id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "coverage_from": "2026-09-07T08:00:00.000Z",
+          "coverage_to": "2026-09-07T08:25:00.000Z",
+          "tag_config_version_id": "73YCH102BFJ8NDMYFV64SS8TK7",
+          "embedding_generation_id": "MCKXET53RR7SJ6SZW4VNPJDV0G",
+          "report_build_id": "7f3a1c2e-9d40-4b18-8a55-2c6e1f0b93d4",
+          "status": "published",
+          "abort_reason": null,
+          "quality": "complete",
+          "published_at": "2026-09-07T08:25:00.000Z",
+          "content_hash": "sha256:845e91831319e89c4d656bdb80c278ac09a7230d61e5dfd2e1b1fbb436ac8917",
+          "_note": "`abort_reason` NULL vì status != 'aborted' (CHECK của ENT-report). `content_hash` BẤT BIẾN sau đây (I05)."
+        }
+      ],
+      "report_item": [
+        {
+          "id": "59C2F7ER9N0YKK2MD1MTQZPGHD",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "target_kind": "work",
+          "target_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "target_key": "work:FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "item_type": "first_announcement",
+          "first_announced_report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "analysis_id": "AASB4RBHEPD784ZDJ213CGK9PE",
+          "selection_reason": "tag_match"
+        },
+        {
+          "id": "JJ1KC0KSPYNFGC7NTA9BMRVHYP",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "target_kind": "work",
+          "target_work_id": "WMV5P2DB00F1TE174C3XYTN38R",
+          "target_key": "work:WMV5P2DB00F1TE174C3XYTN38R",
+          "item_type": "first_announcement",
+          "first_announced_report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "analysis_id": "AASB4RBHEPD784ZDJ213CGK9PE",
+          "selection_reason": "tag_match"
+        }
+      ],
+      "first_announced_ledger": [
+        {
+          "id": "ZVP49SRT37A0D5CP7KYWHH0JBZ",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "canonical_work_id": "FB6MS98AKQTGXNW6Q3EC11G2VF",
+          "first_report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "first_announced_at": "2026-09-07T08:25:00.000Z",
+          "merge_audit_id": null,
+          "superseded_by_merge_id": null,
+          "_note": "Đúng MỘT hàng cho mỗi canonical work lần đầu xuất hiện (I07)."
+        }
+      ],
+      "coverage_window": [
+        {
+          "id": "V7JG55M6ZK6C9H823ZT8DXWY7B",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "sequence": 12,
+          "window_from": "2026-09-07T08:00:00.000Z",
+          "window_to": "2026-09-07T08:25:00.000Z",
+          "ingest_sequence_from": 100,
+          "ingest_sequence_to": 102,
+          "predecessor_window_id": "EYXZ8CF5JAHVCR31PP5QG4QXT2",
+          "report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "advanced_at": "2026-09-07T08:25:00.000Z",
+          "_note": "`window_from` BẰNG `window_to` của kỳ trước — nối liền, nửa mở (I06). Coverage chỉ tiến tại commit publish (B04)."
+        }
+      ],
+      "pending_item_ledger": [],
+      "outbox_intent": [
+        {
+          "id": "22H3WG396E5Z0WQ5ATSV48B1E6",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "intent_type": "report_digest",
+          "subject_ref": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "created_in_transaction_at": "2026-09-07T08:25:00.000Z",
+          "dispatch_state": "dispatched",
+          "restore_generation": 0,
+          "_note": "Tạo TRONG transaction publish; gửi xảy ra sau (I09)."
+        }
+      ],
+      "delivery": [
+        {
+          "id": "8G712YS7CWVX6AD3G8FSAP1ZMM",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "report_id": "1N8EBKA451WAFZY09DG6KBJWDS",
+          "channel": "telegram",
+          "state": "sent",
+          "attempt_count": 1,
+          "telegram_link_generation": 1
+        }
+      ],
+      "delivery_part": [
+        {
+          "id": "NSWJZQY8S5GE33J4XH4A7F601X",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "delivery_id": "8G712YS7CWVX6AD3G8FSAP1ZMM",
+          "part_index": 0,
+          "payload_hash": "sha256:b0dd0a55d266c3af62b5eefceef2f66bcd4e9e99b958502cd47b8d3993d183f8",
+          "state": "sent",
+          "provider_message_id": "tg-msg-9001"
+        }
+      ],
+      "schedule_occurrence": [
+        {
+          "id": "08ZSTPHZ4MKNY25V807H2ESQCC",
+          "owner_id": "6PNQ047XA29K4GVSEEXF8WFNJT",
+          "due_at": "2026-09-07T08:00:00.000Z",
+          "state": "enqueued",
+          "coalesced_into_run_id": "KZA8XXCYQBY4190TVQJ05NMPZ3"
+        }
+      ]
+    },
+    "counts": {
+      "run": 1,
+      "post": 2,
+      "ingest_receipt": 2,
+      "checkpoint": 2,
+      "analysis_valid": 2,
+      "analysis_attempt": 2,
+      "report_published": 1,
+      "report_item": 2,
+      "coverage_window_new": 1,
+      "delivery_sent": 1,
+      "delivery_part_sent": 1,
+      "pending_item_ledger": 0,
+      "outbox_intent": 1,
+      "analysis_attempt_failed_or_unknown": 0,
+      "alert_intent": 0
+    },
+    "equalities_vi": [
+      "(1) I02 — `checkpoint.acked_through_ingest_sequence` (102) == `MAX(ingest_receipt.max_ingest_sequence)` (102).",
+      "(2) I05 — `report.content_hash` không đổi ở mọi thời điểm sau sự kiện 14, kể cả sau khi delivery đạt `sent`.",
+      "(3) I06 — `coverage_window[12].window_from` == `coverage_window[11].window_to` (08:00:00.000Z), nửa mở.",
+      "(4) I07 — `COUNT(first_announced_ledger WHERE canonical_work_id=W AND superseded_by_merge_id IS NULL) = 1` cho mọi W mới.",
+      "(5) I04/I16 — `COUNT(analysis WHERE status='valid')` == số target được chọn (2); `COUNT(analysis_attempt WHERE outcome != 'accepted') = 0`.",
+      "(6) I09 — `run.outcome='complete'` độc lập với delivery; nếu delivery thất bại thì run vẫn `complete`."
+    ]
+  },
+  "forbidden_effects": [
+    "Để AI chọn mục vào báo cáo hoặc tính mật độ vector (REQ-S10.1-05) — chọn mục là truy vấn dữ liệu.",
+    "Gán nhãn 'phát hiện mới' cho khối hướng đang nổi (REQ-D54).",
+    "ACK trước commit ở bất kỳ bước nào (I02).",
+    "Gọi AI lại cho một target đã có analysis hợp lệ cùng key và generation (I04).",
+    "Publish khi còn mục được chọn thiếu summary mà không đánh dấu pending (B17).",
+    "Gọi mạng (Telegram) bên trong transaction SQLite (SRC-PLAN §5.1).",
+    "Tiến coverage ở bất kỳ điểm nào ngoài commit publish (B04).",
+    "Tạo alert intent — không có sự cố nào trong scenario này."
+  ],
+  "oracle_vi": "Sáu đẳng thức ở `expected.equalities_vi` phải ĐỒNG THỜI đúng, cộng với `expected.counts`. Đặc biệt: `COUNT(analysis_attempt WHERE outcome != 'accepted') = 0` và `COUNT(outbox_intent WHERE intent_type='run_alert') = 0` — một đợt chạy bình thường không để lại dấu vết lỗi nào."
+}

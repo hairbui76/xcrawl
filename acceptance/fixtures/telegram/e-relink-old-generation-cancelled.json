@@ -1,0 +1,150 @@
+{
+  "fixture_id": "FX-TG-E",
+  "title": "Liên kết lại → delivery generation cũ bị hủy, KHÔNG tự gửi cho generation mới",
+  "purpose": "Liên kết mới vô hiệu hóa liên kết cũ (REQ-D37). Nội dung đã dựng cho recipient cũ KHÔNG được chuyển sang recipient mới (SRC-PLAN §8.3).",
+  "scenario_refs": [
+    "SC25"
+  ],
+  "invariant_refs": [
+    "I09"
+  ],
+  "decision_refs": [
+    "B09",
+    "B10"
+  ],
+  "requirement_refs": [
+    "REQ-D35",
+    "REQ-D37",
+    "REQ-S11.3-04"
+  ],
+  "source_refs": [
+    "contracts/telegram/commands.yaml § linking → link_established",
+    "contracts/state/delivery.yaml T-DL-08"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 3,
+          "chat_id": "111111111"
+        }
+      ],
+      "telegram_link_code": [
+        {
+          "id": "01JTGC0DE10000000000000000",
+          "state": "active",
+          "expires_at": "2026-09-06T22:45:00.000Z",
+          "code_hash": {
+            "symbolic": "H_CODE",
+            "computed_by": "sha256(mã thô)",
+            "note": "Fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể; giá trị thật tính lúc chạy theo quy tắc canonical JSON (RFC 8785)."
+          },
+          "_note": "Định dạng mã (`^RR-[0-9A-HJKMNP-TV-Z]{8}$`) là hợp đồng của contracts/telegram/commands.yaml § linking → code_format, KHÔNG phải một cột của bảng."
+        }
+      ],
+      "delivery": [
+        {
+          "id": "01JDE11V100000000000000000",
+          "report_id": "01JREP0RT10000000000000000",
+          "state": "retry_wait",
+          "telegram_link_generation": 3
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T22:30:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "telegram.issue_link_code",
+      "performed_by": "MOD-telegram-adapter",
+      "description": "Sinh mã mới trong app."
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-06T22:31:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "description": "Chat MỚI (222222222) gửi đúng mã. Chat này CHƯA liên kết ⇒ đi qua ngoại lệ B09."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-06T22:31:00.500Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "telegram.consume_link_code",
+      "description": "Mã hợp lệ ⇒ liên kết mới, generation 4; liên kết cũ revoked."
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-06T22:35:00.000Z",
+      "actor": "MOD-delivery-service",
+      "operation": "delivery.dispatch_next",
+      "transition": "T-DL-08",
+      "description": "Delivery generation 3 → cancelled."
+    }
+  ],
+  "expected": {
+    "rows": {
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "revoked",
+          "generation": 3
+        },
+        {
+          "id": "01JTG11NK20000000000000000",
+          "state": "active",
+          "generation": 4,
+          "chat_id": "222222222"
+        }
+      ],
+      "telegram_link_code": [
+        {
+          "id": "01JTGC0DE10000000000000000",
+          "state": "consumed",
+          "consumed_by_chat_id": "222222222"
+        }
+      ],
+      "delivery": [
+        {
+          "id": "01JDE11V100000000000000000",
+          "state": "cancelled",
+          "telegram_link_generation": 3
+        }
+      ]
+    },
+    "counts": {
+      "telegram_link__state_active": 1,
+      "delivery__auto_created_for_new_generation": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 1,
+      "telegram.answerCallbackQuery": 0,
+      "note": "Đúng 1: tin xác nhận liên kết. KHÔNG gửi lại digest cũ cho chat mới."
+    },
+    "note_vi": "Digest cũ thuộc về recipient cũ. Muốn chat mới nhận digest thì phải có kỳ báo cáo mới."
+  },
+  "forbidden_effects": [
+    "Tự gửi digest của generation cũ cho chat mới.",
+    "Giữ hai telegram_link active.",
+    "Cho phép mã đã consumed dùng lại.",
+    "Chuyển payload sang recipient mới (SRC-PLAN §8.3)."
+  ]
+}

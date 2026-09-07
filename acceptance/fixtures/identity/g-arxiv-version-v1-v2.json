@@ -1,0 +1,273 @@
+{
+  "fixture_id": "FX-ID-G",
+  "title": "arXiv v1 → v2: một work, hai work_version, generation phân tích mới",
+  "purpose": "identity.md §2.2: canonical_arxiv_id là BASE, không kèm vN. REQ-D26: phiên bản mới là lý do phân tích lại và bản cũ được GIỮ.",
+  "scenario_refs": [
+    "SC30"
+  ],
+  "invariant_refs": [
+    "I03",
+    "I04"
+  ],
+  "decision_refs": [
+    "B06",
+    "B07"
+  ],
+  "requirement_refs": [
+    "REQ-D17",
+    "REQ-D25",
+    "REQ-D26"
+  ],
+  "source_refs": [
+    "SRC-SPEC §3.5 D26",
+    "SRC-PLAN §9.1",
+    "SRC-PLAN §9.3",
+    "contracts/data/identity.md §2.2"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/data/entities.yaml",
+    "contracts/data/identity.md",
+    "contracts/data/invariants.md",
+    "contracts/schemas/target.schema.json"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKG100000000000000000",
+          "canonical_arxiv_id": "2503.03333",
+          "canonical_doi": null,
+          "identity_state": "active",
+          "current_work_version_id": "01JWVERG100000000000000000",
+          "metadata_state": "complete",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKG100000000000000000",
+            "target_key": "work:01JW0RKG100000000000000000",
+            "canonical": {
+              "arxiv_base": "2503.03333"
+            },
+            "work_version_label": "v1",
+            "identity_state": "active"
+          }
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASG10000000000000000",
+          "id_scheme": "arxiv",
+          "id_value_normalized": "2503.03333",
+          "id_value_raw": "https://arxiv.org/abs/2503.03333v1",
+          "work_id": "01JW0RKG100000000000000000",
+          "evidence_source": "post_link",
+          "confidence": "asserted_by_source",
+          "_note": "Giá trị raw có hậu tố v1; giá trị normalized KHÔNG có."
+        }
+      ],
+      "work_version": [
+        {
+          "id": "01JWVERG100000000000000000",
+          "work_id": "01JW0RKG100000000000000000",
+          "version_label": "v1",
+          "version_scheme": "arxiv",
+          "is_current": true,
+          "content_fingerprint": "F_2503.03333_v1"
+        }
+      ],
+      "analysis_generation": [
+        {
+          "id": "01JAGENG100000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKG100000000000000000",
+            "target_key": "work:01JW0RKG100000000000000000"
+          },
+          "task_type": "summary",
+          "generation_number": 1,
+          "reason": "initial"
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YG10000000000000000",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKG100000000000000000",
+            "target_key": "work:01JW0RKG100000000000000000"
+          },
+          "task_type": "summary",
+          "status": "valid",
+          "generation_number": 1,
+          "source_fingerprint": "F_2503.03333_v1",
+          "prompt_version": "1.0.0",
+          "schema_version": "0.1.0",
+          "payload_hash": {
+            "symbolic": "H_AN1g",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "accepted_from_attempt_id": "01JATTG1000000000000000000"
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-10T07:00:00.000Z",
+      "actor": "MOD-x-collector",
+      "operation": "ingest.submit_batch",
+      "description": "Một post mới dẫn https://arxiv.org/abs/2503.03333v2 . Chuẩn hóa cho base 2503.03333 + version v2.",
+      "performed_by": "MOD-ingest-service"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-10T07:00:02.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "identity.resolve_target",
+      "description": "Alias arxiv/2503.03333 đã tồn tại ⇒ dùng work Wg. KHÔNG tạo work thứ hai.",
+      "performed_by": "MOD-identity-service"
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-10T07:05:00.000Z",
+      "actor": "MOD-ingest-service",
+      "operation": "research.fetch_work_metadata",
+      "description": "arXiv API xác nhận v2 tồn tại với abstract đã cập nhật ⇒ tạo work_version v2 và chuyển is_current.",
+      "performed_by": "MOD-research-connector"
+    },
+    {
+      "seq": 4,
+      "at": "2026-09-10T07:06:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "analysis.request_reanalysis",
+      "description": "Tạo analysis_generation số 2, reason = 'new_work_version'.",
+      "performed_by": "MOD-analysis-service"
+    },
+    {
+      "seq": 5,
+      "at": "2026-09-10T07:20:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "transaction": "TXN-analysis-accept",
+      "description": "Kết quả cho generation 2 với source_fingerprint mới.",
+      "performed_by": "MOD-analysis-service"
+    }
+  ],
+  "expected": {
+    "rows": {
+      "work": [
+        {
+          "id": "01JW0RKG100000000000000000",
+          "canonical_arxiv_id": "2503.03333",
+          "current_work_version_id": "01JWVERG200000000000000000",
+          "identity_state": "active",
+          "_note": "canonical_arxiv_id KHÔNG đổi và KHÔNG mang hậu tố v2.",
+          "_target": {
+            "kind": "work",
+            "work_id": "01JW0RKG100000000000000000",
+            "target_key": "work:01JW0RKG100000000000000000",
+            "canonical": {
+              "arxiv_base": "2503.03333"
+            },
+            "work_version_label": "v2",
+            "identity_state": "active"
+          }
+        }
+      ],
+      "work_version": [
+        {
+          "id": "01JWVERG100000000000000000",
+          "version_label": "v1",
+          "is_current": false,
+          "content_fingerprint": "F_2503.03333_v1",
+          "_note": "Hàng cũ giữ nguyên."
+        },
+        {
+          "id": "01JWVERG200000000000000000",
+          "version_label": "v2",
+          "is_current": true,
+          "content_fingerprint": "F_2503.03333_v2",
+          "observed_at": "2026-09-10T07:05:00.000Z"
+        }
+      ],
+      "identity_alias": [
+        {
+          "id": "01JA11ASG10000000000000000",
+          "id_value_normalized": "2503.03333",
+          "work_id": "01JW0RKG100000000000000000",
+          "_note": "Không có alias thứ hai cho 2503.03333v2 — hậu tố phiên bản không phải định danh riêng."
+        }
+      ],
+      "analysis_generation": [
+        {
+          "id": "01JAGENG100000000000000000",
+          "generation_number": 1,
+          "reason": "initial"
+        },
+        {
+          "id": "01JAGENG200000000000000000",
+          "generation_number": 2,
+          "reason": "new_work_version"
+        }
+      ],
+      "analysis": [
+        {
+          "id": "01JANA1YG10000000000000000",
+          "generation_number": 1,
+          "status": "valid",
+          "source_fingerprint": "F_2503.03333_v1",
+          "payload_hash": {
+            "symbolic": "H_AN1g",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          },
+          "_note": "BẤT BIẾN: payload_hash không đổi (REQ-D26 'giữ bản cũ')."
+        },
+        {
+          "id": "01JANA1YG20000000000000000",
+          "generation_number": 2,
+          "status": "valid",
+          "source_fingerprint": "F_2503.03333_v2",
+          "accepted_from_attempt_id": "01JATTG2000000000000000000",
+          "payload_hash": {
+            "symbolic": "H_AN2g",
+            "computed_by": "sha256(JCS(analysis.payload))",
+            "note": "Giá trị hex thật được tính lúc chạy test theo quy tắc canonical JSON (RFC 8785) trong entities.yaml conventions.hashes; fixture khẳng định QUAN HỆ giữa các hash, không khẳng định một chuỗi hex cụ thể."
+          }
+        }
+      ]
+    },
+    "counts": {
+      "work__total": 1,
+      "work_version": 2,
+      "work_version__is_current": 1,
+      "identity_alias__scheme_arxiv": 1,
+      "analysis_generation": 2,
+      "analysis__status_valid": 2,
+      "identity_merge_audit": 0,
+      "identity_conflict__state_open": 0
+    },
+    "hash_oracles": [
+      {
+        "assert": "payload_hash của AN1g sau sự kiện 5 == trước sự kiện 1",
+        "symbolic": "H_AN1g"
+      },
+      {
+        "assert": "AN1g và AN2g có analysis key KHÁC nhau vì source_fingerprint khác ⇒ cả hai cùng 'valid' không vi phạm ux_analysis_valid_key"
+      }
+    ]
+  },
+  "forbidden_effects": [
+    "Tạo work thứ hai cho 2503.03333v2.",
+    "Ghi '2503.03333v2' vào work.canonical_arxiv_id.",
+    "Tạo identity_alias arxiv với giá trị normalized có hậu tố vN.",
+    "UPDATE hoặc DELETE hàng analysis AN1g.",
+    "Đặt is_current = true cho cả hai work_version.",
+    "Coi việc có v2 là một identity merge."
+  ]
+}

@@ -1,0 +1,404 @@
+# Research Radar — State machine của delivery (vòng đời tách rời khỏi run, B03/AMD-B03)
+# Ngôn ngữ: prose tiếng Việt, identifier/khóa/enum tiếng Anh (baseline §3).
+# Gói: PC03 · Packet: PKT-PC03 · Worker: worker-W4
+
+contract_id: CT-state-delivery
+version: 0.1.0
+status: draft
+owner_role: workflow contract owner
+source_refs:
+  - SRC-PLAN §3.1
+  - SRC-PLAN §5.1
+  - SRC-PLAN §8.3
+  - SRC-PLAN §10
+  - SRC-PLAN §11 PC03
+  - SRC-SPEC §9.1
+  - SRC-SPEC §9.3
+  - SRC-SPEC §11.3
+  - SRC-SPEC §12 AC-14
+requirement_refs: [REQ-AC14, REQ-AC15, REQ-AC18, REQ-D35, REQ-D36, REQ-D37, REQ-D38, REQ-D57, REQ-S9.1-03, REQ-S9.2-05, REQ-S9.3-06, REQ-S11.3-02]
+decision_refs: [B01, B03, B09, B10, B11, AMD-B03, AMD-B09, AMD-B10, ADR-0003, "R-03 (A1-R1)"]
+invariant_refs: [I05, I09, I13, I15]
+producers: [MOD-delivery-service]
+consumers: [MOD-telegram-adapter, MOD-web-ui, MOD-report-service, MOD-job-service]
+dependencies:
+  - contracts/ports.yaml
+  - contracts/data/entities.yaml
+  - contracts/errors.yaml
+  - contracts/retry-policy.yaml
+  - contracts/state/report.yaml
+  - contracts/state/storage.yaml
+  - "contracts/telegram/delivery.md (PC07, chưa tồn tại tại thời điểm viết)"
+scope: >-
+  File này đóng vòng đời gửi: bảng transition của SRC-PLAN §8.3 nguyên vẹn, cộng ngữ nghĩa `delivery_part`, sender
+  lease, quy tắc GHI ATTEMPT TRƯỚC NETWORK CALL, xử lý `unknown` (không retry tự động; chỉ Operator quyết định
+  qua `delivery.decide_unknown`), và hủy khi liên kết Telegram đổi generation. Ngân sách và backoff tham chiếu
+  contracts/retry-policy.yaml, không định nghĩa lại. File này KHÔNG định nghĩa nội dung digest, cách render, hay
+  allowlist lệnh Telegram — đó là PC07.
+verification: "EV-PC03-01/02/03/04 (SELF_VALIDATION): transition lint + reachability + đối chiếu mã lỗi và operation ID."
+claim_ceiling: DRAFT_FOR_REVIEW
+
+# ---------------------------------------------------------------------------
+# 1. Enum
+# ---------------------------------------------------------------------------
+enums:
+  delivery_state:
+    values: [pending, sending, sent, retry_wait, unknown, failed, cancelled]
+    source_refs: [SRC-PLAN §8.3, AMD-B03, "contracts/data/entities.yaml ENT-delivery.state"]
+    legacy_mapping_vi: >-
+      SRC-SPEC §9.1 khai `pending → sent` với nhánh `retrying`, `failed`. AMD-B03 thay bằng enum trên:
+      `retrying` → `retry_wait`; thêm `sending`, `unknown`, `cancelled`.
+      Enum cũ của run `delivered` → `delivery.state = sent`;
+      `delivered_partial` → `delivery.state ∈ {failed, unknown}` (AMD-B02, bảng ánh xạ).
+  delivery_part_state:
+    values: [pending, sending, sent, unknown, failed]
+    source_refs: ["contracts/data/entities.yaml ENT-delivery-part.state", SRC-PLAN §8.3]
+    note_vi: >-
+      entities.yaml khai bốn giá trị `pending | sent | unknown | failed`. PC03 thêm `sending` để trạng thái
+      "đã ghi attempt, chưa có kết quả" quan sát được — đó chính là trạng thái mà crash biến thành `unknown`.
+      Bổ sung additive; xem CR-PC03-07.
+  intent_kind:
+    values: [report_digest, run_alert]
+    source_refs: ["contracts/ports.yaml delivery.create_intent"]
+  unknown_decision:
+    values: [resend_accepting_duplicate_risk, mark_not_delivered, abandon]
+    source_refs: ["contracts/ports.yaml delivery.decide_unknown"]
+
+initial_state: pending
+terminal_states: [sent, failed, cancelled]
+quasi_terminal_states: [unknown]
+non_terminal_states: [pending, sending, retry_wait, unknown]
+
+terminal_state_rule:
+  id: TSR-D01
+  statement_vi: >-
+    `sent`, `failed`, `cancelled` không phát sinh side effect. Retry sau khi `sent` CHỈ trả receipt đã lưu,
+    không mở kết nối (SRC-PLAN §8.3). `unknown` là QUASI-terminal: nó không tự đi đâu cả — chỉ một quyết định
+    của Operator (`delivery.decide_unknown`) mới đưa nó ra khỏi đó.
+  oracle_vi: "Sau khi part đạt `sent`: outbound call count cho part đó = 0 ở mọi lần dispatch sau."
+
+# ---------------------------------------------------------------------------
+# 2. delivery_part: ngữ nghĩa
+# ---------------------------------------------------------------------------
+delivery_part_semantics:
+  source_refs: [SRC-PLAN §8.3]
+  rules:
+    - id: DP-01
+      rule_vi: "Một digest nhiều message được lưu thành nhiều `delivery_part`, mỗi part có `part_index`, `payload_hash` và receipt RIÊNG."
+    - id: DP-02
+      rule_vi: >-
+        Part ở `unknown` KHÔNG được gửi lại chỉ vì AGGREGATE chưa `sent` (SRC-PLAN §8.3 nguyên văn). Đây là quy
+        tắc quan trọng nhất của mục này: aggregate không bao giờ ép một part rời `unknown`.
+    - id: DP-03
+      rule_vi: "Aggregate `delivery.state` được SUY RA từ các part, không phải nguồn sự thật độc lập."
+      derivation_vi: >-
+        `sent` ⟺ mọi part `sent`. `unknown` ⟺ có ≥1 part `unknown` (và không part nào cần quyết định gấp hơn).
+        `failed` ⟺ có ≥1 part `failed` và không part nào `unknown`. `sending`/`retry_wait`/`pending` theo part
+        đang hoạt động. `cancelled` khi intent bị hủy trước khi có part nào `sent`.
+      precedence_vi: "unknown > failed > retry_wait > sending > pending > sent — trạng thái CẦN CHÚ Ý NHẤT thắng, để UI không bao giờ nói 'đã gửi' khi còn một phần chưa rõ (I13)."
+    - id: DP-04
+      rule_vi: "`ux_delivery_part_index` (owner_id, delivery_id, part_index) — không có hai part cùng index."
+    - id: DP-05
+      rule_vi: >-
+        UNIQUE nội bộ là ĐIỀU KIỆN CẦN, KHÔNG phải bằng chứng exactly-once ở mạng ngoài (SRC-PLAN §3.1, §8.3;
+        entities.yaml §pc02_note). Telegram Bot API `sendMessage` không nhận idempotency key từ client.
+  invariant_refs: [I09, I13]
+
+# ---------------------------------------------------------------------------
+# 3. Sender lease
+# ---------------------------------------------------------------------------
+sender_lease:
+  rule_vi: >-
+    Dispatcher phải giữ một SENDER LEASE trước khi chuyển bất kỳ part nào sang `sending`. Lease này bảo đảm chỉ
+    một tiến trình dispatch một part tại một thời điểm — nếu không, hai dispatcher sẽ gửi trùng và không có cách
+    nào phát hiện ở phía Telegram.
+  numbers_ref: "contracts/retry-policy.yaml §budgets (lease_ttl_collector dùng chung cơ chế; sender lease dùng `delivery_sender_lease_ttl`)"
+  epoch_rule_vi: "Cùng cơ chế epoch như `assignment_lease`: lease cũ ⇒ `STALE_LEASE`, không ghi gì."
+  storage_guard_vi: >-
+    Dispatcher BỊ KHÓA khi `storage.health = recovery_required` cho tới khi `backup.reconcile_after_restore`
+    xong (I15, NC-10). Guard đọc `storage.get_health` TRƯỚC mỗi lần dispatch.
+  invariant_refs: [I15]
+
+# ---------------------------------------------------------------------------
+# 4. Bảng transition (SRC-PLAN §8.3 nguyên vẹn + bổ sung PKT-PC03)
+# ---------------------------------------------------------------------------
+transitions:
+
+  - id: T-DL-00
+    plan_row_ref: "bổ sung PC03 (tạo intent)"
+    from: "(chưa tồn tại)"
+    event: intent_created
+    operation_id: delivery.create_intent
+    guard_vi: >-
+      Được tạo TRONG transaction publish (report_digest) hoặc trong transaction ghi `needs_user` (run_alert).
+      Idempotency `logical_delivery_key = report_id | run_alert_id + channel`.
+    to: pending
+    transaction_vi: "`outbox_intent` + `delivery(state = pending, telegram_link_generation)` ghi CÙNG transaction với nội dung nguồn (outbox pattern, SRC-PLAN §5.1)."
+    effects_vi:
+      - "Một report/kênh có MỘT logical delivery; một run có TỐI ĐA MỘT alert intent (REQ-AC04)."
+      - "`telegram_link_generation` được chụp tại đây; đổi liên kết về sau ⇒ hủy (T-DL-08)."
+    forbidden_vi:
+      - "Tạo digest intent cho kỳ rỗng (REQ-D57)."
+      - "Gọi mạng trong transaction (SRC-PLAN §5.1)."
+      - "Delivery đổi nội dung report đã publish (B01)."
+    oracle_vi: "Kỳ rỗng ⇒ `COUNT(outbox_intent WHERE kind='report_digest')` = 0. Run có 2 lần `worker.report_stop` ⇒ `COUNT(run_alert intent) = 1`."
+    scenario_refs: [SC04, SC14, SC19]
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I05, I09]
+
+  - id: T-DL-01
+    plan_row_ref: "SRC-PLAN §8.3 hàng 1"
+    from: pending
+    event: dispatch
+    operation_id: delivery.dispatch_next
+    guard_vi: >-
+      Payload/revision/link generation hợp lệ VÀ có sender lease VÀ recipient còn liên kết với
+      `telegram_link_generation` đã chụp VÀ `storage.health ∉ {write_blocked, recovery_required}`.
+    to: sending
+    transaction_vi: >-
+      GHI ATTEMPT TRƯỚC NETWORK CALL: commit `delivery_part(attempt_seq)` + `delivery_part.state = sending`
+      TRƯỚC khi mở kết nối tới Telegram. Idempotency `delivery_part_id + attempt_seq`.
+    effects_vi:
+      - "SRC-PLAN §8.3 nguyên văn: 'Ghi attempt trước network call'."
+      - "Nhờ vậy, crash ngay sau đó cho phép hệ thống biết CÓ THỂ đã gửi, thay vì gửi lại mù."
+    forbidden_vi:
+      - "Gọi `telegram.send_payload` trước khi attempt đã COMMIT."
+      - "Dispatch khi `storage.health = recovery_required` (I15, NC-10)."
+      - "Dispatch bởi module khác MOD-delivery-service (NC-09: scheduler không gửi digest)."
+      - "Nội dung nguồn hay output AI định nghĩa recipient (I11, NC-04)."
+    oracle_vi: "Kill tiến trình giữa commit attempt và network call: tồn tại attempt không có receipt ⇒ part vào `unknown` (T-DL-04), số lần gọi lại tự động = 0."
+    scenario_refs: [SC14, SC27]
+    error_codes: [STALE_LEASE, RESTORE_UNVERIFIED, STORAGE_WRITE_FAILED, TELEGRAM_SEND_UNCERTAIN, TELEGRAM_PERMANENT_FAILURE]
+    invariant_refs: [I09, I15]
+
+  - id: T-DL-02
+    plan_row_ref: "SRC-PLAN §8.3 hàng 2"
+    from: sending
+    event: success_with_message_id
+    operation_id: delivery.record_receipt
+    guard_vi: "Telegram trả thành công kèm message ID."
+    to: sent
+    transaction_vi: "Ghi `delivery_part(state = sent, provider_message_id)` — persist receipt. Idempotency `delivery_part_id`."
+    effects_vi:
+      - "Retry SAU ĐÓ chỉ trả receipt, KHÔNG gửi lần hai (SRC-PLAN §8.3)."
+      - "Aggregate `delivery.state = sent` chỉ khi MỌI part có receipt (DP-03)."
+    forbidden_vi:
+      - "Gửi lại một part đã có receipt."
+      - "Ghi `sent` cho aggregate khi còn part chưa có receipt."
+    oracle_vi: "Gọi `delivery.dispatch_next` lại sau khi part `sent`: outbound call count = 0, response trả receipt cũ."
+    scenario_refs: [SC14]
+    error_codes: [VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I09]
+
+  - id: T-DL-03
+    plan_row_ref: "SRC-PLAN §8.3 hàng 3"
+    from: sending
+    event: definitely_not_received_or_meaningful_retryable_error
+    guard_vi: >-
+      CHẮC CHẮN chưa được nhận (ví dụ lỗi trước khi request rời máy) HOẶC lỗi retryable có NGHĨA RÕ (429 kèm
+      Retry-After, 5xx có thân lỗi xác định). VÀ còn `telegram_send_attempts` VÀ chưa quá `telegram_send_max_window`.
+    to: retry_wait
+    transaction_vi: "Ghi `delivery.attempt_count += 1` + `next_attempt_at` theo `telegram_send_backoff`; part về `pending` ở lần dispatch kế."
+    effects_vi: ["Retry có budget/backoff ĐÃ ĐÓNG (contracts/retry-policy.yaml)."]
+    forbidden_vi:
+      - "Xếp một kết quả KHÔNG RÕ vào đây — không rõ thì phải là `unknown` (T-DL-04). Đây là ranh giới quan trọng nhất của AMD-B03."
+      - "Bỏ qua `Retry-After` do Telegram trả."
+    oracle_vi: "Ép lỗi retryable rõ nghĩa: `attempt_count` tăng, `next_attempt_at` > now, không có tin trùng ở phía nhận."
+    scenario_refs: [SC14]
+    error_codes: [RATE_LIMITED, TELEGRAM_PERMANENT_FAILURE]
+    invariant_refs: [I09]
+
+  - id: T-DL-04
+    plan_row_ref: "SRC-PLAN §8.3 hàng 4"
+    from: sending
+    event: timeout_or_connection_lost_or_crash_after_possible_send
+    operation_id: delivery.mark_unknown
+    guard_vi: >-
+      Timeout, mất kết nối, hoặc crash sau ĐIỂM CÓ THỂ ĐÃ GỬI. Nói cách khác: không phân biệt được "đã tới
+      Telegram" với "chưa tới". Timeout transport là KHÔNG BIẾT, không phải rollback (SRC-PLAN §5.1).
+    to: unknown
+    transaction_vi: "Ghi `delivery_part(state = unknown, provider_message_id = NULL)`. Idempotency `delivery_part_id + attempt_seq`."
+    effects_vi:
+      - "KHÔNG retry tự động (AMD-B03)."
+      - "App nêu rõ 'chưa xác định'; KHÔNG hiển thị thành `sent` hay `failed` (I13)."
+      - "Operator quyết định có chấp nhận nguy cơ trùng hay không (T-DL-06)."
+      - "Report trong app GIỮ ĐẦY ĐỦ nội dung (I09)."
+    forbidden_vi:
+      - "Retry tự động từ `unknown` — ĐÂY LÀ CẤM TUYỆT ĐỐI (AMD-B03, never_retry của retry-policy)."
+      - "Gửi lại part `unknown` vì aggregate chưa `sent` (DP-02)."
+      - "Hiển thị `unknown` gộp với `sent` hoặc `failed`."
+      - "Đổi `run.status`/`run.outcome` (I09)."
+      - "Xóa report (REQ-AC14)."
+    oracle_vi: >-
+      AMD-B03 oracle nguyên văn: mô phỏng Telegram nhận tin rồi cắt response ⇒ delivery vào `unknown`, số lần
+      gọi mạng tiếp theo BẰNG 0; `report.content_hash` không đổi; `run.outcome` không đổi.
+    scenario_refs: [SC14]
+    error_codes: [TELEGRAM_SEND_UNCERTAIN, VALIDATION_ERROR, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED]
+    invariant_refs: [I09, I13]
+
+  - id: T-DL-05
+    plan_row_ref: "SRC-PLAN §8.3 hàng 5"
+    from: retry_wait
+    event: retry_due
+    guard_vi: >-
+      `now >= next_attempt_at` VÀ recipient còn hiệu lực (`telegram_link_generation` không đổi) VÀ chưa quá
+      `telegram_send_max_window` VÀ `storage.health` cho phép.
+    to: pending
+    transaction_vi: "Ghi `next_attempt_at = NULL`; giữ CÙNG `logical delivery key` và cùng `delivery_part_id`."
+    effects_vi: ["Giữ cùng logical delivery key (SRC-PLAN §8.3) ⇒ không sinh delivery thứ hai cho cùng report/kênh."]
+    forbidden_vi:
+      - "Tạo `delivery` mới cho cùng (report, channel, link_generation) — `ux_delivery_report_channel_generation` chặn."
+      - "Retry khi liên kết đã đổi generation (phải là T-DL-08)."
+    oracle_vi: "Sau nhiều lần retry: `COUNT(delivery WHERE report_id = R AND channel='telegram') = 1`."
+    scenario_refs: [SC14]
+    error_codes: [STORAGE_WRITE_FAILED]
+    invariant_refs: [I09]
+
+  - id: T-DL-06
+    plan_row_ref: "bổ sung PC03/AMD-B03 (quyết định của Operator trên `unknown`)"
+    from: unknown
+    event: operator_decision
+    operation_id: delivery.decide_unknown
+    guard_vi: >-
+      Owner (auth_scope `owner_session`) chọn một trong `resend_accepting_duplicate_risk` |
+      `mark_not_delivered` | `abandon`, KÈM xác nhận rằng nguy cơ trùng đã được chấp nhận.
+      Idempotency `delivery_part_id + decision_request_id`.
+    to: "pending (resend) | failed (mark_not_delivered) | cancelled (abandon)"
+    transaction_vi: "Ghi quyết định + trạng thái part tương ứng. Cùng quyết định KHÔNG gửi hai lần."
+    effects_vi:
+      - "CHỈ Operator mới đưa một part ra khỏi `unknown`; hệ thống KHÔNG tự quyết định (AMD-B03, ports.yaml)."
+      - "`resend_accepting_duplicate_risk` ⇒ part về `pending` với `attempt_seq` MỚI; bản ghi quyết định là bằng chứng rằng người đã chấp nhận nguy cơ."
+      - "`mark_not_delivered` ⇒ `failed`: người kết luận tin chưa tới, không gửi lại."
+      - "`abandon` ⇒ `cancelled`: bỏ hẳn phần này."
+    forbidden_vi:
+      - "Hệ thống tự chọn một trong ba (AMD-B03)."
+      - "Cho phép Telegram (chat đã liên kết) gọi operation này — auth_scope là `owner_session`, không có lệnh Telegram thứ tư (AMD-B10)."
+      - "Gửi lại mà không ghi `attempt_seq` mới."
+    oracle_vi: "Sau `resend_accepting_duplicate_risk`: đúng một attempt mới; sau `mark_not_delivered`: outbound call = 0 và part `failed`."
+    scenario_refs: [SC14]
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT, TELEGRAM_SEND_UNCERTAIN, STORAGE_WRITE_FAILED]
+    invariant_refs: [I09, I13]
+
+  - id: T-DL-07
+    plan_row_ref: "SRC-PLAN §8.3 hàng 6"
+    from: "sending | retry_wait"
+    event: permanent_failure_or_budget_exhausted
+    guard_vi: >-
+      Lỗi vĩnh viễn (recipient invalid/revoked, bot bị chặn) HOẶC hết `telegram_send_attempts` HOẶC quá
+      `telegram_send_max_window`.
+    to: failed
+    transaction_vi: "Ghi `delivery_part(state = failed)` + aggregate theo DP-03. KHÔNG đụng bảng `report`, KHÔNG đụng bảng `run`."
+    effects_vi:
+      - "App GIỮ report đầy đủ (REQ-AC14, I09)."
+      - "KHÔNG đổi run thành collection failure (SRC-PLAN §8.3 nguyên văn, I09)."
+    forbidden_vi:
+      - "Xóa report."
+      - "Đổi `run.status`/`run.outcome` (I09) — đây là counterexample chính của I09."
+      - "Chuyển payload sang recipient khác."
+    oracle_vi: >-
+      Recipient bị revoke: `delivery.state = 'failed'`, `report.content_hash` trước/sau bằng nhau,
+      `run.outcome` giữ `complete`, app mở được report.
+    scenario_refs: [SC14, SC25]
+    error_codes: [TELEGRAM_PERMANENT_FAILURE, RATE_LIMITED]
+    invariant_refs: [I05, I09, I13]
+
+  - id: T-DL-08
+    plan_row_ref: "SRC-PLAN §8.3 hàng 7"
+    from: "pending | retry_wait"
+    event: unlink_or_link_generation_changed
+    operation_id: telegram.unlink
+    guard_vi: >-
+      Owner hủy liên kết (hành động TRONG APP — AMD-B10/F-PC00-01), hoặc `telegram_link.generation` hiện hành
+      KHÁC `delivery.telegram_link_generation` đã chụp lúc tạo intent.
+    to: cancelled
+    transaction_vi: "Ghi `delivery(state = cancelled)`. Không gửi gì."
+    effects_vi:
+      - "KHÔNG gửi tới recipient cũ."
+      - "KHÔNG chuyển payload cũ sang recipient mới âm thầm (SRC-PLAN §8.3 nguyên văn)."
+      - "Nếu Owner liên kết lại và muốn nhận digest cũ, đó là một intent MỚI do người tạo có chủ đích — không tự động."
+    forbidden_vi:
+      - "Gửi tới chat cũ sau khi đã unlink."
+      - "Tự đổi recipient của một intent đã tạo."
+      - "Hủy một part đã `sent` (không thể thu hồi tin đã gửi; chỉ part chưa gửi mới bị hủy)."
+    oracle_vi: >-
+      SC25 (Telegram relink): unlink giữa lúc `retry_wait` ⇒ `delivery.state = 'cancelled'`, outbound call tới
+      chat cũ = 0; sau khi liên kết chat mới, `COUNT(delivery WHERE report_id = R)` không tự tăng.
+    scenario_refs: [SC25, SC18]
+    error_codes: [VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, IDEMPOTENCY_CONFLICT]
+    invariant_refs: [I09, I11]
+
+  - id: T-DL-09
+    plan_row_ref: "bổ sung PKT-PC03 (khóa dispatcher sau restore)"
+    from: "pending | retry_wait"
+    event: storage_recovery_required
+    operation_id: storage.get_health
+    guard_vi: "`storage.health = recovery_required` (vừa restore, chưa reconcile)."
+    to: "pending | retry_wait (KHÔNG đổi)"
+    transaction_vi: "KHÔNG có transaction. Dispatcher đơn giản KHÔNG chạy."
+    effects_vi:
+      - "Outbox cũ KHÔNG replay (I15, NC-10)."
+      - "Chỉ `backup.reconcile_after_restore` mới mở khóa, và nó QUYẾT ĐỊNH CÓ CHỦ ĐÍCH với từng delivery cũ (giữ hay hủy)."
+    forbidden_vi:
+      - "Tự động gửi lại outbox trong snapshot đã restore (I15) — người nhận sẽ thấy các digest cũ hàng loạt."
+      - "Mở khóa dispatcher theo thời gian."
+    oracle_vi: "SC27: restore vào môi trường có outbox cũ ⇒ số outbound send TRƯỚC reconcile = 0."
+    scenario_refs: [SC27]
+    error_codes: [RESTORE_UNVERIFIED]
+    invariant_refs: [I15]
+
+# ---------------------------------------------------------------------------
+# 5. Transition bị cấm
+# ---------------------------------------------------------------------------
+forbidden_transitions:
+  - {from: unknown, to: sending, condition_vi: "tự động, không qua delivery.decide_unknown", reason_vi: "AMD-B03 — không retry tự động từ unknown; UNIQUE nội bộ không chứng minh exactly-once ở mạng ngoài.", counterexample_vi: "Dispatcher quét outbox thấy aggregate chưa `sent` nên gửi lại part `unknown` ⇒ người nhận thấy tin trùng ⇒ FAIL.", error_code_if_attempted: TELEGRAM_SEND_UNCERTAIN}
+  - {from: sent, to: sending, condition_vi: "mọi trường hợp", reason_vi: "Đã có receipt; retry chỉ trả receipt (SRC-PLAN §8.3).", counterexample_vi: "Bấm gửi lại trên UI ⇒ outbound call phải bằng 0.", error_code_if_attempted: IDEMPOTENCY_CONFLICT}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "làm đổi `run.status` hoặc `run.outcome`", reason_vi: "I09 — vòng đời delivery tách rời vòng đời run (SRC-SPEC §9.1).", counterexample_vi: "Telegram `failed` khiến Runs hiển thị 'đợt thất bại' ⇒ FAIL AC-15.", error_code_if_attempted: null}
+  - {from: "bất kỳ", to: "bất kỳ", condition_vi: "làm đổi nội dung report đã publish", reason_vi: "I05 + B01 — delivery không đổi nội dung report đã publish.", counterexample_vi: "Ghi `delivered_at` vào bảng report ⇒ `content_hash` đổi ⇒ FAIL.", error_code_if_attempted: CONFLICT}
+  - {from: cancelled, to: "bất kỳ", condition_vi: "mọi trường hợp", reason_vi: "Đã hủy vì recipient không còn hợp lệ; hồi sinh sẽ gửi tới chat sai.", counterexample_vi: "Liên kết lại chat mới rồi delivery cũ tự gửi ⇒ FAIL.", error_code_if_attempted: CONFLICT}
+  - {from: pending, to: sending, condition_vi: "khi chưa commit attempt", reason_vi: "SRC-PLAN §8.3 — ghi attempt TRƯỚC network call; nếu không, crash không phân biệt được 'chưa gửi' với 'có thể đã gửi'.", counterexample_vi: "Kill ngay sau khi gọi sendMessage mà không có attempt row ⇒ hệ thống gửi lại mù ⇒ có thể trùng.", error_code_if_attempted: TELEGRAM_SEND_UNCERTAIN}
+  - {from: "bất kỳ", to: sending, condition_vi: "khi `storage.health = recovery_required`", reason_vi: "I15, NC-10.", counterexample_vi: "Sau restore, dispatcher gửi lại toàn bộ outbox cũ ⇒ FAIL.", error_code_if_attempted: RESTORE_UNVERIFIED}
+  - {from: "bất kỳ", to: sending, condition_vi: "khi recipient được xác định bởi nội dung nguồn hoặc output AI", reason_vi: "I11 — nội dung nguồn là dữ liệu, không phải lệnh (SRC-SPEC §11.4); NC-04.", counterexample_vi: "Prompt injection yêu cầu gửi tới chat khác ⇒ outbound call tới chat đó phải = 0.", error_code_if_attempted: CAPABILITY_DENIED}
+
+# ---------------------------------------------------------------------------
+# 6. Ngân sách (tham chiếu)
+# ---------------------------------------------------------------------------
+retry_budget_refs:
+  file: contracts/retry-policy.yaml
+  entries:
+    - {budget: telegram_send_attempts, value_vi: "4 lần thử cho mỗi delivery_part", applies_to: [T-DL-03, T-DL-07]}
+    - {budget: telegram_send_backoff, value_vi: "5 / 30 / 300 / 1800 giây, jitter ±20%", applies_to: [T-DL-03, T-DL-05]}
+    - {budget: telegram_send_max_window, value_vi: "21600 giây (6 giờ) kể từ delivery.created_at", applies_to: [T-DL-05, T-DL-07]}
+    - {budget: telegram_attempt_before_send, value_vi: "1 hàng attempt commit TRƯỚC network call", applies_to: [T-DL-01]}
+    - {budget: delivery_alert_per_run, value_vi: "1 alert intent cho mỗi run", applies_to: [T-DL-00]}
+    - {budget: delivery_sender_lease_ttl, value_vi: "xem retry-policy", applies_to: [T-DL-01]}
+  never_retry_ref: "contracts/retry-policy.yaml §never_retry — `delivery_part.state = unknown` là mục đầu tiên của danh sách."
+
+# ---------------------------------------------------------------------------
+# 7. Invariant sở hữu
+# ---------------------------------------------------------------------------
+invariants_owned:
+  - id: I09
+    statement_vi: "Telegram thất bại không làm report biến mất hoặc run đổi sang thất bại thu thập."
+    owner_transition: [T-DL-04, T-DL-07, T-DL-08, "forbidden_transitions hàng 3 và 4"]
+    positive_oracle_vi: >-
+      Ép `TELEGRAM_PERMANENT_FAILURE` và ép `TELEGRAM_SEND_UNCERTAIN`: trong cả hai,
+      `report.content_hash` không đổi, `run.outcome` không đổi, app mở được report đầy đủ.
+    counterexample_vi: >-
+      PHẢI FAIL: một đường code đặt `run.status = failed` khi `delivery.state = failed`. Khi đó AC-15 mất khả
+      năng phân biệt và người dùng đọc "đợt thất bại" cho một đợt đã thu thập và phân tích thành công.
+  - id: I13
+    statement_vi: "(phần delivery) `unknown` hiển thị RIÊNG, không gộp với `sent` hay `failed`."
+    owner_transition: [T-DL-04, T-DL-06, "DP-03 precedence"]
+    positive_oracle_vi: >-
+      `delivery.get_status` trả bốn nhãn phân biệt cho bốn tình huống: đầy đủ đã gửi / một phần chưa rõ /
+      thất bại vĩnh viễn / đã hủy vì đổi liên kết. UI render bốn nhãn khác nhau.
+    counterexample_vi: >-
+      PHẢI FAIL: aggregate hiển thị `sent` trong khi còn một part `unknown` (do lấy trạng thái của part cuối
+      cùng thay vì theo precedence của DP-03). Người dùng tin là đã gửi xong trong khi có thể thiếu một phần.
+  - id: I15
+    statement_vi: "(phần dispatch) Restore không tự gửi lại outbox cũ."
+    owner_transition: [T-DL-09, "sender_lease.storage_guard_vi"]
+    positive_oracle_vi: "SC27: sau restore, số outbound send trước `backup.reconcile_after_restore` = 0."
+    counterexample_vi: >-
+      PHẢI FAIL: dispatcher khởi động cùng tiến trình server sau restore và bắt đầu quét outbox. Người nhận
+      sẽ nhận lại toàn bộ digest của khoảng thời gian trong snapshot.

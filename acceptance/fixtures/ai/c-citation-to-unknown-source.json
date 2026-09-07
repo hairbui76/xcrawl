@@ -1,0 +1,132 @@
+{
+  "fixture_id": "FX-AI-C",
+  "title": "Citation trỏ source_id không được cấp → AI_OUTPUT_INVALID (SV-02)",
+  "purpose": "Đây là hàng rào chính chống citation bịa. Payload này ĐÚNG SCHEMA — nó chỉ bị chặn ở tầng ngữ nghĩa. Fixture chứng minh vì sao 'JSON đúng schema' không phải toàn bộ hợp đồng.",
+  "scenario_refs": [
+    "SC11",
+    "SC17"
+  ],
+  "invariant_refs": [
+    "I11"
+  ],
+  "decision_refs": [
+    "B16"
+  ],
+  "requirement_refs": [
+    "REQ-D43",
+    "REQ-AC11",
+    "REQ-S9.3-03"
+  ],
+  "source_refs": [
+    "SRC-PLAN §10 AI_OUTPUT_INVALID",
+    "SRC-SPEC §3.7 D43",
+    "contracts/state/analysis.yaml forbidden_transitions"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01JW0WNER00000000000000000",
+  "contract_refs": [
+    "contracts/ai/tasks.yaml",
+    "contracts/ai/providers.yaml",
+    "contracts/ai/grounding.md",
+    "contracts/schemas/analysis-result.schema.json",
+    "contracts/state/analysis.yaml",
+    "contracts/errors.yaml",
+    "contracts/retry-policy.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "validation_target": "contracts/schemas/analysis-result.schema.json",
+  "expected_validation": "reject_semantic",
+  "expected_violation": {
+    "check_id": "SV-02",
+    "validation_failure_kind": "citation_unknown_source",
+    "error_code": "AI_OUTPUT_INVALID",
+    "attempt_outcome": "schema_invalid",
+    "why_schema_passes_vi": "`work_version:01JWVRZ9...` đúng dạng source_id, nên JSON Schema chấp nhận. Chỉ việc đối chiếu với input_source_ids mới phát hiện nó chưa bao giờ được cấp."
+  },
+  "given": {
+    "task": {
+      "task_id": "summary"
+    },
+    "max_evidence_level": "post_only",
+    "input_source_ids": [
+      "post:01JPSTA1000000000000000000"
+    ],
+    "note_vi": "Chỉ MỘT nguồn được cấp. Model trích dẫn thêm một work_version chưa từng thấy."
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-06T18:00:00.000Z",
+      "actor": "MOD-analysis-worker",
+      "operation": "analysis.submit_result",
+      "description": "Server chạy SV-02 và từ chối."
+    }
+  ],
+  "expected": {
+    "rejected_payload": {
+      "schema_version": "0.1.0",
+      "task_type": "summary",
+      "analysis_key": {
+        "owner_id": "01JW0WNER00000000000000000",
+        "target_key": "work:01JWRKA1000000000000000000",
+        "task_type": "summary",
+        "source_fingerprint": "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38",
+        "prompt_version": "1.0.0",
+        "schema_version": "0.1.0",
+        "generation_number": 1
+      },
+      "provider": {
+        "auth_family": "cli_acp",
+        "provider_name": "example-vendor-cli",
+        "model_name": "m-1"
+      },
+      "evidence_level": "post_only",
+      "usage": {
+        "unknown": true,
+        "tokens_in": null,
+        "tokens_out": null,
+        "cost_micro_usd": null
+      },
+      "attempt_id": "01JATTA1000000000000000000",
+      "produced_at": "2026-09-06T18:00:00.000Z",
+      "input_source_ids": [
+        "post:01JPSTA1000000000000000000"
+      ],
+      "result": {
+        "content": "Phương pháp mới cho bài toán gấp protein.",
+        "difference_from_existing": {
+          "text": "Khác với công trình trước ở chỗ dùng ít tham số hơn.",
+          "comparator": {
+            "kind": "ref",
+            "source_ref": "work_version:01JWVRZ9000000000000000000"
+          }
+        },
+        "limitation_line": "Chưa có đánh giá độc lập.",
+        "statements": [
+          {
+            "kind": "source_verified",
+            "text": "Công trình trước dùng 3 tỷ tham số.",
+            "citation_refs": [
+              "work_version:01JWVRZ9000000000000000000"
+            ]
+          }
+        ]
+      }
+    },
+    "counts": {
+      "analysis[status='valid'] created": 0,
+      "analysis_attempt[outcome='schema_invalid'] created": 1
+    },
+    "row_oracles": [
+      "COUNT(analysis WHERE status='valid' AND analysis_key=K) = 0.",
+      "Attempt được ghi với error_code = AI_OUTPUT_INVALID; ngân sách analysis_attempts_per_item (2) giảm 1.",
+      "details_safe KHÔNG chứa transcript hay đoạn JSON của model (errors.yaml redaction_vi)."
+    ]
+  },
+  "forbidden_effects": [
+    "Commit kết quả vì nó 'đúng schema' (contracts/state/analysis.yaml: running → valid khi chỉ pass schema là transition bị cấm).",
+    "Tự bỏ citation sai rồi commit phần còn lại — sửa output của model là bịa dữ liệu.",
+    "Tra id đó trong kho rồi chấp nhận vì 'nó có tồn tại': model không được đọc nó, nên citation vẫn bịa."
+  ]
+}

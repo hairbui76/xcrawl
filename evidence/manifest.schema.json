@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://research-radar.local/schemas/evidence-manifest.schema.json",
+  "title": "Research Radar evidence manifest",
+  "description": "Mô hình bằng chứng theo SRC-PLAN §14.1. Một manifest mô tả MỘT lần kiểm tra: danh tính, baseline, môi trường, đầu vào, thực thi, kết quả, artifacts và giới hạn. Hash phát hiện artifact bị đổi, nó KHÔNG tự chứng minh artifact là thật: phải có execution/tool reference và review tương ứng (agent_profile/protocol.md §9). `NOT_APPLICABLE` luôn cần lý do và một decision ref; nó không được dùng để bỏ một AC khó.",
+  "x-contract": {
+    "contract_id": "CT-evidence-manifest",
+    "version": "0.1.0",
+    "status": "draft",
+    "owner_role": "verification owner (PC09)",
+    "source_refs": [
+      "SRC-PLAN §14.1 (bảng trường bắt buộc của evidence manifest)",
+      "SRC-PLAN §14.2 (E0..E4)",
+      "SRC-PLAN §16 (quản lý thay đổi và bằng chứng hết hiệu lực)",
+      "agent_profile/protocol.md §9 (evidence và claim)"
+    ],
+    "requirement_refs": [
+      "REQ-S13.2-01",
+      "REQ-S13.2-02",
+      "REQ-A1",
+      "REQ-A2",
+      "REQ-A3",
+      "REQ-A4",
+      "REQ-A5",
+      "REQ-A6",
+      "REQ-A7"
+    ],
+    "decision_refs": ["B13", "B14", "ADR-0010"],
+    "invariant_refs": [],
+    "producers": ["MOD-none"],
+    "consumers": ["MOD-none"],
+    "dependencies": [
+      "evidence/index.json",
+      "acceptance/scenarios.yaml",
+      "precode/gates.yaml"
+    ],
+    "scope": "JSON Schema 2020-12 cho mọi bản ghi bằng chứng của dự án, ở mọi cấp E0–E4. Áp cho cả kết quả tự kiểm (SELF_VALIDATION), kiểm của Coordinator (COORDINATOR_CHECK) và audit độc lập (INDEPENDENT_AUDIT).",
+    "verification": "evidence/index.json phải validate được với chính schema này; kiểm bằng jsonschema Draft202012Validator. Xem EV-PC09-02.",
+    "claim_ceiling": "DRAFT_FOR_REVIEW",
+    "deviations": [
+      {
+        "id": "DEV-PC09-01",
+        "rule": "agent_profile/protocol.md §10 — 'Schema Draft 2020-12 dùng oneOf discriminated type'",
+        "deviation": "Schema này dùng `allOf` gồm bảy nhánh `if/then` thay vì `oneOf`.",
+        "reason": "Bảy nhánh ở đây KHÔNG phải một union phân biệt theo `type`: chúng là các ràng buộc CÓ ĐIỀU KIỆN trên cùng MỘT loại đối tượng (result=NOT_APPLICABLE ⇒ bắt buộc not_applicable_reason; execution.kind=command ⇒ bắt buộc command; review_type=SELF_VALIDATION ⇒ giới hạn claim.supports_label). Một manifest phải thoả TẤT CẢ các điều kiện áp dụng cho nó, không phải đúng một trong bảy. Diễn đạt bằng `oneOf` sẽ sai về ngữ nghĩa: một bản ghi vừa NOT_APPLICABLE vừa có execution.kind=not_executed sẽ khớp hai nhánh và bị `oneOf` từ chối. Đối tượng vẫn đóng kín: additionalProperties=false ở mọi object definition.",
+        "evidence_refs": [
+          "R4-04 (Coordinator, FIX4 wave) — allOf + if/then được chấp nhận là tương đương chức năng",
+          "F-A1R3-05 (cùng lớp, đã ratify cho contracts/schemas/analysis-result.schema.json)",
+          "EV-PC09-02 — evidence/index.json validate được với chính schema này"
+        ]
+      }
+    ]
+  },
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "created_at",
+    "producer_principal",
+    "producer_role",
+    "review_type",
+    "baseline",
+    "environment",
+    "inputs",
+    "execution",
+    "result",
+    "artifacts",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1.0",
+      "description": "Phiên bản của chính schema này."
+    },
+
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^EV-(PC[0-9]{2}|A[0-9]|E[0-4]|COORD)-[0-9]{2,3}(-[a-z0-9-]+)?$",
+      "description": "ID ổn định của bản ghi bằng chứng, theo baseline §3 (`EV-<PC>-<nn>`). Cho phép thêm cả nguồn auditor (`EV-A1-..`) và các lần chạy theo cấp (`EV-E0-..`)."
+    },
+    "created_at": {
+      "$ref": "#/$defs/utc_timestamp",
+      "description": "Thời điểm bản ghi được tạo. UTC RFC 3339, kết thúc bằng `Z`."
+    },
+    "producer_principal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Principal đã thực hiện, ví dụ `worker-W6`, `auditor-A1`, `coordinator@session-...`."
+    },
+    "producer_role": {
+      "type": "string",
+      "enum": ["Worker", "Auditor", "Coordinator", "Owner"],
+      "description": "Vai trò trong agent_profile/protocol.md §1."
+    },
+    "review_type": {
+      "type": "string",
+      "enum": ["SELF_VALIDATION", "COORDINATOR_CHECK", "INDEPENDENT_AUDIT"],
+      "description": "SELF_VALIDATION không chứng minh independent review (protocol §9). Không bao giờ ghi 'independent audit passed' cho một lần tự kiểm."
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": ["E0", "E1", "E2", "E3", "E4"],
+      "description": "Cấp bằng chứng theo SRC-PLAN §14.2. Bắt buộc khi `result` không phải `NOT_RUN`."
+    },
+
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spec_sha256", "plan_sha256", "contract_hashes"],
+      "description": "Baseline mà kết luận được ghim vào. Kết luận chỉ có hiệu lực với đúng các byte này.",
+      "properties": {
+        "spec_sha256": { "$ref": "#/$defs/sha256_hex" },
+        "plan_sha256": { "$ref": "#/$defs/sha256_hex" },
+        "contract_versions": {
+          "type": "object",
+          "description": "Ánh xạ contract_id -> version.",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+          "propertyNames": { "type": "string", "pattern": "^CT-[a-z0-9-]+$" }
+        },
+        "contract_hashes": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Ánh xạ đường dẫn tương đối repo -> sha256 tại thời điểm chạy.",
+          "additionalProperties": { "$ref": "#/$defs/sha256_hex_or_null" },
+          "propertyNames": { "$ref": "#/$defs/repo_relative_path" }
+        },
+        "manifest_sha256": {
+          "$ref": "#/$defs/sha256_hex",
+          "description": "Hash của frozen-candidate manifest nếu lần chạy này gắn vào một candidate đã freeze (protocol §6)."
+        },
+        "candidate_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Epoch của frozen candidate, nếu có."
+        },
+        "implementation_revision": {
+          "type": ["string", "null"],
+          "description": "Revision của code nếu có. NULL ở giai đoạn Pre-code — chưa có code."
+        }
+      }
+    },
+
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "runtimes"],
+      "description": "Môi trường liên quan. Cấu hình đã che secrets; không bao giờ nhúng secret vào manifest.",
+      "properties": {
+        "os": { "type": "string", "minLength": 1 },
+        "runtimes": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Ánh xạ tên runtime/thư viện -> phiên bản, ví dụ {\"python\": \"3.12.3\", \"PyYAML\": \"6.0.1\"}.",
+          "additionalProperties": { "type": "string" }
+        },
+        "config_redacted": {
+          "type": "object",
+          "description": "Cấu hình liên quan ĐÃ che secrets.",
+          "additionalProperties": true
+        },
+        "provider": {
+          "type": ["string", "null"],
+          "description": "Nhà cung cấp AI dùng trong lần chạy này, hoặc null nếu không liên quan."
+        },
+        "model": { "type": ["string", "null"] },
+        "embedding_generation_id": {
+          "type": ["string", "null"],
+          "description": "Generation embedding đang active. Bắt buộc ghi khi kết luận phụ thuộc vector (I12)."
+        },
+        "network_access": {
+          "type": "boolean",
+          "description": "Lần chạy này có truy cập mạng ngoài hay không. Ở Pre-code luôn là false."
+        }
+      }
+    },
+
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenario_ids"],
+      "description": "Đầu vào của lần kiểm.",
+      "properties": {
+        "scenario_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^SC[0-9]{2,3}$" },
+          "uniqueItems": true,
+          "description": "Các scenario của acceptance/scenarios.yaml mà lần chạy này nói về. Mảng rỗng hợp lệ cho một lần lint toàn cục."
+        },
+        "requirement_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^REQ-[A-Za-z0-9._-]+$" },
+          "uniqueItems": true
+        },
+        "invariant_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^I[0-9]{2}$" },
+          "uniqueItems": true
+        },
+        "fixtures": {
+          "type": "array",
+          "description": "Fixture/dataset đã dùng, mỗi cái có hash tại thời điểm chạy.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "#/$defs/repo_relative_path" },
+              "sha256": { "$ref": "#/$defs/sha256_hex" },
+              "bytes": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "seed": {
+          "type": ["integer", "string", "null"],
+          "description": "Seed ngẫu nhiên nếu kết quả phụ thuộc nó."
+        },
+        "clock": {
+          "type": ["string", "null"],
+          "description": "Fake-clock đã dùng (RFC 3339) nếu lần chạy phụ thuộc thời gian."
+        },
+        "protocol_version": {
+          "type": ["string", "null"],
+          "description": "Phiên bản của protocol probe (ví dụ collector-probe, cli-acp-probe) nếu áp dụng."
+        }
+      }
+    },
+
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "started_at", "ended_at"],
+      "description": "Thực thi chính xác. Một trong hai: câu lệnh, hoặc thủ tục thủ công. Không được để trống cả hai khi result khác NOT_RUN — xem allOf ở cuối schema.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["command", "manual_procedure", "not_executed"],
+          "description": "`not_executed` chỉ hợp lệ cùng result NOT_RUN hoặc BLOCKED."
+        },
+        "command": {
+          "type": ["string", "null"],
+          "description": "Câu lệnh CHÍNH XÁC đã chạy, kể cả biến môi trường liên quan."
+        },
+        "working_directory": { "type": ["string", "null"] },
+        "manual_procedure": {
+          "type": ["string", "null"],
+          "description": "Thủ tục thủ công chính xác, đủ để người khác lặp lại."
+        },
+        "started_at": { "$ref": "#/$defs/utc_timestamp" },
+        "ended_at": { "$ref": "#/$defs/utc_timestamp" },
+        "exit_code": {
+          "type": ["integer", "null"],
+          "description": "Mã thoát; null cho thủ tục thủ công (protocol §9)."
+        },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "error_classification": {
+          "type": ["string", "null"],
+          "description": "Phân loại lỗi nếu có, ưu tiên một mã của contracts/errors.yaml."
+        }
+      }
+    },
+
+    "oracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement_vi"],
+      "description": "Kết quả mong đợi ĐỘC LẬP. Log đẹp hoặc câu trả lời của agent không phải oracle (SRC-PLAN §2).",
+      "properties": {
+        "statement_vi": { "type": "string", "minLength": 1 },
+        "expected": { "description": "Giá trị mong đợi, kiểu tùy oracle." },
+        "observed": { "description": "Giá trị quan sát được." }
+      }
+    },
+
+    "result": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "STALE", "NOT_APPLICABLE"],
+      "description": "SRC-PLAN §14.1. Không có ngày chạy và kết quả thật thì phải là NOT_RUN."
+    },
+    "not_applicable_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason_vi", "decision_ref"],
+      "description": "BẮT BUỘC khi result = NOT_APPLICABLE (SRC-PLAN §14.1). Không dùng để bỏ một AC khó.",
+      "properties": {
+        "reason_vi": { "type": "string", "minLength": 1 },
+        "decision_ref": {
+          "type": "string",
+          "pattern": "^(B[0-9]{2}|AMD-B[0-9]{2}|ADR-[0-9]{4}|PROV-PC[0-9]{2}-[0-9]{2}|R-[0-9]{2}|R4-[0-9]{2}|CR-PC[0-9]{2}-[0-9]{2})$",
+          "description": "Quyết định cho phép coi mục này là không áp dụng."
+        }
+      }
+    },
+    "blocked_reason": {
+      "type": ["string", "null"],
+      "description": "Bắt buộc về ngữ nghĩa khi result = BLOCKED: nêu đúng cái gì thiếu."
+    },
+    "stale_reason": {
+      "type": ["string", "null"],
+      "description": "Bắt buộc về ngữ nghĩa khi result = STALE: nêu thay đổi nào làm bằng chứng hết hiệu lực (SRC-PLAN §16)."
+    },
+
+    "artifacts": {
+      "type": "array",
+      "description": "Log đã che secrets, DB assertions, trace, screenshot, receipt. Mỗi artifact có hash. Mảng rỗng hợp lệ khi không có artifact (ví dụ NOT_RUN).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "kind"],
+        "properties": {
+          "path": { "$ref": "#/$defs/repo_relative_path" },
+          "sha256": { "$ref": "#/$defs/sha256_hex" },
+          "bytes": { "type": "integer", "minimum": 0 },
+          "kind": {
+            "type": "string",
+            "enum": ["log_redacted", "json_report", "db_assertions", "trace", "screenshot", "receipt", "other"]
+          },
+          "redaction_note_vi": { "type": "string" }
+        }
+      }
+    },
+
+    "limitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mock_or_live", "not_checked_vi"],
+      "description": "Giới hạn phải được nêu, không phải suy ra. Đây là chỗ chặn việc nâng nhãn bằng suy diễn.",
+      "properties": {
+        "mock_or_live": {
+          "type": "string",
+          "enum": ["mock", "live", "mixed", "none"],
+          "description": "`mock` không chứng minh dịch vụ thật hoạt động (SRC-PLAN §14.2)."
+        },
+        "sample_size": { "type": ["integer", "null"], "minimum": 0 },
+        "not_checked_vi": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Những gì lần chạy này KHÔNG kiểm. Ít nhất một mục — mọi lần chạy đều có giới hạn."
+        },
+        "uncertainty_vi": { "type": "string" },
+        "unresolved_issue_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(CR-PC[0-9]{2}-[0-9]{2}|F-A1R[0-9]-[0-9]{2}|PROV-PC[0-9]{2}-[0-9]{2}|B[0-9]{2}|REQ-OQ[0-9]{2}|REQ-A[0-9])$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+
+    "invalidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Điều kiện làm bằng chứng này STALE (SRC-PLAN §16). Nếu vắng, áp quy tắc mặc định của precode/gates.yaml §invalidation_rules.",
+      "properties": {
+        "invalidated_by_paths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repo_relative_path" },
+          "uniqueItems": true,
+          "description": "Đổi bất kỳ file nào trong danh sách này làm bản ghi STALE."
+        },
+        "invalidated_by_rule_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^INV-[0-9]{2}$" },
+          "uniqueItems": true,
+          "description": "Quy tắc invalidation của precode/gates.yaml."
+        }
+      }
+    },
+
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Nhãn tuyên bố mà bản ghi này CHỐNG ĐỠ. Không nâng nhãn bằng suy diễn (SRC-PLAN §2).",
+      "properties": {
+        "supports_label": {
+          "type": "string",
+          "enum": [
+            "DRAFT_FOR_REVIEW",
+            "CONTRACT_READY",
+            "IMPLEMENTATION_VERIFIED",
+            "INTEGRATION_VERIFIED",
+            "LIVE_FEASIBILITY_VERIFIED",
+            "PRODUCT_ACCEPTED"
+          ]
+        },
+        "scope_vi": { "type": "string" },
+        "not_established_vi": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Những gì bản ghi này KHÔNG thiết lập."
+        }
+      }
+    }
+  },
+
+  "allOf": [
+    {
+      "if": { "properties": { "result": { "const": "NOT_APPLICABLE" } }, "required": ["result"] },
+      "then": { "required": ["not_applicable_reason"] }
+    },
+    {
+      "if": { "properties": { "result": { "const": "BLOCKED" } }, "required": ["result"] },
+      "then": {
+        "required": ["blocked_reason"],
+        "properties": { "blocked_reason": { "type": "string", "minLength": 1 } }
+      }
+    },
+    {
+      "if": { "properties": { "result": { "const": "STALE" } }, "required": ["result"] },
+      "then": {
+        "required": ["stale_reason"],
+        "properties": { "stale_reason": { "type": "string", "minLength": 1 } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "result": { "enum": ["PASS", "FAIL"] } },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["evidence_level", "oracle"],
+        "properties": {
+          "execution": {
+            "properties": { "kind": { "enum": ["command", "manual_procedure"] } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution": { "properties": { "kind": { "const": "command" } }, "required": ["kind"] }
+        },
+        "required": ["execution"]
+      },
+      "then": {
+        "properties": {
+          "execution": {
+            "required": ["command"],
+            "properties": { "command": { "type": "string", "minLength": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "execution": {
+            "properties": { "kind": { "const": "manual_procedure" } },
+            "required": ["kind"]
+          }
+        },
+        "required": ["execution"]
+      },
+      "then": {
+        "properties": {
+          "execution": {
+            "required": ["manual_procedure"],
+            "properties": { "manual_procedure": { "type": "string", "minLength": 1 } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "review_type": { "const": "SELF_VALIDATION" } },
+        "required": ["review_type"]
+      },
+      "then": {
+        "properties": {
+          "claim": {
+            "properties": {
+              "supports_label": {
+                "enum": ["DRAFT_FOR_REVIEW", "CONTRACT_READY"],
+                "description": "Tự kiểm không chống đỡ được nhãn từ IMPLEMENTATION_VERIFIED trở lên (protocol §9)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+
+  "$defs": {
+    "utc_timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{3})?Z$",
+      "description": "UTC RFC 3339, kết thúc bằng `Z`; mili giây tùy chọn cho evidence (dữ liệu nghiệp vụ thì BẮT BUỘC mili giây theo AMD-B08)."
+    },
+    "sha256_hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 chữ thường, 64 ký tự hex (protocol §6)."
+    },
+    "sha256_hex_or_null": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "repo_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^/\\\\][^\\u0000-\\u001f|\\r\\n\\t]*$",
+      "description": "Đường dẫn tương đối gốc repo. Không tuyệt đối, không chứa `|`, CR, LF, TAB hay ký tự điều khiển (protocol §6 bước 1)."
+    }
+  }
+}

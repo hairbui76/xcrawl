@@ -1,0 +1,153 @@
+{
+  "fixture_id": "FX-TG-M",
+  "title": "Ba run empty / dừng sớm / thất bại → ba câu trạng thái PHÂN BIỆT",
+  "purpose": "REQ-AC15 + REQ-S8.3-01..03: ba trạng thái phải phân biệt được, và không cái nào được hiển thị là 'không có nghiên cứu mới'.",
+  "scenario_refs": [
+    "SC15"
+  ],
+  "invariant_refs": [
+    "I13"
+  ],
+  "decision_refs": [
+    "B02"
+  ],
+  "requirement_refs": [
+    "REQ-AC15",
+    "REQ-S8.3-01",
+    "REQ-S8.3-02",
+    "REQ-S8.3-03",
+    "REQ-D57"
+  ],
+  "source_refs": [
+    "SRC-SPEC §8.3",
+    "contracts/state/run.yaml §invariants_owned I13",
+    "contracts/ui/screens.yaml §§ global_rules → run_status_labels"
+  ],
+  "fixture_format_version": "0.1.0",
+  "owner_id": "01J0WNER100000000000000000",
+  "contract_refs": [
+    "contracts/ui/screens.yaml",
+    "contracts/telegram/commands.yaml",
+    "contracts/telegram/delivery.md",
+    "contracts/schemas/saved-snapshot.schema.json",
+    "contracts/state/delivery.yaml",
+    "contracts/retry-policy.yaml",
+    "contracts/errors.yaml"
+  ],
+  "claim_ceiling": "DRAFT_FOR_REVIEW",
+  "evidence_status": "NOT_RUN",
+  "given": {
+    "rows": {
+      "run": [
+        {
+          "id": "01JRVNA0000000000000000000",
+          "status": "completed",
+          "outcome": "empty",
+          "stop_reason": null,
+          "_note": "Thu thập xong, không bài nào khớp tag."
+        },
+        {
+          "id": "01JRVNB0000000000000000000",
+          "status": "completed",
+          "outcome": "partial",
+          "stop_reason": "limit_reached",
+          "_note": "Đạt giới hạn mỗi đợt."
+        },
+        {
+          "id": "01JRVNC0000000000000000000",
+          "status": "failed",
+          "outcome": "failed",
+          "stop_reason": "source_blocked",
+          "_note": "Nguồn không truy cập được."
+        }
+      ],
+      "telegram_link": [
+        {
+          "id": "01JTG11NK10000000000000000",
+          "state": "active",
+          "generation": 1
+        }
+      ]
+    }
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-09-07T02:00:00.000Z",
+      "actor": "EXT-telegram-api",
+      "operation": "telegram.receive_update",
+      "performed_by": "MOD-telegram-adapter",
+      "message_text": "/status"
+    },
+    {
+      "seq": 2,
+      "at": "2026-09-07T02:00:00.200Z",
+      "actor": "MOD-telegram-adapter",
+      "operation": "run.list",
+      "performed_by": "MOD-job-service",
+      "description": "Read-only; không mutation nào (ST-01)."
+    },
+    {
+      "seq": 3,
+      "at": "2026-09-07T02:05:00.000Z",
+      "actor": "MOD-web-ui",
+      "operation": "run.list",
+      "performed_by": "MOD-job-service",
+      "description": "Cùng ba run xem trên màn hình Runs."
+    }
+  ],
+  "expected": {
+    "telegram_texts": [
+      {
+        "run_id": "01JRVNA0000000000000000000",
+        "label_id": "no_matching_content",
+        "text_vi": "Đợt gần nhất: không có nội dung phù hợp (đã thu thập xong, không bài nào khớp tag)."
+      },
+      {
+        "run_id": "01JRVNB0000000000000000000",
+        "label_id": "stopped_early",
+        "text_vi": "Đợt gần nhất: dừng sớm — đạt giới hạn mỗi đợt."
+      },
+      {
+        "run_id": "01JRVNC0000000000000000000",
+        "label_id": "run_failed",
+        "text_vi": "Đợt gần nhất: thất bại — nguồn không truy cập được."
+      }
+    ],
+    "ui_labels": [
+      {
+        "run_id": "01JRVNA0000000000000000000",
+        "label_vi": "Không có nội dung phù hợp"
+      },
+      {
+        "run_id": "01JRVNB0000000000000000000",
+        "label_vi": "Đợt dừng sớm"
+      },
+      {
+        "run_id": "01JRVNC0000000000000000000",
+        "label_vi": "Đợt thất bại"
+      }
+    ],
+    "counts": {
+      "distinct_labels": 3,
+      "domain_rows_changed": 0
+    },
+    "outbound_call_counts": {
+      "telegram.sendMessage": 1,
+      "telegram.answerCallbackQuery": 0,
+      "note": "Một tin trả lời /status."
+    },
+    "forbidden_string_check": {
+      "string_vi": "Không có nghiên cứu mới",
+      "expected_occurrences": 0,
+      "scope_vi": "Toàn bộ văn bản Telegram VÀ toàn bộ nhãn UI."
+    },
+    "empty_period_note_vi": "Run R1 KHÔNG sinh digest (REQ-D57) nhưng vẫn có coverage record và vẫn hiện ở Runs."
+  },
+  "forbidden_effects": [
+    "Gộp hai trong ba trạng thái vào một câu.",
+    "Dùng cụm 'Không có nghiên cứu mới' ở bất kỳ đâu.",
+    "Để /status gây mutation (ST-01).",
+    "Gửi digest cho run R1."
+  ]
+}
