@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -42,7 +43,7 @@ from sqlalchemy import Engine, text
 from server.app.db import create_sqlite_engine
 from server.app.identity import service
 from server.app.identity.normalization import IdScheme
-from server.app.identity.repository import IdentityRepository
+from server.app.identity.repository import IdentityRepository, new_ulid
 from server.app.identity.service import ALLOWED_CALLERS, Identifier, IdentityError
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -1242,21 +1243,326 @@ def test_fixture_a_first_announced_literal_null(engine: Engine) -> None:
     assert result.moved_counts["first_announced"] == expected["first_announced"]
 
 
-@pytest.mark.xfail(
-    reason=(
-        "preserved_counts.published_report_item needs the `report` and `report_item` tables, "
-        "owned by the reporting card (not in Phase 1 M1). CR-TC-IDENTITY-03."
-    ),
-    strict=True,
-)
-def test_fixture_i_preserved_published_report_items(engine: Engine) -> None:
-    load_given(engine, FIXTURE_I)
-    result = merge_fixture_i(engine)
+# --- fixture (i) end to end: a real published report survives a real merge ---------------------
+#
+# This was an xfail whose reason said the `report` and `report_item` tables did not exist. They
+# do now (`0010_tc_report_coverage_publish_cas`, `server/app/report/publisher.py`), so the claim
+# is measured instead of deferred: the report is published through `report.publish` itself --
+# not by INSERTing rows that look like one -- and the merge then runs over the two works that
+# period announced. Only a report a publisher actually wrote can prove a merge leaves it alone.
+
+REPORT_TAG_ID = "01JTAGPFD00000000000000000"
+REPORT_TCV = "01JTCV10000000000000000000"
+REPORT_GENERATION_ID = "01JEMBGEN10000000000000000"
+REPORT_MODEL_NAME = "multilingual-e5-small"
+REPORT_MODEL_VERSION = "1.0.0"
+REPORT_DIMENSION = 4
+
+
+def _upgrade_to_head(database: Path) -> None:
+    """``alembic upgrade head`` -- every card's migrations, the way a deployment runs them."""
+    previous = os.environ.get("RR_DATABASE_URL")
+    os.environ["RR_DATABASE_URL"] = str(database)
+    try:
+        config = Config(str(REPO_ROOT / "server" / "alembic.ini"))
+        config.set_main_option("script_location", str(REPO_ROOT / "server" / "migrations"))
+        command.upgrade(config, "head")
+    finally:
+        if previous is None:
+            os.environ.pop("RR_DATABASE_URL", None)
+        else:
+            os.environ["RR_DATABASE_URL"] = previous
+
+
+def _report_vector() -> Any:
+    from server.app.embedding.generation import GenerationFingerprint, Normalization, Vector
+
+    fingerprint = GenerationFingerprint(
+        generation_id=REPORT_GENERATION_ID,
+        model_name=REPORT_MODEL_NAME,
+        model_version=REPORT_MODEL_VERSION,
+        dimension=REPORT_DIMENSION,
+        normalization=Normalization.L2,
+    )
+    return Vector(fingerprint=fingerprint, values=(1.0, 0.0, 0.0, 0.0))
+
+
+class _FakeTagPort:
+    """``MOD-tag-service``'s freeze contract, faked as ``TC-report-coverage-publish-cas`` fakes it.
+
+    No card creates the ``tag`` / ``tag_config_version`` tables (``CR-TC-REPORT-01``), so there is
+    no implementation to integrate with. What matters to a merge test is only that the freeze is
+    idempotent on the build id, which is what the publish CAS depends on.
+    """
+
+    def __init__(self, version: Any) -> None:
+        self.versions: dict[str, Any] = {version.id: version}
+        self.current = version
+        self.frozen: dict[str, Any] = {}
+
+    def get_active_config_version(self, owner_id: str) -> Any:
+        return self.current
+
+    def config_version(self, *, owner_id: str, tag_config_version_id: str) -> Any:
+        return self.versions[tag_config_version_id]
+
+    def freeze_config_version(
+        self, *, owner_id: str, report_build_id: str, expected_tag_config_version_id: str
+    ) -> Any:
+        if report_build_id not in self.frozen:
+            self.frozen[report_build_id] = self.current
+        return self.frozen[report_build_id]
+
+
+def _seed_reportable_work(
+    engine: Engine,
+    *,
+    work_id: str,
+    sequence: int,
+    discovered_at: str,
+    canonical_doi: str | None,
+    canonical_arxiv_id: str | None,
+    label_text: str,
+) -> None:
+    """A work the report builder can select: a canonical id, a valid summary, and a label vector."""
+    analysis_id = new_ulid()
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO work (id, owner_id, canonical_doi, canonical_arxiv_id, title,"
+                " paper_url, code_url, current_work_version_id, metadata_state, identity_state,"
+                " merged_into_work_id, first_discovered_at, ingest_sequence, content_state,"
+                " created_at)"
+                " VALUES (:id, :owner, :doi, :arxiv, 'w', NULL, NULL, NULL, 'partial', 'active',"
+                " NULL, :at, :seq, 'present', :at)"
+            ),
+            {
+                "id": work_id,
+                "owner": OWNER_I,
+                "doi": canonical_doi,
+                "arxiv": canonical_arxiv_id,
+                "at": discovered_at,
+                "seq": sequence,
+            },
+        )
+        connection.execute(
+            text(
+                "INSERT INTO analysis (id, owner_id, analysis_generation_id, target_kind,"
+                " target_work_id, target_post_id, task_type, source_fingerprint, prompt_version,"
+                " schema_version, generation_number, status, payload, payload_hash,"
+                " evidence_level, provider_name, model_name, usage_tokens_in, usage_tokens_out,"
+                " analyzed_at, accepted_from_attempt_id, moved_by_merge_id)"
+                " VALUES (:id, :owner, :gen, 'work', :work, NULL, 'summary', 'fp', '1.0.0',"
+                " '0.1.0', 1, 'valid', '{}', :hash, 'abstract', 'anthropic', 'm', NULL, NULL,"
+                " :at, 'attempt', NULL)"
+            ),
+            {
+                "id": analysis_id,
+                "owner": OWNER_I,
+                "gen": new_ulid(),
+                "work": work_id,
+                "hash": "sha256:" + "0" * 64,
+                "at": "2026-09-02T01:30:00.000Z",
+            },
+        )
+        connection.execute(
+            text(
+                "INSERT INTO work_label (id, owner_id, target_kind, target_work_id,"
+                " target_post_id, label_text, analysis_id, embedding_generation_id, vector,"
+                " created_at) VALUES (:id, :owner, 'work', :work, NULL, :label, :analysis,"
+                " :generation, :vector, '2026-09-02T01:30:00.000Z')"
+            ),
+            {
+                "id": new_ulid(),
+                "owner": OWNER_I,
+                "work": work_id,
+                "label": label_text,
+                "analysis": analysis_id,
+                "generation": REPORT_GENERATION_ID,
+                "vector": _report_vector().to_blob(),
+            },
+        )
+
+
+@pytest.fixture
+def published_engine(tmp_path: Path) -> Iterator[Engine]:
+    """A database at ``head`` holding ONE published report that announced the two works of (i).
+
+    The report is produced by the real path -- build the snapshot, open the build, publish -- so
+    the rows this test protects are rows a publisher wrote. Both works are announced in that one
+    period, which is the shape fixture (i) asserts against the merge: two published
+    ``report_item`` rows and two ``first_announced_ledger`` rows.
+    """
+    from server.app.embedding.generation import DeterministicHashEncoder, Normalization
+    from server.app.embedding.service import EmbeddingService
+    from server.app.report.builder import SelectionSettings, TagConfigVersion, build_report
+    from server.app.report.publisher import PublishContext, publish_report, record_build
+
+    database = tmp_path / "published.db"
+    _upgrade_to_head(database)
+    engine = create_sqlite_engine(database)
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO owner (id, singleton_guard, display_name, timezone_iana,"
+                    " created_at) VALUES (:id, 1, 'owner', 'Asia/Ho_Chi_Minh',"
+                    " '2026-09-01T00:00:00.000Z')"
+                ),
+                {"id": OWNER_I},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO embedding_generation (id, owner_id, model_name, model_version,"
+                    " dimension, normalization, state, expected_vector_count, built_vector_count,"
+                    " created_at, activated_at) VALUES (:id, :owner, :name, :version, :dim,"
+                    " 'l2', 'active', 8, 8, '2026-09-01T02:00:00.000Z',"
+                    " '2026-09-01T02:30:00.000Z')"
+                ),
+                {
+                    "id": REPORT_GENERATION_ID,
+                    "owner": OWNER_I,
+                    "name": REPORT_MODEL_NAME,
+                    "version": REPORT_MODEL_VERSION,
+                    "dim": REPORT_DIMENSION,
+                },
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO tag_vector (id, owner_id, subject_type, subject_id,"
+                    " embedding_generation_id, vector)"
+                    " VALUES (:id, :owner, 'tag', :subject, :generation, :vector)"
+                ),
+                {
+                    "id": new_ulid(),
+                    "owner": OWNER_I,
+                    "subject": REPORT_TAG_ID,
+                    "generation": REPORT_GENERATION_ID,
+                    "vector": _report_vector().to_blob(),
+                },
+            )
+
+        # The two works of fixture (i): A carries the DOI and therefore wins the merge, B was
+        # discovered first and therefore holds the earlier first-announcement.
+        _seed_reportable_work(
+            engine,
+            work_id=WA_I,
+            sequence=3001,
+            discovered_at="2026-09-02T01:00:00.000Z",
+            canonical_doi="10.1000/xyz",
+            canonical_arxiv_id=None,
+            label_text="protein structure",
+        )
+        _seed_reportable_work(
+            engine,
+            work_id=WB_I,
+            sequence=3000,
+            discovered_at="2026-09-01T01:00:00.000Z",
+            canonical_doi=None,
+            canonical_arxiv_id="2501.01234",
+            label_text="protein folding",
+        )
+
+        version = TagConfigVersion(
+            id=REPORT_TCV,
+            sequence=1,
+            content_hash="sha256:" + "1" * 64,
+            payload={
+                "tags": [
+                    {"id": REPORT_TAG_ID, "text": "protein folding", "similarity_threshold": None}
+                ],
+                "tag_aliases": [],
+                "tag_exclusions": [],
+            },
+            created_at="2026-09-01T02:00:00.000Z",
+        )
+        tag_port = _FakeTagPort(version)
+        context = PublishContext(
+            engine=engine,
+            tag_port=tag_port,
+            embedding_port=EmbeddingService(
+                engine,
+                encoder=DeterministicHashEncoder(
+                    REPORT_MODEL_NAME, REPORT_MODEL_VERSION, REPORT_DIMENSION, Normalization.L2
+                ),
+            ),
+        )
+        snapshot = build_report(
+            engine,
+            owner_id=OWNER_I,
+            # 36 characters: the report table CHECKs a uuid shape for the build id.
+            report_build_id=str(uuid.uuid4()),
+            tag_port=tag_port,
+            embedding_port=context.embedding_port,
+            settings=SelectionSettings(),
+        )
+        record_build(context, snapshot, caller_module="MOD-job-service")
+        publish_report(context, snapshot)
+        yield engine
+    finally:
+        engine.dispose()
+
+
+def test_fixture_i_preserved_published_report_items(published_engine: Engine) -> None:
+    """I17 / I05 against a report that ``report.publish`` really wrote.
+
+    Fixture (i) pins ``preserved_counts.published_report_item = 2`` and "``report_item`` rows
+    updated: 0". Both are measured here on real rows: the period announced both works, the merge
+    then joins those works, and every published item must come out byte-for-byte identical --
+    including its ``target_key``, which still names the work that lost. A published period is a
+    statement about what was true that day; a merge that rewrote it would make the archive
+    disagree with what the owner read.
+    """
+    published = rows_of(published_engine, "report_item")
+    assert len(published) == 2, published
+    report_ids = {str(row["report_id"]) for row in published}
+    assert len(report_ids) == 1
+    assert count_of(published_engine, "report", "status = 'published'") == 1
+    reports_before = rows_of(published_engine, "report")
+
+    result = merge_fixture_i(published_engine)
+
     expected = FIXTURE_I["expected"]["after_event_2"]["rows"]["identity_merge_audit"][0]
     assert (
         result.preserved_counts["published_report_item"]
         == expected["preserved_counts"]["published_report_item"]
+        == 2
     )
+    # Byte-for-byte: every column of every published item, and the report rows around them.
+    assert rows_of(published_engine, "report_item") == published
+    assert rows_of(published_engine, "report") == reports_before
+    # One published item still points at the losing work. That is the archive being honest.
+    assert {str(row["target_key"]) for row in published} == {f"work:{WA_I}", f"work:{WB_I}"}
+    assert row_by_id(published_engine, "work", WB_I)["identity_state"] == "merged"
+
+
+def test_first_announced_after_a_real_publish_inherits_the_earlier_date(
+    published_engine: Engine,
+) -> None:
+    """§8.3 over ledger rows written by the publish transaction, not by a test INSERT.
+
+    ``report.publish`` wrote one ``first_announced_ledger`` row per new discovery; the merge then
+    has to leave exactly one row in force for the winner, carrying the EARLIER of the two dates,
+    with the other kept as superseded evidence (I07).
+    """
+    before = {
+        str(row["canonical_work_id"]): str(row["first_announced_at"])
+        for row in rows_of(published_engine, "first_announced_ledger")
+    }
+    assert set(before) == {WA_I, WB_I}
+
+    result = merge_fixture_i(published_engine)
+    assert result.moved_counts["first_announced"] == 2
+
+    in_force = [
+        row
+        for row in rows_of(published_engine, "first_announced_ledger")
+        if row["superseded_by_merge_id"] is None
+    ]
+    assert len(in_force) == 1
+    assert str(in_force[0]["canonical_work_id"]) == result.winner_work_id == WA_I
+    assert str(in_force[0]["first_announced_at"]) == min(before.values())
+    assert str(in_force[0]["merge_audit_id"]) == result.merge_id
 
 
 # --- default deny (SC49) and the HTTP surface ---------------------------------------------------

@@ -41,6 +41,10 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > ký** `REQ-A5`) và `OD-20260908-08` (authority `AUTH-OWNER-20260908-09`: Owner **đích thân ký** `REQ-A5`
 > cho Anthropic, chấp nhận tường minh bảo đảm `TC-A5-01`). Hai file đó là **bản ghi song hành theo quy ước**;
 > hiệu lực thực chất nằm ở `decision-register.md` §8.14.3 và §8.15.1.
+> Vòng mười ở `precode/owner-decisions-10.md` — `OD-20260908-10` (authority `AUTH-OWNER-20260908-11`,
+> 2026-09-08): ba câu hỏi do card Giai đoạn 5 nêu — lưu target **chưa phân tích** kèm nhãn cố định (`B16`
+> **không** bị nới), giữ `/save <id>` làm trigger tạm, và nhắc ba lệnh **chỉ** cho chat đã liên kết (chat lạ
+> **vẫn im lặng**).
 > Vòng chín ở `precode/owner-decisions-09.md` — `OD-20260908-09` (authority `AUTH-OWNER-20260908-10`,
 > 2026-09-08): **thay** điều kiện khởi động Giai đoạn 5 của vòng năm (từ *"năm dữ kiện land"* — chưa bao giờ
 > thỏa — thành **khởi động có phạm vi, chỉ văn bản thuần**). Nó **không** giải ba dữ kiện Telegram còn lại.

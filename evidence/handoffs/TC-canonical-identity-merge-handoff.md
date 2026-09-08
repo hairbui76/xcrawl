@@ -476,3 +476,89 @@ phẩm, migration hay oracle của fixture; `EV-E1-02-tc-canonical-identity-merg
 hành vi đã đo. Số đếm mới ghi ở bảng trên.
 
 `lease_released_at`: 2026-09-07T15:19Z. Sau dòng này tôi không ghi thêm file nào.
+
+---
+
+# ADDENDUM — PKT-TC-IDENTITY-FIX3 (`F-A3-P4-03`: một xfail sống lâu hơn lý do của nó)
+
+| Trường | Giá trị |
+| --- | --- |
+| `packet_id` | `PKT-TC-IDENTITY-FIX3` · authority `AUTH-COORD-TC-IDENTITY-FIX3` · lease `LEASE-TC-IDENTITY-e3` trên `tests/integration/test_identity_merge_audit.py`, addendum này và manifest |
+| worker principal | `worker-WM` · **status `DONE`** · completion_claim **không đổi**: `IMPLEMENTATION_VERIFIED` |
+| next actor | `Coordinator` · `lease_released_at` 2026-09-08T01:33Z |
+
+## C1. Cái gì sai và sửa thế nào
+
+`test_fixture_i_preserved_published_report_items` vẫn mang lý do *"needs the `report` and
+`report_item` tables, owned by the reporting card (not in Phase 1 M1)"*. Hai bảng đó **đã tồn
+tại** (`0010_tc_report_coverage_publish_cas`, `server/app/report/publisher.py`). Marker
+`strict=True, run=True` nên không có gì bị giấu — test **thật sự** vẫn fail — nhưng fail vì một lý
+do mà văn bản của nó không còn mô tả. Đó là lỗi: một `xfail` là một lời hứa sẽ quay lại, và lời
+hứa này đã đến hạn.
+
+Nay nó **chạy thật**, và chạy qua đường thật:
+
+1. DB ở `alembic upgrade head` (toàn bộ migration của mọi card, đúng thứ tự một deployment chạy).
+2. Hai work của fixture (i) được gieo kèm summary + label vector: `A` mang DOI, `B` mang arXiv ID
+   và được phát hiện sớm hơn — đúng hình dạng fixture pin.
+3. Một kỳ báo cáo được **phát hành bằng `report.publish`** (`build_report` → `record_build` →
+   `publish_report`), không phải bằng `INSERT` mô phỏng. Chỉ một report do publisher thật ghi mới
+   chứng minh được rằng merge để yên nó.
+4. Merge chạy trên đúng hai work đó.
+
+Ba khẳng định, tất cả đo được:
+
+* `preserved_counts.published_report_item` **= 2** — đúng con số fixture (i) pin.
+* Mọi hàng `report_item` và `report` **giống nhau từng cột** trước và sau merge, **kể cả**
+  `target_key` vẫn trỏ work **thua**. Đó không phải dữ liệu cũ: kỳ đã publish là phát biểu về
+  ngày hôm đó (I05, I17). Một merge viết lại nó sẽ làm kho lưu trữ mâu thuẫn với thứ owner đã đọc.
+* Test thứ hai (`test_first_announced_after_a_real_publish_inherits_the_earlier_date`) chạy §8.3
+  trên hàng `first_announced_ledger` **do chính transaction publish ghi**: sau merge còn đúng
+  **một** hàng có hiệu lực, mang ngày **sớm hơn**, hàng kia nhận `superseded_by_merge_id`;
+  `moved_counts.first_announced` = 2 (I07).
+
+Trước đây khối tương ứng chỉ nạp `given.rows` của fixture bằng loader — nay cả `report_item` lẫn
+ledger đều là sản phẩm của code sản phẩm. `CR-TC-IDENTITY-03` (§6) do đó **ĐÓNG**.
+
+## C2. `xfail` còn lại — đã rà, không lỗi thời
+
+Chỉ còn **một**: `test_fixture_a_first_announced_literal_null` (`strict=True`, `run=True`). Lý do
+của nó nêu một **hợp đồng**, không nêu một card chưa tồn tại: fixture (a) vẫn khai
+`moved_counts.first_announced = null` trong khi `contracts/reporting/time-and-tags.md` §8.3 đã
+thay bằng một con số. Không card nào đóng được nó — chỉ một lần cập nhật fixture qua change
+control (`CR-TC-IDENTITY-02`) mới đóng. Giữ nguyên, và giữ `strict=True` để ngày fixture được sửa
+thì test này **fail** và bắt người ta gỡ marker.
+
+Không có `skip` nào trong hai file test của card.
+
+## C3. Hash và kết quả
+
+| Trường | Giá trị |
+| --- | --- |
+| `tests/integration/test_identity_merge_audit.py` **trước** | `4c8c957d7cfd8a42b30d43beb28102487b148216e02d851adef28bf6e3b68130` (67 718 B) |
+| `tests/integration/test_identity_merge_audit.py` **sau** | `30f1b1818ad0667b7e54237fbea8287a9e0995976620c2a53fae5e4bc22c50eb` (80 791 B) |
+| Test của card | **119 passed, 1 xfailed, 0 failed** (trước: 117 passed / 2 xfailed) · 01:29:04Z→01:29:16Z |
+| Toàn bộ suite | **1 032 passed, 4 xfailed, 1 failed** — lỗi duy nhất **không phải của card này**, xem C4 |
+| `ruff check .` · `ruff format` · `mypy` | exit 0 · sạch · "no issues found in 87 source files" |
+
+## C4. Một file đang đỏ, không phải của tôi
+
+`tests/integration/test_pending_survives_cursor.py::test_fixture_e_the_late_discovery_is_still_a_new_discovery`
+(card `TC-backfill-pending-ledger`) fail với **`[XPASS(strict)] CR-TC-BACKFILL-09`**: một
+`xfail(strict=True)` của họ nay **đậu**, nên marker biến nó thành lỗi. Cùng đúng một lớp với
+`F-A3-P4-03` mà addendum này sửa, chỉ ở hướng ngược lại. Nó chạy trên
+`server/app/report/publisher.py` — file tôi **không** chạm — và fail y hệt khi chạy riêng, tức
+không do thay đổi của tôi. Tôi **không sửa**: ngoài lease. Chuyển Coordinator.
+
+## C5. Manifest
+
+* **Mới:** `evidence/runs/TC-canonical-identity-merge-E1-20260908T012916Z.json`
+  (`EV-E1-03-tc-canonical-identity-merge`, 14 448 B, `result: PASS`), validate với
+  `evidence/manifest.schema.json` → **0 lỗi**. Có `invalidation.invalidated_by_paths` để lần sau
+  không phải đoán bản ghi này hết hiệu lực khi file nào đổi — trong đó có
+  `server/app/report/publisher.py`, vì kết luận nay phụ thuộc vào code của card báo cáo.
+* **Cũ → STALE:** `…-E1-20260907T102504Z.json` và `…-E1-20260907T111124Z.json` đổi
+  `result` sang `STALE` kèm `stale_reason` trỏ tới bản kế nhiệm. Số đếm và danh sách xfail của
+  chúng không còn mô tả lần chạy hiện hành; nội dung còn lại giữ nguyên để đọc lại được lịch sử.
+
+`lease_released_at`: 2026-09-08T01:33Z. Sau dòng này tôi không ghi thêm file nào.

@@ -187,7 +187,8 @@
     "expected": "29 test; mỗi oracle ở trên đúng; đúng 1 test xfail (strict, run) trỏ tới TC-backup-restore-drill.",
     "observed": "29 test: 28 pass, 1 xfail (strict, run=True), 0 fail, 0 error, exit code 0. Toàn bộ suite của repo: 836 test, 0 fail, 0 error, 9 skipped/xfail, exit code 0. alembic get_heads() = ['0009_tc_telegram_unknown_delivery'] (đúng MỘT head); ruff check + ruff format sạch trên write set; mypy --strict 'Success: no issues found in 49 source files'. SG-HASH: 30/30 file đã pin khớp, 0 drift."
   },
-  "result": "PASS",
+  "result": "STALE",
+  "stale_reason": "Superseded by EV-E1-03-tc-telegram-unknown-delivery (evidence/runs/TC-telegram-unknown-delivery-E1-20260908T004909Z.json) under PKT-TC-DELIVERY-FIX2. Bản ghi này chạy trên một cây làm việc trong đó `report` và `run` KHÔNG tồn tại và test dựng bảng thế chỗ; PKT-TC-REPORT và PKT-TC-SCHEDULER đã land cả hai bảng thật (revision 0010), khiến setup cũ vi phạm schema (CR-TC-REPORT-09, 18 setup error). Hai file test đã đổi byte. Quy tắc STALE đọc BYTE.",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "mock",

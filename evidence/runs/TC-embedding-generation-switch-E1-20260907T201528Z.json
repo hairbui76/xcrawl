@@ -157,7 +157,7 @@
       "density_arithmetic": "NOT_RUN — REQ-OQ08/REQ-A4, MOD-report-service, card §1 non-goal"
     }
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "mock",
@@ -217,5 +217,6 @@
       "KHÔNG thiết lập hành vi dưới lỗi lưu trữ thật (E2 chưa chạy) hay dưới tranh chấp đồng thời thật.",
       "KHÔNG phải independent audit: review_type là SELF_VALIDATION."
     ]
-  }
+  },
+  "stale_reason": "Superseded by evidence/runs/TC-embedding-generation-switch-E1-20260908T004611Z.json under PKT-TC-EMBED-FIX2. Two Coordinator rulings changed the bytes this record pins: CR-TC-REPORT-04 (cosine now rounds half-up per contracts/reporting/selection.md §3, not Python's half-to-even) and CR-TC-REPORT-08 (the publish-guard test was re-pointed from the non-existent server.app.report.service to server.app.report.publisher.publish_report and made real, so this record's 'xfail / ordering NOT established' statement is no longer true). generation.py and both test files changed (INV-06)."
 }

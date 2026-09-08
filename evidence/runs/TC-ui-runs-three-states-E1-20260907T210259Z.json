@@ -1,0 +1,260 @@
+{
+    "schema_version": "0.1.0",
+    "evidence_id": "EV-E1-10-tc-ui-runs-three-states",
+    "created_at": "2026-09-07T21:02:59Z",
+    "producer_principal": "worker-W4C",
+    "producer_role": "Worker",
+    "review_type": "SELF_VALIDATION",
+    "evidence_level": "E1",
+    "baseline": {
+        "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+        "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+        "contract_hashes": {
+            "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+            "precode/baseline.json": "52af62c8b11e6939a9a34798bd71b4a4e688d8ed85d9c579ee1858ed341037e9",
+            "precode/decision-register.md": "b26cf51a0d7c73661ab465e5a157aaad7a9ceb6f013926abd5117f6966764a7e",
+            "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+            "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+            "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+            "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+            "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+            "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+            "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+            "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+            "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807",
+            "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+            "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+            "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+            "precode/adr/ADR-0003-delivery-unknown-state.md": "567828c11049d26993cbeee0d0bd6c157d9938263ec69c5a05fa045da3ceb0e3",
+            "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+            "acceptance/fixtures/collection/e-limit-reached-stop.json": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+            "acceptance/fixtures/collection/c-challenge-mid-batch.json": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+            "acceptance/fixtures/reporting/d-empty-period-coverage-only.json": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+            "acceptance/fixtures/telegram/m-three-run-states-distinct-text.json": "950b336ba3eb0dad18287ec273430235d8e125278fa332cabece5d7e19af33e2",
+            "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
+            "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+            "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+            "agent-tasks/TC-ui-runs-three-states.md": "67f0f5d48f0c071ca8fa90724a18b038f1a311607a03508a748fad141e7e8931",
+            "acceptance/scenarios.yaml": "8d36036e865df1764caae3ed778e457d44c4fcf5ffab5d222b16ade6d9acea43",
+            "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+            "web/src/generated/openapi.d.ts": "0885e55f5f659044fe7b8f4bd146f13d9c4e48c716169e06d835f87dfd31ccaf"
+        },
+        "implementation_revision": "PKT-TC-UIRUNS working tree; api.ts=5c3e9630d30093fe939f56422aebf613edf7e64ef946121fbaf383d881442e79; runState.ts=2993f50b4f36aeff46c8f3ea9386453763bbbbe875410c51ecf6c39ad9490da7; runs.ts=3a1583404ee7c0a46e520bad6ae322476b8367b1727e06cf0d1435445b7c4660; runDetail.ts=a330d8fcf3d80dc005836d687d57ebcad60facb35e4599b384628d7d282ae98b; RunsList.tsx=c78540a541197850c41440793a5efdd25cf1f76ba5b6abc79cd6cdea8dd9ce9f; RunDetail.tsx=f698d0953f6b45ba16a3f004ea7d785be20f5c67fe25eec85603d8c68f3b5a71; runReadModel.test.ts=73463a12a852cd20d02f93a9ac8f4617b5888abfa79a259e78b6d8bfcefabf69; threeStatesDistinct.test.ts=e87abe347891a250fe828e2f126ef0954a1f62e67379f553dac12bb9c1bae2b1",
+        "contract_versions": {
+            "CT-ui-screens": "0.1.0",
+            "CT-state-run": "0.6.0",
+            "CT-state-delivery": "0.2.0",
+            "CT-state-storage": "0.3.0",
+            "CT-http-openapi": "0.3.0"
+        }
+    },
+    "environment": {
+        "os": "Linux 7.0.0-30-generic",
+        "runtimes": {
+            "node": "22.23.2",
+            "typescript": "5.9.3",
+            "vitest": "3.2.7",
+            "eslint": "9.39.5",
+            "prettier": "3.9.6",
+            "react": "18.3.1",
+            "openapi-typescript": "7.9.1",
+            "jsdom": "26.1.0"
+        },
+        "config_redacted": {
+            "transport": "an in-test fetch function returning fixture bodies; no server runs, no socket is opened, and the jsdom environment has no network",
+            "rr_csrf": "a 32-character test constant returned by an injected cookie reader; no real cookie is set",
+            "rr_session": "never read by the page (HttpOnly); only `credentials: 'include'` is asserted",
+            "api_base_url": "'' (same origin) — no absolute URL appears anywhere in src/"
+        },
+        "provider": null,
+        "model": null,
+        "embedding_generation_id": null,
+        "network_access": false
+    },
+    "inputs": {
+        "scenario_ids": [
+            "SC03",
+            "SC04",
+            "SC15",
+            "SC20",
+            "SC26",
+            "SC49"
+        ],
+        "requirement_ids": [
+            "REQ-AC15",
+            "REQ-S8.3-01",
+            "REQ-S8.3-02",
+            "REQ-S8.3-03",
+            "REQ-D57",
+            "REQ-D11",
+            "REQ-D12",
+            "REQ-D14",
+            "REQ-D45",
+            "REQ-S4-06",
+            "REQ-S4-07",
+            "REQ-S5.4-04",
+            "REQ-AC04",
+            "REQ-AC14"
+        ],
+        "invariant_ids": [
+            "I09",
+            "I13"
+        ],
+        "fixtures": [
+            {
+                "path": "acceptance/fixtures/telegram/m-three-run-states-distinct-text.json",
+                "sha256": "950b336ba3eb0dad18287ec273430235d8e125278fa332cabece5d7e19af33e2",
+                "bytes": 4599
+            },
+            {
+                "path": "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json",
+                "sha256": "10d7c4deccdb95a7fcc1b02033ff90a785ce881d79e4f8ba6d0d648f109ef215",
+                "bytes": 5047
+            },
+            {
+                "path": "acceptance/fixtures/collection/e-limit-reached-stop.json",
+                "sha256": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+                "bytes": 7892
+            },
+            {
+                "path": "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+                "sha256": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+                "bytes": 12528
+            },
+            {
+                "path": "acceptance/fixtures/reporting/d-empty-period-coverage-only.json",
+                "sha256": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+                "bytes": 8879
+            },
+            {
+                "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+                "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+                "bytes": 31529
+            }
+        ],
+        "seed": null,
+        "clock": "host UTC clock; it reads 2026-09-08. Timestamps in this record are the clock's own.",
+        "protocol_version": "card pin epoch PC10-PIN-P3b-20260908 (agent-tasks/TC-ui-runs-three-states.md §0). SG-HASH re-run against disk before the first write and again at commit: 26 pinned rows in §0 (24 contract/fixture + 2 source), 0 mismatches."
+    },
+    "execution": {
+        "kind": "command",
+        "command": "cd web && npm run typecheck && npx eslint . && npx prettier --check . && npm run test",
+        "working_directory": "/mnt/virtual/repo/xcrawl/web",
+        "started_at": "2026-09-07T21:01:47Z",
+        "ended_at": "2026-09-07T21:02:59Z",
+        "exit_code": 0,
+        "attempts": 1,
+        "error_classification": null
+    },
+    "oracle": {
+        "statement_vi": "Fixture là oracle (SRC-PLAN §15), và hợp đồng được ĐỌC ở thời điểm chạy chứ không chép thành literal. (a) Ba run của fixture `m` đi qua generated client rồi qua read model rồi được render; ba chuỗi `run-status-label-*` bằng đúng `expected.ui_labels` và `Set(...).size = expected.counts.distinct_labels = 3`. (b) Cụm bị cấm `Không có nghiên cứu mới` xuất hiện 0 lần trong DOM của mọi trạng thái hiển thị (kể cả empty) và 0 lần trong source của src/views và src/routes. (c) `needs_user` hiện nút resume; `blocked` KHÔNG hiện resume và hiện `unblock_condition_vi` của server — hai row cùng nhãn nhưng khác chuỗi hiển thị. (d) delivery `unknown` đọc là 'Chưa xác định — có thể đã gửi', DOM không chứa 'Đã gửi Telegram' hay 'Không gửi được', và ba lựa chọn `unknown_decision` kèm cảnh báo trùng tin được hiện; DP-03: một part `unknown` thắng mọi part `sent`. (e) Mọi action id + operation_id được so với action map đọc từ chính `contracts/ui/screens.yaml`; mọi enum được so với `contracts/state/*.yaml §enums`; mọi label_vi được so từng ký tự với `screens.yaml §global_rules`. (f) Mutation mang `X-CSRF-Token` + `Idempotency-Key`; read KHÔNG mang CSRF; thiếu cookie `rr_csrf` ⇒ 0 request. (g) `SCHEMA_VERSION` bằng `info.version` của openapi.yaml; `newUlid()` khớp pattern `components.schemas.Ulid`. (h) SG-DENY: 0 URL tuyệt đối, 0 nhắc tới sqlite/telegram/secret.issue_task_credential trong src/, và client chỉ địa chỉ hoá được 9 operation của card §4.",
+        "expected": {
+            "card_tests": 63,
+            "card_failures": 0,
+            "distinct_run_status_strings_for_the_three_ac15_triples": 3,
+            "forbidden_phrase_occurrences_in_rendered_dom": 0,
+            "forbidden_phrase_occurrences_in_views_and_routes_source": 0,
+            "resume_action_on_needs_user": 1,
+            "resume_action_on_blocked": 0,
+            "delivery_unknown_rendered_as_sent_or_failed": 0,
+            "unknown_decision_options_offered": 3,
+            "automatic_unknown_decisions": 0,
+            "mutations_missing_csrf_header": 0,
+            "reads_carrying_csrf_header": 0,
+            "requests_issued_without_a_readable_csrf_cookie": 0,
+            "actions_outside_the_screens_yaml_action_map": 0,
+            "operations_outside_card_section4": 0,
+            "absolute_urls_in_src": 0,
+            "tsc_errors": 0,
+            "eslint_errors": 0,
+            "prettier_violations": 0,
+            "generated_client_diff": "none"
+        },
+        "observed": {
+            "card_tests": 63,
+            "card_failures": 0,
+            "distinct_run_status_strings_for_the_three_ac15_triples": 3,
+            "forbidden_phrase_occurrences_in_rendered_dom": 0,
+            "forbidden_phrase_occurrences_in_views_and_routes_source": 0,
+            "resume_action_on_needs_user": 1,
+            "resume_action_on_blocked": 0,
+            "delivery_unknown_rendered_as_sent_or_failed": 0,
+            "unknown_decision_options_offered": 3,
+            "automatic_unknown_decisions": 0,
+            "mutations_missing_csrf_header": 0,
+            "reads_carrying_csrf_header": 0,
+            "requests_issued_without_a_readable_csrf_cookie": 0,
+            "actions_outside_the_screens_yaml_action_map": 0,
+            "operations_outside_card_section4": 0,
+            "absolute_urls_in_src": 0,
+            "tsc_errors": 0,
+            "eslint_errors": 0,
+            "prettier_violations": 0,
+            "generated_client_diff": "none",
+            "breakdown": {
+                "tests/contract/runReadModel.test.ts": "48 passed (npm run test -- runReadModel, rc=0)",
+                "tests/integration/threeStatesDistinct.test.ts": "15 passed (npm run test -- threeStatesDistinct, rc=0)",
+                "full_web_suite": "74 passed / 4 files (npm run test, rc=0) — includes the 7 pre-existing App shell tests and the 4 generated-client tests, neither of which regressed",
+                "static": {
+                    "typecheck": "tsc --noEmit, rc=0, no output",
+                    "eslint": "npx eslint ., rc=0, no findings",
+                    "prettier": "npx prettier --check ., 'All matched files use Prettier code style!'"
+                }
+            }
+        }
+    },
+    "result": "PASS",
+    "artifacts": [],
+    "limitations": {
+        "mock_or_live": "mock",
+        "sample_size": 63,
+        "not_checked_vi": [
+            "E4 (render review trên desktop và điện thoại) là NOT_RUN. SC15 khai `evidence_level_required: E4`; `screens.yaml` chưa có render fixture; không có ảnh chụp và không có người review. Cái được chứng minh ở đây đúng bằng dòng `mockable_vi` của chính SC15: ba bộ ba phân biệt và cụm bị cấm vắng mặt, kiểm bằng so chuỗi trên copy hiển thị.",
+            "E2 (fault injection) KHÔNG áp dụng: card không ghi state và không chạm SQLite.",
+            "E3 là NOT_RUN: không server thật, không gọi X/Telegram/AI, không browser automation. Bốn cạnh cấm FE-01..FE-04 của MOD-web-ui được khẳng định ở tầng CẤU TRÚC (không chuỗi nào, không operation nào địa chỉ hoá được), KHÔNG bằng cách gọi thật rồi nhận CAPABILITY_DENIED/UNAUTHORIZED. Fixture boundary tự nói FE-03 là `local_observation` — oracle là đếm kết nối từ trình duyệt.",
+            "Backend là fixture. `run.list`, `run.get`, `worker.get_status`, `delivery.get_status` do một transport trong test trả lời. Scheduler (TC-scheduler-lease-claim, W6A, cùng đợt) và delivery (TC-telegram-unknown-delivery, W5C) CHƯA được chạy đối chiếu với client này; sự khớp nhau về HÌNH DẠNG response chưa được chứng minh — CR-TC-uiruns-02.",
+            "TỰ THAM CHIẾU: các body fixture đi qua client do chính worker này viết, theo tên trường của `screens.yaml`. Sự khớp nhau chứng minh nhất quán nội bộ, KHÔNG chứng minh server thật gửi đúng các khoá đó.",
+            "`health.get_readiness` nằm trong card §4 và trong `OPERATION_PATHS` nhưng CHƯA màn hình nào gọi; `storage_health` được đọc từ body của run.list/run.get. Ghi ra để mục đó không bị hiểu là một đường đã được kiểm.",
+            "SC20 (stale lease) và SC26 (hết ổ đĩa) là anchor ở card §8 nhưng là scenario phía server; ở đây chỉ hệ quả UI được kiểm (`storage_health != healthy` ⇒ nhãn last-known + mutation disabled kèm lý do). Bản thân các transition là NOT_RUN.",
+            "Accessibility, i18n và visual design KHÔNG được đánh giá. `screens.yaml §global_rules.visual_design` (REQ-S4-10) cố ý chưa chốt, nên hai view không mang style nào — đó là một lập trường hợp đồng, không phải một giao diện đã hoàn thiện.",
+            "`web/src/App.tsx` KHÔNG nằm trong write set, nên hai view chưa được nối vào route `/runs` của app shell — CR-TC-uiruns-04.",
+            "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy."
+        ],
+        "uncertainty_vi": "`contracts/ui/screens.yaml §run_status_labels` và `contracts/state/run.yaml §legacy_enum_mapping.ui_three_states_vi` KHÔNG khớp nhau ở bộ ba `(blocked, null, source_blocked)`: screens.yaml xếp `status = blocked` vào `stopped_early`, run.yaml gọi đó là 'đợt thất bại'. Code theo screens.yaml vì đó là hợp đồng sở hữu nhãn hiển thị (`producers: [MOD-web-ui]`) và là nơi duy nhất có bảng `label_vi` có id. Ba bộ ba của REQ-AC15 không bị ảnh hưởng. Xem CR-TC-uiruns-01.",
+        "unresolved_issue_refs": [
+            "CR-TC-uiruns-01",
+            "CR-TC-uiruns-02",
+            "CR-TC-uiruns-03",
+            "CR-TC-uiruns-04",
+            "CR-TC-uiruns-05",
+            "CR-TC-uiruns-06"
+        ]
+    },
+    "invalidation": {
+        "invalidated_by_paths": [
+            "contracts/ui/screens.yaml",
+            "contracts/state/run.yaml",
+            "contracts/state/delivery.yaml",
+            "contracts/state/storage.yaml",
+            "contracts/http/openapi.yaml",
+            "contracts/ports.yaml",
+            "contracts/modules.yaml",
+            "contracts/errors.yaml",
+            "contracts/capabilities.yaml",
+            "contracts/data/entities.yaml",
+            "contracts/retry-policy.yaml",
+            "acceptance/fixtures/telegram/m-three-run-states-distinct-text.json",
+            "acceptance/fixtures/telegram/b-response-lost-unknown-operator-decides.json",
+            "acceptance/fixtures/collection/e-limit-reached-stop.json",
+            "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+            "acceptance/fixtures/reporting/d-empty-period-coverage-only.json",
+            "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+            "acceptance/scenarios.yaml",
+            "agent-tasks/TC-ui-runs-three-states.md",
+            "web/src/generated/openapi.d.ts"
+        ],
+        "invalidated_by_rule_ids": [
+            "INV-06"
+        ]
+    }
+}

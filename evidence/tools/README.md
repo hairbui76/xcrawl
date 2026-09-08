@@ -1,6 +1,6 @@
 ---
 contract_id: CT-evidence-tools
-version: 0.4.0
+version: 0.5.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -27,7 +27,7 @@ dependencies:
   - "python3 ≥ 3.10, PyYAML, jsonschema"
 scope: >
   Bộ công cụ kiểm tra tĩnh (E0) cho baseline hợp đồng Pre-code. **Hai** công cụ, cả hai chỉ đọc
-  và cả hai chạy trong job CI `e0`: `e0_check.py` chạy **26 check** trên contracts/, acceptance/,
+  và cả hai chạy trong job CI `e0`: `e0_check.py` chạy **27 check** trên contracts/, acceptance/,
   precode/, evidence/ (§1–§7); `verify_cards.py` chạy **13 check** trên 18 task card của
   agent-tasks/ — dạng chạy được của EV-PC10-01 — cộng một self-test âm (§8). Mỗi công cụ xuất một
   báo cáo JSON máy đọc được và một bản tóm tắt cho người. Đây là tài liệu sử dụng, giới hạn và
@@ -38,7 +38,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 
 # E0 static checks
 
-*Hai công cụ: `e0_check.py` (§1–§7, 26 check) và `verify_cards.py` (§8, 13 check + self-test âm).*
+*Hai công cụ: `e0_check.py` (§1–§7, 27 check) và `verify_cards.py` (§8, 13 check + self-test âm).*
 
 ## 1. Cái này chứng minh gì và KHÔNG chứng minh gì
 
@@ -79,7 +79,7 @@ Một `BLOCKED` (thiếu file đầu vào) **không** làm exit code khác 0 —
 Phụ thuộc: python3 stdlib + PyYAML + jsonschema. Không có phụ thuộc nào khác và công cụ **không**
 truy cập mạng.
 
-## 3. Hai mươi sáu check
+## 3. Hai mươi bảy check
 
 | ID | Kiểm gì | Oracle |
 | --- | --- | --- |
@@ -108,7 +108,8 @@ truy cập mạng.
 | `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: 37 + 21 + 2 = 60. (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
 | `E0-17-declared-deviations` | `x-contract.deviations` và các ngoại lệ header | mỗi deviation có `rule`/`deviation`/`reason`/`evidence_refs`; ngoại lệ ADR (R-05) và ngoại lệ CSV được ghi ở nơi đọc được |
 | `E0-19-generated-matches` | Hai manifest `GENERATED_FROM.json` (`shared/rr_contracts/rr_contracts/generated/`, `web/src/generated/`) | Mỗi manifest parse được, khai `generator` và một `sources` **không rỗng**, và mọi `sources[].path` tồn tại với `sha256` **bằng** hash của file trên đĩa hôm nay (và `bytes` khớp khi được khai). Đây là quy tắc "sinh, đừng sửa tay" của ADR-0011 ở dạng check tĩnh. Nó **KHÔNG** chứng minh đầu ra của bộ sinh đúng, và **KHÔNG** bắt được một file sinh bị sửa tay — chỉ chạy lại bộ sinh mới bắt được, và hai cửa đó (`pytest shared/rr_contracts/tests/test_generated_matches_contracts.py`, `node web/scripts/generate.mjs --check`) **vẫn ở nguyên**. `contracts/data/entities.yaml` **cố ý** không phải nguồn của bộ sinh nào (`CR-P0-06`, `F-A3R2-04`): hình dạng bảng đi vào code bằng tay qua Alembic và được canh bởi **pytest** `tests/contract/test_schema_matches_entities.py` — cổng schema sống trong pytest, không trong E0. Check in ra sự vắng mặt đó thành một note thay vì để người đọc suy ra |
-| `E0-20-card-fixture-accounting` | Fixture `§2. Read set` của mọi card **đã hiện thực** (có `evidence/runs/<card>-E1-*.json`) | Mỗi `acceptance/fixtures/**.json` mà §2 nêu tên phải **hoặc** được một file dưới `tests/` tham chiếu, **hoặc** được nêu trong `evidence/handoffs/<card>-handoff.md` **trong một đoạn cũng chứa `NOT_RUN`**. Card chưa ai xây thì ngoài phạm vi và được đếm riêng trong note. Thêm ở `PKT-PC09-P3` vì đây là **lần thứ ba** một auditor tìm ra cùng hình dạng bằng tay (`F-A3R1-09` → `F-A3-P2-01` → `F-A3-P3-03`); ba lần là tín hiệu rằng nó nên thôi làm finding từng vòng. Điều nó **KHÔNG** chứng minh, và oracle nói ra: một tham chiếu là **sự có mặt**, không phải độ phủ — check không biết test nhắc tên một fixture có khẳng định gì với nó hay không, nên một kết quả sạch không được đọc là "mọi fixture đã được phủ" |
+| `E0-20-card-fixture-accounting` | Fixture `§2. Read set` của mọi card **đã hiện thực** (có `evidence/runs/<card>-E1-*.json`) | Mỗi `acceptance/fixtures/**.json` mà §2 nêu tên phải **hoặc** được một file dưới **bất kỳ cây test nào** tham chiếu — `tests/`, `web/tests/`, hoặc một file `*.test.*`/`*.spec.*` nằm cạnh mã dưới `web/src/` — **hoặc** được nêu trong `evidence/handoffs/<card>-handoff.md` **trong một đoạn cũng chứa `NOT_RUN`**. Card chưa ai xây thì ngoài phạm vi và được đếm riêng trong note. Thêm ở `PKT-PC09-P3` vì đây là **lần thứ ba** một auditor tìm ra cùng hình dạng bằng tay (`F-A3R1-09` → `F-A3-P2-01` → `F-A3-P3-03`); ba lần là tín hiệu rằng nó nên thôi làm finding từng vòng. Điều nó **KHÔNG** chứng minh, và oracle nói ra: một tham chiếu là **sự có mặt**, không phải độ phủ — check không biết test nhắc tên một fixture có khẳng định gì với nó hay không, nên một kết quả sạch không được đọc là "mọi fixture đã được phủ" |
+| `E0-21-marker-reason-freshness` | Lý do của mọi `pytest.mark.xfail(reason=…)` và mọi `it/test/describe.skip\|todo` của Vitest | Nếu lý do khẳng định một **sự VẮNG MẶT** (`pending`, `not yet`, `chưa`, `absent`, `no implementation`, `needs the`, …) về một card `TC-…` **đã có handoff trên đĩa**, hoặc về một **bảng mà migration tạo ra**, thì lý do đó đã **mục** và bị báo. Marker vẫn có thể đúng — `strict=True` nghĩa là test thật sự vẫn fail — nhưng **câu giải thích** thì không, và người đọc tin câu giải thích. Thêm ở `PKT-PC09-P4` vì đây là **lần thứ tư** cùng một hình dạng (`F-A3R3-03`, `F-A3-P2-01`, `F-A3-P3-02`, `F-A3-P4-03`). Tên bảng chỉ khớp khi lý do viết nó thành **một span backtick riêng** (`` `report` ``), không bao giờ như một từ trong đường dẫn `contracts/telegram/delivery.md`. Điều nó **cố ý KHÔNG** báo: lý do mô tả một **khuyết tật thật**, vốn có quyền nêu tên card và bảng đang tồn tại — báo chúng sẽ dạy người ta xóa những lý do chính xác. Cái giá: một lý do đã mục nhưng không dùng từ vắng-mặt nào sẽ lọt, và note in ra danh sách từ khóa để lỗ đó soi được |
 
 ## 4. Cách đếm — một phương pháp duy nhất
 
@@ -349,10 +350,65 @@ Cùng kỷ luật §5b và §5j. `selftest_p3.py` tiêm từng khiếm khuyết 
 | 3 | handoff nêu tên **kèm** `NOT_RUN` và một lý do (đối chứng dương) | PASS | **PASS** |
 | 4 | vẫn im lặng, nhưng card **chưa** có manifest ⇒ ngoài phạm vi (đối chứng dương) | PASS | **PASS**, 79 mục |
 
+**`CR-TC-uiruns-08` — check này từng đo hẹp hơn oracle của chính nó.** Bản đầu chỉ duyệt cây
+`tests/` của Python, nên một fixture của card UI — được Vitest nạp **theo tên** dưới
+`web/tests/` — là vô hình, và **không card UI nào có thể pass**. Oracle nói "được một test tham
+chiếu"; phép đo nói "được một test **Python** tham chiếu". Đó đúng là lớp lỗi mà `F-A3R3-01` và
+`F-A3R4-01` đã bắt hai lần ở file này: một tầm với được tuyên bố rộng hơn tầm với thật. Cách sửa
+là **kéo phép đo theo oracle**, không phải thu oracle theo phép đo. Dưới `web/src/` chỉ file
+`*.test.*`/`*.spec.*` được tính: mã sản phẩm nhắc tên một fixture không phải một test chạy nó.
+Hai hàng đột biến mới kiểm cả hai chiều — fixture chỉ được `web/tests/` tham chiếu ⇒ **sạch**;
+xóa tên đó khỏi `web/tests/` ⇒ **vi phạm**.
+
 Hàng 2 là hàng đáng nói: một lời nhắc tên **không phải** một disposition. Nếu check chỉ hỏi
 "fixture có được nhắc tới không", nó sẽ cho qua đúng thứ mà ba vòng audit đã bắt — sự im lặng
 được thay bằng một câu vô thưởng vô phạt. Hàng 4 kiểm chiều ngược lại: một quy tắc chỉ biết từ
 chối cũng vô dụng như một quy tắc không bắt được gì.
+
+## 5o. Self-test âm cho `E0-21`, và một false positive bị bắt trong lúc viết
+
+`selftest_p4.py`: **8/8 đúng đặc tả**, và điều đáng ghi là **năm** trong bảy hàng là đối chứng
+dương — một cửa kiểm về "lý do đã mục" mà quá nhiệt tình sẽ dạy người ta xóa những lý do chính
+xác, nên phần lớn công sức nằm ở việc chứng minh nó **im lặng** đúng chỗ.
+
+| # | Tiêm gì | Kỳ vọng | Quan sát |
+| --- | --- | --- | --- |
+| 1 | hai lý do đã mục đang có trên đĩa (`report`/`report_item`) | BÁO | **BÁO** |
+| 2 | lý do `pending TC-storage-…` của một card đã land | BÁO | **BÁO** |
+| 3 | lý do được viết lại thành nguyên nhân thật (bản sửa của WM) | im lặng | **im lặng** |
+| 4 | bảng thật sự bị xóa khỏi migration ⇒ lý do ĐÚNG trở lại | im lặng | **im lặng** |
+| 5 | handoff bị xóa ⇒ `pending` ĐÚNG trở lại | im lặng | **im lặng** |
+| 6 | lý do nêu một bảng đang tồn tại như một **khuyết tật**, không phải vắng mặt | im lặng | **im lặng** |
+| 7 | `contracts/telegram/delivery.md` trong lý do không phải bảng `delivery` | im lặng | **im lặng** |
+
+**`F-A3-P4R2-01` — bản đầu của `E0-21` bỏ sót dạng một dòng, và cái giá phải nói ra.** Nó bắt
+đối số của `xfail(` bằng regex kết thúc ở `\)\s*$` hoặc `\n\s*\)`. Dưới `re.S`, `$` là **cuối
+chuỗi**, nên với dạng một dòng `xfail(reason="…")` — dấu đóng ngoặc nằm **giữa file**, cùng dòng
+— **không nhánh nào khớp**, và lý do bị **bỏ qua hoàn toàn**. Hậu quả không phải một cảnh báo
+sai mà là một **im lặng**: check báo `items_checked` nhỏ hơn thay vì báo vi phạm, đúng kiểu hỏng
+mà chính file này cảnh báo ở §5b ("0 được kiểm đọc thành sạch"). Một lý do đã mục viết theo lối
+phổ biến nhất sẽ đi qua mà không ai thấy.
+
+Bản sửa **bỏ regex** cho file Python: một module test là Python hợp lệ, nên nó được `ast.parse`
+và đọc thẳng keyword `reason`; nối chuỗi ngầm đã được Python gộp sẵn thành một `Constant`. Regex
+chỉ còn là đường lui cho file không parse được, và nay kết thúc cả ở `)` trần. Thêm nữa, marker
+mang `reason` **không phải literal** (f-string, biến) nay được **đếm và in ra** như một lỗ của
+check, chứ không lặng lẽ tính là sạch.
+
+Bộ đột biến cũng được viết lại: bản đầu sửa hai lý do đã mục **đang có trên đĩa**, và khi WM sửa
+chúng thì đột biến ngừng land — một self-test phụ thuộc vào văn của người khác là một self-test
+lặng lẽ ngừng kiểm. Nay mỗi hàng **tự trồng marker của nó**. **8/8 đúng đặc tả**, năm hàng là
+đối chứng dương, và hai hàng mới phủ đúng dạng một dòng ở **cả hai chiều**.
+
+Hàng "path, không phải bảng" là một **false positive có thật, bắt được trong lúc viết check**: bản đầu so tên bảng
+với mọi từ trong lý do, nên đường dẫn `contracts/telegram/delivery.md` trông như bảng
+`delivery`, và một lý do mà tiền đề vẫn đúng (`CR-PC07-04`, ba dữ kiện định dạng vẫn `KC`) bị
+báo oan. Đã sửa bằng cách chỉ khớp khi tên bảng là **cả một span backtick**. Một cửa kiểm kêu
+oan dạy người ta bỏ qua nó, nên đây không phải chuyện nhỏ.
+
+Hàng 6 cũng suýt nói dối: bản đầu của chính đột biến đó chỉ thay **một cụm** trong lý do, mà
+phần còn lại vẫn chứa "(not in Phase 1 M1)" — một từ vắng-mặt — nên hàng "chứng minh" được một
+điều nó không chứng minh. Sửa đột biến, không sửa check.
 
 ## 5j. Self-test âm cho ba quy tắc của `PKT-PC09-P1`
 

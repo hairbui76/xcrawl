@@ -37,7 +37,9 @@ jobs:
       - name: ruff (format)
         run: uv run ruff format --check .
 
-      - name: mypy --strict (server core)
+      # Scope is every Python production tree — server/app, worker/app, collector/app,
+      # probe — not just the server core (F-A3-P4-02). The list lives in pyproject.toml.
+      - name: mypy --strict (all Python production trees)
         run: uv run mypy
 
       - name: Generated models match contracts/

@@ -39,6 +39,8 @@ a fixture into Python constants.
 from __future__ import annotations
 
 import ast
+import math
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +63,7 @@ from server.app.embedding.generation import (
     assert_single_generation,
     cosine,
     coverage_satisfied,
+    round_half_up,
 )
 from server.app.embedding.service import ALLOWED_CALLERS, EmbeddingService
 
@@ -308,7 +311,57 @@ def test_scores_are_rounded_to_the_four_decimals_selection_md_specifies(generati
     """``selection.md`` §3: ``[round 4dp]``, in one place so two callers cannot disagree."""
     g1 = generations["01JEMBGEN10000000000000000"]
     score = cosine(vector_for(g1, "alpha"), vector_for(g1, "beta"))
-    assert score == round(score, SCORE_DECIMALS)
+    assert score == round_half_up(score)
+    assert Decimal(str(score)).as_tuple().exponent >= -SCORE_DECIMALS
+
+
+def test_rounding_is_half_up_and_not_pythons_half_to_even() -> None:
+    """``CR-TC-REPORT-04``. ``selection.md`` §3: *"làm tròn **half-up** về 4 chữ số thập phân"*,
+    and its parameter table repeats it (``rounding: half-up``).
+
+    Python's ``round`` rounds half to **even**, so the two disagree on exactly the inputs that
+    sit on a tie — which is the worst place to disagree, because a tie is a score sitting on
+    the threshold the comparison is about. ``0.15625`` is a genuine tie: it is exactly
+    representable in binary (5/32), so ``Decimal(0.15625)`` really is ``0.15625`` and the
+    fourth decimal really is a coin flip between the two rules.
+
+    Both directions are asserted, and the divergence from the built-in is asserted too — a
+    test that only checked the expected value would still pass if someone put ``round`` back
+    and the platform happened to agree.
+    """
+    assert round_half_up(0.15625) == 0.1563
+    assert round(0.15625, SCORE_DECIMALS) == 0.1562, "the premise moved: no longer a tie"
+    assert round_half_up(0.15625) != round(0.15625, SCORE_DECIMALS)
+
+    assert round_half_up(0.03125) == 0.0313
+    assert round(0.03125, SCORE_DECIMALS) == 0.0312
+
+    # Half **away from zero**, so a negative tie goes to the larger magnitude. Cosine is
+    # legitimately negative, so this half is not hypothetical.
+    assert round_half_up(-0.15625) == -0.1563
+    assert round_half_up(-0.03125) == -0.0313
+
+    # Values that are not ties are unaffected, in both rules.
+    for value in (0.1234, 0.98765431, -0.5, 0.0, 1.0):
+        assert round_half_up(value) == pytest.approx(round(value, SCORE_DECIMALS))
+
+
+def test_cosine_rounds_its_own_result_with_the_half_up_rule(generations) -> None:
+    """The link between the rule and the function that applies it.
+
+    The raw quotient is recomputed here the way :func:`cosine` computes it and passed through
+    :func:`round_half_up`; the two must agree. That is what stops the rule from being correct
+    in isolation while ``cosine`` quietly keeps calling the built-in.
+    """
+    g1 = generations["01JEMBGEN10000000000000000"]
+    a = vector_for(g1, "graph neural networks")
+    b = vector_for(g1, "molecular property prediction")
+
+    dot = math.fsum(x * y for x, y in zip(a.values, b.values, strict=True))
+    norm_a = math.sqrt(math.fsum(x * x for x in a.values))
+    norm_b = math.sqrt(math.fsum(y * y for y in b.values))
+
+    assert cosine(a, b) == round_half_up(dot / (norm_a * norm_b))
 
 
 def test_the_activation_guard_is_built_greater_or_equal_expected(fixture_loader) -> None:

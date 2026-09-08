@@ -186,13 +186,12 @@ scenarios:
       timestamp (E3, gắn với probe SP1 của `contracts/ops/collector-probe.md`).
     status: NOT_RUN
     partial_evidence_vi: >
-      Đã chạy ở PHÍA COLLECTOR (`tests/contract/test_collector_stop_reasons.py`,
-      `TC-collector-checkpoint-resume`): `worker.claim_assignment` khi không có việc trả
-      `no_work` chứ không phải lỗi, và **đăng ký không tự cấp lease** (I10). KHÔNG đo được: cả
-      ba vế của oracle là trạng thái bền phía SERVER — `COUNT(run …) = 1`,
-      `COUNT(assignment_lease WHERE state='held') = 1`, và độ trễ ≤ 45 s tính từ mốc lịch. Bảng
-      `run` và `assignment_lease` **chưa tồn tại** (thuộc `TC-scheduler-lease-claim`); vế 'người
-      dùng không phải mở X' còn là E3 gắn với probe SP1.
+      Đã chạy hai vế: `COUNT(run … không terminal) = 1` và `COUNT(assignment_lease held) = 1`
+      sau khi lịch tới hạn (`test_scheduler_catchup.py`, `test_lease_two_claimants.py`). KHÔNG
+      đo được hai vế còn lại: **độ trễ ≤ 45 s** kể từ mốc lịch (`claim_idle_backoff` của
+      `retry-policy.yaml`) và **0 lời gọi tới X trước khi lease tồn tại** — cả hai đòi một đồng
+      hồ thật và một collector thật cùng chạy; vế "người dùng không phải mở X" là E3 gắn với
+      probe SP1.
 
   - id: SC02
     title_vi: "Nhiều kỳ lịch bị bỏ lỡ vì máy tắt → đúng MỘT run chạy bù, tin nhắn ghi khoảng bao trùm"
@@ -232,6 +231,13 @@ scenarios:
     mockable_vi: "Fake-clock + queue giả; không cần X hay Telegram thật."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy ba vế ở phía scheduler: ba (và sáu) occurrence quá hạn sinh **đúng một** run,
+      `len(run.schedule_occurrence_ids)` đúng bằng số occurrence, và cửa sổ catch-up bao trùm từ
+      min tới max. KHÔNG đo được vế thứ tư: `coverage_window[n].window_from ==
+      coverage_window[n-1].window_to` cho chính run bù đó — bảng `coverage_window` nay tồn tại
+      và bất biến nửa mở được kiểm kỹ ở `test_coverage_contiguous.py`, nhưng **không test nào
+      chạy run bù rồi publish nó**, nên hai nửa chưa gặp nhau trong một phép đo.
 
   - id: SC03
     title_vi: "Đạt giới hạn đợt → dừng thu thập, checkpoint đã ACK được giữ, phase/outcome đúng AMD-B02"
@@ -279,13 +285,12 @@ scenarios:
       chứng minh cơ chế, không chứng minh con số đúng.
     status: NOT_RUN
     partial_evidence_vi: >
-      Đã chạy ở PHÍA COLLECTOR: báo cáo dừng vì giới hạn mang đúng các trường fixture pin
-      (`test_limit_stop_report_carries_the_fields_the_fixture_pins`), 409 layout-changed là một
-      acknowledgement chứ không phải lỗi client, và resume đọc con trỏ **từ checkpoint của
-      server** chứ không từ trạng thái cục bộ. KHÔNG đo được: bộ ba `(status, outcome,
-      stop_reason)` khớp một dòng AMD-B02 và hash hàng `checkpoint` trước/sau `report_stop` — cả
-      hai là trạng thái bền phía server và bảng `run` chưa tồn tại. Vế 'số request tới nguồn sau
-      report_stop = 0' được ép ở tầng client, không được quan sát ở tầng nguồn.
+      Đã chạy nhiều hơn trước: bộ ba `(status, outcome, stop_reason)` nay có bảng `run` thật, và
+      `web/tests/contract/runReadModel.test.ts` khẳng định từ vựng cùng ánh xạ nhãn hiển thị.
+      Phía collector, báo cáo dừng-vì-giới-hạn và resume-từ-checkpoint-server đã chạy. KHÔNG đo
+      được: **số request tới nguồn sau `report_stop` bằng 0** và **hash hàng `checkpoint`
+      trước/sau không đổi** trong cùng một lần chạy — ba mảnh nằm ở ba card và chưa mảnh nào nối
+      chúng thành một chuỗi.
 
   - id: SC04
     title_vi: "CAPTCHA giữa lô → needs_user, ĐÚNG MỘT cảnh báo, không tự thử lại, resume phải cấp lease mới"
@@ -336,12 +341,11 @@ scenarios:
       dùng xử lý tay trong cửa sổ Chrome" là bước con người, không tự động hóa được.
     status: NOT_RUN
     partial_evidence_vi: >
-      Đã chạy ở PHÍA COLLECTOR (`tests/integration/test_collector_resume_after_challenge.py`):
-      sau challenge collector **không tự thử lại**, và một lời gọi bằng lease epoch cũ bị từ
-      chối bằng `STALE_LEASE`. KHÔNG đo được: `COUNT(outbox_intent WHERE kind='run_alert') = 1`
-      — bảng `outbox_intent` **chưa tồn tại** — và `COUNT(post)` trước/sau, vốn là trạng thái
-      bền phía server. Nhánh 'người dùng xử lý tay trong cửa sổ Chrome' là bước con người và tần
-      suất challenge thật chỉ đo được bằng probe SP1.
+      Đã chạy: collector **không tự thử lại** sau challenge; lease epoch cũ bị từ chối bằng
+      `STALE_LEASE`; `outbox_intent` nay là bảng thật. KHÔNG đo được: `COUNT(outbox_intent WHERE
+      kind='run_alert' AND run_id=<run>) = 1` **bất kể số lần phát hiện lại** — không test nào
+      chạy chuỗi phát-hiện-lại đó; và nhánh "người dùng xử lý tay trong cửa sổ Chrome" là bước
+      con người. Tần suất challenge thật chỉ đo được bằng probe SP1.
 
   - id: SC05
     title_vi: "Bỏ tag trước transaction publish → mục khớp tag đó không vào báo cáo, dữ liệu vẫn ở kho"
@@ -384,7 +388,19 @@ scenarios:
     evidence_level_required: E1
     mockable_vi: "Toàn bộ là truy vấn dữ liệu; fixture đủ để kiểm ở E1, không cần AI hay mạng."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E1)"
+    status_evidence_refs:
+      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260908T013343Z.json"
+      - "tests/integration/test_publish_cas.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đo được và đã đo. Bỏ tag TRƯỚC transaction publish: tập
+      `report_item.target_key` bằng đúng tập mong đợi,
+      `COUNT(work)`/`COUNT(analysis)`/`COUNT(work_label)` không đổi — dữ liệu **không** bị xóa,
+      chỉ không được chọn. Nếu tag đổi giữa build và CAS, build bị hủy với `abort_reason =
+      'tag_version_stale'` và **report đã publish giữ nguyên `content_hash`**, có test riêng cho
+      đúng mệnh đề đó. KHÔNG thiết lập: nội dung report có hữu ích hay không (E4).
 
   - id: SC06
     title_vi: "Bỏ tag rồi thêm lại → mục cũ tái xuất hiện dùng analysis sẵn có, số lời gọi AI tăng thêm bằng 0"
@@ -531,11 +547,23 @@ scenarios:
     mockable_vi: >
       Toàn bộ là transaction và truy vấn; crash inject được; CAS kiểm bằng hai tiến trình giả.
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
-    partial_evidence_vi: >
-      Giai đoạn 3/5 không thêm gì cho dòng này. `coverage_window`, `report` và `report_build_id`
-      đều chưa tồn tại, nên cả bốn kỳ của scenario — kỳ rỗng, hai publisher tranh CAS, builder
-      crash — chưa có bảng nào để quan sát.
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260908T013343Z.json"
+      - "evidence/runs/TC-backfill-pending-ledger-E1-20260908T013901Z.json"
+      - "tests/integration/test_coverage_contiguous.py"
+      - "tests/integration/test_publish_cas.py"
+      - "tests/integration/test_backfill_once.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Cả bốn kỳ của scenario đã chạy thật. Kỳ có nội dung đẩy coverage tiến; **kỳ rỗng** ghi
+      `coverage_window` với `report_id` NULL và **không** tạo report, **không** tạo intent; ba
+      kỳ liên tiếp có một kỳ rỗng ở giữa **không có khe hở**; hai publisher tranh CAS để lại
+      **đúng một** cửa sổ và bên thua dựng lại tiếp liền; builder crash để lại 0 `report_item`
+      và **không tiêu thụ backfill**. Bất biến nửa mở `window_from[n] == window_to[n-1]` được
+      khẳng định ở mọi nhánh, kể cả sau một lần ghi bị từ chối. KHÔNG thiết lập: một chuỗi kỳ
+      THẬT nhiều tuần (E4).
     notes_vi: >
       Lựa chọn (b) cho kỳ rỗng (giữ hàng `report(status='aborted')` mang `report_build_id` làm
       mỏ neo replay) là quyết định PROVISIONAL của PC04 TRÁI với khuyến nghị (a) của Coordinator;
@@ -586,9 +614,17 @@ scenarios:
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
     partial_evidence_vi: >
-      first_announced_ledger và merge hook §8.3 đã chạy ở tầng identity; vế
-      report_item.item_type='prior_reference' và content_hash của report đã publish KHÔNG đo
-      được — card báo cáo chưa tồn tại.
+      **Oracle có khuyết tật, và đó là lý do dòng này không chuyển — không phải thiếu code.** Ba
+      vế đã đo: `COUNT(first_announced_ledger … superseded_by_merge_id IS NULL) = 1`, report đã
+      publish giữ `content_hash` sau merge, và `moved_counts.first_announced` là **số** chứ
+      không phải null. Vế thứ tư — `report_item(kỳ sau).reference_date = D` — nêu tên một trường
+      mà `ENT-report-item` **không khai**: card báo cáo ship `item_type = 'prior_reference'`
+      nhưng không có cột `reference_date`. `CR-PC09-22` xin PC04/PC09 sửa oracle hoặc PC02 thêm
+      cột; cho tới lúc đó dòng này không thể PASS bằng bất kỳ lượng code nào.
+      Ghi kèm: `CR-TC-BACKFILL-09` — khuyết tật làm hỏng đúng ranh giới `new_discovery` /
+      `prior_reference` mà dòng này dựa vào — **đã được sửa ở epoch 2** và `A3-P4-R2` §2 xác
+      minh. Vậy chặn còn lại là **thuần oracle**: `reference_date` không phải một trường của
+      `ENT-report-item`.
 
   - id: SC10
     title_vi: "Một mục trong báo cáo tự đủ trên cả app và Telegram: nội dung, điểm khác, hạn chế, mức đọc, tag khớp"
@@ -648,10 +684,10 @@ scenarios:
       Giới hạn định dạng Telegram vẫn `KC` (CR-PC07-04) nên phần render Telegram chưa chốt được.
     status: NOT_RUN
     partial_evidence_vi: >
-      `evidence_level_required` là **E4** (review nội dung qua nhiều kỳ), nên dòng này không thể
-      rời `NOT_RUN` ở giai đoạn hiện tại bất kể code. Phần đã chạy:
-      `test_analysis_once_per_key.py` chứng minh một mục có `analysis` hợp lệ và các trường của
-      nó; "tự đủ trên cả app và Telegram" là phán đoán của người đọc.
+      `evidence_level_required` là **E4**. Giai đoạn 4/6 thêm đúng cái nó có thể thêm:
+      `web/tests/contract/reportReadModel.test.ts` và `provenanceLabels.test.ts` khẳng định mọi
+      trường mà một mục phải mang và nhãn xuất xứ của từng phát biểu. "Tự đủ ở mức người đọc"
+      vẫn là phán đoán của con người trên cả app và Telegram.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`ui/sc10-…`, ruling R5-02): nó khẳng định cùng một
       `analysis_id` và cùng `generation_number` trên cả hai kênh, cộng đủ năm trường của REQ-D20.
@@ -708,10 +744,8 @@ scenarios:
       ≥ 3 kỳ) — E4, `NOT_RUN`.
     status: NOT_RUN
     partial_evidence_vi: >
-      `evidence_level_required` là **E4**. Phần đã chạy: adapter từ chối kết quả
-      `source_verified` khi `evidence_level='post_only'` (SV-03) và ép `comparator='unknown'`
-      thay vì bịa baseline — `test_analysis_result_schema.py`,
-      `test_research_metadata_fixtures.py`. Vế còn lại ("trình bày là suy luận") cần
+      `evidence_level_required` là **E4**. Nhãn `post_only`, quy tắc SV-03 và
+      `comparator='unknown'` đều được ép ở tầng schema và read model. Vế còn lại cần
       groundedness review của người theo `contracts/ai/grounding.md` §6.
 
   - id: SC12
@@ -759,10 +793,12 @@ scenarios:
       chỉ một drill thật mới chứng minh khôi phục được, hash một artifact thì không.
     status: "PASS (E2)"
     status_evidence_refs:
-      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json"
       - "tests/integration/test_snapshot_survives_delete.py"
       - "evidence/audits/A3-P3-R1-report.md"
       - "evidence/audits/A3-P3-R2-report.md"
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_restore_side_effect_lock.py"
     status_scope_vi: >
       Toàn bộ oracle đã đo, và đo lại chứ không so bằng chính nó: `content_hash` được **tính lại
       từ bytes `payload` trên đĩa** ở bốn mốc — sau khi lưu, sau khi ghi
@@ -773,6 +809,9 @@ scenarios:
       target_key=T) = 1` ở mọi mốc; sau khi xóa `post_work` + `post`, Saved vẫn trả nội dung chứ
       không trả NOT_FOUND. KHÔNG thiết lập: một drill restore THẬT vào môi trường sạch
       (`TC-backup-restore-drill`, Giai đoạn 6) — ở đây chỉ có `VACUUM INTO` + copy.
+      Giai đoạn 4/6 CỦNG CỐ dòng này mà không đổi nhãn: `content_hash` của snapshot nay được
+      chứng minh bất biến qua **toàn bộ chu trình backup → restore → đối soát**, không chỉ qua
+      `VACUUM INTO` + copy. Nhãn giữ `PASS (E2)`.
 
   - id: SC13
     title_vi: "Save đồng thời từ app và Telegram, bấm năm lần → đúng MỘT bản ghi, năm phản hồi"
@@ -820,8 +859,8 @@ scenarios:
       CR-PC07-04; cần một lần đọc tài liệu Bot API và một probe E3.
     status: "PASS (E2)"
     status_evidence_refs:
-      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
-      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json"
       - "tests/integration/test_concurrent_save.py"
       - "evidence/audits/A3-P3-R1-report.md"
       - "evidence/audits/A3-P3-R2-report.md"
@@ -943,9 +982,12 @@ scenarios:
       trên desktop và điện thoại (E4); `screens.yaml` hiện chưa có fixture render.
     status: NOT_RUN
     partial_evidence_vi: >
-      `evidence_level_required` là **E4**: "ba trạng thái hiển thị khác nhau" ở mức người dùng
-      hiểu được cần review giao diện thật. Giai đoạn 3/5 không thêm gì cho dòng này; `run` vẫn
-      chưa tồn tại, nên cả ba bộ ba trạng thái cũng chưa đo được.
+      `evidence_level_required` là **E4**. Đã chạy nhiều: `runReadModel.test.ts` và
+      `threeStatesDistinct.test.ts` khẳng định ba bộ ba sinh **ba chuỗi hiển thị khác nhau đôi
+      một** và cụm bị cấm "Không có nghiên cứu mới" xuất hiện **0 lần**; thứ tự ưu tiên
+      `run_failed > stopped_early > no_matching_content` được kiểm. Nhưng "ba trạng thái khác
+      nhau **ở mức người dùng hiểu được**" đòi review giao diện thật trên desktop và điện thoại
+      — chưa ai làm.
 
   - id: SC16
     title_vi: "Không có API key nào: cả ba tác vụ AI chạy qua CLI/ACP, embedding local ở server → đợt hoàn tất"
@@ -1130,7 +1172,7 @@ scenarios:
       Secret token webhook và so sánh constant-time cần một endpoint thật để kiểm ở E3 (CR-PC07-03).
     status: "PASS (E2)"
     status_evidence_refs:
-      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json"
       - "tests/integration/test_unknown_chat_silent.py"
       - "tests/contract/test_telegram_command_allowlist.py"
       - "evidence/audits/A3-P3-R1-report.md"
@@ -1186,11 +1228,12 @@ scenarios:
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
     partial_evidence_vi: >
-      KHÔNG đo được: `report.content_hash` trước/sau là vế trung tâm, và card delivery chạy trên
-      một **bảng `report` giả ba cột** chứ không phải bảng thật — nó khai điều đó thẳng trong
-      handoff §3. Đã chạy: `delivery_part.payload_hash` được tính từ nội dung đã publish và
-      delivery không tự sinh hàng cho generation mới. Một hash tính trên một bảng thay thế không
-      chứng minh được bất biến của bảng thật.
+      Cả hai nửa nay tồn tại thật, nhưng **không test nào chạy chuỗi**: report giữ
+      `content_hash` khi tag đổi sau publish (`test_publish_cas.py`), và
+      `delivery_part.payload_hash` được kiểm toàn vẹn
+      (`test_permanent_failure_report_intact.py`). KHÔNG đo được: đổi tag **sau publish, trước
+      khi Telegram gửi**, rồi khẳng định payload đã dựng không đổi VÀ kỳ sau dùng TCV3 — ba mốc
+      trong một lần chạy. Đây là một test còn thiếu, không phải một bảng còn thiếu.
 
   - id: SC20
     title_vi: "Lease cũ (stale) — hai worker cùng claim, và một worker từ trước backup quay lại sau restore"
@@ -1231,14 +1274,21 @@ scenarios:
     evidence_level_required: E2
     mockable_vi: "Hai tiến trình giả và một restore giả; toàn bộ offline."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
-    partial_evidence_vi: >
-      Đã chạy ở PHÍA COLLECTOR: `STALE_LEASE` được ném kèm đúng mã của registry, heartbeat mang
-      epoch cũ bị từ chối, và worker từ trước backup không ghi thêm gì sau khi epoch đã chuyển
-      (`test_collector_resume_after_challenge.py`, fixture f). KHÔNG đo được: bất biến
-      `COUNT(assignment_lease WHERE state='held') = 1` ở mọi thời điểm — bảng chưa tồn tại — và
-      nhánh `RESTORE_UNVERIFIED` cho tới khi `reconciliation_complete(restore_id)` đúng, vốn
-      thuộc `TC-storage-write-blocked-readiness` và chỉ được chứng minh ở mức cổng.
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json"
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_lease_two_claimants.py"
+      - "tests/integration/test_restore_side_effect_lock.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Cả ba vế đã đo, và vế thứ ba nay đo được vì `restore_record` tồn tại. Hai claimant cùng
+      lúc ⇒ `COUNT(assignment_lease WHERE state='held') = 1` và heartbeat mang epoch cũ đổi **0
+      hàng**. Worker từ trước backup quay lại sau restore ⇒ lease cũ **không còn held**,
+      `worker.claim_assignment` bị chặn bằng `RESTORE_UNVERIFIED`, và `held` giữ **0** cho tới
+      khi vị từ đối soát đúng. KHÔNG thiết lập: đồng thời ở mức hai TIẾN TRÌNH — vẫn là hai
+      luồng trong một tiến trình.
 
   - id: SC21
     title_vi: "Mất ACK ingest → replay cùng idempotency key trả receipt cũ, số hàng và checkpoint không đổi"
@@ -1348,11 +1398,22 @@ scenarios:
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
     partial_evidence_vi: >
-      KHÔNG đo được: `pending_item_ledger` chưa tồn tại (`MOD-report-service`, Giai đoạn 4), và
-      card analysis đánh dấu đúng nghĩa vụ đó là `xfail(strict=True)` thay vì để service giả vờ
-      đã ghi — `ledger_state()` báo port chưa nối. Nghĩa vụ B04/B17 "mục hết ngân sách không
-      được biến mất khỏi report" vì vậy **chưa** được thiết lập. Đã chạy:
-      `test_a_late_summary_commits_and_touches_no_published_period`.
+      **Oracle có khuyết tật — hai chỗ.** (a) Nó đếm `pending_item_ledger WHERE report_id=<kỳ n>
+      AND consumed_at IS NULL`, nhưng `ENT-pending-item-ledger` **không có** hai cột đó: card
+      ship `first_pending_window_id` và `resolved_in_report_id`, và W4B dừng đúng chỗ thay vì tự
+      thêm cột (`SG-PC09`). (b) Oracle nói "= 2" trong khi fixture `e` mang **một** mục. Cái ĐÃ
+      chạy phủ đúng nghiệp vụ: mục về muộn mở hàng pending, kỳ n mang `quality='partial'`, kỳ
+      n+1 hiện nó như phát hiện muộn **và vẫn là phát hiện mới**, hàng được **resolved chứ không
+      bị xóa** (module không phát một câu DELETE nào), và số học của sổ cân bằng qua publish.
+      `CR-PC09-23` xin sửa oracle. **Lý do thứ hai đã được gỡ ở epoch 2:** `CR-TC-BACKFILL-09`
+      — `publisher._write_first_announcements` công bố cả mục còn `summary_state = pending`,
+      khiến một phát hiện muộn thật quay lại thành `prior_reference` — **đã được sửa**.
+      Publisher nay mang `if item.summary_state != SUMMARY_FINAL: continue`, `xfail` đã được
+      gỡ và test là test thật. `A3-P4-R2` §2 xác minh, và xác minh đúng chỗ đáng lo nhất:
+      điều kiện được dẫn từ `time-and-tags.md` §5.3 + §8.2 và auditor kiểm rằng **hợp đồng
+      không bị sửa để code pass** — file đó nguyên vẹn từng byte. Vậy chỉ còn **khuyết tật
+      oracle** chặn dòng này: hai cột mà oracle đếm không tồn tại, và số mục kỳ vọng lệch
+      fixture.
 
   - id: SC23
     title_vi: "Định danh mâu thuẫn → identity_conflict quarantine, giữ nguyên nguồn, KHÔNG merge đoán"
@@ -1442,14 +1503,20 @@ scenarios:
     needs_live_or_human_vi: >
       Chất lượng của model đa ngôn ngữ trên thuật ngữ khoa học (REQ-A3) cần so sánh với một model
       chỉ tiếng Anh trên cùng tập thử — E4, rubric khóa trước khi đo.
-    status: NOT_RUN
-    partial_evidence_vi: >
-      Đã chạy phần âm và đo bằng instrument, không bằng log: số phép cosine giữa hai generation
-      khác nhau = **0** trên fixture `l`/`n`, và selection bị chặn khi generation không khớp.
-      KHÔNG đo được: `report.abort_reason = 'embedding_generation_mismatch'` — bảng `report`
-      chưa tồn tại, và card embedding đánh dấu đúng vế đó `xfail(strict=True, run=True)` pending
-      `TC-report-coverage-publish-cas`, nên ngày card đó land, một XPASS sẽ làm vỡ suite thay vì
-      để marker mục ruỗng.
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260908T013343Z.json"
+      - "tests/integration/test_publish_cas.py"
+      - "tests/contract/test_embedding_generation_guard.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Vế cuối cùng còn thiếu ở Giai đoạn 3 nay đã đo:
+      `test_the_generation_guard_blocks_before_the_publish_commit` khẳng định report bị chặn
+      mang `abort_reason = 'embedding_generation_mismatch'` — và chặn xảy ra **trước** commit,
+      không phải dọn dẹp sau. Cộng với phần đã có: số phép cosine giữa hai generation khác nhau
+      bằng **0**, đo bằng instrument trên hàm similarity. KHÔNG thiết lập: chất lượng model đa
+      ngôn ngữ (E4, `REQ-A3`).
 
   - id: SC25
     title_vi: "Liên kết Telegram bị hủy hoặc liên kết lại trước khi gửi → delivery cancelled, không gửi cho recipient cũ"
@@ -1544,6 +1611,8 @@ scenarios:
       - "tests/integration/test_readiness_independent_channel.py"
       - "evidence/audits/A3-R1-report.md"
       - "evidence/audits/A3-R2-report.md"
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_restore_side_effect_lock.py"
     status_scope_vi: >
       Fault injection thật (ổ đầy giữa ingest, mô phỏng ở tầng guard cộng một lần gọi
       ingest.submit_batch thật): mọi mutation bị từ chối bằng STORAGE_WRITE_FAILED trước khi mở
@@ -1553,6 +1622,9 @@ scenarios:
       chứ không về healthy. KHÔNG thiết lập: hành vi của SQLite trên một ổ đĩa đầy THẬT
       (REQ-S9.3-08 vẫn NOT_RUN), và nhánh hồi phục write_blocked → healthy (chưa có bảng probe —
       CR-TC-storage-04, F-A3R1-11 PARTIAL).
+      Giai đoạn 4/6 CỦNG CỐ vế cuối của oracle — "nếu còn `restore_record` chưa đối soát thì
+      trạng thái về `recovery_required`, không về `healthy`" — nay chạy trên bảng
+      `restore_record` **thật** thay vì một vị từ luôn trả `False`. Nhãn giữ `PASS (E2)`.
 
   - id: SC27
     title_vi: "Restore với outbox cũ → không gửi gì, không reset first_announced, dispatch khóa tới khi đối soát xong"
@@ -1601,14 +1673,22 @@ scenarios:
       Một drill restore THẬT vào môi trường sạch. `contracts/ops/backup-restore.md` §5.7 và §9 ghi
       rõ: runbook là thiết kế, KHÔNG phải bằng chứng rằng restore hoạt động; hash một artifact
       backup không chứng minh nó khôi phục được.
-    status: NOT_RUN
-    partial_evidence_vi: >
-      KHÔNG đo được, và card delivery khai đúng như vậy:
-      `test_reconciliation_reports_which_clauses_are_unmet` là `xfail(strict=True)` pending
-      `TC-backup-restore-drill` (Giai đoạn 6). Đã chạy: cổng khóa dispatch khi vị từ
-      `reconciliation_complete` trả `False`, và 0 outbound trong cửa sổ đó. Nhưng chưa lần
-      restore nào chạy vào môi trường sạch, và `backup_manifest` chưa tồn tại để so count/hash —
-      cùng lý do đã giữ dòng này `NOT_RUN` từ Giai đoạn 1.
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_restore_side_effect_lock.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo trên một lần restore THẬT vào một database sạch (không mô phỏng):
+      trong khoảng [restore, đối soát xong) số outbound call bằng **0** — đo bằng chính
+      dispatcher của card delivery cộng một transport **raise nếu bị gọi**; mọi
+      `worker.claim_assignment` trả `RESTORE_UNVERIFIED`; `first_announced_ledger` sau restore
+      giống hệt trước backup; count và hash của `saved_snapshot` khớp `backup_manifest`; và
+      response nêu **đích danh** mệnh đề chưa đạt, không phải một thông điệp chung. KHÔNG thiết
+      lập, và card khai thẳng: một **drill restore thật vào môi trường của Owner** với RPO/RTO
+      đo được vẫn `NOT_RUN` (E3) — cái đã chạy chứng minh hệ thống TỪ CHỐI đúng chỗ, không chứng
+      minh nó khôi phục được.
 
   - id: SC28
     title_vi: "Worker chết sau khi provider đã chạy xong, trước khi submit → unknown_attempt, không hai kết quả cùng key"
@@ -1661,7 +1741,7 @@ scenarios:
       (`PROV-PC03-04`) và cần Owner phê chuẩn.
     status: "PASS (E2)"
     status_evidence_refs:
-      - "evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json"
+      - "evidence/runs/TC-analysis-once-per-generation-E1-20260908T010738Z.json"
       - "tests/integration/test_attempt_not_result.py"
       - "tests/contract/test_analysis_key.py"
       - "evidence/audits/A3-P3-R1-report.md"
@@ -1929,7 +2009,17 @@ scenarios:
     evidence_level_required: E2
     mockable_vi: "Offline; đếm hàng."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json"
+      - "tests/integration/test_scheduler_catchup.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo: năm lần bấm `run.run_now` khi đang có run active ⇒ `COUNT(run)`
+      **không tăng**, cả năm response mang **cùng một** `run_id`, và ảnh chụp hàng `run`
+      trước/sau **giống hệt** — tức `coalesce` không âm thầm sửa gì. KHÔNG thiết lập: hành vi
+      khi người dùng bấm từ Telegram (thuộc card adapter).
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`collection/i-…`, ruling R5-02). Định nghĩa gốc vẫn ở
       `contracts/state/run.yaml` §scenario_definitions; fixture chỉ cung cấp dữ liệu cho nó.
@@ -1970,7 +2060,19 @@ scenarios:
       Không cần live, nhưng phụ thuộc câu trả lời của Owner cho B08: `Asia/Ho_Chi_Minh` hiện
       KHÔNG có DST nên hai quy tắc này chưa kích hoạt với giá trị mặc định. Nếu Owner chọn một
       múi giờ có DST thì mọi fixture lịch của PC03 và PC04 phải dựng lại.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json"
+      - "tests/integration/test_scheduler_catchup.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo: mỗi mốc DST sinh **đúng một** occurrence, `schedule_occurrence_id`
+      duy nhất cho mỗi mốc, không mốc nào bị bỏ và không mốc nào sinh hai run. **Giới hạn quan
+      trọng, và nó nằm trong chính scenario**: `Asia/Ho_Chi_Minh` hiện **không có DST**, nên hai
+      quy tắc giờ-nhảy và giờ-lặp được kiểm bằng fixture với một múi giờ có DST, không bằng múi
+      giờ sản phẩm. Cái được chứng minh là **cơ chế**; nếu Owner đổi múi giờ, phép đo này vẫn
+      đứng.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`collection/j-…`, ruling R5-02). Câu hỏi Owner về timezone (B08)
       vẫn mở: nếu Owner chọn một múi giờ CÓ DST thì fixture này mới thực sự kích hoạt, và mọi
@@ -2010,6 +2112,12 @@ scenarios:
     mockable_vi: "Offline; đếm hàng."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: NOT_RUN
+    partial_evidence_vi: >
+      Đã chạy hai vế mạnh: cancel từ **cả năm** trạng thái non-terminal ⇒ 5 run `cancelled`, **0
+      hàng bị xóa**, và mọi `assignment_lease` liên quan chuyển `revoked` (worker sống sót không
+      claim lại được vì epoch đã chuyển). KHÔNG đo được hai vế cross-card: một `report.publish`
+      **sau** cancel bị từ chối, và một `delivery` đã `sent` **không** bị thu hồi. Cả hai bảng
+      tồn tại; không test nào nối cancel với chúng.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`collection/k-…`, ruling R5-02).
 
@@ -2110,7 +2218,21 @@ scenarios:
       Giá trị N THẬT (REQ-OQ04) chờ Owner; 7 ngày là PROVISIONAL từ baseline §5. Hệ quả đã ghi
       nhận có chủ đích: **đổi TÊN một tag sinh một entitlement mới**, vì hệ thống không được đoán
       rằng hai chuỗi khác nhau là cùng một mối quan tâm.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-backfill-pending-ledger-E1-20260908T013901Z.json"
+      - "tests/integration/test_backfill_once.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo qua năm bước thêm → tiêu thụ → bỏ → thêm lại: `COUNT(backfill_ledger
+      … consumed_in_report_id IS NOT NULL) = 1` sau cả năm bước, và **cơ sở dữ liệu từ chối**
+      lần tiêu thụ thứ hai ngay cả khi code cố ý yêu cầu — UNIQUE một phần là trọng tài, không
+      phải một phép đọc trước khi ghi. `coverage_from` của kỳ sau **không lùi** trước
+      `coverage_to` của kỳ trước. Và vế tinh tế nhất được kiểm bằng một test riêng: khóa theo
+      `tag.id` **sẽ** cấp lại entitlement, nên khóa là **chữ tag đã chuẩn hóa** — test chứng
+      minh cả hai chiều. KHÔNG thiết lập: giá trị N THẬT (`REQ-OQ04` chờ Owner; 7 ngày là
+      PROVISIONAL).
 
   - id: SC38
     title_vi: "Builder crash giữa chừng → không report một phần, KHÔNG tiêu thụ backfill"
@@ -2148,7 +2270,18 @@ scenarios:
     evidence_level_required: E2
     mockable_vi: "Crash inject được; offline."
     needs_live_or_human_vi: "Không có phần bắt buộc live."
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-backfill-pending-ledger-E1-20260908T013901Z.json"
+      - "tests/integration/test_backfill_once.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle đã đo, và nhánh sự cố được tiêm thật: builder không publish ⇒ **không**
+      tiêu thụ; crash **bên trong** transaction publish ⇒ tiêu thụ bị roll back; build chạy lại
+      ⇒ tiêu thụ **đúng một lần**. `COUNT(report_item)` cho build hỏng bằng 0 và `entitlement`
+      vẫn `granted` cho tới publish commit. Ba điều kiện của SRC-PLAN §9.2 (không tiêu thụ vô
+      điều kiện) đều có test riêng.
 
   # ------------------------------------------------------------------------------------
   # SC39–SC43 — do PC08 đăng ký (CR-PC08-01)
@@ -2338,11 +2471,21 @@ scenarios:
     mockable_vi: "Offline."
     needs_live_or_human_vi: >
       Mệnh đề 7 theo thiết kế đòi một CON NGƯỜI xác nhận; không tự động hóa được.
-    status: NOT_RUN
-    partial_evidence_vi: >
-      RESTORE_UNVERIFIED với details_safe nêu đích danh mệnh đề chưa đạt, và dispatch vẫn khóa —
-      đã chạy (fixture j). Vế COUNT(assignment_lease WHERE state='held') = 0 KHÔNG đo được (bảng
-      chưa tồn tại), và mệnh đề 7 theo thiết kế đòi một CON NGƯỜI xác nhận.
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_restore_side_effect_lock.py"
+      - "tests/integration/test_readiness_independent_channel.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Toàn bộ oracle nay đo được và đã đo — vế từng thiếu (`assignment_lease`, `restore_record`)
+      nay có bảng thật. `RESTORE_UNVERIFIED` được trả với `details_safe` **nêu đích danh** mệnh
+      đề chưa đạt; số outbound bằng 0; `COUNT(assignment_lease WHERE state='held') = 0`. Ba test
+      tách riêng ba cách một lần đối soát có thể **giả vờ** hoàn tất: integrity + counts **một
+      mình không đủ**, một acknowledgement **một mình không đủ**, và acknowledgement phải mang
+      **tên principal và một ghi chú**. Mệnh đề 7 theo thiết kế đòi một CON NGƯỜI — cái được đo
+      là vị từ **giữ false** cho tới khi có nó.
 
   - id: SC43
     title_vi: "Backup WAL-unsafe bị phát hiện: hash khớp và integrity_check ok nhưng counts lệch → snapshot invalid"
@@ -2382,6 +2525,13 @@ scenarios:
       Chỉ một drill THẬT trên SQLite thật (WAL bật, có ghi đồng thời) mới chứng minh cơ chế phát
       hiện hoạt động. Chưa drill nào đã chạy.
     status: NOT_RUN
+    partial_evidence_vi: >
+      `evidence_level_required` là **E3**. Nhưng phần đo được đã được đo bằng một khuyết tật
+      **tạo thật, không mô phỏng**: ghi rồi checkpoint 3 hàng, ghi tiếp 4 hàng (nằm trong
+      `-wal`), copy **chỉ** file `.db` ⇒ `sha256` khớp, `PRAGMA integrity_check` = `ok`,
+      `counts` lệch đúng 4 ⇒ `RESTORE_UNVERIFIED` và snapshot bị từ chối. Đối chứng: **cả hai**
+      phương pháp hợp lệ chụp đủ 7 hàng và verify sạch. Cái còn thiếu là cấp bằng chứng: một
+      drill trên môi trường thật của Owner với RPO/RTO đo được.
 
   - id: SC44
     title_vi: "data.purge_all: xác nhận hai pha, chỉ trong maintenance, thu hồi lease, cùng các ca âm"
@@ -2464,6 +2614,12 @@ scenarios:
       lưu — mục (4) và (6) kiểm cả sự thật đó lẫn việc hộp thoại có NÓI ra nó. Chạy thật vẫn
       `NOT_RUN`: phê chuẩn chốt cam kết, nó không tạo ra bằng chứng.
     status: NOT_RUN
+    partial_evidence_vi: >
+      **Không hiện thực, và card khai thẳng.** `data.purge_all` là non-goal của
+      `TC-backup-restore-drill` (`SG-02`, §1); fixture `recovery/l` **chỉ được đọc**. Bảng
+      `data_deletion_audit` chưa tồn tại. Oracle đòi kiểm **đủ ba tập** trên 60 bảng (37 xóa /
+      21 giữ / 2 không bao giờ xóa) — phạm vi đã được Owner chốt ở `OD-20260907-01` mục 24, nên
+      đây là việc còn lại, không phải một câu hỏi còn mở.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`recovery/l-…`, ruling R5-02), gồm xác nhận hai pha và các ca
       âm. `F-A2R5-01` (MAJOR): oracle của scenario này từng ghi phạm vi loại trừ là
@@ -2611,7 +2767,7 @@ scenarios:
       (CR-PC07-01).
     status: "PASS (E2)"
     status_evidence_refs:
-      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json"
       - "tests/integration/test_link_code_once.py"
       - "tests/integration/test_unknown_chat_silent.py"
       - "evidence/audits/A3-P3-R1-report.md"
@@ -2668,7 +2824,7 @@ scenarios:
     needs_live_or_human_vi: "Không có phần bắt buộc live."
     status: "PASS (E1)"
     status_evidence_refs:
-      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
+      - "evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json"
       - "tests/contract/test_saved_snapshot_schema.py"
       - "evidence/audits/A3-P3-R1-report.md"
       - "evidence/audits/A3-P3-R2-report.md"
@@ -2798,15 +2954,15 @@ scenarios:
       không bao giờ mở ra LAN hay reverse proxy (REQ-S11.2-06).
     status: NOT_RUN
     partial_evidence_vi: >
-      Giai đoạn 3/5 mở rộng đáng kể phần chạm được: `test_concurrent_save.py` phủ NC-01
-      (collector token), NC-20 (analysis worker token), NC-36 (không credential) và `FE-14`;
-      `test_telegram_command_allowlist.py` phủ ba cạnh `UNAUTHORIZED_COMMAND`;
-      `test_injection_canary.py`, `test_delivery_unknown_no_retry.py` và
-      `test_analysis_once_per_key.py` thêm các cạnh AI và delivery. Oracle vẫn đòi **cả ba** cơ
-      chế ép buộc, và 14 cạnh `CAPABILITY_DENIED` vẫn là `NOT_TESTABLE_AT_THIS_LAYER`. Thêm một
-      mâu thuẫn hợp đồng chưa giải: `CR-TC-TGAUTH-04` — fixture sweep nói ba cạnh đó **không
-      phản hồi gì**, `commands.yaml` nói một chat ĐÃ liên kết nhận một câu ngắn. Một oracle đang
-      tranh chấp không thể chống đỡ một PASS.
+      Giai đoạn 4/6 lại mở rộng phần chạm được: `test_pending_survives_cursor.py` phủ một cạnh
+      `FORBIDDEN_EDGE` **trước mọi lần ghi**, `test_publish_cas.py` phủ hai cạnh (analysis
+      worker không được publish; report service không tự yêu cầu build),
+      `test_restore_side_effect_lock.py` phủ các cạnh `backup.*`, và web test phủ hai cạnh UI.
+      **Lý do còn lại, nêu chính xác**: oracle đòi **cả ba** cơ chế ép buộc, và cơ chế thứ ba —
+      network/process capability cho worker trên máy cá nhân — vẫn là **14 cạnh
+      `CAPABILITY_DENIED`** giữ ở `NOT_TESTABLE_AT_THIS_LAYER`; chúng chỉ đo được trên máy có
+      Chrome thật và một tiến trình worker thật. `CR-PC09-24` ghi rằng SC49 sẽ **không** chuyển
+      được bằng thêm test ở tầng này, dù thêm bao nhiêu cạnh.
     notes_vi: >
       HAI THIẾU SÓT ĐÃ ĐO. (a) 26 trong 36 cạnh KHÔNG có `denied_cases[]` với
       `expected_error_code` được pin, nên scenario này có oracle "không đổi trạng thái" cho cả 36
@@ -3119,7 +3275,20 @@ scenarios:
       Mệnh đề 7 đòi một CON NGƯỜI xác nhận theo thiết kế. Và như `backup-restore.md` §5.7 ghi:
       runbook là thiết kế, không phải bằng chứng — chỉ một drill restore thật mới chứng minh
       khôi phục được. RPO 24 h / RTO 2 h là PROVISIONAL và cần Owner chốt.
-    status: NOT_RUN
+    status: "PASS (E2)"
+    status_evidence_refs:
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "tests/integration/test_restore_side_effect_lock.py"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+    status_scope_vi: >
+      Mặt DƯƠNG của I15, toàn bộ oracle đã đo: sau khi đối soát hoàn tất,
+      `worker.claim_assignment` **thành công** và `COUNT(assignment_lease held) = 1`; nhưng
+      outbound cho `outbox_intent` mang `restore_generation` cũ vẫn bằng **0** — mở dispatcher
+      **không** có nghĩa phát lại lịch sử, và đó là vế dễ làm sai nhất. `first_announced_ledger`
+      sau restore giống hệt trước backup; count và hash của `saved_snapshot` khớp
+      `backup_manifest`; đối soát là idempotent. KHÔNG thiết lập: drill thật vào môi trường của
+      Owner (E3).
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`recovery/m-…`, ruling R5-02). I15 trước đợt này chỉ có mặt âm
       (bị khóa); nay có mặt dương (đối soát xong thì dispatcher mở mà outbox cũ vẫn không phát lại).

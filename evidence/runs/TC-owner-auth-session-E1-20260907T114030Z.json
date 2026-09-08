@@ -171,12 +171,13 @@
       "pytest_output_tail": "305 passed, 4 xfailed in 41.01s (exit 0)"
     }
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "mock",
     "sample_size": 309,
     "not_checked_vi": [
+      "SUPERSEDED: con số và giới hạn trong bản ghi này thuộc về cây trước PKT-TC-AUTH-FIX3. Đọc EV-E1-03-tc-owner-auth-session cho kết quả hiện hành.",
       "E3/E4 chưa chạy: không trình duyệt thật, không TLS thật, không reverse proxy. Cờ `Secure` của cookie được khẳng định trên chuỗi Set-Cookie, KHÔNG phải trên một kết nối HTTPS thật.",
       "Không có bearer token thật nào tồn tại: `TokenRegistry` rỗng theo mặc định và chỉ giữ sha256; test nạp digest của token giả. Phát/lưu/xoay ba token thuộc card khác.",
       "14 trong 36 cạnh của boundary/a KHÔNG do lớp này quyết định (process/network capability, import rule). Chúng được ghi NOT_TESTABLE_AT_THIS_LAYER kèm cơ chế, và KHÔNG được đếm là pass.",
@@ -209,5 +210,6 @@
       "acceptance/fixtures/ui/sc51-first-time-setup.json",
       "acceptance/scenarios.yaml"
     ]
-  }
+  },
+  "stale_reason": "Superseded by EV-E1-03-tc-owner-auth-session (evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json). Ruling F-A3R3 / E0-21: this record's storage row rested on an xfail whose reason said TC-storage-write-blocked-readiness had not landed. It had. PKT-TC-AUTH-FIX3 replaced that stub with tests that drive the real StorageGuard into write_blocked through its own T-ST-01 transition and the real WriteFaultInjector through the login write path, which changed both the counts and what the evidence establishes. SRC-PLAN §16: evidence pinned to superseded bytes is STALE, not FAIL."
 }

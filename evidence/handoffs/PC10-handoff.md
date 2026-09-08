@@ -3396,3 +3396,143 @@ E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
 ---
 
 *PKT-PC10-FIX25 · worker-WP · `lease_released_at` 2026-09-08T03:05Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX26 (re-pin `P4`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX26` · lease `LEASE-PC10-e27` (fencing 27) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-08T01:10Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P4-20260908`** (thay `PC10-PIN-P3b-20260908`) |
+
+## Z.1 Cổng — predicate sai, sự kiện đúng, và cách tôi xử lý
+
+Packet yêu cầu chờ một addendum `PKT-PC00-FIX30` trong `evidence/handoffs/PC00-handoff.md`. **File đó không
+có addendum nào tên như vậy** — tôi kiểm trực tiếp: 0 kết quả cho cả `FIX30` lẫn `FIX24`. Coordinator xác
+nhận W1n chưa append FIX24–FIX30 vào file này và sẽ backfill ở nơi khác, đồng thời nêu các sự kiện mà cổng
+đại diện: `LEASE-PC00-e31` nhả lúc 00:50Z, `precode/owner-decisions-10.md` tồn tại, `precode/` đã yên.
+
+Tôi xác minh phần **kiểm được**: `precode/owner-decisions-10.md` **có** trên đĩa; và tôi tự chạy phép kiểm
+ổn định hai phút thay vì tin lời.
+
+**Lần chạy đầu của phép kiểm đó là rác, và tôi bắt được nó.** Danh sách file nằm trong một biến được bọc
+nháy, nên shell truyền **một chuỗi** thay vì tám đường dẫn: `sha256sum` không đọc file nào, cả ba mẫu đều là
+md5 của chuỗi rỗng (`d41d8cd9…`), và script in ra `STABLE`. Đó đúng loại "self-test chứng minh không gì cả
+theo đúng cách trông giống thành công" mà `evidence/tools/README.md` §5b cảnh báo. Chạy lại với lời gọi
+tường minh và một guard chống rỗng: **t0 = t1 = t2 = `63c3542f33ef8a05`**, tám file, ba mẫu cách nhau 65 s.
+Chỉ sau đó tôi mới pin.
+
+## Z.2 Re-pin — có thật sự có gì để pin lại
+
+Trước khi pin, `verify_cards.py` báo **0 vi phạm** ở `P3b`, nên câu hỏi hợp lệ là: epoch mới này có phải chỉ
+là đổi tên không? **Không.** Tôi so từng hàng hash giữa bản trước và bản sinh mới: **hai** file đã pin đổi
+byte — `precode/baseline.json` và `precode/decision-register.md` (vòng ghi `OD-20260908-10`). Con số 0 trước
+đó là vì lần chạy verify diễn ra **trước** khi hai file ấy land, không phải vì chúng không đổi.
+
+Tập pin **528 dòng hash / 144 file**. Phép kiểm hai vùng: **19/19 card giống hệt ngoài §0**. §0 nay ghi thêm
+rằng đợt sửa Giai đoạn 4/6 chỉ chạm code, test, handoff và manifest — **không** file nào trong số đó được
+card pin, nên nó không sinh ra một lần pin lại.
+
+## Z.3 Phạm vi
+
+Ghi **đúng 24 file**: 19 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`, `TEMPLATE.md`,
+`WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum này. Không file nào khác — không
+`contracts/`, `acceptance/`, `precode/` ngoài `README.md`, `server/`, `collector/`, `worker/`, `probe/`,
+`web/`, `tests/`, `shared/`, `tools/`, `evidence/runs/`, `evidence/tools/`, `.github/`, `agent_profile/`,
+`docs/`, hay handoff khác.
+
+## Z.4 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 730 assertion, 0 violation**; epoch
+`PC10-PIN-P4-20260908`. exit 0. **Generator verifier:** `PASS: no failures`; 528 dòng hash / 144 file.
+**`--self-test`:** **14/14 đột biến bị bắt**, exit 0. Tất cả `SELF_VALIDATION`.
+
+## Z.5 CR
+
+Không CR mới. Ghi nhận cho Coordinator: `evidence/handoffs/PC00-handoff.md` **thiếu addendum FIX24–FIX30**.
+Không file nào trong nhóm đó được card pin nên nó không chặn gì ở đây, nhưng một chuỗi handoff có lỗ là một
+chuỗi bằng chứng có lỗ — nếu backfill sang file khác thì nên có một dòng trỏ đường trong `PC00-handoff.md`,
+nếu không người đọc sau này sẽ thấy chuỗi nhảy từ `FIX23` sang `FIX31` mà không biết tìm phần giữa ở đâu.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`.
+
+---
+
+*PKT-PC10-FIX26 · worker-WP · `lease_released_at` 2026-09-08T01:10Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX27 (re-pin `P4b`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX27` · lease `LEASE-PC10-e28` (fencing 28) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-08T01:55Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P4b-20260908`** (thay `PC10-PIN-P4-20260908`) |
+
+## AA.1 Cổng — predicate trên byte, và một lần nữa công cụ của tôi suýt tự lừa mình
+
+Predicate: `ADR-0011` khác hash đã pin ở `P4`, **và** nhóm file đã pin đứng yên hai phút.
+
+Vế một đúng: `precode/adr/ADR-0011-frameworks-and-toolchain.md` nay `defbe74ef6a4953a…` (trước
+`da5181b288867413…`), theo `PKT-PC00-FIX32` (phạm vi `mypy`, `CR-PC00-35`).
+
+Vế hai: script gate chạy nền của tôi mắc **đúng lỗi quoting** của vòng trước — danh sách file nằm trong một
+biến, shell truyền một chuỗi, `sha256sum` không đọc gì. Khác biệt lần này: guard chống rỗng mà tôi thêm sau
+lần đầu đã **giữ `stable = 0`**, nên gate sẽ **timeout** thay vì mở giả. Một cái bẫy đã sập vào chính nó và
+không cho ra kết quả sai — đó là điều guard tồn tại để làm. Tôi dừng gate đó và chạy lại phép đo bằng lời gọi
+tường minh: **t0 = t1 = t2 = `238891e54f655cd5`** trên 10 file đã pin, ba mẫu cách nhau 65 s. Pin sau đó.
+
+## AA.2 File đã pin nào thật sự đổi
+
+Không suy đoán từ mtime: tôi so từng hàng hash giữa bản trước và bản sinh mới. **Đúng hai file**:
+
+| File | Trước (`P4`) | Nay (`P4b`) |
+| --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `da5181b288867413…` | `defbe74ef6a4953a…` |
+| `precode/decision-register.md` | (bản `P4`) | bản mới của `PKT-PC00-FIX32` |
+
+Khớp đúng 38 vi phạm `pins` = 19 card × 2 file mà cả tôi và Coordinator cùng đo được.
+
+**Gói song song của WS không chạm gì có pin** — tôi kiểm trực tiếp trên cả 19 card, không tin phỏng đoán:
+bộ file dựng gói (pyproject, uv lockfile), workflow CI, Makefile, .gitignore và test smoke của server đều
+cho **0 hàng pin và 0 lần được trích dẫn**. Nên gói đó không thể làm card nào `STALE`.
+
+## AA.3 Prose của tôi lại sinh ra một token giả dạng operation ID — và verifier bắt được
+
+Bản sinh đầu tiên khiến **generator verifier FAIL 3 dòng**: `pyproject.toml` và `uv.lock` nằm trong backtick
+ở §0 khớp mẫu `a.b` của phép kiểm (c). Bản port trong repo **PASS** cùng lúc, vì nó chỉ quét §4 — chính là
+khoảng trống `CR-PC10-13` đã ghi, nay có thêm một ví dụ thật.
+
+Tôi **không** nới phép kiểm và **không** thêm token vào danh sách bỏ qua. Tôi sửa **câu văn của mình**: liệt
+kê chúng bằng chữ (pyproject, uv lockfile, workflow CI, Makefile, .gitignore) thay vì bằng token trong
+backtick. Nghĩa không đổi; không còn chuỗi nào giả dạng một operation ID. Sau đó cả hai verifier sạch.
+
+## AA.4 Phạm vi
+
+Ghi **đúng 24 file**: 19 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`, `TEMPLATE.md`,
+`WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum này. Không file nào khác — không
+`contracts/`, `acceptance/`, `precode/` ngoài `README.md`, không cây code nào, không handoff khác.
+Phép kiểm hai vùng: **19/19 card giống hệt ngoài §0**.
+
+## AA.5 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 730 assertion, 0 violation**; epoch
+`PC10-PIN-P4b-20260908`. exit 0. **Generator verifier (a…m):** `PASS: no failures` sau khi sửa prose; 528
+dòng hash / 144 file. **`--self-test`:** **14/14 đột biến bị bắt**, exit 0. Tất cả `SELF_VALIDATION`.
+
+## AA.6 CR
+
+Không CR mới. `CR-PC10-13` (bản port chỉ quét §4 ở phép kiểm `operations`) nay có **ví dụ thứ hai** — nên
+ưu tiên nó cao hơn một chút: khi script scratch biến mất, lớp lỗi này sẽ không còn ai bắt.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`PC00-handoff.md` vẫn thiếu addendum FIX24–FIX30.
+
+---
+
+*PKT-PC10-FIX27 · worker-WP · `lease_released_at` 2026-09-08T01:55Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

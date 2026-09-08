@@ -1,0 +1,234 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-01-tc-ui-reports-detail",
+ "created_at": "2026-09-07T21:09:16Z",
+ "producer_principal": "worker-W4D",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/baseline.json": "52af62c8b11e6939a9a34798bd71b4a4e688d8ed85d9c579ee1858ed341037e9",
+   "precode/decision-register.md": "b26cf51a0d7c73661ab465e5a157aaad7a9ceb6f013926abd5117f6966764a7e",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+   "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+   "contracts/schemas/report.schema.json": "8bf6bc9ccd6040c06f4ba709ea638e647ab8349e1bac4f26cd6049df76b7ba60",
+   "contracts/ai/grounding.md": "b54cec8b3f9f6a9cb2221daaafe8a61a149d0a6686d0d23dcbf7bf9f17995172",
+   "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+   "contracts/telegram/delivery.md": "18dc7c175a56efbfd434b63aac603d8408030f5fe68b63046cd83c3c9db8a0e1",
+   "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+   "precode/adr/ADR-0008-analysis-key-and-generation.md": "bbf649f5e9239d0de28c24255469ce0498f9f108bfdd45ada2ddeac859b8f1c5",
+   "precode/adr/ADR-0004-tag-freeze-point.md": "4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f",
+   "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+   "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+   "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+   "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+   "acceptance/fixtures/ai/d-schema-valid-but-uncited.json": "cf4662a1713d11fd4c60698cc416b0637bd1cfbfb35dce3a86b298e26c52bcbe",
+   "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+   "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+   "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+   "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
+   "acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json": "5b6e4f52b7558533b0555362fd38cad17ea23bb2349fe6600d08d311b9c5b8d8"
+  },
+  "implementation_revision": "PKT-TC-UIREPORTS working tree on commit fb3944a, pin epoch PC10-PIN-P3b-20260908; provenance.ts=d9561e297fdb7f4e4a368312afe685c0c19b1f2d5422363b5314d2f0743f496f; reports.ts=d186b993bc9e7b17daff21599883dbbfc0f3a18d3b65526add4b9ac0cbe18353; reportDetail.ts=e847eef67f56ac2c6b9ed5a25bb33851961d64a884cffbfa97ebdaf9413db592; workDetail.ts=f637b382313cdb97e3109d9dbd86b206caa4b18a726fa6a554bd4184c926e992; ReportDetail.tsx=764e559a187006c459b18d3d42429fd770ad5fea5b54f5ec722d2e91407248fe; reportReadModel.test.ts=3e29a9f35f7f9bf12afb461516da9817d0cd8547452f793c1718195123386abe; provenanceLabels.test.ts=e6b24ce73bbcaaa3df6c6613138f1d61b1ca069dc741af65cab08a7ccd997b9f; api.ts(after this card's block)=c82fb41aa1aa127cae5509aa26e3110e257f30809e9a9a2684a7e717b89aa061; dependencies read but not written: runState.ts=2993f50b4f36aeff46c8f3ea9386453763bbbbe875410c51ecf6c39ad9490da7, generated/openapi.d.ts=0885e55f5f659044fe7b8f4bd146f13d9c4e48c716169e06d835f87dfd31ccaf"
+ },
+ "environment": {
+  "os": "Linux-7.0.0-30-generic-x86_64",
+  "runtimes": {
+   "node": "22.23.2",
+   "npm": "10.9.8",
+   "typescript": "5.9.3",
+   "vitest": "3.2.7",
+   "eslint": "9.39.5",
+   "prettier": "3.9.6",
+   "react": "18.3.1",
+   "vite": "7.3.6",
+   "jsdom": "26.1.0",
+   "openapi-typescript": "7.13.0",
+   "@testing-library/react": "16.3.3"
+  },
+  "config_redacted": {
+   "test_environment": "jsdom (web/vite.config.ts §test)",
+   "backend": "NONE. No server was started and no HTTP request was issued. Every payload in these tests is built from acceptance/fixtures/** and passed to a pure read-model function; the typed client in web/src/lib/api.ts was compiled, not executed.",
+   "network_calls_made": 0,
+   "secrets_used": "none. This card reads no secret and the web layer is forbidden to (contracts/ui/screens.yaml §global_rules.no_direct_access)."
+  },
+  "provider": null,
+  "model": null,
+  "embedding_generation_id": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC09",
+   "SC10",
+   "SC11",
+   "SC15",
+   "SC49"
+  ],
+  "requirement_ids": [
+   "REQ-D19",
+   "REQ-D20",
+   "REQ-D21",
+   "REQ-D26",
+   "REQ-D29",
+   "REQ-D30",
+   "REQ-D45",
+   "REQ-D53",
+   "REQ-D54",
+   "REQ-D55",
+   "REQ-S4-01",
+   "REQ-S4-02",
+   "REQ-S4-03",
+   "REQ-AC09",
+   "REQ-AC10",
+   "REQ-AC11"
+  ],
+  "invariant_ids": [
+   "I04",
+   "I05",
+   "I07",
+   "I13"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json",
+    "sha256": "5b6e4f52b7558533b0555362fd38cad17ea23bb2349fe6600d08d311b9c5b8d8",
+    "bytes": 10455
+   },
+   {
+    "path": "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json",
+    "sha256": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+    "bytes": 9789
+   },
+   {
+    "path": "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json",
+    "sha256": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+    "bytes": 15344
+   },
+   {
+    "path": "acceptance/fixtures/ai/a-post-only-summary-inference-labelled.json",
+    "sha256": "dc1defe222b82dfae97582216d2251fb35663ff177822b388334789a30c9ddea",
+    "bytes": 5694
+   },
+   {
+    "path": "acceptance/fixtures/ai/d-schema-valid-but-uncited.json",
+    "sha256": "cf4662a1713d11fd4c60698cc416b0637bd1cfbfb35dce3a86b298e26c52bcbe",
+    "bytes": 6158
+   }
+  ]
+ },
+ "execution": {
+  "kind": "command",
+  "command": "npm --prefix web run typecheck && npm --prefix web run test -- reportReadModel && npm --prefix web run test -- provenanceLabels && npm --prefix web run lint && npm --prefix web test",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "started_at": "2026-09-07T21:09:02Z",
+  "ended_at": "2026-09-07T21:09:16Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Fixture là oracle duy nhất (SRC-PLAN §15); mọi phép đo là so chuỗi hoặc đếm, không đọc log và không chụp màn hình. (a) AC-10, fixture ui/sc10: dựng read model của SCR-report-detail từ analysis revision mà report_item đã đóng băng (given.rows.report_item[0].analysis_id = AN1) rồi so TỪNG TRƯỜNG với expected.channel_payloads.telegram_digest theo đúng danh sách fields_present của chính fixture — content, difference_from_prior, limitation_vi, evidence_level, matched_tags — cộng analysis_id và generation_number; số analysis_id riêng biệt trên hai kênh = expected.counts.distinct_analysis_id_across_channels = 1. (b) I05: AN2 (bản mới hơn xuất hiện SAU publish) không xuất hiện ở bất kỳ đâu trong JSON.stringify(read model) — kiểm bằng chuỗi, không bằng ý định. (c) fixture reporting/h: expected.report là một payload report.schema đầy đủ, nạp thẳng vào read model; item_type = prior_reference và nhãn hiển thị = 'Đã báo cáo 12/03' (display_oracles của fixture, ngày lấy từ first_announced_at, render theo owner.timezone_iana); số mục new_discovery = expected.counts[\"report_item[report_id=HRP2 AND item_type='new_discovery']\"] = 0. (d) fixture reporting/i: ngày công bố lần đầu KẾ THỪA sau merge (first_announced_at = 2026-09-01T13:00Z, merge_audit_id NOT NULL) vẫn hiện là một tham chiếu CÓ NGÀY, 0 mục new_discovery (I07). (e) AC-11, fixture ai/a: ba loại phát biểu cho ba chuỗi hiển thị KHÁC NHAU đôi một (so bằng Set.size = 3); mỗi statement của fixture được render DƯỚI ĐÚNG bucket kind của nó và KHÔNG xuất hiện dưới hai bucket kia (kiểm chéo 3x2); bucket source_verified RỖNG vẫn hiện, kèm câu 'Không có phát biểu loại này' (I13: không có ≠ bị giấu); evidence_level = post_only và nhãn khớp enum của report.schema.json. (f) B16: comparator thiếu ⇒ data-comparator-kind='unknown' và chuỗi chứa 'comparator: unknown'; describeComparator(undefined) và (null) cũng cho 'unknown' — không đường nào sinh ra một baseline. (g) fixture ai/d semantic_variant (source_verified dưới post_only): evidenceCeilingViolations trả đúng 1 phát biểu, view hiện cảnh báo dữ liệu lỗi, và phát biểu ấy VẪN nằm dưới bucket source_verified — hệ thống không tự hạ nhãn để 'sửa' dữ liệu. (h) grounding.md §4.5 / CR-PC06-05: analyzed_at và discovered_at cùng hiển thị và cho hai chuỗi khác nhau. (i) REQ-AC10: mục thiếu bất kỳ trường nào trong năm trường hiện nhãn 'Mục còn thiếu: …' và completeness.complete = false, không hiện như đầy đủ. (j) SRC-SPEC §8.3: cụm 'Không có nghiên cứu mới' xuất hiện 0 lần trong toàn bộ output render và trong JSON của read model Reports; hằng số được import từ runState.ts của W4C, không viết lại. (k) B14/REQ-D54: nhãn khối hướng nổi = hằng số hợp đồng 'ứng viên để đọc sâu', và evidence_state=insufficient_evidence hiện là 'Chưa đủ bằng chứng', không phải 'đang nổi'. (l) UC-03/UI-03: không có nút 'Sửa báo cáo'; nút duy nhất là Save và khi chưa có handler thì nó disabled KÈM lý do, không im lặng. (m) SG-DENY/SC49 (FE-01…FE-04): quét byte năm file của card — 0 lời gọi fetch, 0 URL tuyệt đối ngoài schema $id, 0 dangerouslySetInnerHTML, mọi import là đường dẫn tương đối. Phép quét tương đương của W4C (runReadModel.test.ts §10) nay cũng phủ các file này và PASS.",
+  "expected": {
+   "card_tests": 38,
+   "card_failures": 0,
+   "web_suite_tests": 112,
+   "web_suite_failures": 0,
+   "distinct_analysis_id_across_channels": 1,
+   "new_discovery_items_fixture_h": 0,
+   "new_discovery_items_fixture_i": 0,
+   "references_to_post_publish_analysis": 0,
+   "distinct_statement_kind_labels": 3,
+   "distinct_evidence_level_labels": 3,
+   "ceiling_violations_fixture_d_semantic_variant": 1,
+   "forbidden_phrase_occurrences": 0,
+   "network_calls": 0,
+   "typecheck_exit": 0,
+   "lint_exit": 0
+  },
+  "observed": {
+   "card_tests": 38,
+   "card_passed": 38,
+   "card_failures": 0,
+   "card_xfailed": 0,
+   "web_suite_tests": 112,
+   "web_suite_passed": 112,
+   "web_suite_failures": 0,
+   "distinct_analysis_id_across_channels": 1,
+   "new_discovery_items_fixture_h": 0,
+   "new_discovery_items_fixture_i": 0,
+   "references_to_post_publish_analysis": 0,
+   "distinct_statement_kind_labels": 3,
+   "distinct_evidence_level_labels": 3,
+   "ceiling_violations_fixture_d_semantic_variant": 1,
+   "forbidden_phrase_occurrences": 0,
+   "network_calls": 0,
+   "typecheck_exit": 0,
+   "lint_exit": 0,
+   "per_command": {
+    "npm --prefix web run typecheck": "exit 0",
+    "npm --prefix web run test -- reportReadModel": "exit 0 — 18 passed",
+    "npm --prefix web run test -- provenanceLabels": "exit 0 — 20 passed",
+    "npm --prefix web run lint": "exit 0 — eslint clean, prettier --check clean",
+    "npm --prefix web test (whole suite)": "exit 0 — 6 files, 112 passed, 0 failed; includes the sibling card's 48+15 tests and the generated-client regeneration check"
+   },
+   "sibling_regression_note": "The card's five source files fall inside the directories `tests/contract/runReadModel.test.ts` §10 sweeps for forbidden-edge tokens. The first run failed that sweep because a header comment in `web/src/routes/reports.ts` contained the database engine's name in prose. The comment was reworded and the reason recorded in the file; no test of either card was modified. This is the only failure observed in this packet, and it is reported rather than hidden."
+  }
+ },
+ "result": "STALE",
+ "artifacts": [],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 38,
+  "not_checked_vi": [
+   "E4 KHÔNG chạy. Card §8 nói rõ: render review trên desktop/mobile/Telegram là thủ công, và groundedness review theo rubric contracts/ai/grounding.md §6 cần người đánh giá thật. acceptance/scenarios.yaml đặt evidence_level_required = E4 cho SC10, SC11 và SC15. Lần chạy này chỉ thiết lập nửa E1 của ba scenario đó.",
+   "KHÔNG có server nào chạy. report.list, report.get, work.get_detail, save.create, save.remove, save.list và analysis.request_reanalysis chưa từng được gọi qua HTTP; các wrapper trong api.ts được BIÊN DỊCH chứ không được THỰC THI. Không có bằng chứng nào ở đây về hành vi CSRF, idempotency hay mã lỗi thật của server.",
+   "KHÔNG có payload Telegram nào được dựng ở đây. AC-10 được chứng minh bằng cách chiếu phía app rồi so với payload digest mà fixture đã pin, KHÔNG bằng cách chạy MOD-delivery-service. Việc hai kênh THỰC SỰ đọc cùng một revision khi cả hai đều chạy vẫn chưa được kiểm.",
+   "Read model của SCR-report-detail nhận nội dung summary qua một tham số RIÊNG (SummaryIndex) chứ không đọc từ response của report.get, vì report.schema.json chỉ mang analysis_ref. Đường dây thật từ analysis payload tới màn hình CHƯA tồn tại — xem CR-TC-UIREPORTS-03.",
+   "Read model của SCR-work-detail nhận một WorkDetailSource ghép từ các kiểu hợp đồng, vì response của work.get_detail trong openapi.yaml chỉ là target.schema.json. Chưa có adapter nào từ response thật sang read model — xem CR-TC-UIREPORTS-01.",
+   "36 cạnh của boundary/a: chỉ nửa TRÌNH DUYỆT của FE-01…FE-04 được kiểm, và chỉ bằng cách quét mã nguồn (ENF-import-rule). Nửa server và nửa network-egress KHÔNG kiểm được ở tầng này.",
+   "Không có test nào chạy trên trình duyệt thật: môi trường là jsdom. Bố cục, khả năng đọc và hành vi trên điện thoại KHÔNG được thiết lập.",
+   "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy.",
+   "Card §13 đặt tên manifest là EVM-TC-ui-reports-detail, nhưng evidence/manifest.schema.json ép evidence_id theo pattern ^EV-(PC[0-9]{2}|A[0-9]|E[0-4]|COORD)-[0-9]{2,3}(-[a-z0-9-]+)?$ mà tên card không khớp. Schema thắng vì nó là cổng kiểm chạy được; mọi card đã landing đều làm y hệt (CR-TC-ANALYSIS-07). Cùng lý do, id của change request là CR-TC-UIREPORTS-nn chứ không phải CR-TC-ui-reports-detail-nn: pattern unresolved_issue_refs của schema không nhận dạng thứ hai. Xem CR-TC-UIREPORTS-09.",
+   "Card §13 yêu cầu đăng ký run vào evidence/index.json; file đó KHÔNG nằm trong write set được cấp, nên không được chạm — xem CR-TC-UIREPORTS-07."
+  ],
+  "uncertainty_vi": "Nhãn hiển thị tiếng Việt cho ba loại phát biểu và ba mức bằng chứng do card này chọn: contracts/ui/screens.yaml §visual_design cố ý KHÔNG khóa copy (REQ-S4-10), và không hợp đồng nào cấp chuỗi cho chúng. Thứ mang tính hợp đồng là DANH TÍNH của ba nhóm và việc ba chuỗi phải phân biệt — đó chính là điều test đo. Nếu Owner muốn câu chữ khác, đổi bảng nhãn trong provenance.ts là đủ và không oracle nào phải đổi. Ngoài ra định dạng ngày dd/MM được suy ra từ chuỗi 'đã báo cáo 12/03' trong display_oracles của fixture reporting/h chứ không từ một mục hợp đồng nói thẳng về pattern ngày.",
+  "unresolved_issue_refs": [
+   "CR-TC-UIREPORTS-01",
+   "CR-TC-UIREPORTS-02",
+   "CR-TC-UIREPORTS-03",
+   "CR-TC-UIREPORTS-04",
+   "CR-TC-UIREPORTS-05",
+   "CR-TC-UIREPORTS-06",
+   "CR-TC-UIREPORTS-07",
+   "CR-TC-UIREPORTS-08",
+   "CR-TC-UIREPORTS-09",
+   "CR-PC06-05",
+   "CR-PC07-04",
+   "REQ-A5"
+  ]
+ },
+ "claim": {
+  "supports_label": "CONTRACT_READY",
+  "scope_vi": "Read model của ba màn hình SCR-reports, SCR-report-detail và SCR-work-detail; bộ từ vựng provenance ba loại phát biểu, ba mức bằng chứng và comparator; nhãn tham chiếu có ngày cho mục đã công bố; và bảy wrapper operation của §4 trong web/src/lib/api.ts — trên baseline pin PC10-PIN-P3b-20260908, commit fb3944a. Card §9 đặt trần IMPLEMENTATION_VERIFIED cho read model và nhãn provenance, nhưng bản ghi NÀY là SELF_VALIDATION và protocol §9 chặn tự kiểm ở CONTRACT_READY.",
+  "not_established_vi": [
+   "KHÔNG thiết lập IMPLEMENTATION_VERIFIED: đó là trần của card, không phải của một lần tự kiểm. Cần INDEPENDENT_AUDIT theo §12 của card.",
+   "KHÔNG thiết lập chất lượng nội dung: card §9 nói thẳng 'Chất lượng nội dung là E4', và E4 chưa chạy.",
+   "KHÔNG thiết lập rằng người đọc THỰC SỰ phân biệt được suy luận AI với dữ kiện đã kiểm — đó là câu hỏi bắt buộc của §12 và là phán đoán của người, không của test.",
+   "KHÔNG thiết lập bất kỳ hành vi HTTP nào: không server, không CSRF thật, không mã lỗi thật.",
+   "KHÔNG thiết lập rằng app và Telegram đọc cùng revision khi cả hai cùng chạy — chỉ rằng phép chiếu phía app khớp payload mà fixture pin.",
+   "KHÔNG thiết lập gì về render trên thiết bị thật: môi trường là jsdom.",
+   "KHÔNG phải independent audit: review_type là SELF_VALIDATION."
+  ]
+ },
+ "stale_reason": "Superseded by EV-E1-02-tc-ui-reports-detail (evidence/runs/TC-ui-reports-detail-E1-20260907T220500Z.json) under packet PKT-TC-UIREPORTS-FIX1, lease LEASE-TC-UIREPORTS-e2. The standing check E0-20-card-fixture-accounting flagged that §2 fixture acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json was named by no test path string and nowhere in the handoff. Both test files gained full-path FIXTURES maps and two more §2 fixtures (collection/h, boundary/a) are now exercised, so their bytes changed (reportReadModel.test.ts 3e29a9f3… -> f193f04f…, provenanceLabels.test.ts e6b24ce7… -> 4cf7006f…) and this record no longer describes the tree it was computed on. No claim changed and no result in it was contradicted: every oracle it reports still passes, on more fixtures than before."
+}

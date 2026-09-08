@@ -166,7 +166,7 @@ thư mục, **56** scenario có oracle, **0** thiếu fixture. Độ phủ: **`C
 `DEFERRED_P1` 6, `OUT_OF_SCOPE` 6, **`ORPHAN` 0** — và **không còn dòng `BLOCKED_B*` nào**
 (`coverage`), vì phê chuẩn đã chốt văn bản cam kết của cả 84 dòng từng chờ nó.
 
-**Lần chạy E0 của bản này: 26 check, 26 PASS, 0 FAIL, 0 vi phạm** (`e0`, khóa `e0`). Bộ check tăng 24 → 25 ở `PKT-PC09-P1` và → **26** ở `PKT-PC09-P3` với `E0-19-generated-matches` (mọi `sources[].sha256` của hai
+**Lần chạy E0 của bản này: 27 check, 27 PASS, 0 FAIL, 0 vi phạm** (`e0`, khóa `e0`). Bộ check tăng 24 → 25 ở `PKT-PC09-P1` và → 26 ở `PKT-PC09-P3`, → **27** ở `PKT-PC09-P4` (`E0-21-marker-reason-freshness`) với `E0-19-generated-matches` (mọi `sources[].sha256` của hai
 `GENERATED_FROM.json` bằng hash trên đĩa hôm nay — quy tắc "sinh, đừng sửa tay" của ADR-0011 ở
 dạng check tĩnh). Hai check **đổi oracle** cùng đợt: `E0-12` mở một ngoại lệ hẹp cho
 `IMPLEMENTATION_VERIFIED` trong `evidence/handoffs/**` và `evidence/runs/**` **khi bản ghi trích
@@ -237,7 +237,7 @@ lập lần đầu (`REQ-S5.1-01..05`, bốn dòng XN). SC50–SC53 cộng rulin
 
 ## 3. Kết quả E0 — chạy thật, FAIL còn lại được báo nguyên vẹn
 
-Công cụ: `evidence/tools/e0_check.py` (**26 check**, quét 286 file trong bốn thư mục
+Công cụ: `evidence/tools/e0_check.py` (**27 check**, quét 302 file trong bốn thư mục
 `contracts`, `acceptance`, `precode`, `evidence` — `agent-tasks/` **không** nằm trong phạm vi quét,
 xem §9.1). Lần chạy đóng gói được đăng ký ở
 `evidence/index.json` bản ghi `EV-PC09-01`. `baseline_hashes` gồm các file quét được
@@ -248,7 +248,7 @@ viết ra kết quả) và `evidence/index.json` (nó phải đăng ký artefact
 bytes của hai file đó **trước** bước cuối. Đây là vòng lặp không tránh được, không phải một khoảng
 lệch bị giấu; mọi file hợp đồng, fixture và scenario khác trong bản ghi là bytes cuối cùng.
 
-**26 PASS · 0 FAIL · 0 vi phạm** (`e0` trong `numbers.json`).
+**27 PASS · 0 FAIL · 0 vi phạm** (`e0` trong `numbers.json`).
 
 ### 3.1 Check mới: `E0-04b-prose-op-tokens` — lớp lỗi mà E0 trước đây không thấy
 
@@ -464,11 +464,11 @@ Mọi mục khác của bản này trỏ về đây thay vì nhắc lại. `F-A2
 được viết ở bốn chỗ và ba chỗ không được quét lại khi nó đổi; kỷ luật `numbers.json` áp cho *số*
 nay áp cho cả *trạng thái*.
 
-**17 AUDIT_REPORT độc lập đã chạy** (`audit_reports_count`): `A1-R1..R3`, `A2-R1..R7`
+**19 AUDIT_REPORT độc lập đã chạy** (`audit_reports_count`): `A1-R1..R3`, `A2-R1..R7`
 (baseline hợp đồng), **`A3-R1..R4`** trên `FC-P1` epoch 1–4, và **`A3-P2-R1`** trên `FC-P2` —
 năm lượt audit **code**.
 
-**Cả 17 bản nay nằm trong repo** tại `evidence/audits/` (`audit_reports_in_repo_count`, ĐẾM
+**Cả 19 bản nay nằm trong repo** tại `evidence/audits/` (`audit_reports_in_repo_count`, ĐẾM
 từ thư mục), **nguyên vẹn từng byte** so với bản gốc (`cmp`-verified). Bản còn thiếu là
 **`A3-P2-R1`**: `evidence/audits/` **không** nằm trong write set của `PKT-PC09-P2`, nên gói này
 không chép nó, và chênh lệch 15 ≠ 14 được nêu ra thay vì làm phẳng — **`CR-PC09-18`**. Hệ quả cụ
@@ -574,7 +574,7 @@ rõ trong tiêu đề cột rằng đó là điều đang xảy ra. `F-A2R4-01` 
 
 **Lượt xác minh đang chờ.** A2 chưa kiểm lại bản sửa của chính đợt này — bao gồm `E0-12`/`E0-12b`,
 bảng module viết lại sau phê chuẩn, và tuyên bố theo phạm vi ở §12. Theo protocol §8 tôi không
-được tự xác minh bản sửa của mình, nên "**26/26 PASS, 0 vi phạm**" ở §3 là **con số của phía sửa,
+được tự xác minh bản sửa của mình, nên "**27/27 PASS, 0 vi phạm**" ở §3 là **con số của phía sửa,
 chạy bằng công cụ do phía sửa viết** — bằng chứng cần được kiểm, không phải một verdict. Điều này
 áp **đặc biệt** cho `E0-12b`: một check do tôi viết, tự xác nhận rằng các `ratification_ref` do
 các gói khác viết là hợp lệ, chưa từng được ai ngoài tôi chạy.
@@ -869,8 +869,8 @@ trích trước đó (`…/scratchpad/phase1-cr-consolidated.txt`) đếm **32**
 chạy là **41**, vì đợt sửa sau `A3-R1` phát thêm chín id (`CR-TC-IDENTITY-11..15`,
 `CR-TC-AUTH-07/-08`, `CR-TC-ingest-07`, `CR-P0-06`). Chênh lệch được nêu thay vì được làm tròn.
 
-**Tổng: 255 CR** (artefact `cr_summary-…` của `EV-PC09-01`) — **150** dạng `CR-PC<nn>` (PC00–PC10),
-**6** dạng `CR-P0-nn`, **99** dạng `CR-TC-<CARD>-nn`. Phân bố trạng thái: ACCEPTED_AS_LIMITATION 1 · ACCEPT_AS_LIMITATION 2 · APPROVED 1 · CLOSED_BY_PHASE1 1 · CLOSED_CLAIMED 43 · DEFERRED_TO_CARD 1 · DUPLICATE_CLOSED 1 · FIXED_THIS_PACKET 1 · HANDOFF_TO_CARD 3 · NEXT_CONTRACT_ROUND 18 · NEXT_ROUND 1 · OPEN 152 · PARTIALLY_CLOSED 1 · RESOLVED_BY_PROTOCOL 2 · RULED 26 · SUPERSEDED 1.
+**Tổng: 319 CR** (artefact `cr_summary-…` của `EV-PC09-01`) — **157** dạng `CR-PC<nn>` (PC00–PC10),
+**6** dạng `CR-P0-nn`, **156** dạng `CR-TC-<CARD>-nn`. Phân bố trạng thái: ACCEPTED_AS_LIMITATION 1 · ACCEPT_AS_LIMITATION 2 · APPROVED 1 · CLOSED_BY_PHASE1 1 · CLOSED_CLAIMED 46 · DEFERRED_TO_CARD 1 · DUPLICATE_CLOSED 1 · FIXED_THIS_PACKET 1 · HANDOFF_TO_CARD 3 · NEXT_CONTRACT_ROUND 18 · NEXT_ROUND 1 · OPEN 203 · PARTIALLY_CLOSED 1 · RESOLVED_BY_PROTOCOL 2 · RULED 36 · SUPERSEDED 1.
 
 **12 trong số đó chạm một file `CONTRACT_READY`** và vì vậy — khi được áp dụng — cần một lần
 **re-freeze cộng A2 xác minh**, không phải một lần sửa lặng lẽ: `CR-TC-AUTH-01`, `CR-TC-AUTH-04`, `CR-TC-IDENTITY-02`, `CR-TC-IDENTITY-05`, `CR-TC-IDENTITY-06`, `CR-TC-IDENTITY-07`, `CR-TC-IDENTITY-08`, `CR-TC-IDENTITY-10`, `CR-TC-ingest-02`, `CR-TC-ingest-03`, `CR-TC-ingest-05`, `CR-TC-storage-04`. Cột "Trạng thái / đề xuất xử
@@ -880,7 +880,7 @@ lý" đánh dấu chúng bằng `CONTRACT_TOUCH`.
 (protocol §8). Khi một CR vừa có ruling của Coordinator vừa có đề xuất của gói này, **cả hai** được
 in, ngăn cách bởi dấu `+`.
 
-Bảng thứ hai bên dưới liệt kê **finding của bảy lượt audit A3** (`A3-R1..R4` trên FC-P1, `A3-P2-R1` trên FC-P2, `A3-P3-R1`/`-R2` trên FC-P3) (`A3-R1..R4` trên FC-P1, `A3-P2-R1` trên FC-P2). Chúng không phải CR và không
+Bảng thứ hai bên dưới liệt kê **finding của chín lượt audit A3** (`A3-R1..R4`, `A3-P2-R1`, `A3-P3-R1/R2`, `A3-P4-R1/R2`) (`A3-R1..R4` trên FC-P1, `A3-P2-R1` trên FC-P2, `A3-P3-R1`/`-R2` trên FC-P3) (`A3-R1..R4` trên FC-P1, `A3-P2-R1` trên FC-P2). Chúng không phải CR và không
 thuộc gói nào: quyền disposition là của Coordinator. Trạng thái lấy nguyên từ bảng xác minh của
 lượt SAU, không từ lời tự khai của gói sửa — `F-A3R1-01…15` từ `A3-R2` §2 (**13 VERIFIED · 1
 PARTIAL · 1 DEFERRED · 0 NOT_VERIFIED**) và `F-A3R2-01…04` từ `A3-R3` §2 (**4/4 VERIFIED**).
@@ -900,292 +900,359 @@ Hai disposition của Coordinator, ghi rõ vì chúng là quyết định chứ 
 
 | CR | Chủ sở hữu (gói) | Trạng thái / đề xuất xử lý | Ghi chú | Xuất hiện ở |
 | --- | --- | --- | --- | --- |
-| `CR-PC00-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
-| `CR-PC00-02` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-03` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC00-04` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-05` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC00-06` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-07` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-08` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC00-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC00-10` | — | OPEN |  | `evidence/coordination/00-coordination-baseline.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+12 file) |
-| `CR-PC00-11` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-12` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
-| `CR-PC00-13` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC00-14` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC00-15` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC00-16` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
-| `CR-PC00-17` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC00-18` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+12 file) |
-| `CR-PC00-19` | — | OPEN |  | `evidence/coordination/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+9 file) |
-| `CR-PC00-20` | — | OPEN |  | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+13 file) |
-| `CR-PC00-21` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC00-22` | — | OPEN |  | `evidence/audits/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+9 file) |
-| `CR-PC00-23` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T123537Z.json` (+6 file) |
-| `CR-PC00-24` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+3 file) |
-| `CR-PC00-25` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+3 file) |
-| `CR-PC00-26` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+5 file) |
-| `CR-PC00-27` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+7 file) |
-| `CR-PC00-28` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+3 file) |
-| `CR-PC00-29` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+5 file) |
-| `CR-PC00-30` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/coordination/PHASE3-5-card-dispatch.md`, `evidence/coordination/README.md` (+2 file) |
-| `CR-PC00-31` | — | OPEN |  | `agent_profile/registry.json`, `evidence/runs/cr_summary-20260907T204906Z.json`, `evidence/runs/numbers-20260907T204906Z.json` (+5 file) |
-| `CR-PC00-32` | — | OPEN |  | `agent_profile/registry.json`, `evidence/audits/A3-P3-R1-report.md`, `evidence/coordination/A3-p3-r1-packet.md` (+4 file) |
-| `CR-PC00-33` | — | OPEN |  | `evidence/audits/README.md`, `evidence/runs/cr_summary-20260907T204906Z.json`, `evidence/runs/numbers-20260907T204906Z.json` |
-| `CR-PC01-01` | — | OPEN |  | `contracts/errors.yaml`, `contracts/modules.yaml`, `contracts/ports.yaml` (+15 file) |
-| `CR-PC01-02` | — | OPEN |  | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json`, `agent-tasks/TC-scheduler-lease-claim.md` (+21 file) |
-| `CR-PC01-03` | — | OPEN |  | `contracts/errors.yaml`, `contracts/ports.yaml`, `evidence/audits/A1-R1-report.md` (+13 file) |
-| `CR-PC01-05` | — | OPEN |  | `acceptance/scenarios.yaml`, `contracts/data/entities.yaml`, `contracts/http/openapi.yaml` (+19 file) |
-| `CR-PC01-06` | — | OPEN |  | `contracts/modules.yaml`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC01-07` | — | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+11 file) |
-| `CR-PC01-08` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/ops/secrets.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+12 file) |
-| `CR-PC01-09` | — | **APPROVED** (Coordinator, A2-R1) | UNAUTHORIZED_COMMAND và RESTORE_UNVERIFIED là mã hợp lệ cho denied case nằm ngoài bảng bốn dòng R5-01 khi đặc tả gọi tên chúng | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+18 file) |
-| `CR-PC01-10` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+13 file) |
-| `CR-PC01-11` | — | OPEN |  | `evidence/audits/A2-R5-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+20 file) |
-| `CR-PC01-12` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC01-handoff.md` (+12 file) |
-| `CR-PC01-13` | — | OPEN |  | `docs/master-plan.md`, `evidence/coordination/A2-ratification-verify-packet.md`, `evidence/coordination/coordinator-ledger.md` (+14 file) |
-| `CR-PC02-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC02-03` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/data/invariants.md`, `contracts/schemas/saved-snapshot.schema.json` (+13 file) |
-| `CR-PC02-04` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/http/openapi.yaml`, `contracts/schemas/ingest-batch.schema.json` (+13 file) |
-| `CR-PC02-05` | — | OPEN |  | `agent-tasks/TC-canonical-identity-merge.md`, `contracts/data/entities.yaml`, `contracts/errors.yaml` (+17 file) |
-| `CR-PC02-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json`, `agent-tasks/TC-canonical-identity-merge.md`, `agent-tasks/TC-report-coverage-publish-cas.md` (+28 file) |
-| `CR-PC02-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/invariants.md`, `contracts/ops/backup-restore.md`, `evidence/audits/A2-R1-report.md` (+14 file) |
-| `CR-PC02-08` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/identity/README.md`, `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-10` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-11` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-12` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-ingest-idempotent-ack-lost.md`, `contracts/data/entities.yaml`, `contracts/state/run.yaml` (+20 file) |
-| `CR-PC02-13` | — | OPEN |  | `acceptance/fixtures/identity/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC02-handoff.md` (+11 file) |
-| `CR-PC02-14` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC02-15` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC02-16` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/modules.yaml`, `evidence/coordination/coordinator-ledger.md` (+13 file) |
-| `CR-PC02-17` | — | OPEN |  | `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml`, `contracts/telegram/commands.yaml` (+14 file) |
-| `CR-PC02-18` | — | **ACCEPTED_AS_LIMITATION** (Coordinator, A2-R1) | cửa kiểm cột R4-01 áp cho fixture dạng `rows[]`; các fixture văn xuôi giữ nguyên và được khai là NOT_APPLICABLE_FREEFORM | `evidence/audits/A2-R1-report.md`, `evidence/audits/A2-R2-report.md`, `evidence/audits/A2-R3-report.md` (+17 file) |
-| `CR-PC02-19` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC02-20` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC02-21` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC02-22` | — | OPEN |  | `contracts/data/entities.yaml`, `docs/master-plan.md`, `evidence/audits/A2-R7-report.md` (+17 file) |
-| `CR-PC02-23` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/runs/cr_summary-20260907T204906Z.json`, `evidence/runs/numbers-20260907T204906Z.json` |
-| `CR-PC03-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ports.yaml`, `evidence/coordination/FIX3-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+16 file) |
-| `CR-PC03-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-scheduler-lease-claim.md`, `contracts/errors.yaml`, `contracts/ports.yaml` (+22 file) |
-| `CR-PC03-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/run.yaml`, `evidence/coordination/FIX3-rulings.md` (+13 file) |
-| `CR-PC03-04` | — | OPEN |  | `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+18 file) |
-| `CR-PC03-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ai/tasks.yaml`, `contracts/capabilities.yaml`, `contracts/ports.yaml` (+21 file) |
-| `CR-PC03-06` | — | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/fixtures/reporting/d-empty-period-coverage-only.json`, `contracts/reporting/time-and-tags.md` (+17 file) |
-| `CR-PC03-07` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/delivery.yaml`, `evidence/coordination/FIX3-rulings.md` (+14 file) |
-| `CR-PC03-08` | — | OPEN |  | `evidence/handoffs/PC03-REQA6-handoff.md`, `evidence/handoffs/PC07-TELEGRAM-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json` (+6 file) |
-| `CR-PC04-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+14 file) |
-| `CR-PC04-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+18 file) |
-| `CR-PC04-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+14 file) |
-| `CR-PC04-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/reporting/g-concurrent-publishers-cas.json`, `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/ports.yaml` (+18 file) |
-| `CR-PC04-05` | — | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `contracts/ai/grounding.md`, `contracts/ai/tasks.yaml` (+16 file) |
-| `CR-PC04-06` | — | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/scenarios.yaml`, `contracts/reporting/time-and-tags.md` (+13 file) |
-| `CR-PC04-07` | — | OPEN |  | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/reporting/time-and-tags.md`, `contracts/ui/screens.yaml` (+13 file) |
-| `CR-PC04-08` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+18 file) |
-| `CR-PC04-09` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `contracts/state/report.yaml` (+15 file) |
-| `CR-PC04-10` | — | OPEN |  | `contracts/reporting/time-and-tags.md`, `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC04-handoff.md` (+11 file) |
-| `CR-PC04-11` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json`, `acceptance/scenarios.yaml`, `evidence/audits/A2-R1-report.md` (+14 file) |
-| `CR-PC05-01` | — | OPEN |  | `acceptance/fixtures/collection/README.md`, `acceptance/fixtures/collection/a-feed-layout-changed.json`, `agent-tasks/TC-collector-checkpoint-resume.md` (+23 file) |
-| `CR-PC05-02` | — | OPEN |  | `contracts/http/openapi.yaml`, `evidence/handoffs/PC05-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC05-03` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-research-connector-metadata.md`, `agent-tasks/TC-x-feasibility-probe.md`, `contracts/ops/collector-probe.md` (+26 file) |
-| `CR-PC05-04` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC05-handoff.md` (+11 file) |
-| `CR-PC05-05` | — | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+12 file) |
-| `CR-PC05-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `contracts/http/openapi.yaml` (+21 file) |
-| `CR-PC05-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `acceptance/scenarios.yaml` (+24 file) |
-| `CR-PC06-01` | — | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/retry-policy.yaml`, `contracts/state/analysis.yaml` (+15 file) |
-| `CR-PC06-02` | — | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md` (+14 file) |
-| `CR-PC06-03` | — | OPEN |  | `agent-tasks/TC-analysis-adapter-validation.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+13 file) |
-| `CR-PC06-04` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-analysis-adapter-validation.md`, `docs/master-plan.md` (+15 file) |
-| `CR-PC06-05` | — | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `evidence/handoffs/PC06-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC07-01` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml` (+19 file) |
-| `CR-PC07-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml` (+16 file) |
-| `CR-PC07-03` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `evidence/handoffs/PC07-handoff.md` (+15 file) |
-| `CR-PC07-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json`, `acceptance/scenarios.yaml` (+69 file) |
-| `CR-PC07-05` | — | OPEN |  | `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml`, `evidence/handoffs/PC07-handoff.md` (+15 file) |
-| `CR-PC07-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/scenarios.yaml`, `evidence/audits/A1-R3-report.md` (+14 file) |
-| `CR-PC07-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc51-first-time-setup.json`, `agent-tasks/TC-analysis-adapter-validation.md` (+18 file) |
-| `CR-PC07-08` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC07-09` | — | OPEN |  | `evidence/handoffs/PC07-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC07-10` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+12 file) |
-| `CR-PC08-01` | — | OPEN |  | `acceptance/fixtures/recovery/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC00-handoff.md` (+13 file) |
-| `CR-PC08-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backup-restore-drill.md`, `agent-tasks/TC-owner-auth-session.md`, `contracts/capabilities.yaml` (+17 file) |
-| `CR-PC08-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/h-unauthenticated-owner-api.json`, `acceptance/scenarios.yaml`, `contracts/capabilities.yaml` (+28 file) |
-| `CR-PC08-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `acceptance/scenarios.yaml` (+26 file) |
-| `CR-PC08-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `agent-tasks/TC-backup-restore-drill.md`, `contracts/data/entities.yaml` (+17 file) |
-| `CR-PC09-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+14 file) |
-| `CR-PC09-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+17 file) |
-| `CR-PC09-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/run.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+13 file) |
-| `CR-PC09-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/analysis.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+13 file) |
-| `CR-PC09-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+11 file) |
-| `CR-PC09-06` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+11 file) |
-| `CR-PC09-07` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+12 file) |
-| `CR-PC09-08` | — | OPEN |  | `evidence/audits/A2-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+11 file) |
-| `CR-PC09-09` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC09-10` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC09-11` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC09-12` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
-| `CR-PC09-13` | — | OPEN |  | `docs/master-plan.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+11 file) |
-| `CR-PC09-14` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC09-15` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+10 file) |
-| `CR-PC09-16` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+8 file) |
-| `CR-PC09-17` | — | OPEN |  | `evidence/audits/A3-R4-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+8 file) |
-| `CR-PC09-18` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/README.md`, `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/coordination/README.md` (+9 file) |
-| `CR-PC09-19` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/index.json` (+5 file) |
-| `CR-PC09-20` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json` (+4 file) |
-| `CR-PC09-21` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+4 file) |
-| `CR-PC10-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+35 file) |
-| `CR-PC10-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-collector-checkpoint-resume.md`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+23 file) |
-| `CR-PC10-03` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/WALKTHROUGH.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+13 file) |
-| `CR-PC10-04` | — | OPEN |  | `agent-tasks/WALKTHROUGH.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+11 file) |
-| `CR-PC10-05` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md` (+11 file) |
-| `CR-PC10-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+10 file) |
-| `CR-PC10-07` | — | OPEN |  | `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+13 file) |
-| `CR-PC10-08` | — | OPEN |  | `agent-tasks/README.md`, `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md` (+12 file) |
-| `CR-PC10-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/README.md`, `evidence/coordination/README.md`, `evidence/coordination/coordinator-ledger.md` (+13 file) |
-| `CR-PC10-10` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+9 file) |
-| `CR-PC10-11` | — | OPEN |  | `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+7 file) |
-| `CR-PC10-12` | — | OPEN |  | `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+7 file) |
-| `CR-PC10-13` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R3-report.md` (+14 file) |
-| `CR-PC10-14` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A3-P2-R1-report.md`, `evidence/coordination/A3-p2-r1-packet.md`, `evidence/coordination/PHASE2-dispatch-log.md` (+6 file) |
-| `CR-PC10-15` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+23 file) |
-| `CR-P0-01` | PC10 / Coordinator | DUPLICATE_CLOSED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · card da duoc re-pin sang epoch hien hanh (ten epoch chi in o review.md §9.1); khong con lech | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/coordination/PHASE0-skeleton-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+8 file) |
-| `CR-P0-02` | PC09 | FIXED_THIS_PACKET | E0-12 nay cho `IMPLEMENTATION_VERIFIED` trong evidence/handoffs va evidence/runs khi ban ghi trich dan mot bao cao A3; contracts/ acceptance/ precode/ khong doi | `evidence/audits/A3-R3-report.md`, `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+14 file) |
-| `CR-P0-03` | PC10 | NEXT_CONTRACT_ROUND | tools/ la cay top-level thu tam; §5.3 phai khai no hoac file phai chuyen vao server/ | `agent-tasks/README.md`, `evidence/handoffs/P0-skeleton-handoff.md`, `evidence/handoffs/PC00-handoff.md` (+7 file) |
-| `CR-P0-04` | Coordinator / PC10 | ACCEPT_AS_LIMITATION | card la van ban da pin va da duoc theo; xin xac nhan lai de hai van ban khong lech tiep | `agent-tasks/README.md`, `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/coordination/coordinator-ledger.md` (+7 file) |
-| `CR-P0-05` | PC09 | CLOSED_BY_PHASE1 | gói liên quan tự khai đã đóng; chưa xác minh độc lập · loader nay co cua hoi quy that: 8 file test cua bon card doc qua fixture_loader | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+6 file) |
-| `CR-P0-06` | Coordinator / WS | NEXT_CONTRACT_ROUND | sinh entity registry tu entities.yaml; can packet rieng, chi phi khong nho | `contracts/data/entities.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R3-report.md` (+17 file) |
-| `CR-TC-ANALYSIS-01` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-TC-ANALYSIS-02` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-TC-ANALYSIS-03` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+2 file) |
-| `CR-TC-ANALYSIS-04` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+2 file) |
-| `CR-TC-ANALYSIS-05` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+2 file) |
-| `CR-TC-ANALYSIS-06` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+2 file) |
-| `CR-TC-ANALYSIS-07` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+2 file) |
-| `CR-TC-ANALYSIS-08` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-AUTH-01` | PC08 / PC10 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | fixture recovery/h seq4 pin FORBIDDEN_EDGE; bon nguon noi CSRF_REJECTED | `acceptance/scenarios.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R1-report.md` (+12 file) |
-| `CR-TC-AUTH-02` | PC02 | RULED → FIX_PROPOSED + CLOSED_BY_AMENDMENT | có ruling của Coordinator; chờ A2 xác minh · AMD-ENT-owner-01 (PROVISIONAL) them password_hash/password_updated_at | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+11 file) |
-| `CR-TC-AUTH-03` | PC02 | RULED → FIX_PROPOSED + CLOSED_BY_AMENDMENT | có ruling của Coordinator; chờ A2 xác minh · AMD-ENT-owner-01 them failed_login_count/locked_until | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+11 file) |
-| `CR-TC-AUTH-04` | PC01 / PC08 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ports.yaml va errors.yaml khong liet ke RATE_LIMITED cho auth.login | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-AUTH-05` | WS / PC01 | NEXT_CONTRACT_ROUND | bo sinh chua pho auth_scope, message_safe_template_vi, details_safe_keys, model inline | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-AUTH-06` | Coordinator | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · chuoi revision tuyen tinh sau 0002_base_entities; mot head | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-AUTH-07` | PC08 / PC02 | ACCEPT_AS_LIMITATION | cua so 15 phut khong bieu dien duoc bang bon cot; ban cai dat la tap cha dem-lien-tiep | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/index.json`, `evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json` (+5 file) |
-| `CR-TC-AUTH-08` | WM (TC-canonical-identity-merge) | NEXT_ROUND | docstring cua 0004_merge_phase1_heads nay sai; file thuoc card khac | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-COLLECTOR-01` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T132623Z.json`, `evidence/runs/cr_summary-20260907T174152Z.json` (+2 file) |
-| `CR-TC-COLLECTOR-02` | — | OPEN |  | `evidence/audits/A3-P2-R1-report.md`, `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json` (+5 file) |
-| `CR-TC-COLLECTOR-03` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T132623Z.json` (+4 file) |
-| `CR-TC-COLLECTOR-04` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+1 file) |
-| `CR-TC-COLLECTOR-05` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+3 file) |
-| `CR-TC-COLLECTOR-06` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+3 file) |
-| `CR-TC-COLLECTOR-07` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+3 file) |
-| `CR-TC-DELIVERY-01` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-02` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-03` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-04` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-05` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-06` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-TC-DELIVERY-07` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-08` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+2 file) |
-| `CR-TC-DELIVERY-09` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+5 file) |
-| `CR-TC-DELIVERY-10` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json` (+1 file) |
-| `CR-TC-IDENTITY-01` | PC10 / Coordinator | NEXT_CONTRACT_ROUND | card §8 viet 5 post; fixture (h) mang 6 item — code theo fixture | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-02` | PC02 / PC04 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | gói liên quan tự khai đã đóng; chưa xác minh độc lập · fixture (a) moved_counts.first_announced=null vs §8.3 (so); giu bang xfail(strict) | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+11 file) |
-| `CR-TC-IDENTITY-03` | Coordinator | DEFERRED_TO_CARD | preserved_counts.published_report_item chi do duoc khi card bao cao ton tai | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/index.json` (+7 file) |
-| `CR-TC-IDENTITY-04` | Coordinator | SUPERSEDED | thay bang CR-TC-IDENTITY-11..13 (quyen so huu ghi o dung cho) | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/TC-canonical-identity-merge-E1-20260907T102504Z.json` (+5 file) |
-| `CR-TC-IDENTITY-05` | PC10 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ma loi khi vuot identity_merge_max_moved_rows: card noi CONFLICT, errors.yaml noi identity_conflict | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-06` | PC01 / PC10 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | gói liên quan tự khai đã đóng; chưa xác minh độc lập · work.get_detail: openapi ghim 200 vao target.schema.json, ports.yaml mo ta read model rong hon | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/index.json`, `evidence/runs/TC-canonical-identity-merge-E1-20260907T102504Z.json` (+6 file) |
-| `CR-TC-IDENTITY-07` | PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | entities.identity_conflict thieu cot luu request_id / conflict_fingerprint | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-08` | PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | move-set khong neu quy tac va cham cho work_label | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-09` | PC10 | NEXT_CONTRACT_ROUND | card §7 goi retry_after; errors.yaml goi retry_after_ms — code theo hop dong | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-10` | PC09 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | merge_move_set khong liet ke viec tao alias ma fixture (a) ky vong | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-11` | TC-saved-snapshot | HANDOFF_TO_CARD | saved_snapshot/saved_item da ton tai o 0002b; card sau MO RONG, khong CREATE lan hai | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json` (+6 file) |
-| `CR-TC-IDENTITY-12` | TC-analysis-once-per-generation | HANDOFF_TO_CARD | nhu tren cho analysis va work_label | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-13` | TC-report-coverage-publish-cas | HANDOFF_TO_CARD | nhu tren cho first_announced_ledger; them FK khi tao report | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-14` | TC-ingest-idempotent-ack-lost | CLOSED_CLAIMED | WI da dung lai post trong revision ingest; FK post→ingest_receipt nay duoc ep | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-IDENTITY-15` | TC-owner-auth-session | CLOSED_CLAIMED | WA da bo CREATE TABLE owner khoi revision auth; mot dinh nghia duy nhat | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-PROBE-01` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-02` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-03` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-04` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-05` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-06` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+3 file) |
-| `CR-TC-PROBE-07` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T204906Z.json` (+1 file) |
-| `CR-TC-SAVED-01` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+1 file) |
-| `CR-TC-SAVED-02` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-SAVED-03` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+1 file) |
-| `CR-TC-SAVED-04` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+1 file) |
-| `CR-TC-SAVED-05` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-SAVED-06` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-SAVED-07` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/handoffs/TC-telegram-linking-auth-handoff.md` (+4 file) |
-| `CR-TC-SAVED-08` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-SAVED-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+1 file) |
-| `CR-TC-TGAUTH-01` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-TGAUTH-02` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-linking-auth-E1-20260907T192748Z.json` (+2 file) |
-| `CR-TC-TGAUTH-03` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-TGAUTH-04` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` (+2 file) |
-| `CR-TC-TGAUTH-05` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T204906Z.json` |
-| `CR-TC-TGAUTH-06` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json` (+1 file) |
-| `CR-TC-adapter-01` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+2 file) |
-| `CR-TC-adapter-02` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+2 file) |
-| `CR-TC-adapter-03` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+2 file) |
-| `CR-TC-adapter-04` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+2 file) |
-| `CR-TC-adapter-05` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json` (+1 file) |
-| `CR-TC-adapter-06` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json` (+2 file) |
-| `CR-TC-adapter-07` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json` (+1 file) |
-| `CR-TC-embedding-01` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-TC-embedding-02` | — | OPEN |  | `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json`, `evidence/runs/TC-embedding-generation-switch-E1-20260907T192842Z.json` (+2 file) |
-| `CR-TC-embedding-03` | — | OPEN |  | `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json`, `evidence/runs/TC-embedding-generation-switch-E1-20260907T192842Z.json` (+2 file) |
-| `CR-TC-embedding-04` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json` (+3 file) |
-| `CR-TC-ingest-01` | PC02 / TC-scheduler-lease-claim | PARTIALLY_CLOSED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · post.ingest_receipt_id da co FK; run va assignment_lease chua ton tai | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md` (+8 file) |
-| `CR-TC-ingest-02` | PC02 / PC09 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | fixture f-ingest-replay-idempotent khai mot trang thai FK khong the ton tai | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+6 file) |
-| `CR-TC-ingest-03` | PC01 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ports.yaml bat buoc item_count:0; ingest-receipt.schema.json cam no | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+6 file) |
-| `CR-TC-ingest-04` | PC10 / PC01 | NEXT_CONTRACT_ROUND | card §7 noi 400; openapi noi 422 cho /v1/ingest/* — code theo openapi | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+6 file) |
-| `CR-TC-ingest-05` | PC02 / PC01 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | counts.quarantined co trong wire schema, khong co cot tren ENT-ingest-receipt | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+11 file) |
-| `CR-TC-ingest-06` | PC09 | RESOLVED_BY_PROTOCOL | tran cua card chi len duoc qua ban ghi INDEPENDENT_AUDIT — dung viec da lam o goi nay | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json` (+6 file) |
-| `CR-TC-ingest-07` | TC-canonical-identity-merge | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · hai dong E501 trong 0002b da duoc sua | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md` (+5 file) |
-| `CR-TC-research-01` | — | OPEN |  | `evidence/audits/A3-P2-R1-report.md`, `evidence/coordination/A3-p2-r1-packet.md`, `evidence/coordination/PHASE2-dispatch-log.md` (+8 file) |
-| `CR-TC-research-02` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+4 file) |
-| `CR-TC-research-03` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+4 file) |
-| `CR-TC-research-04` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+4 file) |
-| `CR-TC-research-05` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json` (+3 file) |
-| `CR-TC-research-06` | — | OPEN |  | `contracts/ops/collector-probe.md`, `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/TC-research-connector-metadata-handoff.md` (+5 file) |
-| `CR-TC-storage-01` | P0-skeleton | CLOSED_CLAIMED | tripwire Giai doan 0 da duoc dao chieu boi chu so huu file | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
-| `CR-TC-storage-02` | PC09 | RESOLVED_BY_PROTOCOL | nhu CR-TC-ingest-06: SELF_VALIDATION bi chan o CONTRACT_READY la DUNG; nhan len qua A3 | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/index.json`, `evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T100943Z.json` (+7 file) |
-| `CR-TC-storage-03` | P0-skeleton / WR | CLOSED_CLAIMED | install_auth(app) nay chay trong factory | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T100943Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+4 file) |
+| `CR-PC00-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+14 file) |
+| `CR-PC00-02` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-03` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC00-04` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-05` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC00-06` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-07` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-08` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC00-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC00-10` | — | OPEN |  | `evidence/coordination/00-coordination-baseline.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+14 file) |
+| `CR-PC00-11` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-12` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+14 file) |
+| `CR-PC00-13` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC00-14` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC00-15` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC00-16` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+14 file) |
+| `CR-PC00-17` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC00-18` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+14 file) |
+| `CR-PC00-19` | — | OPEN |  | `evidence/coordination/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+11 file) |
+| `CR-PC00-20` | — | OPEN |  | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+15 file) |
+| `CR-PC00-21` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC00-22` | — | OPEN |  | `evidence/audits/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+11 file) |
+| `CR-PC00-23` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T123537Z.json` (+8 file) |
+| `CR-PC00-24` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+5 file) |
+| `CR-PC00-25` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+5 file) |
+| `CR-PC00-26` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+7 file) |
+| `CR-PC00-27` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+9 file) |
+| `CR-PC00-28` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+5 file) |
+| `CR-PC00-29` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+7 file) |
+| `CR-PC00-30` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/coordination/PHASE3-5-card-dispatch.md`, `evidence/coordination/README.md` (+6 file) |
+| `CR-PC00-31` | — | OPEN |  | `agent_profile/registry.json`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json` (+9 file) |
+| `CR-PC00-32` | — | OPEN |  | `agent_profile/registry.json`, `evidence/audits/A3-P3-R1-report.md`, `evidence/coordination/A3-p3-r1-packet.md` (+8 file) |
+| `CR-PC00-33` | — | OPEN |  | `evidence/audits/README.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json` (+4 file) |
+| `CR-PC00-34` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` (+3 file) |
+| `CR-PC00-35` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+26 file) |
+| `CR-PC00-36` | — | OPEN |  | `evidence/handoffs/PC00-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` |
+| `CR-PC00-37` | — | OPEN |  | `evidence/coordination/A3-p4-r2-packet.md`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` (+1 file) |
+| `CR-PC01-01` | — | OPEN |  | `contracts/errors.yaml`, `contracts/modules.yaml`, `contracts/ports.yaml` (+17 file) |
+| `CR-PC01-02` | — | OPEN |  | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/d-unlink-before-send-cancelled.json`, `agent-tasks/TC-scheduler-lease-claim.md` (+23 file) |
+| `CR-PC01-03` | — | OPEN |  | `contracts/errors.yaml`, `contracts/ports.yaml`, `evidence/audits/A1-R1-report.md` (+15 file) |
+| `CR-PC01-05` | — | OPEN |  | `acceptance/scenarios.yaml`, `contracts/data/entities.yaml`, `contracts/http/openapi.yaml` (+21 file) |
+| `CR-PC01-06` | — | OPEN |  | `contracts/modules.yaml`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC01-07` | — | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+13 file) |
+| `CR-PC01-08` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/ops/secrets.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+14 file) |
+| `CR-PC01-09` | — | **APPROVED** (Coordinator, A2-R1) | UNAUTHORIZED_COMMAND và RESTORE_UNVERIFIED là mã hợp lệ cho denied case nằm ngoài bảng bốn dòng R5-01 khi đặc tả gọi tên chúng | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+20 file) |
+| `CR-PC01-10` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/boundary/README.md`, `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`, `contracts/modules.yaml` (+15 file) |
+| `CR-PC01-11` | — | OPEN |  | `evidence/audits/A2-R5-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+23 file) |
+| `CR-PC01-12` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC01-handoff.md` (+14 file) |
+| `CR-PC01-13` | — | OPEN |  | `docs/master-plan.md`, `evidence/coordination/A2-ratification-verify-packet.md`, `evidence/coordination/coordinator-ledger.md` (+16 file) |
+| `CR-PC02-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC02-03` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/data/invariants.md`, `contracts/schemas/saved-snapshot.schema.json` (+15 file) |
+| `CR-PC02-04` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/http/openapi.yaml`, `contracts/schemas/ingest-batch.schema.json` (+15 file) |
+| `CR-PC02-05` | — | OPEN |  | `agent-tasks/TC-canonical-identity-merge.md`, `contracts/data/entities.yaml`, `contracts/errors.yaml` (+20 file) |
+| `CR-PC02-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json`, `agent-tasks/TC-canonical-identity-merge.md`, `agent-tasks/TC-report-coverage-publish-cas.md` (+31 file) |
+| `CR-PC02-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/invariants.md`, `contracts/ops/backup-restore.md`, `evidence/audits/A2-R1-report.md` (+16 file) |
+| `CR-PC02-08` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/identity/README.md`, `evidence/audits/A1-R1-report.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-10` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-11` | — | OPEN |  | `evidence/audits/A1-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-12` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-ingest-idempotent-ack-lost.md`, `contracts/data/entities.yaml`, `contracts/state/run.yaml` (+22 file) |
+| `CR-PC02-13` | — | OPEN |  | `acceptance/fixtures/identity/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC02-handoff.md` (+13 file) |
+| `CR-PC02-14` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC02-15` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC02-16` | — | OPEN |  | `contracts/data/entities.yaml`, `contracts/modules.yaml`, `evidence/coordination/coordinator-ledger.md` (+15 file) |
+| `CR-PC02-17` | — | OPEN |  | `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml`, `contracts/telegram/commands.yaml` (+16 file) |
+| `CR-PC02-18` | — | **ACCEPTED_AS_LIMITATION** (Coordinator, A2-R1) | cửa kiểm cột R4-01 áp cho fixture dạng `rows[]`; các fixture văn xuôi giữ nguyên và được khai là NOT_APPLICABLE_FREEFORM | `evidence/audits/A2-R1-report.md`, `evidence/audits/A2-R2-report.md`, `evidence/audits/A2-R3-report.md` (+19 file) |
+| `CR-PC02-19` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC02-20` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC02-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC02-21` | — | OPEN |  | `contracts/data/entities.yaml`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC02-22` | — | OPEN |  | `contracts/data/entities.yaml`, `docs/master-plan.md`, `evidence/audits/A2-R7-report.md` (+19 file) |
+| `CR-PC02-23` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+3 file) |
+| `CR-PC03-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ports.yaml`, `evidence/coordination/FIX3-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+18 file) |
+| `CR-PC03-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-scheduler-lease-claim.md`, `contracts/errors.yaml`, `contracts/ports.yaml` (+25 file) |
+| `CR-PC03-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/run.yaml`, `evidence/coordination/FIX3-rulings.md` (+15 file) |
+| `CR-PC03-04` | — | OPEN |  | `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+20 file) |
+| `CR-PC03-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/ai/tasks.yaml`, `contracts/capabilities.yaml`, `contracts/ports.yaml` (+23 file) |
+| `CR-PC03-06` | — | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/fixtures/reporting/d-empty-period-coverage-only.json`, `contracts/reporting/time-and-tags.md` (+19 file) |
+| `CR-PC03-07` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/state/delivery.yaml`, `evidence/coordination/FIX3-rulings.md` (+16 file) |
+| `CR-PC03-08` | — | OPEN |  | `evidence/handoffs/PC03-REQA6-handoff.md`, `evidence/handoffs/PC07-TELEGRAM-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json` (+8 file) |
+| `CR-PC04-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+16 file) |
+| `CR-PC04-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+21 file) |
+| `CR-PC04-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `evidence/coordination/FIX3-rulings.md` (+16 file) |
+| `CR-PC04-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/reporting/g-concurrent-publishers-cas.json`, `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/ports.yaml` (+20 file) |
+| `CR-PC04-05` | — | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `contracts/ai/grounding.md`, `contracts/ai/tasks.yaml` (+18 file) |
+| `CR-PC04-06` | — | OPEN |  | `acceptance/fixtures/reporting/README.md`, `acceptance/scenarios.yaml`, `contracts/reporting/time-and-tags.md` (+15 file) |
+| `CR-PC04-07` | — | OPEN |  | `agent-tasks/TC-backfill-pending-ledger.md`, `contracts/reporting/time-and-tags.md`, `contracts/ui/screens.yaml` (+15 file) |
+| `CR-PC04-08` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-report-coverage-publish-cas.md`, `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md` (+20 file) |
+| `CR-PC04-09` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/data/entities.yaml`, `contracts/reporting/time-and-tags.md`, `contracts/state/report.yaml` (+17 file) |
+| `CR-PC04-10` | — | OPEN |  | `contracts/reporting/time-and-tags.md`, `evidence/audits/A2-R1-report.md`, `evidence/handoffs/PC04-handoff.md` (+13 file) |
+| `CR-PC04-11` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json`, `acceptance/scenarios.yaml`, `evidence/audits/A2-R1-report.md` (+16 file) |
+| `CR-PC05-01` | — | OPEN |  | `acceptance/fixtures/collection/README.md`, `acceptance/fixtures/collection/a-feed-layout-changed.json`, `agent-tasks/TC-collector-checkpoint-resume.md` (+25 file) |
+| `CR-PC05-02` | — | OPEN |  | `contracts/http/openapi.yaml`, `evidence/handoffs/PC05-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC05-03` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-research-connector-metadata.md`, `agent-tasks/TC-x-feasibility-probe.md`, `contracts/ops/collector-probe.md` (+28 file) |
+| `CR-PC05-04` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md`, `evidence/handoffs/PC05-handoff.md` (+13 file) |
+| `CR-PC05-05` | — | OPEN |  | `contracts/ports.yaml`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC01-handoff.md` (+14 file) |
+| `CR-PC05-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `contracts/http/openapi.yaml` (+23 file) |
+| `CR-PC05-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`, `acceptance/scenarios.yaml` (+26 file) |
+| `CR-PC06-01` | — | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/retry-policy.yaml`, `contracts/state/analysis.yaml` (+17 file) |
+| `CR-PC06-02` | — | OPEN |  | `agent-tasks/TC-analysis-once-per-generation.md`, `contracts/data/entities.yaml`, `evidence/coordination/coordinator-ledger.md` (+16 file) |
+| `CR-PC06-03` | — | OPEN |  | `agent-tasks/TC-analysis-adapter-validation.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+15 file) |
+| `CR-PC06-04` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-analysis-adapter-validation.md`, `docs/master-plan.md` (+17 file) |
+| `CR-PC06-05` | — | OPEN |  | `agent-tasks/TC-ui-reports-detail.md`, `evidence/handoffs/PC06-handoff.md`, `evidence/handoffs/TC-ui-reports-detail-handoff.md` (+16 file) |
+| `CR-PC07-01` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml` (+23 file) |
+| `CR-PC07-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/fixtures/telegram/i-unknown-chat-valid-code-format.json`, `contracts/data/entities.yaml` (+18 file) |
+| `CR-PC07-03` | — | OPEN |  | `acceptance/scenarios.yaml`, `agent-tasks/TC-telegram-linking-auth.md`, `evidence/handoffs/PC07-handoff.md` (+19 file) |
+| `CR-PC07-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc10-same-analysis-revision-app-and-telegram.json`, `acceptance/scenarios.yaml` (+83 file) |
+| `CR-PC07-05` | — | OPEN |  | `agent-tasks/TC-telegram-linking-auth.md`, `contracts/telegram/commands.yaml`, `evidence/handoffs/PC07-handoff.md` (+19 file) |
+| `CR-PC07-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/telegram/README.md`, `acceptance/scenarios.yaml`, `evidence/audits/A1-R3-report.md` (+16 file) |
+| `CR-PC07-07` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `acceptance/fixtures/ui/README.md`, `acceptance/fixtures/ui/sc51-first-time-setup.json`, `agent-tasks/TC-analysis-adapter-validation.md` (+20 file) |
+| `CR-PC07-08` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC07-09` | — | OPEN |  | `evidence/handoffs/PC07-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC07-10` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC07-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+14 file) |
+| `CR-PC08-01` | — | OPEN |  | `acceptance/fixtures/recovery/README.md`, `acceptance/scenarios.yaml`, `evidence/handoffs/PC00-handoff.md` (+15 file) |
+| `CR-PC08-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `agent-tasks/TC-backup-restore-drill.md`, `agent-tasks/TC-owner-auth-session.md`, `contracts/capabilities.yaml` (+20 file) |
+| `CR-PC08-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/h-unauthenticated-owner-api.json`, `acceptance/scenarios.yaml`, `contracts/capabilities.yaml` (+32 file) |
+| `CR-PC08-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/fixtures/recovery/README.md`, `acceptance/fixtures/recovery/i-collector-token-calls-save.json`, `acceptance/scenarios.yaml` (+30 file) |
+| `CR-PC08-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `agent-tasks/TC-backup-restore-drill.md`, `contracts/data/entities.yaml` (+20 file) |
+| `CR-PC09-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md` (+16 file) |
+| `CR-PC09-02` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+22 file) |
+| `CR-PC09-03` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/run.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+15 file) |
+| `CR-PC09-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `contracts/state/analysis.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC03-handoff.md` (+15 file) |
+| `CR-PC09-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md` (+13 file) |
+| `CR-PC09-06` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+13 file) |
+| `CR-PC09-07` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX5-rulings.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/handoffs/PC10-handoff.md` (+14 file) |
+| `CR-PC09-08` | — | OPEN |  | `evidence/audits/A2-R1-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+13 file) |
+| `CR-PC09-09` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC09-10` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC09-11` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC09-12` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+12 file) |
+| `CR-PC09-13` | — | OPEN |  | `docs/master-plan.md`, `evidence/handoffs/PC00-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+13 file) |
+| `CR-PC09-14` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC09-15` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/README.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC00-handoff.md` (+12 file) |
+| `CR-PC09-16` | — | OPEN |  | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+10 file) |
+| `CR-PC09-17` | — | OPEN |  | `evidence/audits/A3-R4-report.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC09-handoff.md` (+10 file) |
+| `CR-PC09-18` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/README.md`, `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/coordination/README.md` (+11 file) |
+| `CR-PC09-19` | — | OPEN |  | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/index.json` (+7 file) |
+| `CR-PC09-20` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json` (+6 file) |
+| `CR-PC09-21` | — | OPEN |  | `evidence/handoffs/PC09-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+6 file) |
+| `CR-PC09-22` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` (+2 file) |
+| `CR-PC09-23` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` (+2 file) |
+| `CR-PC09-24` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/runs/cr_summary-20260908T020907Z.json`, `evidence/runs/numbers-20260908T020907Z.json` (+2 file) |
+| `CR-PC10-01` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+37 file) |
+| `CR-PC10-02` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-collector-checkpoint-resume.md`, `agent-tasks/WALKTHROUGH.md`, `contracts/errors.yaml` (+25 file) |
+| `CR-PC10-03` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/WALKTHROUGH.md`, `contracts/capabilities.yaml`, `evidence/coordination/coordinator-ledger.md` (+15 file) |
+| `CR-PC10-04` | — | OPEN |  | `agent-tasks/WALKTHROUGH.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+13 file) |
+| `CR-PC10-05` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md` (+13 file) |
+| `CR-PC10-06` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T052513Z.json` (+12 file) |
+| `CR-PC10-07` | — | OPEN |  | `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+15 file) |
+| `CR-PC10-08` | — | OPEN |  | `agent-tasks/README.md`, `docs/master-plan.md`, `evidence/coordination/coordinator-ledger.md` (+14 file) |
+| `CR-PC10-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/README.md`, `evidence/coordination/README.md`, `evidence/coordination/coordinator-ledger.md` (+15 file) |
+| `CR-PC10-10` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+11 file) |
+| `CR-PC10-11` | — | OPEN |  | `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+9 file) |
+| `CR-PC10-12` | — | OPEN |  | `evidence/handoffs/PC10-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+9 file) |
+| `CR-PC10-13` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `contracts/data/entities.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R3-report.md` (+16 file) |
+| `CR-PC10-14` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A3-P2-R1-report.md`, `evidence/coordination/A3-p2-r1-packet.md`, `evidence/coordination/PHASE2-dispatch-log.md` (+8 file) |
+| `CR-PC10-15` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent-tasks/TC-analysis-adapter-validation.md`, `agent-tasks/TC-analysis-once-per-generation.md`, `agent-tasks/TC-backfill-pending-ledger.md` (+27 file) |
+| `CR-P0-01` | PC10 / Coordinator | DUPLICATE_CLOSED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · card da duoc re-pin sang epoch hien hanh (ten epoch chi in o review.md §9.1); khong con lech | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/coordination/PHASE0-skeleton-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+9 file) |
+| `CR-P0-02` | PC09 | FIXED_THIS_PACKET | E0-12 nay cho `IMPLEMENTATION_VERIFIED` trong evidence/handoffs va evidence/runs khi ban ghi trich dan mot bao cao A3; contracts/ acceptance/ precode/ khong doi | `evidence/audits/A3-R3-report.md`, `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md` (+16 file) |
+| `CR-P0-03` | PC10 | NEXT_CONTRACT_ROUND | gói liên quan tự khai đã đóng; chưa xác minh độc lập · tools/ la cay top-level thu tam; §5.3 phai khai no hoac file phai chuyen vao server/ | `agent-tasks/README.md`, `evidence/handoffs/P0-skeleton-handoff.md`, `evidence/handoffs/PC00-handoff.md` (+9 file) |
+| `CR-P0-04` | Coordinator / PC10 | ACCEPT_AS_LIMITATION | card la van ban da pin va da duoc theo; xin xac nhan lai de hai van ban khong lech tiep | `agent-tasks/README.md`, `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/coordination/coordinator-ledger.md` (+9 file) |
+| `CR-P0-05` | PC09 | CLOSED_BY_PHASE1 | gói liên quan tự khai đã đóng; chưa xác minh độc lập · loader nay co cua hoi quy that: 8 file test cua bon card doc qua fixture_loader | `evidence/coordination/PC09-PHASE1-packet.md`, `evidence/handoffs/P0-skeleton-handoff.md`, `evidence/handoffs/PC09-handoff.md` (+7 file) |
+| `CR-P0-06` | Coordinator / WS | NEXT_CONTRACT_ROUND | sinh entity registry tu entities.yaml; can packet rieng, chi phi khong nho | `contracts/data/entities.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R3-report.md` (+19 file) |
+| `CR-TC-ANALYSIS-01` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-scheduler-lease-claim-handoff.md` (+8 file) |
+| `CR-TC-ANALYSIS-02` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-scheduler-lease-claim-handoff.md` (+8 file) |
+| `CR-TC-ANALYSIS-03` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+6 file) |
+| `CR-TC-ANALYSIS-04` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json` (+7 file) |
+| `CR-TC-ANALYSIS-05` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+6 file) |
+| `CR-TC-ANALYSIS-06` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-once-per-generation-E1-20260907T194257Z.json` (+6 file) |
+| `CR-TC-ANALYSIS-07` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json` (+9 file) |
+| `CR-TC-ANALYSIS-08` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json` (+2 file) |
+| `CR-TC-AUTH-01` | PC08 / PC10 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | fixture recovery/h seq4 pin FORBIDDEN_EDGE; bon nguon noi CSRF_REJECTED | `acceptance/scenarios.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P4-R2-report.md` (+16 file) |
+| `CR-TC-AUTH-02` | PC02 | RULED → FIX_PROPOSED + CLOSED_BY_AMENDMENT | có ruling của Coordinator; chờ A2 xác minh · AMD-ENT-owner-01 (PROVISIONAL) them password_hash/password_updated_at | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+12 file) |
+| `CR-TC-AUTH-03` | PC02 | RULED → FIX_PROPOSED + CLOSED_BY_AMENDMENT | có ruling của Coordinator; chờ A2 xác minh · AMD-ENT-owner-01 them failed_login_count/locked_until | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+12 file) |
+| `CR-TC-AUTH-04` | PC01 / PC08 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ports.yaml va errors.yaml khong liet ke RATE_LIMITED cho auth.login | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-AUTH-05` | WS / PC01 | NEXT_CONTRACT_ROUND | bo sinh chua pho auth_scope, message_safe_template_vi, details_safe_keys, model inline | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-AUTH-06` | Coordinator | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · chuoi revision tuyen tinh sau 0002_base_entities; mot head | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-AUTH-07` | PC08 / PC02 | ACCEPT_AS_LIMITATION | cua so 15 phut khong bieu dien duoc bang bon cot; ban cai dat la tap cha dem-lien-tiep | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/index.json`, `evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json` (+8 file) |
+| `CR-TC-AUTH-08` | WM (TC-canonical-identity-merge) | NEXT_ROUND | docstring cua 0004_merge_phase1_heads nay sai; file thuoc card khac | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-AUTH-09` | — | OPEN |  | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/index.json`, `evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json` (+2 file) |
+| `CR-TC-AUTH-10` | — | OPEN |  | `evidence/handoffs/TC-owner-auth-session-handoff.md`, `evidence/index.json`, `evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json` (+2 file) |
+| `CR-TC-AUTH-11` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/audits/A3-P4-R2-report.md`, `evidence/audits/README.md`, `evidence/coordination/A3-p4-r2-packet.md` (+5 file) |
+| `CR-TC-BACKFILL-01` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKFILL-02` | — | OPEN |  | `evidence/handoffs/TC-analysis-once-per-generation-handoff.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-BACKFILL-03` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backfill-pending-ledger-E1-20260907T220221Z.json` (+3 file) |
+| `CR-TC-BACKFILL-04` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backfill-pending-ledger-E1-20260907T220221Z.json` (+3 file) |
+| `CR-TC-BACKFILL-05` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/audits/A3-P4-R1-report.md`, `evidence/coordination/A3-p4-r1-packet.md`, `evidence/coordination/FIX-P4-wave-rulings.md` (+8 file) |
+| `CR-TC-BACKFILL-06` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKFILL-07` | — | OPEN |  | `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md` (+7 file) |
+| `CR-TC-BACKFILL-08` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKFILL-09` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `acceptance/scenarios.yaml`, `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md` (+15 file) |
+| `CR-TC-BACKFILL-10` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json` (+4 file) |
+| `CR-TC-BACKFILL-11` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/index.json` (+4 file) |
+| `CR-TC-BACKFILL-12` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKUP-01` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backup-restore-drill-E1-20260908T042000Z.json` (+3 file) |
+| `CR-TC-BACKUP-02` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKUP-03` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKUP-04` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backup-restore-drill-E1-20260908T042000Z.json` (+3 file) |
+| `CR-TC-BACKUP-05` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backup-restore-drill-E1-20260908T042000Z.json` (+3 file) |
+| `CR-TC-BACKUP-06` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-BACKUP-07` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/index.json`, `evidence/runs/TC-backup-restore-drill-E1-20260908T042000Z.json` (+3 file) |
+| `CR-TC-COLLECTOR-01` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T132623Z.json`, `evidence/runs/cr_summary-20260907T174152Z.json` (+3 file) |
+| `CR-TC-COLLECTOR-02` | — | OPEN |  | `evidence/audits/A3-P2-R1-report.md`, `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-COLLECTOR-03` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T132623Z.json` (+5 file) |
+| `CR-TC-COLLECTOR-04` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+2 file) |
+| `CR-TC-COLLECTOR-05` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+4 file) |
+| `CR-TC-COLLECTOR-06` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+4 file) |
+| `CR-TC-COLLECTOR-07` | — | OPEN |  | `evidence/handoffs/TC-collector-checkpoint-resume-handoff.md`, `evidence/index.json`, `evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json` (+4 file) |
+| `CR-TC-DELIVERY-01` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-02` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-03` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-04` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-05` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-06` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-DELIVERY-07` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T193653Z.json` (+5 file) |
+| `CR-TC-DELIVERY-08` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-DELIVERY-09` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+10 file) |
+| `CR-TC-DELIVERY-10` | — | OPEN |  | `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json` (+4 file) |
+| `CR-TC-DELIVERY-11` | — | OPEN |  | `evidence/handoffs/TC-backup-restore-drill-handoff.md`, `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md`, `evidence/index.json` (+2 file) |
+| `CR-TC-IDENTITY-01` | PC10 / Coordinator | NEXT_CONTRACT_ROUND | card §8 viet 5 post; fixture (h) mang 6 item — code theo fixture | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-02` | PC02 / PC04 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | gói liên quan tự khai đã đóng; chưa xác minh độc lập · fixture (a) moved_counts.first_announced=null vs §8.3 (so); giu bang xfail(strict) | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/audits/A3-R1-report.md` (+15 file) |
+| `CR-TC-IDENTITY-03` | Coordinator | DEFERRED_TO_CARD | gói liên quan tự khai đã đóng; chưa xác minh độc lập · preserved_counts.published_report_item chi do duoc khi card bao cao ton tai | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/index.json` (+9 file) |
+| `CR-TC-IDENTITY-04` | Coordinator | SUPERSEDED | thay bang CR-TC-IDENTITY-11..13 (quyen so huu ghi o dung cho) | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/TC-canonical-identity-merge-E1-20260907T102504Z.json` (+6 file) |
+| `CR-TC-IDENTITY-05` | PC10 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ma loi khi vuot identity_merge_max_moved_rows: card noi CONFLICT, errors.yaml noi identity_conflict | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-06` | PC01 / PC10 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | gói liên quan tự khai đã đóng; chưa xác minh độc lập · work.get_detail: openapi ghim 200 vao target.schema.json, ports.yaml mo ta read model rong hon | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/index.json`, `evidence/runs/TC-canonical-identity-merge-E1-20260907T102504Z.json` (+8 file) |
+| `CR-TC-IDENTITY-07` | PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | entities.identity_conflict thieu cot luu request_id / conflict_fingerprint | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-08` | PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | move-set khong neu quy tac va cham cho work_label | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-09` | PC10 | NEXT_CONTRACT_ROUND | card §7 goi retry_after; errors.yaml goi retry_after_ms — code theo hop dong | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-10` | PC09 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | merge_move_set khong liet ke viec tao alias ma fixture (a) ky vong | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-11` | TC-saved-snapshot | HANDOFF_TO_CARD | saved_snapshot/saved_item da ton tai o 0002b; card sau MO RONG, khong CREATE lan hai | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json` (+8 file) |
+| `CR-TC-IDENTITY-12` | TC-analysis-once-per-generation | HANDOFF_TO_CARD | nhu tren cho analysis va work_label | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-13` | TC-report-coverage-publish-cas | HANDOFF_TO_CARD | nhu tren cho first_announced_ledger; them FK khi tao report | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json` (+5 file) |
+| `CR-TC-IDENTITY-14` | TC-ingest-idempotent-ack-lost | CLOSED_CLAIMED | WI da dung lai post trong revision ingest; FK post→ingest_receipt nay duoc ep | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-IDENTITY-15` | TC-owner-auth-session | CLOSED_CLAIMED | WA da bo CREATE TABLE owner khoi revision auth; mot dinh nghia duy nhat | `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-PROBE-01` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-02` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-03` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-04` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-05` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-06` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/index.json`, `evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json` (+4 file) |
+| `CR-TC-PROBE-07` | — | OPEN |  | `evidence/handoffs/TC-x-feasibility-probe-handoff.md`, `evidence/runs/cr_summary-20260907T174152Z.json`, `evidence/runs/cr_summary-20260907T210004Z.json` (+2 file) |
+| `CR-TC-REPORT-01` | — | OPEN |  | `evidence/handoffs/TC-backfill-pending-ledger-handoff.md`, `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json` (+5 file) |
+| `CR-TC-REPORT-02` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json`, `evidence/runs/TC-report-coverage-publish-cas-E1-20260907T212434Z.json` (+3 file) |
+| `CR-TC-REPORT-03` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json`, `evidence/runs/TC-report-coverage-publish-cas-E1-20260907T212434Z.json` (+3 file) |
+| `CR-TC-REPORT-04` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/audits/A3-P4-R1-report.md`, `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md` (+8 file) |
+| `CR-TC-REPORT-05` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json`, `evidence/runs/TC-report-coverage-publish-cas-E1-20260907T212434Z.json` (+3 file) |
+| `CR-TC-REPORT-06` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json`, `evidence/runs/TC-report-coverage-publish-cas-E1-20260907T212434Z.json` (+3 file) |
+| `CR-TC-REPORT-07` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json`, `evidence/runs/TC-report-coverage-publish-cas-E1-20260907T212434Z.json` (+3 file) |
+| `CR-TC-REPORT-08` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/A3-p4-r1-packet.md`, `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md` (+8 file) |
+| `CR-TC-REPORT-09` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/A3-p4-r1-packet.md`, `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-backfill-pending-ledger-handoff.md` (+15 file) |
+| `CR-TC-REPORT-10` | — | OPEN |  | `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/runs/cr_summary-20260908T020907Z.json` |
+| `CR-TC-SAVED-01` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+4 file) |
+| `CR-TC-SAVED-02` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-SAVED-03` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+4 file) |
+| `CR-TC-SAVED-04` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `agent_profile/registry.json`, `evidence/coordination/OWNER-DECISIONS-20260908-10.md`, `evidence/handoffs/PC09-handoff.md` (+11 file) |
+| `CR-TC-SAVED-05` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-SAVED-06` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-SAVED-07` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/handoffs/TC-telegram-linking-auth-handoff.md` (+9 file) |
+| `CR-TC-SAVED-08` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json` (+2 file) |
+| `CR-TC-SAVED-09` | — | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (+4 file) |
+| `CR-TC-SAVED-10` | — | OPEN |  | `evidence/handoffs/TC-saved-snapshot-handoff.md`, `evidence/index.json`, `evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json` (+1 file) |
+| `CR-TC-SCHED-01` | — | OPEN |  | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md`, `evidence/index.json`, `evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json` (+1 file) |
+| `CR-TC-SCHED-02` | — | OPEN |  | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md`, `evidence/index.json`, `evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json` (+1 file) |
+| `CR-TC-SCHED-03` | — | OPEN |  | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md`, `evidence/index.json`, `evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json` (+1 file) |
+| `CR-TC-SCHED-04` | — | OPEN |  | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md`, `evidence/index.json`, `evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json` (+1 file) |
+| `CR-TC-SCHED-05` | — | OPEN |  | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md`, `evidence/index.json`, `evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json` (+1 file) |
+| `CR-TC-TGAUTH-01` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-TGAUTH-02` | — | OPEN |  | `agent_profile/registry.json`, `evidence/coordination/OWNER-DECISIONS-20260908-10.md`, `evidence/handoffs/PC09-handoff.md` (+13 file) |
+| `CR-TC-TGAUTH-03` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-TGAUTH-04` | — | OPEN |  | `agent_profile/registry.json`, `evidence/coordination/OWNER-DECISIONS-20260908-10.md`, `evidence/handoffs/PC09-handoff.md` (+8 file) |
+| `CR-TC-TGAUTH-05` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/runs/cr_summary-20260907T210004Z.json`, `evidence/runs/cr_summary-20260908T020907Z.json` (+1 file) |
+| `CR-TC-TGAUTH-06` | — | OPEN |  | `evidence/handoffs/TC-telegram-linking-auth-handoff.md`, `evidence/index.json`, `evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json` (+5 file) |
+| `CR-TC-UIREPORTS-01` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-02` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-03` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-04` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-05` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-06` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-07` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-08` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-09` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T210916Z.json` (+2 file) |
+| `CR-TC-UIREPORTS-10` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-reports-detail-E1-20260907T220500Z.json` (+1 file) |
+| `CR-TC-adapter-01` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+4 file) |
+| `CR-TC-adapter-02` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+4 file) |
+| `CR-TC-adapter-03` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+4 file) |
+| `CR-TC-adapter-04` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T193158Z.json` (+4 file) |
+| `CR-TC-adapter-05` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json` (+4 file) |
+| `CR-TC-adapter-06` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/coordination/A3-p4-r1-packet.md` (+11 file) |
+| `CR-TC-adapter-07` | — | OPEN |  | `evidence/handoffs/TC-analysis-adapter-validation-handoff.md`, `evidence/index.json`, `evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json` (+3 file) |
+| `CR-TC-embedding-01` | — | OPEN |  | `evidence/coordination/PHASE4-6-card-dispatch.md`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-embedding-02` | — | OPEN |  | `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/handoffs/TC-report-coverage-publish-cas-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-embedding-03` | — | OPEN |  | `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json`, `evidence/runs/TC-embedding-generation-switch-E1-20260907T192842Z.json` (+5 file) |
+| `CR-TC-embedding-04` | — | OPEN |  | `acceptance/scenarios.yaml`, `evidence/handoffs/TC-embedding-generation-switch-handoff.md`, `evidence/index.json` (+6 file) |
+| `CR-TC-ingest-01` | PC02 / TC-scheduler-lease-claim | PARTIALLY_CLOSED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · post.ingest_receipt_id da co FK; run va assignment_lease chua ton tai | `evidence/audits/A3-R1-report.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md` (+9 file) |
+| `CR-TC-ingest-02` | PC02 / PC09 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | fixture f-ingest-replay-idempotent khai mot trang thai FK khong the ton tai | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+7 file) |
+| `CR-TC-ingest-03` | PC01 / PC02 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | ports.yaml bat buoc item_count:0; ingest-receipt.schema.json cam no | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+7 file) |
+| `CR-TC-ingest-04` | PC10 / PC01 | NEXT_CONTRACT_ROUND | card §7 noi 400; openapi noi 422 cho /v1/ingest/* — code theo openapi | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T103000Z.json` (+7 file) |
+| `CR-TC-ingest-05` | PC02 / PC01 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | counts.quarantined co trong wire schema, khong co cot tren ENT-ingest-receipt | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+12 file) |
+| `CR-TC-ingest-06` | PC09 | RESOLVED_BY_PROTOCOL | tran cua card chi len duoc qua ban ghi INDEPENDENT_AUDIT — dung viec da lam o goi nay | `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json` (+7 file) |
+| `CR-TC-ingest-07` | TC-canonical-identity-merge | CLOSED_CLAIMED | gói liên quan tự khai đã đóng; chưa xác minh độc lập · hai dong E501 trong 0002b da duoc sua | `evidence/coordination/coordinator-ledger.md`, `evidence/handoffs/TC-canonical-identity-merge-handoff.md`, `evidence/handoffs/TC-ingest-idempotent-ack-lost-handoff.md` (+6 file) |
+| `CR-TC-research-01` | — | OPEN |  | `evidence/audits/A3-P2-R1-report.md`, `evidence/coordination/A3-p2-r1-packet.md`, `evidence/coordination/PHASE2-dispatch-log.md` (+9 file) |
+| `CR-TC-research-02` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+5 file) |
+| `CR-TC-research-03` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+5 file) |
+| `CR-TC-research-04` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T135805Z.json` (+5 file) |
+| `CR-TC-research-05` | — | OPEN |  | `evidence/handoffs/TC-research-connector-metadata-handoff.md`, `evidence/index.json`, `evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json` (+4 file) |
+| `CR-TC-research-06` | — | OPEN |  | `contracts/ops/collector-probe.md`, `evidence/coordination/PHASE2-dispatch-log.md`, `evidence/handoffs/TC-research-connector-metadata-handoff.md` (+6 file) |
+| `CR-TC-storage-01` | P0-skeleton | CLOSED_CLAIMED | tripwire Giai doan 0 da duoc dao chieu boi chu so huu file | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-storage-02` | PC09 | RESOLVED_BY_PROTOCOL | nhu CR-TC-ingest-06: SELF_VALIDATION bi chan o CONTRACT_READY la DUNG; nhan len qua A3 | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/index.json`, `evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T100943Z.json` (+8 file) |
+| `CR-TC-storage-03` | P0-skeleton / WR | CLOSED_CLAIMED | install_auth(app) nay chay trong factory | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T100943Z.json`, `evidence/runs/cr_summary-20260907T120836Z.json` (+5 file) |
 | `CR-TC-storage-04` | PC02 / PC03 | NEXT_CONTRACT_ROUND · CONTRACT_TOUCH | khong co entity storage_probe; write_blocked→healthy khong the chay that | `acceptance/scenarios.yaml`, `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R1-report.md` (+14 file) |
-| `CR-TC-storage-05` | PC10 | CLOSED_CLAIMED | re-pin §0 da chay; card nay pin epoch hien hanh nhu 17 card con lai | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+3 file) |
+| `CR-TC-storage-05` | PC10 | CLOSED_CLAIMED | re-pin §0 da chay; card nay pin epoch hien hanh nhu 17 card con lai | `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`, `evidence/runs/cr_summary-20260907T120836Z.json`, `evidence/runs/cr_summary-20260907T123537Z.json` (+4 file) |
+| `CR-TC-uiruns-01` | — | RULED → FIX_PROPOSED | có ruling của Coordinator; chờ A2 xác minh | `evidence/coordination/FIX-P4-wave-rulings.md`, `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json` (+4 file) |
+| `CR-TC-uiruns-02` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260907T210259Z.json` (+3 file) |
+| `CR-TC-uiruns-03` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260907T210259Z.json` (+3 file) |
+| `CR-TC-uiruns-04` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260907T210259Z.json` (+3 file) |
+| `CR-TC-uiruns-05` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260907T210259Z.json` (+3 file) |
+| `CR-TC-uiruns-06` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260907T210259Z.json` (+3 file) |
+| `CR-TC-uiruns-07` | — | OPEN |  | `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json`, `evidence/runs/TC-ui-runs-three-states-E1-20260908T005122Z.json` (+2 file) |
+| `CR-TC-uiruns-08` | — | OPEN |  | `evidence/handoffs/TC-ui-reports-detail-handoff.md`, `evidence/handoffs/TC-ui-runs-three-states-handoff.md`, `evidence/index.json` (+5 file) |
 
 | Finding (A3) | Chủ sở hữu | Trạng thái | Ghi chú | Xuất hiện ở |
 | --- | --- | --- | --- | --- |
-| `F-A3-P2-01` | PC05 / PC00 | PARKED (ruling Coordinator) | hai tham chieu cheo "REQ-A6 chua giai" con sot; chi la van ban — trang thai that o decision-register §8.13.2 va retry-policy 0.8.0 moi la tham quyen | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+8 file) |
-| `F-A3-P2-02` | TC-collector-checkpoint-resume (WC) | PARKED (ruling Coordinator) -> CR-TC-COLLECTOR-02 | RecordedSource ship trong collector/app/reader.py: duoc khai, co ly do, va tro; don o mot dot sau | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+4 file) |
-| `F-A3-P3-01` | TC-analysis-adapter-validation (W3A) | VERIFIED (A3-P3-R2 §2) | ruff format --check nay rc=0 tren 134 file; lenh duoc them vao DANH SACH lenh cua card nen no khong tai dien | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/audits/README.md` (+9 file) |
-| `F-A3-P3-02` | W5A -> W5C | VERIFIED (A3-P3-R2 §2) | hai xfail thanh test that; mot residual duoc khai: xfail(run=False) cho fixture callback — Coordinator CHAP NHAN nguyen trang, no neu mot KC cua hop dong chu khong phai mot card vang mat | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/coordination/A3-p3-r2-packet.md` (+7 file) |
-| `F-A3-P3-03` | W3A, W3B, W3C; W6n (rule) | VERIFIED (A3-P3-R2 §2) + quy tac thuong truc | bon fixture da duoc xu ly; va PKT-PC09-P3 bien no thanh E0-20-card-fixture-accounting, mutation 5/5 — lan thu ba cung mot hinh dang thi no thoi lam finding tung vong | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/coordination/A3-p3-r2-packet.md` (+15 file) |
-| `F-A3R1-01` | WM / WA | VERIFIED (A3-R2 §2) | mot dinh nghia owner; bon thu tu duyet cho mot chu ky sqlite_master | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+16 file) |
-| `F-A3R1-02` | W3n / WS / WA | VERIFIED (A3-R2 §2) | AMD-ENT-owner-01 khai bon cot; 0 khac biet cot hai chieu — nhung xem F-A3R2-02 | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+16 file) |
-| `F-A3R1-03` | PC09 (W6n) | FIX_PROPOSED | dong boi PKT-PC09-P1: bon manifest E1/E2 + sau ban ghi A3 nay nam trong evidence/index.json | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+11 file) |
-| `F-A3R1-04` | WM | VERIFIED (A3-R2 §2) | nam bang move-set chuyen sang 0002b_shared_move_set_tables | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+8 file) |
-| `F-A3R1-05` | WI / WM | VERIFIED (A3-R2 §2) | FK owner_id va post→ingest_receipt duoc ep that | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+9 file) |
-| `F-A3R1-06` | WA | VERIFIED (A3-R2 §2) | lockout ben qua restart, auditor tu chay harness rieng | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+13 file) |
-| `F-A3R1-07` | WS | VERIFIED (A3-R2 §2) | faults.py duoc nhan vao write set Giai doan 0 kem hash | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+9 file) |
-| `F-A3R1-08` | WA | VERIFIED (A3-R2 §2) | phan hoach 12/10/14 = 36 duoc khang dinh; san >=5 da bo | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+8 file) |
-| `F-A3R1-09` | WI, WM, WA, WR | VERIFIED (A3-R2 §2) | moi fixture §2/§8 hoac duoc chay hoac NOT_RUN kem ly do | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+14 file) |
-| `F-A3R1-10` | WI | VERIFIED (A3-R2 §2) | server/app/ingest/__init__.py da co | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+6 file) |
+| `F-A3-P2-01` | PC05 / PC00 | PARKED (ruling Coordinator) | hai tham chieu cheo "REQ-A6 chua giai" con sot; chi la van ban — trang thai that o decision-register §8.13.2 va retry-policy 0.8.0 moi la tham quyen | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+12 file) |
+| `F-A3-P2-02` | TC-collector-checkpoint-resume (WC) | PARKED (ruling Coordinator) -> CR-TC-COLLECTOR-02 | RecordedSource ship trong collector/app/reader.py: duoc khai, co ly do, va tro; don o mot dot sau | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+7 file) |
+| `F-A3-P3-01` | TC-analysis-adapter-validation (W3A) | VERIFIED (A3-P3-R2 §2) | ruff format --check nay rc=0 tren 134 file; lenh duoc them vao DANH SACH lenh cua card nen no khong tai dien | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/audits/README.md` (+12 file) |
+| `F-A3-P3-02` | W5A -> W5C | VERIFIED (A3-P3-R2 §2) | hai xfail thanh test that; mot residual duoc khai: xfail(run=False) cho fixture callback — Coordinator CHAP NHAN nguyen trang, no neu mot KC cua hop dong chu khong phai mot card vang mat | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/audits/A3-P4-R1-report.md` (+11 file) |
+| `F-A3-P3-03` | W3A, W3B, W3C; W6n (rule) | VERIFIED (A3-P3-R2 §2) + quy tac thuong truc | bon fixture da duoc xu ly; va PKT-PC09-P3 bien no thanh E0-20-card-fixture-accounting, mutation 5/5 — lan thu ba cung mot hinh dang thi no thoi lam finding tung vong | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md`, `evidence/coordination/A3-p3-r2-packet.md` (+21 file) |
+| `F-A3-P4-01` | Coordinator | OPEN |  | `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/audits/README.md` (+11 file) |
+| `F-A3-P4-02` | Coordinator | OPEN |  | `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/coordination/A3-p4-r2-packet.md` (+10 file) |
+| `F-A3-P4-03` | Coordinator | OPEN |  | `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-P4-R2-report.md`, `evidence/audits/README.md` (+11 file) |
+| `F-A3R1-01` | WM / WA | VERIFIED (A3-R2 §2) | mot dinh nghia owner; bon thu tu duyet cho mot chu ky sqlite_master | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+20 file) |
+| `F-A3R1-02` | W3n / WS / WA | VERIFIED (A3-R2 §2) | AMD-ENT-owner-01 khai bon cot; 0 khac biet cot hai chieu — nhung xem F-A3R2-02 | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+17 file) |
+| `F-A3R1-03` | PC09 (W6n) | FIX_PROPOSED | dong boi PKT-PC09-P1: bon manifest E1/E2 + sau ban ghi A3 nay nam trong evidence/index.json | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+12 file) |
+| `F-A3R1-04` | WM | VERIFIED (A3-R2 §2) | nam bang move-set chuyen sang 0002b_shared_move_set_tables | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+9 file) |
+| `F-A3R1-05` | WI / WM | VERIFIED (A3-R2 §2) | FK owner_id va post→ingest_receipt duoc ep that | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+10 file) |
+| `F-A3R1-06` | WA | VERIFIED (A3-R2 §2) | lockout ben qua restart, auditor tu chay harness rieng | `contracts/data/entities.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+14 file) |
+| `F-A3R1-07` | WS | VERIFIED (A3-R2 §2) | faults.py duoc nhan vao write set Giai doan 0 kem hash | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+10 file) |
+| `F-A3R1-08` | WA | VERIFIED (A3-R2 §2) | phan hoach 12/10/14 = 36 duoc khang dinh; san >=5 da bo | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+9 file) |
+| `F-A3R1-09` | WI, WM, WA, WR | VERIFIED (A3-R2 §2) | moi fixture §2/§8 hoac duoc chay hoac NOT_RUN kem ly do | `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+17 file) |
+| `F-A3R1-10` | WI | VERIFIED (A3-R2 §2) | server/app/ingest/__init__.py da co | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+7 file) |
 | `F-A3R1-11` | WR / WI | PARTIAL (A3-R2 §2) | nua wiring da sua; nua hoi phuc write_blocked→healthy VAN chua — CR-TC-storage-04 | `acceptance/scenarios.yaml`, `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md` (+12 file) |
-| `F-A3R1-12` | WA | VERIFIED (A3-R2 §2) | token bam va so bang hmac.compare_digest khong thoat som | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+6 file) |
-| `F-A3R1-13` | WR + cac card | VERIFIED (A3-R2 §2) | bon khoi include deu trong delimiter cua rieng no | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+12 file) |
+| `F-A3R1-12` | WA | VERIFIED (A3-R2 §2) | token bam va so bang hmac.compare_digest khong thoat som | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+7 file) |
+| `F-A3R1-13` | WR + cac card | VERIFIED (A3-R2 §2) | bon khoi include deu trong delimiter cua rieng no | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+15 file) |
 | `F-A3R1-14` | WM | VERIFIED (A3-R2 §2) | owner.created_at co GLOB check mili giay | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+9 file) |
-| `F-A3R1-15` | WS | VERIFIED (A3-R2 §2) | ca ba cho deu la uv sync --all-packages | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+7 file) |
-| `F-A3R2-01` | PC02 (W3n) | VERIFIED (A3-R3 §2) | version_rule_vi khai thang khoang trong cua §2 thay vi bia mot luat; CR-PC10-13 mang no sang vong sau | `contracts/data/entities.yaml`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+12 file) |
-| `F-A3R2-02` | TC-owner-auth-session (WA) | VERIFIED (A3-R3 §2, mutation-tested) | table_xinfo o moi call site, 10 test, so bang hai chieu; auditor tu chay ba dot bien va ca ba bi bat | `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md` (+12 file) |
-| `F-A3R2-03` | WI, WA, WR | VERIFIED (A3-R3 §2) | bon manifest moi nhat deu 0 pin lech; bon ban cu nam o superseded_card_runs | `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md`, `evidence/coordination/A3-r3-packet.md` (+17 file) |
-| `F-A3R2-04` | PC02 (W3n) | VERIFIED (A3-R3 §2) | downstream_vi noi thang cau cu la SAI va nêu 15 nguon sinh that | `contracts/data/entities.yaml`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+15 file) |
-| `F-A3R3-01` | PC09 (W6n) | FIX_PROPOSED | E0-12 nay doc ca evidence/runs/** va evidence/index.json cho quy tac claim; schema chan INDEPENDENT_AUDIT o IMPLEMENTATION_VERIFIED; 12/12 mutation. CHUA duoc ai doc lap kiem | `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md`, `evidence/audits/README.md` (+13 file) |
-| `F-A3R3-02` | PC09 (W6n) | FIX_PROPOSED | sau ban ghi EV-A3 nay khai producer_principal la worker-W6n (transcription), execution kind manual_procedure, exit_code null; lenh va so do cua auditor duoc TRICH trong oracle.observed | `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md`, `evidence/handoffs/PC09-handoff.md` (+5 file) |
-| `F-A3R3-03` | PC09 (W6n) | FIX_PROPOSED | review.md §14 nay dung 305/4/0 va 10 test cong schema; F-A3R2-02 khong con trong unresolved_issue_refs | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md` (+7 file) |
-| `F-A3R4-01` | PC09 (W6n) | FIX_PROPOSED | quy tac claim nay doc ca front matter cua Markdown (claim_fields); E0-12 checked 976 -> 1157; mutation 6/6. Ban sua den SAU bao cao, CHUA duoc ai doc lap kiem | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+13 file) |
+| `F-A3R1-15` | WS | VERIFIED (A3-R2 §2) | ca ba cho deu la uv sync --all-packages | `evidence/audits/A3-R1-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/coordination/FIX-A3R1-rulings.md` (+8 file) |
+| `F-A3R2-01` | PC02 (W3n) | VERIFIED (A3-R3 §2) | version_rule_vi khai thang khoang trong cua §2 thay vi bia mot luat; CR-PC10-13 mang no sang vong sau | `contracts/data/entities.yaml`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+13 file) |
+| `F-A3R2-02` | TC-owner-auth-session (WA) | VERIFIED (A3-R3 §2, mutation-tested) | table_xinfo o moi call site, 10 test, so bang hai chieu; auditor tu chay ba dot bien va ca ba bi bat | `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md` (+13 file) |
+| `F-A3R2-03` | WI, WA, WR | VERIFIED (A3-R3 §2) | bon manifest moi nhat deu 0 pin lech; bon ban cu nam o superseded_card_runs | `evidence/audits/A3-P4-R2-report.md`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+19 file) |
+| `F-A3R2-04` | PC02 (W3n) | VERIFIED (A3-R3 §2) | downstream_vi noi thang cau cu la SAI va nêu 15 nguon sinh that | `contracts/data/entities.yaml`, `evidence/audits/A3-R2-report.md`, `evidence/audits/A3-R3-report.md` (+17 file) |
+| `F-A3R3-01` | PC09 (W6n) | FIX_PROPOSED | E0-12 nay doc ca evidence/runs/** va evidence/index.json cho quy tac claim; schema chan INDEPENDENT_AUDIT o IMPLEMENTATION_VERIFIED; 12/12 mutation. CHUA duoc ai doc lap kiem | `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md`, `evidence/audits/README.md` (+15 file) |
+| `F-A3R3-02` | PC09 (W6n) | FIX_PROPOSED | sau ban ghi EV-A3 nay khai producer_principal la worker-W6n (transcription), execution kind manual_procedure, exit_code null; lenh va so do cua auditor duoc TRICH trong oracle.observed | `evidence/audits/A3-R3-report.md`, `evidence/audits/A3-R4-report.md`, `evidence/handoffs/PC09-handoff.md` (+6 file) |
+| `F-A3R3-03` | PC09 (W6n) | FIX_PROPOSED | review.md §14 nay dung 305/4/0 va 10 test cong schema; F-A3R2-02 khong con trong unresolved_issue_refs | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P4-R1-report.md`, `evidence/audits/A3-R3-report.md` (+11 file) |
+| `F-A3R4-01` | PC09 (W6n) | FIX_PROPOSED | quy tac claim nay doc ca front matter cua Markdown (claim_fields); E0-12 checked 976 -> 1157; mutation 6/6. Ban sua den SAU bao cao, CHUA duoc ai doc lap kiem | `evidence/audits/A3-P2-R1-report.md`, `evidence/audits/A3-P3-R1-report.md`, `evidence/audits/A3-P3-R2-report.md` (+17 file) |
 
 ---
 
@@ -1259,10 +1326,10 @@ nêu cả epoch hiện hành lẫn mọi epoch đã bị thay — đọc nó kh�
 (`F-A2R3-02`). Quy tắc đúng: epoch hiện hành là token trong cặp backtick **đầu tiên** của dòng bắt
 đầu bằng `**Pin epoch: `.
 
-Tại thời điểm chạy bản này lệnh đó trả **`PC10-PIN-P3b-20260908`**, và **19/19 card khai cùng
+Tại thời điểm chạy bản này lệnh đó trả **`PC10-PIN-P4b-20260908`**, và **19/19 card khai cùng
 một epoch** (`card_pin_current`, `card_pin_declared`, `card_pin_unanimous`). Chuỗi epoch từ đầu
 gói: `FCW4` → `FCW4b` → `FCW4c` → `FCW4d` → `FCW4e` → `FCW4f` → `OD01` → `OD01c` → `P1` → `P1b`
-→ `P1c` → `P1d` → `P2` … → `P2d` → `P3` → `P3b`; những cái đã bị thay lần lượt như vậy. Bốn
+→ `P1c` → `P1d` → `P2` … → `P2d` → `P3` → `P3b` → `P4` → `P4b`; những cái đã bị thay lần lượt như vậy. Bốn
 lần re-pin cuối thuộc Giai đoạn 2 (ba card mới, card thứ 19, và bản viết lại §9/§10 của card
 connector theo `CR-PC10-14`). `F-A2R1-03` bắt đúng điểm này, và
 lý do nó lệch được là vì nó được chép chứ không được đọc. Card trích các file của PC09 **theo
@@ -1389,7 +1456,7 @@ là quyết định; là **phép đo** (§6.2) và **code chưa tồn tại**.
 | 7 | Coverage/backfill/pending/tag version và identity/analysis/Saved có oracle cho race/crash | ✅ | SC08, SC13, SC21, SC22, SC28, SC37, SC38 |
 | 8 | Telegram unknown, CLI capability, backup WAL/restore và secrets không còn mô tả mơ hồ | ⚠️ | Ba trong bốn đủ. **Giới hạn định dạng Telegram vẫn `KC`** (CR-PC07-04) |
 | 9 | AC-01–AC-18 và các SC bổ sung có fixtures/oracles, loại bằng chứng và amended AC đúng nguồn | ✅ | 56 scenario, mỗi cái có oracle, cấp bằng chứng và **ít nhất một fixture**; 86 fixture trên 9 thư mục (`scenarios`, `fixtures`, `fixture_directories`) |
-| 10 | E0 đã chạy thật và có manifest; E1–E4 chưa chạy ghi NOT_RUN | ✅ | `evidence/index.json`; **26/26 PASS, 0 vi phạm, exit 0**; **E1/E2 nay đã chạy** cho bốn card (10 bản ghi có `evidence_level` E1/E2 với `result` khác `NOT_RUN`), **E3/E4 vẫn `NOT_RUN` ở mọi nhóm** với 32 placeholder tường minh — xem §14 |
+| 10 | E0 đã chạy thật và có manifest; E1–E4 chưa chạy ghi NOT_RUN | ✅ | `evidence/index.json`; **27/27 PASS, 0 vi phạm, exit 0**; **E1/E2 nay đã chạy** cho bốn card (10 bản ghi có `evidence_level` E1/E2 với `result` khác `NOT_RUN`), **E3/E4 vẫn `NOT_RUN` ở mọi nhóm** với 32 placeholder tường minh — xem §14 |
 | 11 | Card triển khai pin baseline, paths/stack, contracts và proof obligations | ✅ | **Stack đã chốt (Option B, mục 3)** và 18 card đều pin cùng một epoch — **tên epoch được in ở §9.1 và chỉ ở đó** (`F-A2R3-01`). Điều từng thiếu — "chưa có repo triển khai" — **không còn thiếu**: Giai đoạn 0 dựng bảy cây thư mục thật và `verify_cards.py` cho **13/13, 0 violation**, nghĩa là mọi đường dẫn §3 mà card pin phân giải được trên đĩa (`G5-X4` nay `met: true`). `ADR-0011` nêu tên framework. Xem §14.1 |
 | 12 | Readiness report liệt kê module nào READY/BLOCKED | ✅ | §9 |
 
@@ -1422,7 +1489,7 @@ Trần claim của **hợp đồng** thì nay là một object theo phạm vi (`
 `claim_ceiling.by_scope`), theo `OD-20260907-01` §4. Bốn phạm vi được W1 đặt là
 **`CONTRACT_READY_PENDING_E0`** — nghĩa là đủ điều kiện *về quyết định*, còn chờ một lần chạy E0
 sạch trên epoch mới. **Lần chạy đóng gói của tôi ở đợt này chính là điều kiện đó**, và nó cho
-**26/26 PASS, 0 vi phạm**. Giá trị `CONTRACT_READY_PENDING_E0` → `CONTRACT_READY` là việc của W1:
+**27/27 PASS, 0 vi phạm**. Giá trị `CONTRACT_READY_PENDING_E0` → `CONTRACT_READY` là việc của W1:
 `precode/baseline.json` không nằm trong grant ghi của PC09, nên **tôi không sửa nó** — tôi báo
 rằng điều kiện đã đạt và để W1 chốt (CR tới W1 nếu giá trị cần đổi khác đi).
 
@@ -1476,7 +1543,7 @@ gỡ được.
 
 ## 13. Giới hạn của chính bản review này
 
-*Phạm vi của mục này bao gồm cả **§14** (Giai đoạn 0/1), **§15** (Giai đoạn 2) và **§16** (Giai đoạn 3/5), được thêm sau bởi `PKT-PC09-P1`, `-P2` và `-P3`; cả ba đứng sau §13 để mọi trích dẫn `review.md §13` đã tồn tại vẫn phân giải đúng.*
+*Phạm vi của mục này bao gồm cả **§14** (Giai đoạn 0/1), **§15** (Giai đoạn 2) và **§16** (Giai đoạn 3/5) và **§17** (Giai đoạn 4/6 + trạng thái sản phẩm), được thêm sau bởi `PKT-PC09-P1`…`-P4`; cả bốn đứng sau §13 để mọi trích dẫn `review.md §13` đã tồn tại vẫn phân giải đúng.*
 
 1. **Đây là `SELF_VALIDATION`.** Người viết bản này cũng viết `scenarios.yaml`, `traceability.csv`,
    `gates.yaml`, `manifest.schema.json` và `e0_check.py`. Một công cụ chỉ nhìn nơi tác giả của nó
@@ -1816,7 +1883,7 @@ Ba CR mới của gói này, tất cả đều là **giới hạn của chính t
 | Module có code | 7 | **13** | `precode/gates.yaml` G6 |
 | Báo cáo audit trong repo | 13 | **17** | `audit_reports_in_repo_count` |
 
-**Số trích từ `A3-P3-R2` §1** (auditor tự chạy trên FC-P3 epoch 2, 545 entry, `manifest_sha256 41c47506…`): **827 passed / 9 xfailed / 0 failed**; `ruff check` sạch; **`ruff format --check` 134 file, rc=0**; `mypy --strict` 49 file sạch; `verify_cards.py` **13/13, 3 685 assertion**, epoch `PC10-PIN-P3b-20260908`; `e0_check.py` 25/25 (tại thời điểm đó — gói này thêm check thứ 26); một Alembic head.
+**Số trích từ `A3-P3-R2` §1** (số của **epoch P3b**, đã bị thay lần lượt bởi Giai đoạn 4/6 — xem §17.1; auditor tự chạy trên FC-P3 epoch 2, 545 entry, `manifest_sha256 41c47506…`): **827 passed / 9 xfailed / 0 failed**; `ruff check` sạch; **`ruff format --check` 134 file, rc=0**; `mypy --strict` 49 file sạch; `verify_cards.py` **13/13, 3 685 assertion**, epoch `PC10-PIN-P3b-20260908`; `e0_check.py` 25/25 (tại thời điểm đó — gói này thêm check thứ 26); một Alembic head.
 
 ### 16.2 Hai phán quyết phạm vi, cả hai được CHỨNG MINH chứ không được đọc
 
@@ -1883,3 +1950,90 @@ Mười ba module nay có code. **Có code không phải là đạt cổng**: `M
 - **Không** nói `TC-A5-01` phủ mọi điều khoản: nó phủ điều khoản **Anthropic**; chính sách của arXiv/OpenAlex/X về việc xử lý lại nội dung của họ là một câu hỏi **riêng và chưa trả lời** (`OD-20260908-08` nói vậy).
 - **Không** nói bốn file của `F-A3-P3-01` chỉ đổi định dạng — auditor từ chối khẳng định điều đó và tôi không khẳng định thay họ.
 - **Không** có lời gọi live nào. **E3 và E4 vẫn bằng 0 ở mọi nhóm scenario**; SP1 chưa chạy.
+
+---
+
+## 17. Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8) — và trạng thái sản phẩm sau sáu giai đoạn
+
+*Thêm bởi `PKT-PC09-P4`, trên FC-P4 **epoch 2**. Con số do `derive_numbers.py` sinh; con số trích từ báo cáo audit ghi rõ là trích.*
+
+### 17.1 Cái gì tồn tại thêm
+
+| Phép đo | Sau Giai đoạn 3/5 | Sau Giai đoạn 4/6 | Khóa |
+| --- | --- | --- | --- |
+| File test Python | 34 | **44** | `test_files_count` |
+| Hàm `test_*` | 669 | **865** | `test_defs` |
+| Revision Alembic | 14 | **19**, một head (`0013`) | `migration_revisions` |
+| Bảng | 33 | **48**, khớp `entities.yaml` **hai chiều, 0 khác biệt** | `A3-P4-R1` §1 |
+| Card đã hiện thực | 13 | **19 / 19** | `card_runs_registered` |
+| Báo cáo audit trong repo | 17 | **19** | `audit_reports_in_repo_count` |
+
+**Số trích từ `A3-P4-R2` §1** (FC-P4 epoch 2, 645 entry, `d6d50758…`): **1028+ passed / 0 failed**; `ruff format --check` sạch; **`mypy --strict` nay phủ 87 file** (từ 64 — xem `F-A3-P4-02`); web Vitest **126/126**, `tsc` và eslint sạch; `verify_cards.py` **13/13, 3 730 assertion**; `e0_check.py` 26/26 tại thời điểm đó; một Alembic head; và **toàn bộ suite dưới chặn socket+DNS: rc=0, 0 lần thử mạng**.
+
+### 17.2 Hai bất biến được ép bằng cơ sở dữ liệu, không bằng code
+
+`A3-P4-R1` §2 không đọc mà **tái dẫn xuất**, và đây là kết quả mạnh nhất của cả giai đoạn:
+
+- **Lease độc quyền** — `ux_assignment_lease_one_held`, `UNIQUE (owner_id, job_id) WHERE state = 'held'`. Auditor chèn hàng `held` thứ hai **bằng SQL thô** và cơ sở dữ liệu từ chối. Không phải một phép đọc-rồi-ghi mà một ứng dụng có thể quên.
+- **CAS publish** — `ux_coverage_window_predecessor`. Bên thua bắt `IntegrityError`, roll back, và bị hủy với `cas_conflict` trong một transaction **riêng**. Docstring của publisher nêu đúng lý do: *"một phép kiểm đọc-rồi-ghi là một race"*.
+
+### 17.3 Nhãn theo từng card — `A3-P4-R2` §6
+
+Sáu card đều **may stand, scoped**. Hai điều đáng đọc:
+
+- **Điều kiện của R1 đã được gỡ bỏ.** R1 loại REQ-D29/I07 khỏi phạm vi của `TC-report-coverage-publish-cas` vì `CR-TC-BACKFILL-09` — publisher công bố cả mục còn `pending`, nên một phát hiện muộn thật quay lại thành `prior_reference`. R2 xác minh bản sửa **và kiểm đúng chỗ đáng lo nhất**: điều kiện được dẫn từ `time-and-tags.md` §5.3 + §8.2, và **hợp đồng không bị sửa để code pass** — file đó nguyên vẹn từng byte. Phần disposition cũng được sửa: handoff nay nêu tên CR và có mục sửa lại lời khai độ phủ của chính nó.
+- **`TC-backup-restore-drill` là "narrowed", không phải "scoped".** Cái đã chứng minh là hệ thống **TỪ CHỐI đúng chỗ**: một bản copy WAL-unsafe bị bắt bằng khuyết tật **tạo thật** (hash khớp, `integrity_check` ok, counts lệch đúng 4 hàng), 0 tin gửi trước khi đối soát xong, và ba cách một lần đối soát có thể *giả vờ* hoàn tất đều bị bác. **Không tồn tại một khẳng định nào rằng một restore đã từng được thực hiện.**
+
+### 17.4 Scenario — 27 dòng được xét, **11 chuyển nhãn**
+
+Sáu card khai chạm 27 scenario; cả 27 được xét theo quy tắc §14.5, rồi **xét lại trên epoch 2** sau khi R2 xác minh ba bản sửa. Chuyển: `SC05` (E1); `SC08`, `SC20`, `SC24`, `SC27`, `SC33`, `SC34`, `SC37`, `SC38`, `SC42`, `SC53` (E2).
+
+Sau lượt này: **NOT_RUN 35 · PASS (E1) 4 · PASS (E2) 17** — **21/48** ở cấp ≤ E2 đã PASS, và **32** dòng mang `partial_evidence_vi`.
+
+**Hai dòng bị chặn bởi khuyết tật ORACLE, không bởi thiếu code** — và chúng không thể PASS bằng bất kỳ lượng code nào:
+
+| CR | Dòng | Khuyết tật |
+| --- | --- | --- |
+| `CR-PC09-22` | `SC09` | oracle đòi `report_item.reference_date`; `ENT-report-item` **không khai** trường đó. Card ship `item_type = 'prior_reference'` và không có cột nào mang ngày |
+| `CR-PC09-23` | `SC22` | oracle đếm `pending_item_ledger.report_id` và `.consumed_at` — **cả hai không tồn tại** (card ship `first_pending_window_id` / `resolved_in_report_id`) — và kỳ vọng **2** mục trong khi fixture `e` mang **1**. W4B dừng đúng chỗ (`SG-PC09`) thay vì tự thêm cột |
+| `CR-PC09-24` | `SC49` | không phải khuyết tật oracle mà là **giới hạn tầng đo**: oracle đòi cả ba cơ chế ép buộc, và cơ chế thứ ba là 14 cạnh `CAPABILITY_DENIED` chỉ đo được trên máy có Chrome thật và một tiến trình worker thật. `SC49` **sẽ không** chuyển bằng thêm test ở tầng này, dù thêm bao nhiêu cạnh |
+
+### 17.5 Trạng thái sản phẩm
+
+> **`NOT_READY_FOR_PRODUCT_CODE` giữ nguyên** — nhưng lý do đã đổi hoàn toàn, và điều đó đáng nói rõ. Ở Giai đoạn 0 nó có nghĩa *"chưa có code"*. Nay nó có nghĩa: **code đã có, đã được audit độc lập bảy lượt, và chưa từng chạy một lần nào trong thế giới thật.**
+
+| Cổng | Trạng thái | Vì sao |
+| --- | --- | --- |
+| `G0`–`G2` | MET | không đổi |
+| `G3`, `G4` | PARTIALLY_MET | các mục `KC` và `G4-X7` |
+| `G5` | PARTIALLY_MET | bốn điều kiện ra đủ; điều kiện **VÀO** (G4) chưa |
+| `SP1` | NOT_MET | **0/5–10 đợt probe.** Rào chắn là **vật lý và thuộc Owner** |
+| `G6` | NOT_MET | **21/48 · 0/5 · 0/2** |
+| `G7` | NOT_APPLICABLE_YET | G6 chưa đạt |
+
+**Điều quan trọng nhất trong bảng trên: `G6-X2` và `G6-X3` không chờ thêm code.** Chúng chờ những việc chỉ Owner làm được. Viết thêm bao nhiêu test cũng không chuyển được chúng.
+
+### 17.6 Danh sách còn lại cho Owner — mọi việc chỉ Owner làm được
+
+Đây là danh sách đầy đủ, không rút gọn. Mỗi dòng là một việc **không Worker nào được phép thực hiện**, kèm cái nó sẽ mở khóa.
+
+| # | Việc của Owner | Mở khóa | Hiện trạng |
+| --- | --- | --- | --- |
+| 1 | **Chạy probe X** (`SP1`): cài Playwright trên máy Owner, đăng nhập tay vào một Chrome profile riêng, điền `probe-config.json`, ký bốn `owner_confirmations` kèm `evidence_ref`, chạy 5–10 đợt | `SP1`, `REQ-A1`, `REQ-A7`, `REQ-AC16`, `SC51`; và con số giới hạn thật `REQ-OQ05` | Cổng mở **hành chính** (`OD-20260907-04`); bộ công cụ đã có và đã được audit; `runs.jsonl` **vắng mặt** — đúng thiết kế |
+| 2 | **Bật một adapter AI và chạy thật** (E3): cả hai ship `enabled: false` vì **cô lập** (ISO-03/ISO-05), không vì điều khoản | `SC16`, `SC17`; `REQ-AC16` từ `BLOCKED` | Code đã có, từ chối đúng thứ tự **trước khi chạm transport** (auditor tự nạp registry thật) |
+| 3 | **Gửi thật một tin Telegram** (E3) | `SC14` | Chưa lần gọi Bot API nào ở bất kỳ giai đoạn nào |
+| 4 | **Chạy một drill restore thật** vào môi trường sạch, đo RPO/RTO | `SC43`, `G6-X3` | `SC27`/`SC53` đã PASS (E2) trên restore vào DB sạch; drill môi trường thật `NOT_RUN` |
+| 5 | **Đọc và review giao diện thật** trên desktop và điện thoại (E4) | `SC10`, `SC11`, `SC15` | 126/126 Vitest chứng minh ba trạng thái sinh **ba chuỗi khác nhau**; "khác nhau ở mức người dùng hiểu được" là phán đoán của người |
+| 6 | **Đọc 3–4 kỳ báo cáo thật** để hiệu chỉnh `REQ-A2`/`REQ-A4` | `G7`, rubric mật độ | `uncalibrated`; 0 kỳ thật |
+| 7 | **Đọc tài liệu Bot API** cho ba dữ kiện `delivery.md` §3.4 (độ dài `callback_data`, bảng escape, số nút mỗi hàng) | `CR-PC07-04`, `SC46`, và `MOD-telegram-adapter` khỏi chặn cứng | Cần một range/offset fetch trên URL chính thức — **một sửa đổi công cụ, không phải một quyền mạng mới** (`A3-P3-R1`) |
+| 8 | **Chốt các giá trị PROVISIONAL**: N backfill (`REQ-OQ04`), model embedding (`REQ-OQ09`), ba số của link code (`CR-PC07-01`) | các dòng `KC` tương ứng | Đang dùng giá trị làm việc Owner đã chấp nhận, **không phải** giá trị chốt |
+| 9 | **Trả lời chính sách nguồn**: arXiv/OpenAlex/X có cho phép xử lý lại nội dung của họ không | một câu hỏi pháp lý còn mở | `TC-A5-01` chỉ phủ điều khoản **Anthropic**; `OD-20260908-08` nói thẳng đây là câu hỏi riêng |
+| 10 | **Quyết định `MOD-tag-service`** — chưa có card nào viết nó | `CR-TC-BACKFILL-07` | `tag` là bảng do card khác tạo hộ; không module nào sở hữu nó |
+
+### 17.7 Điều mục này KHÔNG nói
+
+- **Không** nói sản phẩm chạy được. Chưa một lần gọi X, Telegram, hay provider AI nào. **E3 và E4 bằng 0 ở mọi nhóm scenario**, qua cả sáu giai đoạn.
+- **Không** nói một restore đã từng được thực hiện.
+- **Không** nói giao diện dùng được — chỉ nói nó sinh ra đúng chuỗi.
+- **Không** nói `E0-20`/`E0-21` là đúng: cả hai do PC09 viết, tự kiểm bằng công cụ PC09 vừa sửa, và `F-A3-P4R2-01` là bằng chứng rằng một cửa kiểm mới có thể có lỗ ngay khi ra đời.
+- **Không** nói đồng thời an toàn ở mức nhiều tiến trình: vẫn chưa có race test đa tiến trình.

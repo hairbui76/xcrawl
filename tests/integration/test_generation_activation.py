@@ -29,15 +29,16 @@ G1 survives as ``retired`` with all its vectors
     ``REQ-D48`` keeps the old generation; deleting it would silently break every published
     report that names it (I05, ``REQ-S7.3-03``).
 
-What is **not** proven here
----------------------------
+The dependency that is now real
+-------------------------------
 Card §11 depends on ``TC-report-coverage-publish-cas`` for *"chặn xảy ra trước publish
-commit"*. That card does not exist yet: there is no publish transaction to order the refusal
-against, so :func:`test_the_guard_blocks_before_the_publish_commit` is marked ``xfail`` with
-that reason rather than deleted or weakened into something it does not prove. The predicate
-the publish CAS will call --
-:meth:`~server.app.embedding.service.EmbeddingService.embedding_generation_matches` -- is
-implemented and tested here on its own terms.
+commit"*. That card has landed, so
+:func:`test_the_guard_blocks_before_the_publish_commit` is no longer an ``xfail``: it drives
+the real :func:`server.app.report.publisher.publish_report` with this card's
+:class:`~server.app.embedding.service.EmbeddingService` as its ``embedding_port``, switches
+the generation between build and publish, and asserts the refusal, the unchanged published
+count and the ``aborted`` build row. The earlier marker named ``server.app.report.service``, a
+module that card's §3 never creates -- ``CR-TC-REPORT-08``.
 """
 
 from __future__ import annotations
@@ -607,37 +608,119 @@ def test_the_publish_cas_predicate_fails_when_the_generation_changed_mid_build(e
     assert service.embedding_generation_matches(OWNER_ID, pinned.generation_id) is False
 
 
-@pytest.mark.xfail(
-    reason="pending TC-report-coverage-publish-cas",
-    strict=True,
-    raises=ModuleNotFoundError,
-)
-def test_the_guard_blocks_before_the_publish_commit(engine) -> None:
-    """Card §11: the ordering claim, which needs a publish transaction to be ordered against.
+class _FrozenTagPort:
+    """The minimum of ``tag.get_active_config_version`` / ``tag.freeze_config_version``.
 
-    Kept as a real test rather than a comment so that it starts passing on the day
-    ``server.app.report.service`` exists, instead of waiting for someone to remember it.
-    ``strict=True`` means an unexpected pass is itself a failure -- the marker cannot rot.
+    A fake and not a stub of somebody else's package: no card in the nineteen creates the
+    ``tag`` / ``tag_config_version`` tables (``CR-TC-REPORT-01``), so there is nothing to
+    integrate with. What it implements is the part of the contract this test depends on —
+    ``freeze_config_version`` is idempotent on ``report_build_id`` and the version never moves,
+    so the **only** check that can fail in the publish CAS is the embedding one. That is the
+    point: if the tag check could also fail, an ``EMBEDDING_GENERATION_MISMATCH`` would not
+    prove which guard fired.
     """
-    from server.app.report.service import publish_report  # type: ignore[import-not-found]
+
+    def __init__(self) -> None:
+        from server.app.report.builder import TagConfigVersion
+
+        self.version = TagConfigVersion(
+            id="01JTCV0000000000000000000A",
+            sequence=1,
+            content_hash="sha256:" + "0" * 64,
+            payload={"tags": [], "tag_aliases": [], "tag_exclusions": []},
+            created_at="2026-09-01T02:00:00.000Z",
+        )
+
+    def get_active_config_version(self, owner_id: str) -> Any:
+        return self.version
+
+    def config_version(self, *, owner_id: str, tag_config_version_id: str) -> Any:
+        return self.version
+
+    def freeze_config_version(
+        self, *, owner_id: str, report_build_id: str, expected_tag_config_version_id: str
+    ) -> Any:
+        return self.version
+
+
+def test_the_guard_blocks_before_the_publish_commit(engine) -> None:
+    """Card §11: the ordering claim — and it is now **real**, not an ``xfail``.
+
+    ``TC-report-coverage-publish-cas`` has landed, and its
+    :func:`server.app.report.publisher.publish_report` calls this card's predicate as check 3
+    of the six-check CAS::
+
+        if not context.embedding_port.embedding_generation_matches(
+            snapshot.owner_id, snapshot.generation.generation_id
+        ):
+
+    with ``embedding_port`` being a real
+    :class:`~server.app.embedding.service.EmbeddingService`. So the whole sequence is
+    observable end to end, and this test walks it:
+
+    1. build a report snapshot while G1 is active — the snapshot pins G1;
+    2. finish G2 and activate it, between build and publish (fixture ``l``'s event 2);
+    3. publish, and watch the guard refuse.
+
+    Three things are asserted, and the second and third are what make this an **ordering**
+    claim rather than a repeat of the predicate's own unit test: the code is
+    ``EMBEDDING_GENERATION_MISMATCH``; ``COUNT(report WHERE status='published')`` is unchanged
+    (fixture ``l``: *"`#report[status='published']` không tăng"*); and the build row is left
+    ``aborted`` with ``abort_reason = 'embedding_generation_mismatch'``, which is
+    ``contracts/state/report.yaml`` T-RP-04 and proves the refusal happened inside the publish
+    path rather than before it was ever entered.
+
+    The original marker named ``server.app.report.service``, a module that card's §3 never
+    creates — ``CR-TC-REPORT-08``. Re-pointed to the real entry point.
+    """
+    from server.app.report.builder import SelectionSettings, build_report
+    from server.app.report.coverage import ReportError
+    from server.app.report.publisher import PublishContext, publish_report, record_build
 
     g1 = seed_generation_one(engine)
     service, g2 = build_generation_two(engine, expected_vector_count=1)
-    pinned = service.pin_generation(OWNER_ID, caller_module=MOD_REPORT)
+    tag_port = _FrozenTagPort()
+    context = PublishContext(engine=engine, tag_port=tag_port, embedding_port=service)
+
+    snapshot = build_report(
+        engine,
+        owner_id=OWNER_ID,
+        report_build_id="3a7d1e02-8c4b-4f19-9d2e-5b6a7c8d9e01",
+        tag_port=tag_port,
+        embedding_port=service,
+        settings=SelectionSettings(),
+    )
+    assert snapshot.generation.generation_id == g1, "the build did not pin the active generation"
+
+    # T-RP-01: the `building` row that anchors `report_build_id`. Without it the publisher
+    # answers NOT_FOUND at its idempotency check and never reaches the embedding guard --
+    # "publish does not create a build" (`publish_cas.idempotency_rule_vi` case 4). Recording
+    # it is what puts this test *inside* the publish path rather than in front of it.
+    record_build(context, snapshot)
+
+    # The switch, between build snapshot and publish commit.
     service.generate_vectors(
         OWNER_ID, caller_module=MOD_TAG, generation_id=g2, requests=subjects(1)
     )
     service.activate_generation(OWNER_ID, caller_module=MOD_EMBEDDING, generation_id=g2)
+    assert service.embedding_generation_matches(OWNER_ID, g1) is False
 
     published_before = observe(engine, "SELECT COUNT(*) FROM report WHERE status = 'published'")
-    with pytest.raises(EmbeddingError) as raised:
-        publish_report(engine, owner_id=OWNER_ID, expected_embedding_generation_id=g1)
+
+    with pytest.raises(ReportError) as raised:
+        publish_report(context, snapshot)
+
     assert raised.value.code is ErrorCode.EMBEDDING_GENERATION_MISMATCH
     assert (
         observe(engine, "SELECT COUNT(*) FROM report WHERE status = 'published'")
         == published_before
     )
-    assert pinned.generation_id == g1
+    aborted = observe(
+        engine,
+        "SELECT abort_reason FROM report WHERE report_build_id = :b",
+        b=snapshot.report_build_id,
+    )
+    assert aborted == "embedding_generation_mismatch"
 
 
 # --- default deny at the port (card §5, SG-DENY) ----------------------------------------------

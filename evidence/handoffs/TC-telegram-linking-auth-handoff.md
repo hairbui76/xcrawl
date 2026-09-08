@@ -310,3 +310,187 @@ would act on; their file was not touched. `TC-saved-snapshot`'s
 
 *`PKT-TC-TGAUTH-FIX1` · `worker-W5A` · `lease_released_at` 2026-09-07T20:30Z · claim
 `CONTRACT_READY` · no item here is an independent audit.*
+
+---
+
+# ADDENDUM — `PKT-TC-TGAUTH-FIX2`
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-TGAUTH-FIX2` · lease `LEASE-TC-TGAUTH-e3` (fencing 3) · worker `worker-W5A` |
+| status | **`DONE`** · ceiling unchanged (`CONTRACT_READY`; `SELF_VALIDATION`) |
+| evidence | `evidence/runs/TC-telegram-linking-auth-E1-20260908T004625Z.json` (`EV-E1-03-…`, `PASS`, 0 schema errors). `EV-E1-02-…` is now `result: STALE` with a `stale_reason` naming this packet. |
+| pin epoch | `PC10-PIN-P3-20260908`, re-verified: 28/28 §0 rows, 0 drift |
+| lease_released_at | 2026-09-08T01:00Z |
+
+## B.1 Changes
+
+| Path | Operation | Before (sha256) | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `tests/contract/test_telegram_command_allowlist.py` | MODIFY | `6c13c7a63a0db41a3182287a672ecd53caf44a821dd3f6b27f40228b3328fc3b` | `5ea8e6bd586c4b28d897b18488073e1b826189f06fad1dcc73a60f2c134fbc18` | 49310 |
+| `tests/integration/test_unknown_chat_silent.py` | MODIFY | `c1c57ecadb0c22c2fdac913454a7eedbbb754ffd592bd22a49fc82124385c092` | `f08643629c8e40a120db26221e9a410f15652970368b5633335ec0b68f65301d` | 18732 |
+| `evidence/runs/…-E1-20260907T202140Z.json` | MODIFY (→ `STALE`) | `3c2f76b0ff913fe12deeb617b6586235abd79b8445826b3c8608401d6b99c873` | `0ed19b5d28837672d7e9daa163fd16a9b2ad07a8a5f31aa3688ea1d2f40a46df` | 23080 |
+| `evidence/runs/…-E1-20260908T004625Z.json` | CREATE | ABSENT | `1c3b281f7f1b637b538bf9a69adc8557186d0bb57318e4ea128eddfa54396dcb` | 24606 |
+| `evidence/handoffs/TC-telegram-linking-auth-handoff.md` | MODIFY (this addendum) | — | (this file) | — |
+
+**No product code changed.** `commands.py` (`a3c56856…a275`), `ingress.py` (`354a8d17…82d6`),
+`linking.py` (`41779417…1ee9`), `router.py` (`0f6d7b1f…3bd4`), both migrations and
+`server/app/main.py` are byte-identical to FIX1 — the lease's conditional permission to touch
+`commands.py` was not needed, because the `RunNowPort` / `RunListPort` signatures already fit
+`server.app.jobs.service` without changing either side. `tests/integration/test_link_code_once.py`
+is unchanged (`542aa82c…1601`). No sibling card's file was touched.
+
+## B.2 The run-now xfail is now four real tests
+
+The premise no longer holds — `TC-scheduler-lease-claim` landed as
+`server/app/jobs/service.py` — so `test_run_now_against_the_real_job_service` was **deleted**
+rather than restated, and replaced by four tests driving `server.app.jobs.service` through
+`JobContext` and the real `run` table:
+
+* **`test_fixture_l_run_now_against_the_real_job_service`** — fixture `l`, end to end. A run is
+  created through the real service and parked in `needs_user`; `/run_now` from the linked chat
+  leaves **every column of the run row identical** (`run__status_changes: 0`), `COUNT(run) = 1`,
+  `COUNT(assignment)` unchanged, and produces exactly one reply pointing into the app. It also
+  asserts the job service was genuinely asked (`run_now_calls == 2`) — otherwise the test would
+  also pass for an adapter that refused on its own and never called, which is a different
+  system.
+* **`test_run_now_with_no_active_run_queues_one_real_run`** — `RN-03`: one `manual`/`queued` run.
+* **`test_run_now_twice_coalesces_onto_the_same_run`** — `RN-02`/`T-RUN-21`: the reply changes,
+  the row count does not.
+* **`test_status_against_the_real_job_service_mutates_nothing`** — `ST-01` through the real
+  `run.list`.
+
+The double-based `test_fixture_l_run_now_does_not_pass_a_needs_user_run` stays. It tests this
+adapter's **mapping** (`created: False` + `status: needs_user` → `blocked_needs_user`) in
+isolation, which is a different question from whether the two sides agree; both are now
+asserted. One `xfail` remains in the card — the callback path — and it keeps `run=False`
+because it waits on a **contract fact** (`CR-PC07-04`), not on a sibling card.
+
+## B.3 A latent flake found and fixed while doing it
+
+Both suites stamped `message.date` with a frozen `2026-09-07`. When the wall clock crossed
+2026-09-08T00:00Z that timestamp aged past `telegram_update_max_age`, `ING-06` began dropping
+those updates, and twelve tests failed. The behaviour was **correct**; the tests were wrong,
+and worse than wrong: the ones asserting "nothing happened" would have kept passing for the
+wrong reason. `_message` now stamps **now** by default; where a test pins the server clock it
+pins the update's `date` to the same instant; and the age test sets both ends explicitly. Found
+because this packet happened to run after midnight — recorded in the manifest's limitations so
+the class of defect is visible rather than the incident.
+
+## B.4 Owner decisions `OD-20260908-10`, items 2 and 3
+
+Both close CRs this card raised, both in favour of what shipped, and neither needs a code
+change:
+
+* **Item 2** closes `CR-TC-TGAUTH-02`: `/save <id>` **stays** as the plain-text trigger until
+  the inline button is feasible, mapped onto the existing `CMD-save`, with no new contract
+  command. Still exactly three commands (`AMD-B10`).
+* **Item 3** closes `CR-TC-TGAUTH-04`: a **linked** chat that sends text outside the allowlist
+  gets the short three-command reminder; an **unlinked** chat stays silent with 0 outbound. The
+  decision says the shipped code stands and the boundary-sweep fixture row is corrected in the
+  next contract round (a CR for PC08) — so `acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json`
+  is still, today, inconsistent with `commands.yaml` on this row, and this card did not touch it.
+
+`CR-TC-TGAUTH-01`, `-03`, `-05` and `-06` remain open, as do `CR-PC07-01`, `-03`, `-04`, `-05`.
+
+## B.5 Verification
+
+| Command | Result | Exit |
+| --- | --- | --- |
+| `pytest tests/contract/test_telegram_command_allowlist.py -q` | **28 passed, 1 xfailed** | 0 |
+| `pytest tests/integration/test_link_code_once.py -q` | **8 passed** | 0 |
+| `pytest tests/integration/test_unknown_chat_silent.py -q` | **8 passed** | 0 |
+| `pytest tests/contract/test_schema_matches_entities.py -q` | **10 passed** (one Alembic head) | 0 |
+| `ruff check .` / `ruff format --check .` (this card's files) | clean / clean | 0 |
+| `mypy` | `Success: no issues found in 64 source files` | 0 |
+| `pytest` (whole suite) | **1022 passed, 7 xfailed, 0 failed, 0 error** | 0 |
+
+The whole suite is green: the strict XPASS that FIX1 left in
+`TC-telegram-unknown-delivery`'s file is gone — they un-xfailed it, as the Coordinator said
+they would.
+
+*`PKT-TC-TGAUTH-FIX2` · `worker-W5A` · `lease_released_at` 2026-09-08T01:00Z · claim
+`CONTRACT_READY` · no item here is an independent audit.*
+
+## B.6 Baseline drift observed at release — `STALE_BASELINE` for the *next* write
+
+Re-checking `SG-HASH` at handoff, **two of the 28 pinned rows had drifted** while this packet
+ran, both written by the `OD-20260908-10` decision round:
+
+| Path | Card §0 pin | On disk at handoff |
+| --- | --- | --- |
+| `precode/baseline.json` | `ffd1efb3588f8750…` | `e8cf3910c6f23512…` |
+| `precode/decision-register.md` | `058621d0649b798c…` | `8d6a87fb0569e4c3…` |
+
+Reported, not absorbed. Per `SG-HASH` the pin epoch `PC10-PIN-P3-20260908` is now `STALE` and
+**a further write to this card needs a new baseline** — the Coordinator's re-pin, not this
+worker's judgement. This packet's *content* is unaffected: neither file is read by any line of
+this card's code (they are decision minutes, not contracts `MOD-telegram-adapter` depends on),
+and the 26 rows that matter — both Telegram contracts, `entities.yaml`, `ports.yaml`,
+`errors.yaml`, `modules.yaml`, `capabilities.yaml`, `openapi.yaml`, `secrets.md`, the ADRs and
+all seven fixtures — are byte-identical to the pin. The manifest records the **observed**
+hashes with the drift spelled out, rather than the pinned ones, because a baseline block that
+claims bytes that were not there is worse than one that admits what moved.
+
+---
+
+# ADDENDUM — `PKT-TC-TGAUTH-FIX3`
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-TGAUTH-FIX3` · lease `LEASE-TC-TGAUTH-e4` (fencing 4) · worker `worker-W5A` |
+| driven by | audit finding **`F-A3-P4R2-02`** (LOW) |
+| status | **`DONE`** · ceiling unchanged (`CONTRACT_READY`; `SELF_VALIDATION`) |
+| write set | handoff + manifest re-issue only. **No code, no test, no migration changed.** |
+| governing manifest | `evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json` (`EV-E1-04-…`, `PASS`, 0 schema errors) |
+| lease_released_at | 2026-09-08T02:05Z |
+
+## C.1 The finding
+
+`EV-E1-03-…` pinned `server/app/main.py` by whole-file sha256 in `artifacts` and named it in
+`invalidated_by_paths`. That hash had already moved: siblings appended their own delimited
+include blocks to the same file. The record was therefore stale for a reason that has nothing
+to do with anything it asserts — no byte of this card's behaviour changed.
+
+## C.2 Ruling, recorded for every card that follows
+
+> **A card manifest must not pin the shared application factory `server/app/main.py` by
+> whole-file hash, and must not list it in `invalidated_by_paths`. Pin only the card's own
+> delimited include block — or omit the file entirely.**
+
+The reason is that the file is shared **by design**: the Phase 1 dispatch rule tells every
+card to append one clearly delimited block to it, so its hash is a function of how many
+siblings have landed. A per-card record that pins it is asserting something it does not own
+and cannot keep true.
+
+What `EV-E1-04-…` pins instead is this card's own block —
+`# >>> TC-telegram-linking-auth (MOD-telegram-adapter) >>>` … `# <<< TC-telegram-linking-auth <<<`,
+**620 bytes, sha256 `cfa96b64eea978af6d105e26f191002b7adc9a13d34db3a1cd821fcb02a6c93b`** —
+recorded in `baseline.implementation_revision`. `server/app/main.py` no longer appears in
+`artifacts` or in `invalidated_by_paths`.
+
+The trade-off is written into the manifest's own limitations rather than left implicit: a
+change elsewhere in the factory (include order, the `create_app` signature) will **not** mark
+this record stale, so it must not be read as evidence about the factory as a whole. That
+evidence comes from the tests that mount the real application — `test_the_three_routes_are_mounted_and_no_internal_operation_is`,
+`test_the_owner_routes_refuse_without_a_session`, `test_the_webhook_answers_204_even_when_it_stays_silent`,
+`test_a_wrong_secret_processes_nothing_at_all` — all of which build `create_app()` and ran in
+the command this record names.
+
+## C.3 Verification
+
+Re-run at 2026-09-08T01:59Z against current bytes: the three card suites together are
+**44 passed, 1 xfailed**, exit 0. The one xfail is still the callback path
+(`NOT_RUN`, `BLOCKED_DEPENDENCY CR-PC07-04`, `run=False`). Code, tests and migrations are
+byte-identical to `PKT-TC-TGAUTH-FIX2`: ingress `354a8d17…82d6`, commands `a3c56856…a275`,
+linking `41779417…1ee9`, router `0f6d7b1f…3bd4`, `0006` `c6e84237…8f68`, `0007` `31e8b1bd…f2b7`,
+allowlist test `5ea8e6bd…c18`, unknown-chat test `f0864362…301d`, link-code test `542aa82c…1601`.
+
+`EV-E1-03-…` is now `result: STALE` (`4a4c36737f04e184d2b84e12a7badce3bd89a32e84b8765e2c6adb18d45db960`,
+26385 bytes) with a `stale_reason` naming this packet and this finding. The
+`STALE_BASELINE` note of §B.6 still stands unchanged: the card's §0 pin epoch
+`PC10-PIN-P3-20260908` needs a Coordinator re-pin before any further write, for the two
+`precode/` files that `OD-20260908-10` moved.
+
+*`PKT-TC-TGAUTH-FIX3` · `worker-W5A` · `lease_released_at` 2026-09-08T02:05Z · claim
+`CONTRACT_READY` · no item here is an independent audit.*

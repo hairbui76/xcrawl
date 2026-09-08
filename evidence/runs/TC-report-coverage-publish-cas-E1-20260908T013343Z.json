@@ -1,0 +1,246 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-03-tc-report-coverage-publish-cas",
+  "created_at": "2026-09-08T01:35:00Z",
+  "producer_principal": "worker-W4A",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7",
+      "precode/baseline.json": "e8cf3910c6f2351a2c7c4a8620121b0415a58c5c7ec86eee7ba5d33c343c1a70",
+      "precode/decision-register.md": "a38e2ce1a953279b7d1ca0ba6ae2ad52f97886a887f98e596b9ade0f4fdb211b",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+      "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+      "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+      "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/schemas/report.schema.json": "8bf6bc9ccd6040c06f4ba709ea638e647ab8349e1bac4f26cd6049df76b7ba60",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+      "precode/adr/ADR-0004-tag-freeze-point.md": "4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f",
+      "precode/adr/ADR-0007-timezone-handling.md": "fbb464c22df45248895107a3f38e85f700e9cdecd9a722eaa9f2a4b028995e44",
+      "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+      "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+      "acceptance/fixtures/reporting/a-tag-removed-before-publish.json": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+      "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+      "acceptance/fixtures/reporting/d-empty-period-coverage-only.json": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+      "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1",
+      "acceptance/fixtures/reporting/g-concurrent-publishers-cas.json": "825a383b20576864f45a8d9fb9be23bc01d04fe8103f9cf0e8275cff8052980e",
+      "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+      "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+      "acceptance/fixtures/reporting/m-density-worked-example.json": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+      "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+      "acceptance/scenarios.yaml": "76d94809c1dac796d52eb8fc78bf72470f1b3dede533b5407c535537111e74c4",
+      "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+      "contracts/schemas/target.schema.json": "d1ce487d2e4ba24b094f702b38a5fcac517443981fe8faea36472089124dc0fd"
+    },
+    "contract_versions": {
+      "CT-reporting-selection": "0.1.0",
+      "CT-reporting-time-and-tags": "0.1.0",
+      "CT-state-report": "0.4.0",
+      "CT-schema-report": "0.1.0"
+    },
+    "implementation_revision": "PKT-TC-REPORT-FIX2 (lease LEASE-TC-REPORT-e3); card §0 epoch PC10-PIN-P3b-20260908 is STALE at run time (3/34 pins moved, see limitations); coverage.py=a4fd8f83052ee8b001fefb037547a759f5f0da1bbfab6cd7126f16f4a2a94e76, builder.py=c6282d98499db396dc6f7169c690ce190076cc7da8369730b928789ed8363edc, publisher.py=2b98235d5c7e3fe26578dbbd114f907354a52c839defa9e7faa170a19b71c7dc, router.py=b4aac67b1071a5b9bacb057049dac832be7f7a98a75b3f28a90b971b90e81514, 0010_tc_report_coverage_publish_cas.py=c6b049cac6b95d84614d134f321da3e548185ae3eae42e4b5c5ded9b9869adce, test_report_schema.py=b6eab9211a567b2a3728d8cf39b46e2e183a16c230d6b355c85e1bd69b1cabf8, test_publish_cas.py=9ae53c2ebc1ed7cea790803db006c870cfe4d2827fc74484c472bda889c96a1a, test_coverage_contiguous.py=23403f65ab8aa6d902eda1e17eb162688669407a51bd5e7727d47d045df67f06"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "SQLAlchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "jsonschema": "4.26.0",
+      "sqlite3": "see server/app/db/engine.sqlite_library_version()"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "database": "tmp_path SQLite created by `alembic upgrade head` per test"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": "01JEMBGEN10000000000000000",
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC05",
+      "SC08",
+      "SC09",
+      "SC15",
+      "SC19",
+      "SC22",
+      "SC24",
+      "SC37",
+      "SC38",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-AC05",
+      "REQ-AC08",
+      "REQ-AC09",
+      "REQ-CTAG",
+      "REQ-D23",
+      "REQ-D27",
+      "REQ-D28",
+      "REQ-D29",
+      "REQ-D53",
+      "REQ-D54",
+      "REQ-D57"
+    ],
+    "invariant_ids": [
+      "I05",
+      "I06",
+      "I07",
+      "I12",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/reporting/a-tag-removed-before-publish.json",
+        "sha256": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+        "bytes": 16121
+      },
+      {
+        "path": "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json",
+        "sha256": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+        "bytes": 6023
+      },
+      {
+        "path": "acceptance/fixtures/reporting/d-empty-period-coverage-only.json",
+        "sha256": "2b3a6cd3ed2a3a5441a6854038020db17e6dbe736c941df6f1d7d5b1adb2c25e",
+        "bytes": 8879
+      },
+      {
+        "path": "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json",
+        "sha256": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+        "bytes": 10989
+      },
+      {
+        "path": "acceptance/fixtures/reporting/g-concurrent-publishers-cas.json",
+        "sha256": "825a383b20576864f45a8d9fb9be23bc01d04fe8103f9cf0e8275cff8052980e",
+        "bytes": 5795
+      },
+      {
+        "path": "acceptance/fixtures/reporting/h-already-announced-work-becomes-reference.json",
+        "sha256": "99ef5c790806becdf4a3386566d53690ef1d91a77ac416c2f9deacda93085874",
+        "bytes": 9789
+      },
+      {
+        "path": "acceptance/fixtures/reporting/i-identity-merge-single-first-announced.json",
+        "sha256": "207e38f9e1c12cca6111f249ebed230bd33993daa69a561210a93e425963d321",
+        "bytes": 15344
+      },
+      {
+        "path": "acceptance/fixtures/reporting/m-density-worked-example.json",
+        "sha256": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+        "bytes": 29177
+      },
+      {
+        "path": "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json",
+        "sha256": "98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f",
+        "bytes": 19229
+      }
+    ],
+    "seed": null,
+    "clock": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest tests/contract/test_report_schema.py tests/integration/test_publish_cas.py tests/integration/test_coverage_contiguous.py -q && .venv/bin/python -m ruff check server/app/report … && .venv/bin/python -m ruff format --check … && .venv/bin/python -m mypy --strict server/app/report && .venv/bin/python -m pytest   (whole repo)",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-08T01:20:00Z",
+    "ended_at": "2026-09-08T01:50:00Z",
+    "exit_code": 0,
+    "attempts": 1
+  },
+  "oracle": {
+    "statement_vi": "Coverage nửa mở [from,to) nối liền trên CẢ HAI trục (thời gian và ingest_sequence), kể cả qua kỳ rỗng và sau một lần ghi bị từ chối; hai publisher đồng thời trên cùng predecessor ⇒ đúng MỘT coverage_window và đúng MỘT report published, bên thua nhận CONFLICT với 0 report_item và 0 backfill tiêu thụ; read model publish validate theo contracts/schemas/report.schema.json và content_hash tính lại từ hàng đã lưu bằng giá trị đã lưu (I05). PKT-TC-REPORT-FIX1 thêm: một mục thuộc phần NỚI của §6.3 xuất hiện trong report ĐÚNG MỘT lần, mang selected_via_backfill + backfill_ledger_id, và entitlement chỉ chuyển 'consumed' tại COMMIT của TXN-report-publish (§6.4 điều kiện 1); phần nới KHÔNG tìm thấy gì thì entitlement KHÔNG bị tiêu thụ (điều kiện 3). PKT-TC-REPORT-FIX2 thêm (F-A3-P4-01 / CR-TC-BACKFILL-09): first_announced_ledger CHỈ được ghi cho item new_discovery có summary_state='present'; một mục còn pending KHÔNG được công bố, và được công bố ĐÚNG MỘT lần khi summary về và kỳ sau publish — điều khoản chi phối là contracts/reporting/time-and-tags.md §5.3 gạch đầu dòng 3 đọc cùng §8.2 quy tắc 2, oracle là row_oracles[0] của fixture e.",
+    "expected": {
+      "coverage_window[predecessor=P]": 1,
+      "report[status='published'] sau hai publisher": 1,
+      "report[status='aborted' AND abort_reason='cas_conflict']": 1,
+      "report_item của bản dựng thua": 0,
+      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau CAS thua hoặc sau crash": 0,
+      "coverage_window[report_id IS NULL] cho kỳ rỗng": 1,
+      "outbox_intent cho kỳ rỗng": 0,
+      "contiguity_violations(mọi cửa sổ)": [],
+      "sha256(JCS(read model rebuilt)) == report.content_hash": true,
+      "pytest exit_code": 0,
+      "report_item[report_id=R AND target_key=mục backfill]": 1,
+      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau build, trước publish": 0,
+      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau publish": 1,
+      "backfill_ledger[consumed_in_report_id IS NOT NULL] khi phần nới rỗng": 0,
+      "first_announced_ledger[canonical_work_id=mục pending] sau kỳ 1": 0,
+      "first_announced_ledger[canonical_work_id=mục pending] sau kỳ 2 (summary đã về)": 1,
+      "first_announced_ledger sau hai kỳ mà summary KHÔNG về": 0,
+      "report_item[kỳ 2].item_type của mục phát hiện muộn": "new_discovery"
+    },
+    "observed": {
+      "tests/contract/test_report_schema.py": "18 passed",
+      "tests/integration/test_publish_cas.py": "13 passed (2 mới: pending không được công bố; chờ lâu vẫn không công bố)",
+      "tests/integration/test_coverage_contiguous.py": "11 passed",
+      "mutation check": "bỏ đúng một dòng `if item.summary_state != SUMMARY_FINAL: continue` ⇒ CẢ HAI test mới FAIL; khôi phục ⇒ pass. Test bắt đúng khiếm khuyết, không tự xác nhận.",
+      "ruff check / ruff format --check / mypy --strict": "clean (8 file của thẻ; 6 source file)",
+      "alembic heads": [
+        "0013_tc_backfill_pending_ledger"
+      ],
+      "full suite": "Hai lần quan sát, ghi cả hai vì chúng nói hai điều khác nhau. (1) 01:33Z, ngay sau khi sửa: 1030 passed / 5 xfailed / 1 failed — failure duy nhất là XPASS(strict) của W4B (tests/integration/test_pending_survives_cursor.py::test_fixture_e_the_late_discovery_is_still_a_new_discovery), tức marker xfail(strict=True) của CR-TC-BACKFILL-09 bắn vì khiếm khuyết ĐÃ được sửa — xác nhận ĐỘC LẬP, không do tác giả bản sửa khẳng định. (2) 01:50Z, sau khi W4B lật marker (file của họ): 1042 passed / 3 xfailed / 0 failed / 0 errors."
+    }
+  },
+  "result": "PASS",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 42,
+    "not_checked_vi": [
+      "tag.get_active_config_version / tag.freeze_config_version chạy qua một FakeTagPort trong test: KHÔNG card nào trong 19 tạo bảng tag/tag_config_version, nên chưa có triển khai thật để tích hợp (CR-TC-REPORT-01). E1 ở đây chứng minh HỢP ĐỒNG của port, không chứng minh MOD-tag-service.",
+      "run.status/run.outcome KHÔNG được ghi: ENT-run chưa có bảng (thuộc TC-scheduler-lease-claim). §4.5 mục 10 là NOT_RUN.",
+      "delivery.create_intent được gọi qua một cổng ghi nhận (RecordingDelivery) trong test coverage; tích hợp thật với server.app.delivery.service đã có adapter nhưng CHƯA chạy end-to-end trong bộ test này — NOT_RUN.",
+      "Watermark §4.3 quy tắc 1 (sequence đã cấp nhưng chưa commit) KHÔNG quan sát được: không entity nào ghi allocation chưa commit (CR-TC-REPORT-03). Mặc định dùng max đã commit.",
+      "Vector do DeterministicHashEncoder sinh, KHÔNG phải model thật: mọi ngưỡng similarity ở đây vô nghĩa về ngữ nghĩa (REQ-A2 vẫn uncalibrated, REQ-A3 KC).",
+      "Ví dụ số mật độ §8.7 của fixture m KHÔNG được chạy lại đầu-cuối qua builder: fixture m không có events, chỉ có given/computation/expected. Phần density đã hiện thực nhưng oracle O-8.1/O-8.2/O-8.3 là NOT_RUN.",
+      "E3 (live) và E4 (nội dung có hữu ích không) — NOT_RUN, ngoài phạm vi card §8.",
+      "Đường backfill dương nay CÓ chạy (phần nới → ứng viên → report_item → consumed tại publish), nhưng qua FakeTagPort và DeterministicHashEncoder; fixture j (add→remove→re-add) và fixture k vẫn thuộc TC-backfill-pending-ledger — W4B chạy lại đường dương của họ sau addendum này.",
+      "Fixture e KHÔNG được chạy end-to-end như một chuỗi events: nó không có `events` thực thi được qua builder ở dạng này; test mới dựng lại đúng tình huống của nó (chọn → thiếu summary → pending → summary về → kỳ sau) và khẳng định row_oracles[0]. Bản thân fixture vẫn NOT_RUN.",
+      "BASELINE DRIFT tại run time: precode/{baseline.json, decision-register.md, adr/ADR-0011-frameworks-and-toolchain.md} đã đổi byte trong lúc gói này chạy (W1n ghi OD-20260908-10 và sửa ADR-0011 theo F-A3-P4-02 — đúng thứ tự ruling đặt ra). 31/34 pin khớp; không file nào trong ba là đầu vào của oracle ở đây, nhưng epoch PC10-PIN-P3b-20260908 là STALE và WP phải re-pin (P4b) trước freeze."
+    ],
+    "uncertainty_vi": "Trần claim của card là IMPLEMENTATION_VERIFIED và bản ghi này là SELF_VALIDATION: nó KHÔNG chứng minh independent review. contracts/http/openapi.yaml vẫn khai claim_ceiling DRAFT_FOR_REVIEW (card §9), nên claim của card không được vượt IMPLEMENTATION_VERIFIED. Sửa đổi FIX2 cũng chỉnh lại một tuyên bố SAI của bản handoff e1: REQ-D29/I07 khi đó được liệt kê là 'covered' trong khi _write_first_announcements công bố cả mục còn pending. Phạm vi đúng của REQ-D29/REQ-AC09/I07 nay là: một canonical work có đúng một hàng ledger có hiệu lực; mục đã công bố quay lại là prior_reference CÓ ngày; và mục phát hiện muộn chưa từng được công bố vẫn là new_discovery. Nhánh sau identity merge vẫn do TC-canonical-identity-merge chứng minh, không phải thẻ này.",
+    "unresolved_issue_refs": [
+      "CR-TC-REPORT-01",
+      "CR-TC-REPORT-02",
+      "CR-TC-REPORT-03",
+      "CR-TC-REPORT-04",
+      "CR-TC-REPORT-05",
+      "CR-TC-REPORT-06",
+      "CR-TC-REPORT-07",
+      "CR-TC-REPORT-08",
+      "REQ-A2",
+      "REQ-A4"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "MOD-report-service: report.build (selection trên snapshot có version), report.publish (TXN-report-publish với 6 phép kiểm theo đúng thứ tự và CAS trên coverage predecessor), report.list, report.get, cùng sổ coverage nửa mở nối liền và tính bất biến của report đã publish. Kèm §6.3 widening qua backfill_port (mặc định no-op) và §6.4 điều kiện 2/3 hỏi qua cổng của TC-backfill-pending-ledger.",
+    "not_established_vi": [
+      "KHÔNG chống đỡ IMPLEMENTATION_VERIFIED: evidence/manifest.schema.json (theo protocol §9) chỉ cho một bản ghi SELF_VALIDATION chống đỡ tới CONTRACT_READY. Trần của card là IMPLEMENTATION_VERIFIED, nhưng để đạt trần đó cần COORDINATOR_CHECK hoặc INDEPENDENT_AUDIT trên chính các lệnh dưới đây — chưa chạy.",
+      "KHÔNG chứng minh MOD-tag-service (chưa có bảng, chưa có card).",
+      "KHÔNG chứng minh gửi Telegram: report service chỉ tạo intent (FE-27).",
+      "KHÔNG chứng minh ngưỡng 0.8000 tách được tín hiệu khỏi nhiễu (REQ-A2) hay tham số mật độ đúng (REQ-A4).",
+      "KHÔNG phải independent audit: review_type = SELF_VALIDATION."
+    ]
+  }
+}

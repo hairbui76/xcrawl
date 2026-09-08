@@ -43,6 +43,7 @@ Exit code: 0 if no check has status FAIL, 1 otherwise, 2 on tool error.
 from __future__ import annotations
 
 import argparse
+import ast
 import csv
 import datetime as _dt
 import hashlib
@@ -2937,7 +2938,9 @@ def check_card_fixture_accounting(repo: Repo, idx: Index) -> None:
         "Every §2 fixture of an implemented card is exercised by a test or recorded NOT_RUN",
         "A card counts as IMPLEMENTED when `evidence/runs/<card>-E1-*.json` exists. For each such "
         "card, every `acceptance/fixtures/**.json` named in its `§2. Read set` (READMEs excluded) "
-        "must be EITHER referenced by a file under `tests/`, OR named in "
+        "must be EITHER referenced by a file under any TEST tree — `tests/`, `web/tests/`, or a "
+        "co-located `*.test.*` / `*.spec.*` under `web/src/` (CR-TC-uiruns-08: walking only the "
+        "Python tree made every UI card unpassable) — OR named in "
         "`evidence/handoffs/<card>-handoff.md` in a paragraph that also contains `NOT_RUN`. "
         "Silence is the defect this catches, not absence of coverage: `F-A3R1-09`, `F-A3-P2-01` "
         "and `F-A3-P3-03` are the same finding three rounds running, which is why it is now a "
@@ -2953,19 +2956,38 @@ def check_card_fixture_accounting(repo: Repo, idx: Index) -> None:
         return
 
     runs = os.listdir(runs_dir)
-    # every text file under tests/, read once
+    # Every text file under any TEST tree, read once.
+    #
+    # CR-TC-uiruns-08: this walked only the Python `tests/` tree, so a UI card's fixture — loaded
+    # by name in Vitest under `web/tests/` — was invisible and the card could never pass. The
+    # check was measuring "referenced by a PYTHON test" while its oracle said "referenced by a
+    # test", which is the same class of defect (`F-A3R3-01`, `F-A3R4-01`) this file has now been
+    # caught by three times: a stated reach wider than the actual one. The walk follows the
+    # oracle instead of the other way round.
     test_blob = []
-    tests_root = os.path.join(repo.root, "tests")
-    for dirpath, dirnames, filenames in os.walk(tests_root):
-        dirnames[:] = [d for d in dirnames if d not in ("__pycache__", ".pytest_cache")]
-        for fn in filenames:
-            if fn.endswith((".pyc", ".json")):
-                continue
-            try:
-                with open(os.path.join(dirpath, fn), "r", encoding="utf-8") as fh:
-                    test_blob.append(fh.read())
-            except Exception:
-                continue
+    test_roots = [os.path.join(repo.root, "tests"),
+                  os.path.join(repo.root, "web", "tests"),
+                  os.path.join(repo.root, "web", "src")]
+    for root in test_roots:
+        if not os.path.isdir(root):
+            continue
+        in_src = root.endswith(os.path.join("web", "src"))
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames
+                           if d not in ("__pycache__", ".pytest_cache", "node_modules",
+                                        "generated", "dist", "build")]
+            for fn in filenames:
+                if fn.endswith((".pyc", ".json")):
+                    continue
+                # Under `web/src/` only co-located test files count: shipping code that merely
+                # mentions a fixture path is not a test exercising it.
+                if in_src and ".test." not in fn and ".spec." not in fn:
+                    continue
+                try:
+                    with open(os.path.join(dirpath, fn), "r", encoding="utf-8") as fh:
+                        test_blob.append(fh.read())
+                except Exception:
+                    continue
     tests_text = "\n".join(test_blob)
 
     implemented, skipped = [], []
@@ -3004,10 +3026,201 @@ def check_card_fixture_accounting(repo: Repo, idx: Index) -> None:
                        "§2 fixture %s is referenced by no test and named nowhere in the card's "
                        "handoff — the silence F-A3R1-09 / F-A3-P2-01 / F-A3-P3-03 each caught "
                        "by hand" % fixture)
-    c.note("%d card(s) implemented and checked: %s. %d card(s) not implemented and therefore out "
-           "of scope: %s."
-           % (len(implemented), ", ".join(implemented) or "none",
+    c.note("test trees walked: %s (existing ones only). %d card(s) implemented and checked: %s. "
+           "%d card(s) not implemented and therefore out of scope: %s."
+           % (", ".join(os.path.relpath(r, repo.root) for r in test_roots
+                         if os.path.isdir(r)),
+              len(implemented), ", ".join(implemented) or "none",
               len(skipped), ", ".join(skipped) or "none"))
+
+# --------------------------------------------------------------------------------------
+# CHECK 21 — no xfail/skip reason rests on a premise that is no longer true
+#
+# Fourth recurrence of one class: `F-A3R3-03`, `F-A3-P2-01`, `F-A3-P3-02` and now `F-A3-P4-03`
+# are all "a marker's REASON says something is absent, and it is not absent any more". The
+# marker itself is honest — `strict=True` means the test really does still fail — but the
+# sentence explaining why has rotted, and a reader trusts the sentence.
+#
+# What is flagged: a reason that asserts an ABSENCE (`pending`, `not yet`, `chưa`, `absent`,
+# `no implementation`, `needs the`, `does not exist`, …) about a subject that now EXISTS —
+# either a `TC-…` card whose handoff is on disk, or a table the migrations create.
+#
+# Why absence markers rather than "names a card/table at all": a marker whose reason describes a
+# real DEFECT (`CR-TC-BACKFILL-09`, a fixture that disagrees with a contract) legitimately names
+# tables and cards that exist. Flagging those would train people to delete accurate reasons.
+# The cost of that choice is stated rather than hidden: a rotted reason phrased WITHOUT any of
+# these markers slips through, and the note prints the marker list so the gap is inspectable.
+# --------------------------------------------------------------------------------------
+
+ABSENCE_MARKERS = (
+    "pending", "not yet", "no implementation", "not wired", "needs the", "needs a",
+    "does not exist", "doesn't exist", "absent", "not in phase", "not in m1", "is missing",
+    "chưa", "không tồn tại", "vắng mặt",
+)
+XFAIL_RE = re.compile(r"xfail\(")
+STRING_RE = re.compile(r'"([^"\\]*(?:\\.[^"\\]*)*)"' r"|'([^'\\]*(?:\\.[^'\\]*)*)'")
+CARD_RE = re.compile(r"\bTC-[a-z0-9-]+\b", re.I)
+VITEST_SKIP_RE = re.compile(r"\b(?:it|test|describe)\.(?:skip|todo)\s*\(")
+
+
+def migration_tables(repo: Repo) -> "set[str]":
+    """Table names the Alembic revisions create, read statically from the revision files."""
+    out = set()
+    base = os.path.join(repo.root, "server", "migrations", "versions")
+    if not os.path.isdir(base):
+        return out
+    for fn in sorted(os.listdir(base)):
+        if not fn.endswith(".py"):
+            continue
+        try:
+            with open(os.path.join(base, fn), "r", encoding="utf-8") as fh:
+                body = fh.read()
+        except Exception:
+            continue
+        out |= {m.lower() for m in re.findall(
+            r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\"`]?([a-z_]+)", body, re.I)}
+        out |= {m.lower() for m in re.findall(r'op\.create_table\(\s*"([a-z_]+)"', body)}
+    return out
+
+
+def marker_reasons(text: str, python: bool) -> "list[str]":
+    r"""Reason strings of every `xfail(...)` in `text`.
+
+    F-A3-P4R2-01: the first version matched the argument list with a regex terminated by
+    `\)\s*$` or `\n\s*\)`. Under `re.S`, `$` is end-of-STRING, so neither alternative can fire
+    for the one-line form `xfail(reason="…")` — the closing paren sits mid-file on the same
+    line. A textbook stale reason written that way was skipped **entirely**, and the check
+    reported a smaller `items_checked` rather than a violation, which is the quiet failure mode
+    this file keeps warning about. A test module is valid Python, so it is now parsed with `ast`
+    and the keyword read directly; implicit string concatenation arrives already folded into one
+    `Constant`. The regex survives only as a fallback for files that do not parse, and it now
+    terminates on a bare `)` as well.
+    """
+    out, unreadable = [], []
+    if python:
+        try:
+            tree = ast.parse(text)
+        except SyntaxError:
+            tree = None
+        if tree is not None:
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                name = node.func
+                dotted = []
+                while isinstance(name, ast.Attribute):
+                    dotted.append(name.attr)
+                    name = name.value
+                if isinstance(name, ast.Name):
+                    dotted.append(name.id)
+                if "xfail" not in dotted and "skip" not in dotted:
+                    continue
+                kws = [kw for kw in node.keywords if kw.arg == "reason"]
+                if not kws:
+                    unreadable.append("no reason= keyword")
+                for kw in kws:
+                    if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        out.append(kw.value.value)
+                    else:
+                        # An f-string or a variable: this check cannot read it, and saying so is
+                        # the difference between "clean" and "not looked at".
+                        unreadable.append("reason is not a string literal")
+            return out, unreadable
+    for m in XFAIL_RE.finditer(text):
+        seg = text[m.start():m.start() + 900]
+        r = re.search(r"reason\s*=\s*(.*?)(?:,\s*\w+\s*=|\s*\))", seg, re.S)
+        if not r:
+            continue
+        parts = [a or b for a, b in STRING_RE.findall(r.group(1))]
+        if parts:
+            out.append(" ".join(parts))
+    return out, unreadable
+
+
+def check_marker_reasons(repo: Repo, idx: Index) -> None:
+    c = new_check(
+        "E0-21-marker-reason-freshness",
+        "No xfail/skip reason rests on a premise the tree has since falsified",
+        "For every `pytest.mark.xfail(reason=…)` under any test tree, and every Vitest "
+        "`it/test/describe.skip|todo`: if the reason asserts an ABSENCE (%s) about a `TC-…` card "
+        "whose handoff exists on disk, or about a table the Alembic revisions create, the reason "
+        "is STALE and is reported. A table matches only when the reason writes it as a backticked name on its own (`report`), never as a bare word inside a path such as `contracts/telegram/delivery.md`.  The marker may still be correct — `strict=True` means the "
+        "test does still fail — but the sentence explaining why is not, and a reader trusts the "
+        "sentence. Fourth recurrence of this class (`F-A3R3-03`, `F-A3-P2-01`, `F-A3-P3-02`, "
+        "`F-A3-P4-03`), which is why it is a check now. What it deliberately does NOT flag: a "
+        "reason describing a real DEFECT, which legitimately names cards and tables that exist "
+        "— flagging those would train people to delete accurate reasons. The cost: a rotted "
+        "reason phrased without any absence marker slips through."
+        % ", ".join("`%s`" % m for m in ABSENCE_MARKERS[:6]),
+    )
+    tables = migration_tables(repo)
+    handoffs = set()
+    hdir = os.path.join(repo.root, "evidence", "handoffs")
+    if os.path.isdir(hdir):
+        handoffs = {fn[:-len("-handoff.md")].lower()
+                    for fn in os.listdir(hdir) if fn.endswith("-handoff.md")}
+
+    roots = [os.path.join(repo.root, "tests"), os.path.join(repo.root, "web", "tests"),
+             os.path.join(repo.root, "web", "src"), os.path.join(repo.root, "server", "tests")]
+    examined = vitest_seen = 0
+    unreadable_total = []
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames
+                           if d not in ("__pycache__", ".pytest_cache", "node_modules")]
+            for fn in sorted(filenames):
+                if not fn.endswith((".py", ".ts", ".tsx", ".js")):
+                    continue
+                rel = repo.rel(os.path.join(dirpath, fn))
+                try:
+                    with open(os.path.join(dirpath, fn), "r", encoding="utf-8") as fh:
+                        body = fh.read()
+                except Exception:
+                    continue
+                vitest_seen += len(VITEST_SKIP_RE.findall(body))
+                reasons, unreadable = marker_reasons(body, python=fn.endswith(".py"))
+                for why in unreadable:
+                    unreadable_total.append("%s (%s)" % (rel, why))
+                # A Vitest skip/todo carries no reason= kwarg; its nearest string is the title.
+                for m in VITEST_SKIP_RE.finditer(body):
+                    seg = body[m.end():m.end() + 400]
+                    parts = [a or b for a, b in STRING_RE.findall(seg)][:1]
+                    if parts:
+                        reasons.append(parts[0])
+                for reason in reasons:
+                    examined += 1
+                    c.checked += 1
+                    low = reason.lower()
+                    if not any(mk in low for mk in ABSENCE_MARKERS):
+                        continue
+                    for card in {m.lower() for m in CARD_RE.findall(reason)}:
+                        if card in handoffs:
+                            c.fail(rel, "marker reason asserts %s is absent, but "
+                                        "evidence/handoffs/%s-handoff.md exists — the card "
+                                        "landed and the reason has rotted: %s"
+                                   % (card, card, reason[:180]))
+                    # A table name counts only when the reason writes it AS a table: the whole
+                    # backticked span equals the name. Matching bare words made
+                    # `contracts/telegram/delivery.md` look like the `delivery` table and
+                    # produced a false positive on a reason whose premise is still true. A check
+                    # that cries wolf teaches people to ignore it, so the match is exact.
+                    for span in {s.strip().lower() for s in re.findall(r"`([^`]+)`", reason)}:
+                        if span in tables:
+                            c.fail(rel, "marker reason asserts table `%s` is absent, but the "
+                                        "migrations create it: %s" % (span, reason[:180]))
+    if unreadable_total:
+        c.note("%d marker(s) carry no readable literal reason and were NOT examined: %s. This is "
+               "a gap in the check, not a clean result for those markers."
+               % (len(unreadable_total), "; ".join(sorted(set(unreadable_total)))))
+    c.note("examined %d marker reason(s) across tests/, web/tests/, web/src/ and server/tests/; "
+           "%d Vitest skip/todo marker(s) found (a Vitest marker has no `reason=`, so its TITLE "
+           "is read instead — weaker, and said so). %d table name(s) known from the migrations, "
+           "%d card handoff(s) on disk. Absence markers used: %s."
+           % (examined, vitest_seen, len(tables), len(handoffs),
+              ", ".join(ABSENCE_MARKERS)))
+
 
 # --------------------------------------------------------------------------------------
 # Runner
@@ -3048,6 +3261,7 @@ def main(argv=None) -> int:
     check_declared_deviations(repo, idx)
     check_generated_matches(repo, idx)
     check_card_fixture_accounting(repo, idx)
+    check_marker_reasons(repo, idx)
 
     for _c in CHECKS:
         _c.finalize()

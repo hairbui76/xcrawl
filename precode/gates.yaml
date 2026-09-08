@@ -1,5 +1,5 @@
 contract_id: CT-precode-gates
-version: 0.4.0
+version: 0.5.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -600,6 +600,7 @@ gates:
       và sự vắng mặt đó là ĐÚNG, không phải một thiếu sót cần vá.
     blocked_by_open_items:
       - "SP1-X2: **chưa đợt probe nào chạy** — 0/5–10. Đây là lý do DUY NHẤT còn lại, và nó là một phép đo, không phải một quyết định."
+      - "Sau sáu giai đoạn, `SP1-X2` vẫn 0/5–10 và **không giai đoạn nào có thể đổi điều đó**: rào chắn là vật lý và thuộc về Owner. Bộ công cụ probe đã tồn tại, đã được audit, và `runs.jsonl` vẫn vắng mặt — đúng như thiết kế."
       - "Rào chắn còn lại là **vật lý và thuộc về Owner**, không phải hành chính: cài Playwright, đăng nhập tay, ký bốn `owner_confirmations`. Không Worker nào được vượt nó."
       - "REQ-A1 và REQ-A7 vẫn `KC` — theo định nghĩa chúng chỉ giải được BẰNG probe này; `REQ-AC16` không đổi trạng thái (OD-20260907-04 mục 1 nói rõ)."
     ratification_note_vi: >
@@ -624,32 +625,40 @@ gates:
         machine_check: "acceptance/scenarios.yaml: mọi SC với level ≤ E2 có status `PASS (E1)` hoặc `PASS (E2)`"
         met: false
         gap_vi: >
-          **10 trong 48** scenario ở cấp ≤ E2 đã chạy và PASS: `SC12`, `SC13`, `SC18`, `SC21`,
-          `SC26`, `SC28`, `SC47` (E2) và `SC29`, `SC31`, `SC48` (E1). 38 dòng còn lại vẫn
-          `NOT_RUN`, trong đó **33** mang `partial_evidence_vi` nói đích danh vế nào đã chạy và
-          vế nào không đo được.
+          **21 trong 48** scenario ở cấp ≤ E2 đã chạy và PASS. 27 dòng còn lại vẫn `NOT_RUN`,
+          trong đó **32** dòng của toàn bộ danh mục mang `partial_evidence_vi`.
 
-          **Giai đoạn 3/5 chuyển 6 dòng — lần đầu tiên một giai đoạn làm con số này nhúc nhích
-          đáng kể.** Sáu card khai chạm **25** scenario; cả 25 được xét từng dòng theo quy tắc
-          ba điều kiện ở `precode/review.md` §14.5 (`PKT-PC09-P3`). Sáu chuyển nhãn, 19 giữ
-          `NOT_RUN`. Lý do chuyển được lần này mà Giai đoạn 2 thì không: các bảng mà oracle đếm
-          — `saved_item`, `saved_snapshot`, `telegram_link`, `telegram_link_attempt`,
-          `analysis`, `analysis_attempt` — **nay tồn tại**, nên phép đếm không còn chạm vào chỗ
-          trống.
+          **Giai đoạn 4/6 chuyển 11 dòng** — nhiều nhất của một giai đoạn: `SC05` (E1) và
+          `SC08`, `SC20`, `SC24`, `SC27`, `SC33`, `SC34`, `SC37`, `SC38`, `SC42`, `SC53` (E2).
+          Sáu card khai chạm **27** scenario; cả 27 được xét từng dòng theo quy tắc ba điều kiện
+          ở `precode/review.md` §14.5, rồi **xét lại lần thứ hai** trên FC-P4 **epoch 2** sau khi
+          `A3-P4-R2` xác minh ba bản sửa.
 
-          **Vì sao 19 dòng vẫn không chuyển**, phân theo lý do và không gộp lại làm một:
-          (a) **cấp bằng chứng chưa mở** — `SC10`, `SC11`, `SC15` đòi E4 và `SC14`, `SC16`,
-          `SC17` đòi E3; không lời gọi live nào đã xảy ra, nên sáu dòng này bị chặn ở điều kiện
-          thứ nhất bất kể code tốt đến đâu;
-          (b) **bảng `report` / `report_item` / `coverage_window` / `pending_item_ledger` chưa
-          tồn tại** — `SC06`, `SC08`, `SC19`, `SC22`, `SC24`, `SC25`, `SC50`, `SC52`. Đáng ghi:
-          card delivery chạy trên một **bảng `report` giả ba cột** và khai thẳng điều đó, nên
-          mọi vế đếm `report.content_hash` chưa đo được trên bảng thật;
-          (c) **chức năng cố ý không hiện thực** — `SC32` (`data.delete_target` là non-goal,
-          `SG-01`), `SC27` (drill restore thuộc Giai đoạn 6), `SC45` (nửa server thuộc
-          `TC-scheduler-lease-claim`);
-          (d) **hợp đồng còn `KC`** — `SC46` là `NOT_RUN (BLOCKED_DEPENDENCY CR-PC07-04)` được
-          khai đích danh, và `SC49` mang thêm một mâu thuẫn hợp đồng chưa giải (`CR-TC-TGAUTH-04`).
+          Lý do chuyển được: `report`, `report_item`, `coverage_window`, `pending_item_ledger`,
+          `backfill_ledger`, `run`, `assignment_lease`, `restore_record`, `backup_manifest`,
+          `tag` — **mười bảng mà oracle đếm** — nay tồn tại. Và hai bất biến nặng nhất được ép
+          bằng **ràng buộc cơ sở dữ liệu thật**, không bằng kiểm ở tầng ứng dụng: lease độc
+          quyền (`ux_assignment_lease_one_held`) và CAS publish
+          (`ux_coverage_window_predecessor`) — `A3-P4-R1` §2 tự dựng lại cả hai, kể cả việc
+          chèn hàng thứ hai **bằng SQL thô** và bị index từ chối.
+
+          **27 dòng còn lại, phân theo lý do và không gộp:**
+          (a) **cấp bằng chứng chưa mở** (8): `SC10`, `SC11`, `SC15` đòi E4; `SC14`, `SC16`,
+          `SC17`, `SC43`, `SC51` đòi E3. Không lời gọi live nào đã xảy ra ở bất kỳ giai đoạn nào;
+          (b) **khuyết tật ORACLE, không phải thiếu code** (2): `SC22` đếm hai cột
+          `pending_item_ledger` không tồn tại và kỳ vọng 2 mục trong khi fixture mang 1
+          (`CR-PC09-23`); `SC09` đòi `report_item.reference_date`, một trường `ENT-report-item`
+          không khai (`CR-PC09-22`). Cả hai **không thể PASS bằng thêm code**;
+          (c) **chức năng cố ý không hiện thực** (2): `SC32` và `SC44` — `data.delete_target` và
+          `data.purge_all` là non-goal, `data_deletion_audit` chưa tồn tại;
+          (d) **một test còn thiếu, không phải một bảng còn thiếu** (4): `SC01`, `SC02`, `SC19`,
+          `SC35` — cả hai nửa tồn tại thật nhưng không test nào chạy chúng trong **một** chuỗi;
+          (e) **hợp đồng còn `KC` hoặc đang tranh chấp** (2): `SC46` (`CR-PC07-04`), `SC49`;
+          (f) phần còn lại (9) chờ card hoặc chặng chưa nối.
+
+          **`SC49` sẽ không chuyển được bằng thêm test ở tầng này.** Oracle đòi cả ba cơ chế ép
+          buộc; cơ chế thứ ba — network/process capability cho worker trên máy cá nhân — là 14
+          cạnh `CAPABILITY_DENIED` chỉ đo được trên máy có Chrome thật (`CR-PC09-24`).
         evidence_refs:
           - "acceptance/scenarios.yaml (status + status_evidence_refs của SC21, SC26, SC29, SC31)"
           - "evidence/index.json"
@@ -658,18 +667,26 @@ gates:
         machine_check: "acceptance/scenarios.yaml: SC14, SC16, SC17, SC43, SC51 có status != NOT_RUN"
         met: false
         gap_vi: >
-          **0/5.** Không lời gọi live nào đã chạy — không X, không Telegram, không provider AI,
-          không Chrome. Cả hai lượt audit A3 xác nhận điều đó bằng quan sát của chính auditor
-          (`A3-R1-report.md` §5, `A3-R2-report.md` §6): E3/E4 vẫn `NOT_RUN` theo giao thức.
+          **0/5**, không đổi qua sáu giai đoạn. Và đây là chỗ quan trọng nhất để đọc đúng: năm
+          dòng này **không** chờ thêm code. Chúng chờ những việc chỉ **Owner** làm được, trên
+          máy của Owner: `SC14` một lần gửi THẬT tới Telegram; `SC16`/`SC17` một lượt chạy AI
+          thật qua CLI/ACP với binary thật và một phép đo cô lập tiến trình; `SC43` một drill
+          restore thật; `SC51` đăng nhập X trong một Chrome profile riêng. Toàn bộ code phía
+          dưới chúng đã được viết và được audit; cái thiếu là **một lần chạy trong thế giới
+          thật**, và không Worker nào được phép thực hiện nó.
       - id: G6-X3
         statement_vi: "Một drill restore THẬT đã chạy vào môi trường sạch."
         machine_check: "SC27 + SC53 có status != NOT_RUN; contracts/ops/backup-restore.md §5.7"
         met: false
         gap_vi: >
-          **0/2.** `SC42` đã chứng minh rằng **cổng khóa** khi vị từ đối soát false, nhưng đó
-          là cổng, không phải drill: chưa lần restore nào chạy vào môi trường sạch, và
-          `write_blocked → healthy` cũng chưa chạy qua một lần ghi thật (`CR-TC-storage-04`,
-          `F-A3R1-11` PARTIAL ở cả hai lượt A3).
+          **Nửa đo được đã đạt, nửa còn lại là của Owner.** `SC27` và `SC53` nay **PASS (E2)**:
+          một restore thật vào một database sạch khóa dispatch, giữ `first_announced_ledger`
+          nguyên vẹn, khớp count/hash với `backup_manifest`, và mở lại **mà không** phát lại
+          lịch sử. Ba cách một lần đối soát có thể *giả vờ* hoàn tất đều có test riêng bác bỏ.
+          Nhưng `backup-restore.md` §5.7 đòi một **drill vào môi trường sạch của Owner** với
+          RPO/RTO **đo được** — `SC43` (E3), `NOT_RUN`. `A3-P4-R2` §6 nói đúng câu đó: card
+          "may stand, **narrowed**; real restore drill still E3 `NOT_RUN`". Hash một artifact
+          backup **không** chứng minh khôi phục được, và gói này không phản bác điều đó.
     current_status: NOT_MET
     evidence_refs:
       - "evidence/audits/A3-R1-report.md"
@@ -681,6 +698,14 @@ gates:
       - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
       - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
       - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json (result NOT_RUN)"
+      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260908T013343Z.json"
+      - "evidence/runs/TC-backfill-pending-ledger-E1-20260908T013901Z.json"
+      - "evidence/runs/TC-ui-runs-three-states-E1-20260908T005139Z.json"
+      - "evidence/runs/TC-ui-reports-detail-E1-20260907T220500Z.json"
+      - "evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json"
+      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
       - "evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json"
       - "evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json"
       - "evidence/runs/TC-embedding-generation-switch-E1-20260907T201528Z.json"
@@ -693,14 +718,15 @@ gates:
       Cổng chuyển từ `NOT_APPLICABLE_YET` sang **`NOT_MET`**: lý do cũ ("chưa có code") không
       còn đúng, nên giữ nhãn "chưa áp dụng được" sẽ là che một phép đo nay làm được. Code Giai
       đoạn 0/1 tồn tại, đã chạy, và một auditor độc lập đã chạy lại nó — vì vậy G6 nay ĐO
-      được, và phép đo là **10/48 · 0/5 · 0/2** (mẫu số sửa từ 51 ở `PKT-PC09-P2-FIX1`;
-      tử số 4 → 10 ở `PKT-PC09-P3`).
+      được, và phép đo là **21/48 · 0/5 · 0/2** (mẫu số sửa từ 51 ở `PKT-PC09-P2-FIX1`;
+      tử số 4 → 10 ở `PKT-PC09-P3`, → 21 ở `PKT-PC09-P4`). **G6-X2 và G6-X3 không chờ code:**
+      cả hai chờ một lần chạy trong thế giới thật mà chỉ Owner được thực hiện.
       Không điều kiện ra nào đạt.
     blocked_by_open_items:
-      - "G6-X1: **38/48** scenario cấp ≤ E2 vẫn `NOT_RUN` (33 trong số đó có bằng chứng một phần đã ghi). Giai đoạn 3/5 chuyển **6** dòng: `SC12`, `SC13`, `SC18`, `SC28`, `SC47`, `SC48`."
+      - "G6-X1: **27/48** scenario cấp ≤ E2 vẫn `NOT_RUN`. Giai đoạn 4/6 chuyển **11** dòng — nhiều nhất của một giai đoạn. Hai dòng (`SC09`, `SC22`) bị chặn bởi **khuyết tật oracle**, không phải thiếu code."
       - "G6-X2: chưa có lời gọi live nào. Cổng SP1 nay mở về mặt **hành chính** (OD-20260907-04) nhưng `SP1-X2` vẫn 0/5–10 đợt: **cổng mở không phải là đợt chạy**."
       - "G6-X3: chưa có drill restore thật; `write_blocked → healthy` chưa chạy qua một lần ghi thật."
-      - "**Mười ba** module nay có code (Giai đoạn 3/5 thêm sáu: `MOD-analysis-service`, `MOD-ai-adapter`, `MOD-embedding-service`, `MOD-saved-service`, `MOD-telegram-adapter`, `MOD-delivery-service`). Có code **không phải** là đạt cổng: `MOD-ai-adapter` ship với cả hai adapter `enabled: false` vì **cô lập** (ISO-03/ISO-05), `MOD-telegram-adapter` vẫn **chặn cứng** trên ba dữ kiện `KC` của `delivery.md` §3.4, và `MOD-research-connector` vẫn không `CONTRACT_READY`."
+      - "**Toàn bộ 13 module server + web + collector + worker + probe nay có code**, và 48 bảng khớp `entities.yaml` **hai chiều, 0 khác biệt** dưới ba thứ tự duyệt migration (`A3-P4-R1` §1). Có code vẫn **không phải** là đạt cổng: `MOD-ai-adapter` `enabled: false` vì cô lập, `MOD-telegram-adapter` chặn cứng, `MOD-tag-service` **chưa có card nào** (`CR-TC-BACKFILL-07`)."
       - "`REQ-AC16` là **BLOCKED**, không phải FAIL, và Giai đoạn 3/5 **không** đổi điều đó: nó chờ một probe với binary thật, không chờ một bản sửa. Cùng lý do, `MOD-ai-adapter` có code mà không có cổng nào chuyển."
       - "`MOD-research-connector` có code nhưng **KHÔNG** `CONTRACT_READY`: không hợp đồng nào nêu tên host/endpoint của arXiv/OpenAlex (`SG-DOC`) và E3 chưa chạy (`SG-LIVE`) — `A3-P2-R1` §4/§7."
     allows_next_vi: >

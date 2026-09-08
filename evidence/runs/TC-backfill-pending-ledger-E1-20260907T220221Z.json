@@ -1,0 +1,247 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-01-tc-backfill-pending-ledger",
+ "created_at": "2026-09-07T22:02:21Z",
+ "producer_principal": "worker-W4B",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/adr/ADR-0004-tag-freeze-point.md": "4c02d39a2d6ef80f17db7f1aebbda1de39bacaa9b4d417a3c2721c10b6ccf21f",
+   "precode/baseline.json": "52af62c8b11e6939a9a34798bd71b4a4e688d8ed85d9c579ee1858ed341037e9",
+   "precode/decision-register.md": "b26cf51a0d7c73661ab465e5a157aaad7a9ceb6f013926abd5117f6966764a7e",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+   "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+   "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+   "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+   "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+   "acceptance/scenarios.yaml": "8d36036e865df1764caae3ed778e457d44c4fcf5ffab5d222b16ade6d9acea43",
+   "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8"
+  },
+  "contract_versions": {
+   "CT-reporting-time-and-tags": "0.1.0",
+   "CT-data-entities": "0.2.0",
+   "CT-arch-ports": "0.1.0",
+   "CT-http-openapi": "0.3.0",
+   "CT-state-report": "0.1.0"
+  },
+  "implementation_revision": "PKT-TC-BACKFILL working tree, pin epoch PC10-PIN-P3b-20260908, commit fb3944a; backfill.py=982c51335fef3be31a0dfa0744863e0e208ebbeeedb3d7dd35fce1e3c4d44089, pending.py=7568d89c1eff16e7fa5e66eeb91b0682bb34cb14b98c6cece00d11e57b88fd34, rescan.py=b3959d8b44dcd72729ea0f13893aaac14198713f5e94070ff604c8f1af62813c, 0013_tc_backfill_pending_ledger.py=ca6a45f3c3ba9d1f2a6efb852ab10e09aa14a46ff54ec523f5e93561d6a9c656, test_backfill_once.py=a1673f368e9451454d6478c49b2add5d1cec80654576ff96b033975a608f734e, test_pending_survives_cursor.py=1ed74e85f41c4bfec10a5a5f3fb300552fd52f4ec67b3dbe99eba155a64b52c0"
+ },
+ "environment": {
+  "os": "Linux 7.0.0-30-generic",
+  "runtimes": {
+   "python": "3.12.3",
+   "sqlite": "3.45.1",
+   "uv": "0.12.9",
+   "pytest": "8.4.2",
+   "ruff": "0.6.9",
+   "mypy": "1.20.2",
+   "sqlalchemy": "2.0.52",
+   "alembic": "1.19.2",
+   "fastapi": "0.115.14"
+  },
+  "config_redacted": {
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "database": "tệp SQLite tạm do pytest tmp_path cấp, dựng bằng alembic upgrade head",
+   "reporting.backfill_days": "đọc từ bảng settings, giá trị lấy từ given.settings của fixture j (7); KHÔNG có hằng số nào trong mã",
+   "network": "không có lời gọi mạng nào; không có provider AI, Telegram hay X"
+  },
+  "provider": null,
+  "model": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC05",
+   "SC22",
+   "SC37",
+   "SC38",
+   "SC49"
+  ],
+  "requirement_ids": [
+   "REQ-D28",
+   "REQ-D29",
+   "REQ-AC06",
+   "REQ-AC10",
+   "REQ-OQ04",
+   "REQ-S8.2-04",
+   "REQ-S10.4-03"
+  ],
+  "invariant_ids": [
+   "I06",
+   "I07"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/reporting/README.md",
+    "sha256": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+    "bytes": 16228
+   },
+   {
+    "path": "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json",
+    "sha256": "b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a",
+    "bytes": 6842
+   },
+   {
+    "path": "acceptance/fixtures/reporting/k-builder-crash-backfill-not-consumed.json",
+    "sha256": "9fce157821143ef6d852a688e033424d8f4191dbedfb47caaa80d9ba9a3b6f82",
+    "bytes": 5879
+   },
+   {
+    "path": "acceptance/fixtures/reporting/e-late-analysis-pending-then-late-discovery.json",
+    "sha256": "ed7395620db5bd1b569bd087590b02e9b7cd5dbd06add2822d64ddd24f5a83b4",
+    "bytes": 10989
+   },
+   {
+    "path": "acceptance/fixtures/boundary/README.md",
+    "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+    "bytes": 10598
+   },
+   {
+    "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+    "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "bytes": 31529
+   }
+  ]
+ },
+ "execution": {
+  "kind": "command",
+  "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/integration/test_backfill_once.py -p no:randomly --tb=no  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/integration/test_pending_survives_cursor.py -p no:randomly --tb=no  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff check server/app/report/backfill.py server/app/report/pending.py server/app/tags/rescan.py server/migrations/versions/0013_tc_backfill_pending_ledger.py tests/integration/test_backfill_once.py tests/integration/test_pending_survives_cursor.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run mypy  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:randomly --tb=no",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "manual_procedure": null,
+  "started_at": "2026-09-07T21:20:00Z",
+  "ended_at": "2026-09-07T22:02:21Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Bốn oracle của card §8, đo bằng đếm hàng và so chuỗi — không đọc log. (1) Fixture j: sau add → remove → re-add, COUNT(backfill_ledger WHERE subscription_identity_hash = H AND consumed_in_report_id IS NOT NULL) = 1 trong khi COUNT theo cùng H = 2; hai hàng mang hai tag_id KHÁC nhau và một subscription_identity_hash DUY NHẤT, nên khóa theo tag.id sẽ cấp lại còn khóa theo identity thì không. (2) Fixture k: builder dựng xong rồi chết trước publish ⇒ consumed_in_report_id vẫn NULL, 0 report_item, coverage không tiến; lần dựng lại publish thành công ⇒ đúng một hàng consumed. Thêm biến thể E2: fault injection ngay TRONG transaction publish ⇒ rollback, vẫn 0 consumed. (3) Fixture e: mục pending xuất hiện ở kỳ sau với late_discovery = true, discovered_at của nó nằm NGOÀI [coverage_from, coverage_to) của kỳ đó, và hàng ledger chuyển resolved_reported_late chứ không bị xóa (tổng số hàng không đổi). (4) tag.rescan_corpus không đổi bất kỳ hàng first_announced_ledger nào: năm phép đếm của O-7 giữ nguyên và #rescan_ledger tăng đúng 1. Cộng thêm: SG-DENY (FE-11/FE-12/FE-23/FE-30 ⇒ FORBIDDEN_EDGE, không phải UNAUTHORIZED, và không ghi gì trước khi từ chối); O-6.4 (bỏ và thêm lại tag THẬT ⇒ analysis_generation và analysis_attempt không đổi, provider call delta 0); SG-03 (N đọc từ settings; thiếu ⇒ VALIDATION_ERROR; AST của backfill.py không chứa 7 ở default hay hằng module); alembic heads = 1 (tính bằng ScriptDirectory, không phải chuỗi cứng).",
+  "expected": {
+   "pytest_card_section_8": "2 lệnh, exit 0, 0 failed",
+   "consumed_per_subscription_identity": 1,
+   "ledger_rows_per_subscription_identity": 2,
+   "distinct_tag_ids_for_that_identity": 2,
+   "consumed_after_builder_crash": 0,
+   "consumed_after_retry_publish": 1,
+   "consumed_after_fault_injected_publish": 0,
+   "pending_rows_after_period_2": 1,
+   "pending_rows_after_period_3": 0,
+   "resolved_reported_late_after_period_3": 1,
+   "pending_ledger_total_rows_after_period_3": 1,
+   "late_discovery_flag_in_period_3": true,
+   "discovered_at_outside_period_3_window": true,
+   "o7_unchanged_counts": [
+    "coverage_window",
+    "report",
+    "first_announced_ledger",
+    "backfill_consumed",
+    "outbox_intent"
+   ],
+   "rescan_ledger_delta": 1,
+   "forbidden_edge_callers_refused": 4,
+   "provider_call_delta_after_tag_readd": 0,
+   "alembic_heads": 1
+  },
+  "observed": {
+   "pytest_card_section_8": "27 passed (test_backfill_once.py); 25 passed + 1 xfailed (test_pending_survives_cursor.py); exit 0 mỗi lệnh",
+   "consumed_per_subscription_identity": 1,
+   "ledger_rows_per_subscription_identity": 2,
+   "distinct_tag_ids_for_that_identity": 2,
+   "consumed_after_builder_crash": 0,
+   "consumed_after_retry_publish": 1,
+   "consumed_after_fault_injected_publish": 0,
+   "pending_rows_after_period_2": 1,
+   "pending_rows_after_period_3": 0,
+   "resolved_reported_late_after_period_3": 1,
+   "pending_ledger_total_rows_after_period_3": 1,
+   "late_discovery_flag_in_period_3": true,
+   "discovered_at_outside_period_3_window": true,
+   "o7_unchanged_counts": [
+    "coverage_window",
+    "report",
+    "first_announced_ledger",
+    "backfill_consumed",
+    "outbox_intent"
+   ],
+   "rescan_ledger_delta": 1,
+   "forbidden_edge_callers_refused": 4,
+   "provider_call_delta_after_tag_readd": 0,
+   "alembic_heads": 1,
+   "ruff": "All checks passed",
+   "mypy": "Success: no issues found in 64 source files (--strict trên server/app)",
+   "full_suite": "990 passed, 10 xfailed, 18 errors, 0 failed. Cả 18 error là setup error của CR-TC-REPORT-09 (W4A ghi nhận) trong tests/integration/test_delivery_unknown_no_retry.py và tests/integration/test_permanent_failure_report_intact.py — hai file thuộc write set của W5C; gói này không chạm tới chúng và số 18 không đổi so với trước khi gói này ghi."
+  }
+ },
+ "result": "PASS",
+ "artifacts": [
+  {
+   "path": "server/app/report/backfill.py",
+   "sha256": "982c51335fef3be31a0dfa0744863e0e208ebbeeedb3d7dd35fce1e3c4d44089",
+   "bytes": 24206,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Không chứa secret; không có hằng số N."
+  },
+  {
+   "path": "server/app/report/pending.py",
+   "sha256": "7568d89c1eff16e7fa5e66eeb91b0682bb34cb14b98c6cece00d11e57b88fd34",
+   "bytes": 15306,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Không có câu lệnh DELETE nào trên pending_item_ledger."
+  },
+  {
+   "path": "server/app/tags/rescan.py",
+   "sha256": "b3959d8b44dcd72729ea0f13893aaac14198713f5e94070ff604c8f1af62813c",
+   "bytes": 14100,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. SQL chỉ chạm rescan_ledger và một phép đọc tồn tại trên tag."
+  },
+  {
+   "path": "server/migrations/versions/0013_tc_backfill_pending_ledger.py",
+   "sha256": "ca6a45f3c3ba9d1f2a6efb852ab10e09aa14a46ff54ec523f5e93561d6a9c656",
+   "bytes": 9142,
+   "kind": "other",
+   "redaction_note_vi": "DDL: tag, settings, rescan_ledger. Không tạo lại backfill_ledger hay pending_item_ledger."
+  },
+  {
+   "path": "tests/integration/test_backfill_once.py",
+   "sha256": "a1673f368e9451454d6478c49b2add5d1cec80654576ff96b033975a608f734e",
+   "bytes": 49511,
+   "kind": "other",
+   "redaction_note_vi": "Test. Dùng fixture j và k làm dữ liệu; không sửa fixture."
+  },
+  {
+   "path": "tests/integration/test_pending_survives_cursor.py",
+   "sha256": "1ed74e85f41c4bfec10a5a5f3fb300552fd52f4ec67b3dbe99eba155a64b52c0",
+   "bytes": 40758,
+   "kind": "other",
+   "redaction_note_vi": "Test. Dùng fixture e và boundary a làm dữ liệu; không sửa fixture."
+  }
+ ],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 53,
+  "not_checked_vi": [
+   "**SG-PC09 đã kích hoạt.** `acceptance/scenarios.yaml` SC22 phát biểu oracle bằng `COUNT(pending_item_ledger WHERE report_id=<kỳ n> AND consumed_at IS NULL) = 2`. `ENT-pending-item-ledger` KHÔNG có cột `report_id` và KHÔNG có cột `consumed_at` (sáu cột của nó là id, owner_id, target_key, reason, first_pending_window_id, state), và fixture `e` — cùng SC22 — kỳ vọng MỘT mục pending, không phải hai. Gói này KHÔNG sửa oracle và KHÔNG code theo nó; nó code theo entities.yaml + fixture, đúng thứ tự ưu tiên mà card §10 SG-CONTRACT đặt ra, và trả mâu thuẫn về dưới dạng CR-TC-BACKFILL-11. Kết luận của card về SC22 vì thế là điều kiện: nó đúng theo fixture, và chờ ruling cho scenarios.yaml.",
+   "`tag.create` / `tag.update` / `tag.delete` / `tag.list` / `tag.preview_matches` — card §4 liệt kê chúng là *produces*, nhưng §3 không cấp file nào để đặt router hay service của tag (chỉ `server/app/tags/rescan.py`). Chỉ **hệ quả trạng thái backfill** của `tag.create` được hiện thực (open_activation). Hàng `tag` trong test được ghi như dữ liệu fixture. NOT_RUN cho phần HTTP; CR-TC-BACKFILL-07.",
+   "Phần nới backfill CHƯA được `server.app.report.builder._candidates` áp dụng: nó mới hợp nhất hai trong ba nhánh của selection.md §2. Gói này cung cấp seam (plan_extension + entitlements_to_consume) và test ghép nó với build_report/publish_report thật, nhưng đường đi trong production vẫn cần một tham số `backfill_port` trên `build_report` — CR-TC-BACKFILL-05. Cho tới lúc đó, một deployment thật sẽ KHÔNG nới cửa sổ ứng viên.",
+   "`report_item.item_type` của một mục phát hiện muộn: fixture `e` nói `new_discovery`, hệ thống hiện trả `prior_reference` vì publisher ghi first_announced cho cả mục còn `summary_state='pending'`. Đã ghi thành test `xfail(strict=True)` + CR-TC-BACKFILL-09; KHÔNG sửa fixture, KHÔNG sửa file của W4A.",
+   "`PendingLedgerPort` của `server.app.analysis.service` nhận adapter mới nhưng port không truyền connection, nên hàng pending commit TÁCH khỏi transaction analysis (CR-TC-BACKFILL-02). Test chứng minh hàng được ghi; nó KHÔNG chứng minh hai bên cùng commit hoặc cùng rollback.",
+   "`backfill_ledger.tag_id` vẫn không có `REFERENCES tag (id)` dù `tag` đã tồn tại từ revision này — thêm vào làm hỏng một test đang xanh của W4A (CR-TC-BACKFILL-10). Tính toàn vẹn tham chiếu của cột đó là NOT_RUN.",
+   "`tag.rescan_corpus` KHÔNG xếp hàng `analysis.enqueue_tasks` dù time-and-tags.md §7 mục 5 cho phép: `contracts/modules.yaml` không có cạnh MOD-tag-service → MOD-analysis-service. CR-TC-BACKFILL-03; nửa 'đào sâu' của lệnh là NOT_RUN.",
+   "Idempotency theo `request_id` của `tag.rescan_corpus` là **process-local**: `ENT-rescan-ledger` không có cột để lưu khóa (CR-TC-BACKFILL-04). Phần bền vững là `ux_rescan_open`, đã được test.",
+   "Hash literal trong fixture j KHÔNG tính lại được từ công thức §6.2; README §4 của thư mục fixture nói rõ chúng chỉ đúng hình dạng. Mọi khẳng định về hash trong test là về QUAN HỆ, không về chuỗi hex.",
+   "E3/E4 không áp dụng: card §8 ghi 'Không cần live'. Không có lời gọi X, AI hay Telegram nào."
+  ],
+  "uncertainty_vi": "Rủi ro còn lại lớn nhất KHÔNG nằm ở sổ backfill mà ở đường dẫn dữ liệu tới nó: quy tắc 'đúng một lần' được ép ở mức schema và đã được chứng minh, nhưng phần NỚI vẫn chưa có ai gọi trong production (CR-TC-BACKFILL-05), nên một deployment hôm nay sẽ không bao giờ tiêu thụ entitlement nào — an toàn theo hướng không đốt, sai theo hướng không có backfill. Rủi ro thứ hai là CR-TC-BACKFILL-09: nếu ruling nói fixture e đúng thì publisher phải đổi và nhãn phát hiện muộn hiện đang sai loại mục. Rủi ro thứ ba là SG-PC09/CR-TC-BACKFILL-11: SC22 trong scenarios.yaml gọi tên hai cột không tồn tại, nên bất kỳ ai đọc scenarios.yaml làm chuẩn sẽ kết luận khác gói này. Không mục nào ở đây là independent audit; toàn bộ là SELF_VALIDATION."
+ }
+}

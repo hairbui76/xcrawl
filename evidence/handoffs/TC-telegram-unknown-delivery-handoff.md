@@ -317,3 +317,119 @@ PYTHONDONTWRITEBYTECODE=1 uv run ruff check . ; uv run ruff format ... ; uv run 
 
 *`PKT-TC-DELIVERY-FIX1` · `worker-W5C` · `lease_released_at` 2026-09-07T20:35Z · every result
 here is `SELF_VALIDATION`; no item is an independent audit.*
+
+
+---
+
+# ADDENDUM 2 — `PKT-TC-DELIVERY-FIX2`
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-DELIVERY-FIX2` · lease `LEASE-TC-DELIVERY-e3` (fencing 3) · worker `worker-W5C` |
+| scope | `tests/integration/test_delivery_unknown_no_retry.py`, `tests/integration/test_permanent_failure_report_intact.py`, this handoff, a re-issued manifest. **No source file, no migration, no contract touched.** |
+| rulings | `…/scratchpad/packets/FIX-P4-wave-rulings.md` — row **CR-TC-REPORT-09 (BLOCKING)** and the "older xfail premises" row |
+| status | **`DONE_WITH_CONCERNS`** — the 18 setup errors are gone and both remaining xfails became real assertions; but see **A2.5, `STALE_BASELINE`** |
+| next actor | Coordinator |
+| lease_released_at | 2026-09-08T00:55Z |
+
+## A2.1 CR-TC-REPORT-09 — the blocking one
+
+`report` and `run` are now shipped tables (`0010_tc_report_coverage_publish_cas`,
+`0010_tc_scheduler_lease_claim`), so both stand-ins are **deleted**, not adapted. The rows
+seeded in their place satisfy the real schemas: `report` with `owner_id`, a half-open coverage
+window, a 36-character `report_build_id`, `selection_version` and `published_at` (both CHECKed
+once `status = 'published'`) and the `embedding_generation` row its foreign key points at;
+`run` with `trigger_type`/`phase`/`status`/`outcome` from the shipped enums and the counters
+its CHECKs require.
+
+This makes the `I05`/`I09` oracles **stronger**, which is the point rather than a side effect:
+"delivery wrote nothing to `report` or `run`" is now asserted against the real column sets and
+real constraints, so a delivery that touched either would meet the same wall production has.
+
+The ruling offered `report.publisher.publish_report` as the better seeding route "where the
+test needs a *published* report". It was **not** taken, and the reason is in
+`seed_published_report`'s docstring: these tests read exactly two things from the row — its
+bytes before and after — while `publish_report` would pull a build snapshot, a tag config
+version, a window plan and a selection into the setup, none of which any assertion here reads.
+The end-to-end publish→dispatch path deserves a test, but it belongs to a packet that owns both
+sides; W4A's `publisher.PublishedDigestPort` already implements this card's `ReportPayloadPort`,
+so it is a short step for whoever gets that packet. Recorded, not silently skipped.
+
+## A2.2 The drill xfail is now a real assertion
+
+`TC-backup-restore-drill` landed, so `test_reconciliation_reports_which_clauses_are_unmet`
+stops being an `xfail` and asserts fixture `recovery/j` against the real predicate,
+`server.app.backup.reconcile.evaluate`:
+
+* `report.unmet == [4, 7]` — exactly the fixture's `unmet_clauses`, and `met == {1,2,3,5,6}`,
+  so "which clauses" is measured rather than "not finished";
+* the clause-4 subject is produced by **this card's own service** — `create_intent` leaves the
+  intent `ready` at the current restore generation, which is precisely "an intent the
+  dispatcher would pick up that no operator has decided about". Nothing is stubbed;
+* seq 2 of the fixture still holds: `dispatch_next` answers `RESTORE_UNVERIFIED`, outbound
+  calls stay 0, and `restore_record.dispatcher_unlocked_at` stays `NULL`.
+
+**Both files now carry zero xfails.** The card's three test files are 29 passed, 0 xfailed.
+
+## A2.3 CR movement
+
+| ID | Movement |
+| --- | --- |
+| `CR-TC-DELIVERY-11` | **NEW**, against `server/app/backup/reconcile.py::_embedding_ok`. It calls `int(row["expected_vector_count"])` unguarded, but `embedding_generation.expected_vector_count` is `NULL`-able in `0006_tc_embedding_generation_switch`. A generation with a legitimately NULL value makes `evaluate` raise `TypeError` instead of answering clause 6 — a crash where the contract wants a verdict. Worked around here by seeding the column explicitly (the honest value for a generation with no vectors, not a value chosen to dodge the crash), and the workaround is commented at the seed site. W6B's file, not touched. |
+| `CR-TC-DELIVERY-01`..`08`, `10` | unchanged, still open. `CR-TC-DELIVERY-09` remains resolved (Addendum 1). |
+
+## A2.4 Files
+
+| Path | Operation | Before (sha256) | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `tests/integration/test_delivery_unknown_no_retry.py` | MODIFY | `9b8d3fe71da2cb934137bf19db1c5f54b56f1ad69e4e5019d7ab001cc6dc077a` | `57f676fdc058676f70cf0909752fb70f522196ef069fe6cca1e893d4dd668f1e` | 30482 |
+| `tests/integration/test_permanent_failure_report_intact.py` | MODIFY | `50e0a44eaa03f4a7f7e054fb0deb8a8adcad4abdc072ae2cc3163afad6bb5adb` | `b9a3417a2d1325927b33ae56091ba2e001822ecca27e83319d0390ae51568b3e` | 21931 |
+| `evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json` | MODIFY (`result` → `STALE`) | `92356541740be81a69da5218f8a612d11197c6527319013f678436d36791391b` | `c107992149e83a7a6462b393aeb95c5e5696cd2f1055b860b8534d48467df434` | 19080 |
+| `evidence/runs/TC-telegram-unknown-delivery-E1-20260908T004909Z.json` | CREATE | ABSENT | `ea89a310ff0cd1247de67e9996ba7b12648f18f22779e6d7e68bf377f31d3d6f` | 20008 |
+| `evidence/handoffs/TC-telegram-unknown-delivery-handoff.md` | MODIFY | (this addendum) | (this file) | — |
+
+Both manifests validate against `evidence/manifest.schema.json` with a format checker, **0
+errors** each. Two records are now `STALE` and one is live; none was edited into agreement with
+bytes it did not run on.
+
+## A2.5 `STALE_BASELINE` — reported, not worked around
+
+`SG-HASH` was run **before** the first write of this packet: **30/30 clean, 0 drift**. Every
+change above was therefore made on a verified baseline.
+
+Re-run at handoff, it is **no longer clean**: `precode/baseline.json` and
+`precode/decision-register.md` have changed byte since. Nothing else drifted — the 28 contract
+and fixture rows this card actually reads are untouched, and no oracle above depends on either
+file. The cause is visible in `git status`: `precode/owner-decisions-10.md` is new and four
+`precode/` files are modified, which is the `W1n records OD-10` step the wave rulings schedule
+**before** `WP re-pin`.
+
+So this is `STALE_BASELINE` by the byte rule and by nothing else: the card's §0 epoch
+`PC10-PIN-P3b-20260908` no longer names the bytes on disk, and a new epoch has to be issued
+before this candidate is frozen. Recording it rather than quietly re-hashing is the whole point
+of the rule — two different byte sets must not share an epoch name (`CR-PC10-15`). **No further
+mutation was made after the drift was observed**; the two files above and this record were
+already written, and the packet stops here.
+
+## A2.6 Re-verification
+
+```
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider \
+  tests/integration/test_delivery_unknown_no_retry.py \
+  tests/integration/test_multipart_partial_receipt.py \
+  tests/integration/test_permanent_failure_report_intact.py
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider          # whole repo
+PYTHONDONTWRITEBYTECODE=1 uv run ruff check … ; ruff format … ; uv run mypy
+```
+
+| Run | Result |
+| --- | --- |
+| the three card tests | **29 tests: 29 passed, 0 xfailed, 0 failed, 0 error, exit 0** (was 28 / 1) |
+| whole repository suite | **1028 tests: 1021 passed, 7 xfailed, 0 failed, 0 error, exit 0** — the 18 `CR-TC-REPORT-09` setup errors are gone |
+| `ruff check` + `ruff format` | clean on the write set |
+| `mypy` (`--strict`, `server/app`) | `Success: no issues found in 64 source files` |
+| `alembic get_heads()` | `['0013_tc_backfill_pending_ledger']` — one head; revision `0009` unchanged |
+| `SG-HASH` | clean before the first write; **drift on two `precode/` files at handoff — see A2.5** |
+
+*`PKT-TC-DELIVERY-FIX2` · `worker-W5C` · `lease_released_at` 2026-09-08T00:55Z · every result
+here is `SELF_VALIDATION`; no item is an independent audit.*

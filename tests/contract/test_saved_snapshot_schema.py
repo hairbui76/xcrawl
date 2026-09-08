@@ -252,11 +252,13 @@ def test_stored_snapshot_validates_against_the_schema(engine: Engine, validator:
 
 
 def test_neg_summary_missing_limitation_is_refused(engine: Engine) -> None:
-    """``neg-saved-snapshot-summary-missing-limitation``: no limitation line ⇒ no save.
+    """``neg-saved-snapshot-summary-missing-limitation``: a DEFECTIVE analysis ⇒ no save.
 
-    B16 forbids filling the line in, so the only honest answers are "refuse" or "store a
-    declared-missing marker"; the marker's wording is not in any contract (``CR-TC-SAVED-04``),
-    so this refuses. What matters for the oracle either way: nothing is written.
+    Still a refusal after ``OD-20260908-10`` item 1, and the distinction is the point. That
+    decision allows saving a target **nothing has analysed yet**. Here an analysis exists and
+    is missing a line ``REQ-D20`` requires — a data defect. Marking it "not analysed yet" would
+    file the defect under a label asserting the opposite and would make the marker useless for
+    the case it exists for. Nothing is written either way.
     """
     before = _counts(engine)
     incomplete = json.loads(json.dumps(ANALYSIS_PAYLOAD))
@@ -277,6 +279,98 @@ def test_neg_summary_missing_limitation_is_refused(engine: Engine) -> None:
     assert refused.value.code is ErrorCode.VALIDATION_ERROR
     assert refused.value.details_safe["field_path"] == "snapshot.content.summary"
     assert _counts(engine) == before
+
+
+def test_un_analysed_target_saves_with_the_missing_marker(engine: Engine, validator: Any) -> None:
+    """``OD-20260908-10`` item 1, closing ``CR-TC-SAVED-04``: the save is ALLOWED.
+
+    Three things have to hold together, and each is asserted:
+
+    1. the snapshot validates against the unchanged contract schema — no field was invented;
+    2. the summary is the fixed marker, identical in all three lines, so nothing in it can be
+       read as a claim about the target (B16);
+    3. ``analysis_id_at_save`` is NULL — the schema's own declared signal for "no valid
+       analysis", and the field a consumer should branch on rather than string-matching the
+       label.
+
+    ``evidence_level`` is the lowest rung: with no analysis nothing supports a higher one
+    (``REQ-D21``). The ``content_hash`` covers these bytes like any other snapshot, so an
+    un-analysed save is immutable on the same terms.
+    """
+    before = _counts(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DELETE FROM analysis WHERE id = ?", (ANALYSIS_ID,))
+
+    result = service.create_save(
+        engine,
+        owner_id=OWNER_ID,
+        target=TargetRef(kind="work", identifier=WORK_ID),
+        save_channel="app",
+    )
+    assert result.status == "created"
+    assert _counts(engine) == (before[0] + 1, before[1] + 1)
+
+    wire = service.read_saved(
+        engine, owner_id=OWNER_ID, target=TargetRef(kind="work", identifier=WORK_ID)
+    )
+    assert wire is not None
+    errors = sorted(validator.iter_errors(wire), key=str)
+    assert errors == [], [f"{list(e.absolute_path)}: {e.message}" for e in errors]
+
+    assert wire["snapshot"]["analysis_id_at_save"] is None
+    content = wire["snapshot"]["content"]
+    assert snapshot.is_missing_summary(content["summary"])
+    assert set(
+        [
+            content["summary"]["content_vi"],
+            content["summary"]["novelty_vi"],
+            content["summary"]["limitation_vi"],
+        ]
+    ) == {snapshot.SUMMARY_NOT_ANALYSED}
+    assert content["summary"]["comparator"] == "unknown"
+    assert "claim_kinds" not in content["summary"]
+    assert "analysis_ref" not in content
+    assert content["evidence_level"] == snapshot.EVIDENCE_LEVEL_NOT_ANALYSED
+    assert snapshot.compute_content_hash(content) == wire["snapshot"]["content_hash"]
+
+
+def test_the_missing_marker_is_a_constant_not_derived_from_the_target(engine: Engine) -> None:
+    """The marker must be the same for every target, or it is an inference (B16).
+
+    Two different targets saved with no analysis must produce byte-identical summary blocks.
+    A marker that varied with the target would be exactly the "invented text" the decision
+    forbids, dressed as a label.
+    """
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DELETE FROM analysis WHERE id = ?", (ANALYSIS_ID,))
+        connection.exec_driver_sql(
+            "INSERT INTO work (id, owner_id, canonical_arxiv_id, title, metadata_state,"
+            " identity_state, first_discovered_at, ingest_sequence, content_state, created_at)"
+            " VALUES ('01JW0RK2000000000000000000', ?, '2505.09999', 'Công trình khác',"
+            " 'partial', 'active', ?, 2, 'present', ?)",
+            (OWNER_ID, NOW, NOW),
+        )
+    first = service.create_save(
+        engine,
+        owner_id=OWNER_ID,
+        target=TargetRef(kind="work", identifier=WORK_ID),
+        save_channel="app",
+    )
+    second = service.create_save(
+        engine,
+        owner_id=OWNER_ID,
+        target=TargetRef(kind="work", identifier="01JW0RK2000000000000000000"),
+        save_channel="app",
+    )
+    assert first.content_hash != second.content_hash  # different targets, different snapshots
+    summaries = []
+    for target_id in (WORK_ID, "01JW0RK2000000000000000000"):
+        wire = service.read_saved(
+            engine, owner_id=OWNER_ID, target=TargetRef(kind="work", identifier=target_id)
+        )
+        assert wire is not None
+        summaries.append(wire["snapshot"]["content"]["summary"])
+    assert summaries[0] == summaries[1]
 
 
 def test_neg_target_both_ids_is_refused(engine: Engine) -> None:

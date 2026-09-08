@@ -179,7 +179,7 @@
       "tests_xfailed": 2
     }
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "mock",
@@ -196,11 +196,12 @@
       "Không có race thật giữa hai tiến trình: CAS được kiểm bằng trạng thái đọc lại trong transaction, không bằng hai writer đồng thời.",
       "Đây là SELF_VALIDATION. Không có audit độc lập; nhãn IMPLEMENTATION_VERIFIED cần Coordinator/Auditor xác nhận."
     ],
-    "uncertainty_vi": "Hai oracle của fixture mâu thuẫn với hợp đồng mới hơn và ĐƯỢC GIỮ NGUYÊN: moved_counts.first_announced (fixture a: null; time-and-tags §8.3: số) và preserved_counts.published_report_item (fixture i: 2; bảng chưa tồn tại). Cả hai được ghi lại bằng test xfail(strict=True) thay vì sửa fixture. Ngoài ra card §8 viết '5 post → 1 target' còn fixture (h) mang 6 item và khai post=6; code và test theo fixture. Chín change request do card này mở mang dạng CR-TC-IDENTITY-nn và nằm trong evidence/handoffs/TC-canonical-identity-merge-handoff.md §6: mẫu `unresolved_issue_refs` của evidence/manifest.schema.json chỉ nhận CR-PC<nn>-<nn>, nên không khai được ở đây (CR-PC09-02).",
+    "uncertainty_vi": "Hai oracle của fixture mâu thuẫn với hợp đồng mới hơn và ĐƯỢC GIỮ NGUYÊN: moved_counts.first_announced (fixture a: null; time-and-tags §8.3: số) và preserved_counts.published_report_item (fixture i: 2; bảng chưa tồn tại). Cả hai được ghi lại bằng test xfail(strict=True) thay vì sửa fixture. Ngoài ra card §8 viết '5 post → 1 target' còn fixture (h) mang 6 item và khai post=6; code và test theo fixture. Chín change request do card này mở mang dạng CR-TC-IDENTITY-nn và nằm trong evidence/handoffs/TC-canonical-identity-merge-handoff.md §6: mẫu `unresolved_issue_refs` của evidence/manifest.schema.json chỉ nhận CR-PC<nn>-<nn>, nên không khai được ở đây (CR-PC09-02). ĐÃ THAY THẾ: bản ghi này là STALE kể từ PKT-TC-IDENTITY-FIX3 — `test_fixture_i_preserved_published_report_items` không còn là xfail mà chạy thật trên một report do `report.publish` phát hành, nên số đếm ở đây không còn mô tả lần chạy hiện hành. Bản kế nhiệm: EV-E1-03-tc-canonical-identity-merge.",
     "unresolved_issue_refs": [
       "CR-PC02-05",
       "CR-PC02-06",
       "CR-PC09-02"
     ]
-  }
+  },
+  "stale_reason": "PKT-TC-IDENTITY-FIX3 (F-A3-P4-03): `test_fixture_i_preserved_published_report_items` không còn là xfail — bảng `report`/`report_item` đã tồn tại (`0010_tc_report_coverage_publish_cas`) và test nay phát hành một report thật qua `report.publish` rồi đo lại. `tests/integration/test_identity_merge_audit.py` đổi ⇒ số đếm và danh sách xfail của bản ghi này không còn mô tả lần chạy hiện hành. Kế nhiệm: EV-E1-03-tc-canonical-identity-merge (evidence/runs/TC-canonical-identity-merge-E1-20260908T012916Z.json)."
 }

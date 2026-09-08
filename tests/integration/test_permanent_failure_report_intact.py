@@ -59,6 +59,9 @@ RUN_ID = "01JRVN10000000000000000000"
 CHAT_ID = "111111111"
 LINK_GENERATION = 3
 REPORT_HASH = "sha256:" + "d" * 64
+#: 36 characters -- ``report.report_build_id`` is CHECKed for exactly that length (UUIDv4).
+REPORT_BUILD_ID = "2f7b1d34-6c1a-4b0e-9a77-5c2e8f0b3d19"
+EMBEDDING_GENERATION_ID = "01JEMBGEN20000000000000000"
 
 #: Any statement that would write the two tables delivery must never touch. ``I05`` forbids
 #: changing a published report; ``I09`` forbids delivery deciding a run's outcome.
@@ -68,7 +71,15 @@ _FORBIDDEN_WRITE = re.compile(
 
 
 def build_database(path: Path) -> Engine:
-    """``alembic upgrade head`` plus the ``owner`` row, plus stand-ins for report and run."""
+    """``alembic upgrade head`` plus the ``owner``, ``report`` and ``run`` rows this file reads.
+
+    All three tables are now the shipped ones: ``report`` came with
+    ``TC-report-coverage-publish-cas`` (revision 0010) and ``run`` with
+    ``TC-scheduler-lease-claim``, so the three-column stand-ins this file used to create are
+    gone and the ``I05``/``I09`` oracles below are measured against the **real** rows. That is
+    strictly stronger: a delivery that wrote to either table would now hit real constraints and
+    a real column set, not a test-local imitation of one.
+    """
     from alembic import command
     from alembic.config import Config
 
@@ -93,32 +104,49 @@ def build_database(path: Path) -> Engine:
             ),
             {"id": OWNER_ID},
         )
-        # Stand-ins, not the real entities: `report` and `run` belong to
-        # TC-report-coverage-publish-cas and TC-scheduler-lease-claim, neither of which has
-        # landed. `IF NOT EXISTS` means the same assertions run against the real tables the
-        # day those migrations arrive, because the oracle is a SELECT either way.
+        # `report.embedding_generation_id` is a real foreign key, so the generation it points
+        # at is seeded first. `expected_vector_count` is written although the column is
+        # nullable -- see CR-TC-DELIVERY-11.
         connection.execute(
             text(
-                "CREATE TABLE IF NOT EXISTS report (id TEXT PRIMARY KEY, status TEXT NOT NULL, "
-                "content_hash TEXT NOT NULL, tag_config_version_id TEXT NOT NULL)"
-            )
-        )
-        connection.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS run (id TEXT PRIMARY KEY, status TEXT NOT NULL, "
-                "outcome TEXT NOT NULL)"
-            )
-        )
-        connection.execute(
-            text(
-                "INSERT INTO report (id, status, content_hash, tag_config_version_id) "
-                "VALUES (:id, 'published', :hash, 'CTCV-1')"
+                "INSERT INTO embedding_generation (id, owner_id, model_name, model_version, "
+                "dimension, normalization, state, expected_vector_count, built_vector_count, "
+                "created_at, activated_at) "
+                "VALUES (:id, :owner, 'multilingual-e5-small', '1.0.0', 4, 'l2', 'active', 0, 0, "
+                "'2026-09-06T00:00:00.000Z', '2026-09-06T00:00:00.000Z')"
             ),
-            {"id": REPORT_ID, "hash": REPORT_HASH},
+            {"id": EMBEDDING_GENERATION_ID, "owner": OWNER_ID},
         )
         connection.execute(
-            text("INSERT INTO run (id, status, outcome) VALUES (:id, 'completed', 'complete')"),
-            {"id": RUN_ID},
+            text(
+                "INSERT INTO report (id, owner_id, coverage_from, coverage_to, "
+                "tag_config_version_id, embedding_generation_id, report_build_id, status, "
+                "quality, published_at, content_hash, selection_version, created_at, updated_at) "
+                "VALUES (:id, :owner, '2026-09-06T00:00:00.000Z', '2026-09-07T00:00:00.000Z', "
+                "'CTCV-1', :generation, :build_id, 'published', 'complete', "
+                "'2026-09-07T13:00:00.000Z', :hash, 'sel-1', '2026-09-07T13:00:00.000Z', "
+                "'2026-09-07T13:00:00.000Z')"
+            ),
+            {
+                "id": REPORT_ID,
+                "owner": OWNER_ID,
+                "generation": EMBEDDING_GENERATION_ID,
+                "build_id": REPORT_BUILD_ID,
+                "hash": REPORT_HASH,
+            },
+        )
+        # Fixture `telegram/c`'s run: completed, outcome `complete`, no stop reason. The
+        # counters are the zero state of a run that finished cleanly; `run` requires them.
+        connection.execute(
+            text(
+                "INSERT INTO run (id, owner_id, trigger_type, phase, status, outcome, "
+                "applied_config, created_at, schedule_occurrence_ids, current_lease_epoch, "
+                "attempt_count, posts_observed_total, posts_ingested_new, limit_hit, "
+                "cursor_invalidated) "
+                "VALUES (:id, :owner, 'scheduled', 'reporting', 'completed', 'complete', "
+                "'{}', '2026-09-06T00:00:00.000Z', '[]', 1, 1, 0, 0, 0, 0)"
+            ),
+            {"id": RUN_ID, "owner": OWNER_ID},
         )
     return engine
 

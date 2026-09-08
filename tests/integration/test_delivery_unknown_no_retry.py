@@ -11,9 +11,9 @@ Also here, because they are the same claim seen from other sides:
 * ``recovery/a-restore-old-outbox-nothing-sent`` -- after a restore the dispatcher is locked
   and the count of outbound sends is 0 (``I15``, ``SC27``).
 * ``recovery/j-restore-verification-incomplete-dispatch-locked`` -- integrity ``ok`` and
-  every count matching the manifest is still not reconciliation. That one is driven by
-  ``backup.reconcile_after_restore``, which belongs to ``TC-backup-restore-drill``, so the
-  clause-level assertion is ``xfail``; the *lock* it depends on is asserted here for real.
+  every count matching the manifest is still not reconciliation. ``TC-backup-restore-drill``
+  has landed, so this is no longer an ``xfail``: the clause list is read from the real
+  ``server.app.backup.reconcile.evaluate`` and asserted to be exactly clauses 4 and 7.
 * ``boundary/a-default-deny-sweep-36-edges`` seq 24 and seq 34 -- ``FE-24`` and ``FE-34``,
   the two forbidden edges that end at ``MOD-delivery-service``.
 
@@ -60,6 +60,15 @@ OWNER_ID = "01J0WNER100000000000000000"
 REPORT_ID = "01JREP0RT10000000000000000"
 CHAT_ID = "111111111"
 LINK_GENERATION = 3
+#: 36 characters -- ``report.report_build_id`` is CHECKed for exactly that length (UUIDv4).
+REPORT_BUILD_ID = "8c1f0c96-0f4a-4a2e-9f4a-0d1d9e5b7c31"
+EMBEDDING_GENERATION_ID = "01JEMBGEN10000000000000000"
+REPORT_HASH = "sha256:" + "a" * 64
+#: Fixture ``recovery/j``'s restore: generation 6, integrity ok, counts matching, no ack.
+SNAPSHOT_ID = "01JBACKSNAP000000000000030"
+MANIFEST_ID = "01JBACKMANJFEST00000000300"
+RESTORE_ID = "01JREST0REREC0RD0000000300"
+RESTORE_GENERATION = 6
 
 
 def build_database(path: Path) -> Engine:
@@ -97,28 +106,58 @@ def build_database(path: Path) -> Engine:
     return engine
 
 
-def install_report_stand_in(engine: Engine) -> None:
-    """A minimal stand-in for ``report``, because ``TC-report-coverage-publish-cas`` is absent.
+def seed_published_report(engine: Engine) -> None:
+    """One ``published`` row in the **real** ``report`` table (``ENT-report``, revision 0010).
 
-    It is **not** ``ENT-report``: three columns, no coverage window, no tag config version.
-    It exists so the oracle "the report row in the database did not change" can be measured
-    against a row rather than against an object in memory. If the real migration lands, the
-    ``IF NOT EXISTS`` makes this a no-op and the same assertions then run against the real
-    table -- which is the point of writing the oracle against ``SELECT``.
+    ``TC-report-coverage-publish-cas`` has landed, so the three-column stand-in this file used
+    to create is gone: the row below satisfies the shipped schema -- ``owner_id``, the
+    half-open coverage window, a 36-character ``report_build_id``, ``selection_version`` and
+    ``published_at`` (both required once ``status = 'published'``), and the
+    ``embedding_generation`` row its foreign key points at.
+
+    It is seeded with SQL rather than through ``report.publisher.publish_report`` on purpose,
+    and the purpose is the oracle. What these tests measure is that **delivery writes nothing
+    here**: the row's bytes before and after, plus a statement watcher. Driving the real
+    publisher would make the setup depend on a build snapshot, a tag config version and a
+    selection -- none of which this card's assertions read -- while proving nothing extra
+    about delivery. The end-to-end publish→dispatch path belongs to an integration packet that
+    owns both sides; ``server.app.report.publisher.PublishedDigestPort`` already implements
+    this card's ``ReportPayloadPort``, so it is a small step, but it is not this card's.
     """
     with engine.begin() as connection:
         connection.execute(
             text(
-                "CREATE TABLE IF NOT EXISTS report ("
-                "id TEXT PRIMARY KEY, status TEXT NOT NULL, content_hash TEXT NOT NULL)"
-            )
+                "INSERT INTO embedding_generation (id, owner_id, model_name, model_version, "
+                "dimension, normalization, state, expected_vector_count, built_vector_count, "
+                "created_at, activated_at) "
+                "VALUES (:id, :owner, 'multilingual-e5-small', '1.0.0', 4, 'l2', 'active', 0, 0, "
+                "'2026-09-06T00:00:00.000Z', '2026-09-06T00:00:00.000Z')"
+            ),
+            # `expected_vector_count` is written explicitly although the column is nullable:
+            # `server.app.backup.reconcile._embedding_ok` calls `int()` on it unguarded, so a
+            # legitimately NULL value raises TypeError instead of answering clause 6. That is
+            # another card's file and is reported as CR-TC-DELIVERY-11 rather than worked
+            # around silently -- the value here is the honest one for a generation with no
+            # vectors, not a value chosen to dodge the crash.
+            {"id": EMBEDDING_GENERATION_ID, "owner": OWNER_ID},
         )
         connection.execute(
             text(
-                "INSERT INTO report (id, status, content_hash) VALUES "
-                "(:id, 'published', 'sha256:" + "a" * 64 + "')"
+                "INSERT INTO report (id, owner_id, coverage_from, coverage_to, "
+                "tag_config_version_id, embedding_generation_id, report_build_id, status, "
+                "quality, published_at, content_hash, selection_version, created_at, updated_at) "
+                "VALUES (:id, :owner, '2026-09-05T00:00:00.000Z', '2026-09-06T00:00:00.000Z', "
+                "'CTCV-1', :generation, :build_id, 'published', 'complete', "
+                "'2026-09-06T00:00:00.000Z', :hash, 'sel-1', '2026-09-06T00:00:00.000Z', "
+                "'2026-09-06T00:00:00.000Z')"
             ),
-            {"id": REPORT_ID},
+            {
+                "id": REPORT_ID,
+                "owner": OWNER_ID,
+                "generation": EMBEDDING_GENERATION_ID,
+                "build_id": REPORT_BUILD_ID,
+                "hash": REPORT_HASH,
+            },
         )
 
 
@@ -150,9 +189,7 @@ class FakeReportPort:
     blocks: tuple[str, ...] = ("Kỳ 2026-09-06\n\nHướng đang nổi: (không có)", "Mục 1 — tiêu đề")
 
     def published_digest(self, *, owner_id: str, report_id: str) -> PublishedDigest | None:
-        return PublishedDigest(
-            report_id=report_id, content_hash="sha256:" + "a" * 64, blocks=self.blocks
-        )
+        return PublishedDigest(report_id=report_id, content_hash=REPORT_HASH, blocks=self.blocks)
 
 
 class RecordingTransport:
@@ -210,7 +247,7 @@ def seed_intent(context: DeliveryContext) -> str:
 @pytest.fixture
 def engine(tmp_path: Path) -> Engine:
     engine = build_database(tmp_path / "rr.db")
-    install_report_stand_in(engine)
+    seed_published_report(engine)
     return engine
 
 
@@ -492,28 +529,103 @@ def test_an_intent_from_an_older_restore_generation_is_not_eligible(engine: Engi
     assert row.restore_generation == 4
 
 
-@pytest.mark.xfail(
-    reason="pending TC-backup-restore-drill: backup.reconcile_after_restore and the seven "
-    "clauses of reconciliation_complete belong to that card; StorageGuard still takes only a "
-    "boolean reconciliation_check and exposes no clause list",
-    strict=True,
-    run=True,
-)
+def seed_restore_awaiting_review(engine: Engine) -> None:
+    """Fixture ``recovery/j``'s ``given``, in the real tables ``TC-backup-restore-drill`` ships.
+
+    Integrity ``passed``, every count matching the manifest, no lease still held -- and two
+    things missing: one ``outbox_intent`` at the current generation nobody has looked at
+    (clause 4) and no operator acknowledgement (clause 7). That is the whole point of the
+    fixture: the machine-checkable half can be perfect and reconciliation still be incomplete.
+    """
+    counts = '{"saved_item": 40, "report": 12, "first_announced_ledger": 31}'
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO backup_snapshot (id, owner_id, method, started_at, completed_at, "
+                "artifact_path, artifact_sha256, state) VALUES "
+                "(:id, :owner, 'vacuum_into', '2026-09-06T00:00:00.000Z', "
+                "'2026-09-06T00:01:00.000Z', '/tmp/bs-03.sqlite', :artifact, 'verified')"
+            ),
+            {"id": SNAPSHOT_ID, "owner": OWNER_ID, "artifact": "sha256:" + "b" * 64},
+        )
+        connection.execute(
+            text(
+                "INSERT INTO backup_manifest (id, owner_id, backup_snapshot_id, entries, "
+                "manifest_sha256, counts) VALUES (:id, :owner, :snapshot, '[]', :hash, :counts)"
+            ),
+            {
+                "id": MANIFEST_ID,
+                "owner": OWNER_ID,
+                "snapshot": SNAPSHOT_ID,
+                "hash": "sha256:" + "c" * 64,
+                "counts": counts,
+            },
+        )
+        connection.execute(
+            text(
+                "INSERT INTO restore_record (id, owner_id, backup_snapshot_id, restored_at, "
+                "new_restore_generation, integrity_check_outcome, counts_observed, "
+                "leases_revoked) VALUES (:id, :owner, :snapshot, '2026-09-06T00:02:00.000Z', "
+                ":generation, 'passed', :counts, 2)"
+            ),
+            {
+                "id": RESTORE_ID,
+                "owner": OWNER_ID,
+                "snapshot": SNAPSHOT_ID,
+                "generation": RESTORE_GENERATION,
+                "counts": counts,
+            },
+        )
+
+
 def test_reconciliation_reports_which_clauses_are_unmet(engine: Engine, fixture_loader) -> None:
     """``recovery/j``: the refusal must name clauses 4 and 7, not merely say "not yet".
 
-    The predicate is injected into ``StorageGuard`` by ``TC-backup-restore-drill``; until it
-    exists there is nothing that can report a clause list, and inventing one here would be a
-    test that passes because it tests itself.
+    This was an ``xfail`` while ``TC-backup-restore-drill`` was absent. That card has landed,
+    so the clause list now comes from the real predicate,
+    ``server.app.backup.reconcile.evaluate`` -- read-only, as ``storage.yaml`` §7 requires --
+    and is compared against the fixture's own ``unmet_clauses``.
+
+    The intent this card creates is the clause-4 subject: ``create_intent`` leaves it ``ready``
+    at the current restore generation, which is precisely "an intent the dispatcher would pick
+    up that no operator has decided about". Nothing is stubbed; the delivery side of the
+    fixture is produced by the delivery service itself.
     """
+    from server.app.backup import reconcile
+
     fixture = fixture_loader("recovery/j-restore-verification-incomplete-dispatch-locked")
     expected_clauses = fixture.data["expected"]["seq1"]["unmet_clauses"]
+    assert expected_clauses == [4, 7]
 
-    guard = StorageGuard()
+    transport = RecordingTransport([Sent("1001")])
+    context = build_context(engine, transport, restore_generation=RESTORE_GENERATION)
+    seed_intent(context)
+    seed_restore_awaiting_review(engine)
+
+    report = reconcile.evaluate(engine, owner_id=OWNER_ID, restore_id=RESTORE_ID)
+    assert list(report.unmet) == expected_clauses
+    assert report.complete is False
+    assert set(report.met) == {1, 2, 3, 5, 6}
+
+    # seq2 of the fixture: the dispatcher is still shut, and shut for the *state* reason.
+    guard = StorageGuard(
+        reconciliation_check=reconcile.reconciliation_complete(engine, owner_id=OWNER_ID)
+    )
     guard.enter_maintenance()
-    guard.mark_recovery_required("RR-03")
-    reported = getattr(guard, "unmet_reconciliation_clauses", None)
-    assert reported is not None and reported("RR-03") == expected_clauses
+    guard.mark_recovery_required(RESTORE_ID)
+    context.storage = guard
+    with pytest.raises(DeliveryError) as refused:
+        dispatch_next(context, owner_id=OWNER_ID)
+    assert refused.value.code is ErrorCode.RESTORE_UNVERIFIED
+    assert len(transport.calls) == fixture.data["expected"]["seq2"]["messages_sent"]
+    assert guard.reconciliation_complete(RESTORE_ID) is False
+
+    with engine.begin() as connection:
+        unlocked = connection.execute(
+            text("SELECT dispatcher_unlocked_at FROM restore_record WHERE id = :id"),
+            {"id": RESTORE_ID},
+        ).scalar_one()
+    assert unlocked is None, "the fixture requires dispatcher_unlocked_at to stay null"
 
 
 # ======================================================================================

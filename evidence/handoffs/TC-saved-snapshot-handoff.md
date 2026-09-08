@@ -2,15 +2,15 @@
 
 | Trường | Giá trị |
 | --- | --- |
-| packet | `PKT-TC-SAVED` · lease `LEASE-TC-SAVED-e1` · authority `AUTH-COORD-TC-SAVED` (dưới `AUTH-OWNER-20260908-10`) |
+| packet | `PKT-TC-SAVED` (e1) + **`PKT-TC-SAVED-FIX1`** (e2) · lease `LEASE-TC-SAVED-e2` · authority `AUTH-COORD-TC-SAVED` (dưới `AUTH-OWNER-20260908-10`) |
 | worker | `worker-W5B` |
 | card | `agent-tasks/TC-saved-snapshot.md` (§1–§13 ràng buộc) |
 | pin epoch | `PC10-PIN-P3-20260908` — verify lại toàn bộ §0 trước dòng code đầu tiên: **32/32 file khớp, 0 lệch** |
 | status | `DONE` · claim `IMPLEMENTATION_VERIFIED` cho đúng phạm vi card |
 | audit_route | Coordinator quyết định; gói này **không** tự nhận đã qua review độc lập |
-| evidence | `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` (validate sạch với `evidence/manifest.schema.json`) |
+| evidence | **`evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json`** (validate sạch). Bản e1 `…T020500Z.json` nay **STALE** |
 | next actor | Coordinator |
-| `lease_released_at` | 2026-09-08T02:10Z |
+| `lease_released_at` | e1 2026-09-08T02:10Z · **e2 2026-09-08T05:45Z** |
 
 ## 1. Cổng chờ và baseline
 
@@ -32,16 +32,22 @@ phân định) — không file nào bị ghi đè ngoài ý muốn.
 
 | Đường dẫn | Thao tác | sha256 sau | bytes |
 | --- | --- | --- | --- |
-| `server/app/saved/snapshot.py` | CREATE | `baed87d3b2e20a639c128c45e51f58ac97d73b8fb112b71453c05e0d1b418bd7` | 13529 |
-| `server/app/saved/service.py` | CREATE | `c9830c23dec47288ac3b34a5f4f3a524a1059816c99a6537338ef3d78b0bbb44` | 50758 |
+| `server/app/saved/snapshot.py` | CREATE | `1b0257548947a101fb8520c53d35a13780b1c2ed02fe10dffaefda040d1c0b8d` | 16669 |
+| `server/app/saved/service.py` | CREATE | `4fb58438dc2a277dbc5efca3655dc467a91e0223a5f3b3ba6feb15e3d4e89302` | 51730 |
 | `server/app/saved/router.py` | CREATE | `18f7bcd5d88cd7f470431bfeae7529bd9544b2692cdc3e0c149111ae0c0450b2` | 19114 |
 | `server/migrations/versions/0008_tc_saved_snapshot.py` | CREATE | `f1c5c6b42412d77098dc5d8af40be8586008f95c815684a122f392b6575f2fe0` | 9894 |
-| `tests/contract/test_saved_snapshot_schema.py` | CREATE | `b106112fb00e0d9fccd2a35b1321533ecc2d6e565f6e11a6d924d036ac683c58` | 16549 |
+| `tests/contract/test_saved_snapshot_schema.py` | CREATE | `fd7e3fef3cf5b504e4448d79d1f945935c5f78ba80ae0b7efd4d783ed32bb5b5` | 20809 |
 | `tests/integration/test_concurrent_save.py` | CREATE | `89a73368cdc7e8cb592830047191a399352c8fec797e85bdcfd9cb656fa1fd5c` | 27029 |
 | `tests/integration/test_snapshot_survives_delete.py` | CREATE | `f5c11d768b9399746728debd8b883cd703e9135684b1d18bf27ee26e87b2836f` | 27339 |
-| `server/app/main.py` | MODIFY (append 1 include block) | `8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59` | 11088 |
-| `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` | CREATE | (bản ghi bằng chứng) | 18146 |
+| `server/app/main.py` | MODIFY (append 1 include block) | `8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59` (hash tại e1) | 11088 |
+| `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` | CREATE (e1, nay **STALE**) | (bản ghi bằng chứng) | 18146 |
+| `evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json` | CREATE (e2) | (bản ghi bằng chứng thay thế) | 20259 |
 | `evidence/handoffs/TC-saved-snapshot-handoff.md` | CREATE | (file này) | — |
+
+`server/app/main.py` đã đổi byte SAU e1 — hiện là `73392a3c3dadd1b07a3f58383d014c1dbfdb1c4d4e0fe3727679980ca0ff8d97` / 13222 bytes — vì các card khác
+nối thêm khối include của họ. `PKT-TC-SAVED-FIX1` **không** chạm file này (nó không nằm trong
+lease e2); hash ở bảng trên là hash đúng tại thời điểm bàn giao e1, và giá trị hiện tại được
+ghi ở đây để Coordinator rehash không bị lệch mà không rõ vì sao.
 
 **Không** có `server/app/saved/__init__.py`: `server/app/research/` đã đặt tiền lệ dùng
 namespace package, và §3 không cấp file đó.
@@ -78,7 +84,7 @@ tính. `downgrade()` khôi phục đúng định nghĩa cũ. Diff hai định ng
 Ba lệnh của §8, exit 0 mỗi lệnh:
 
 ```
-python -m pytest tests/contract/test_saved_snapshot_schema.py -q      → 18 passed
+python -m pytest tests/contract/test_saved_snapshot_schema.py -q      → 20 passed
 python -m pytest tests/integration/test_concurrent_save.py -q         → 17 passed
 python -m pytest tests/integration/test_snapshot_survives_delete.py -q → 12 passed
 ```
@@ -169,9 +175,54 @@ Thêm, ngoài bốn oracle:
 - `evidence/index.json` thuộc PC09 và **không** nằm trong write set của gói này, nên bản ghi run
   chưa được đăng ký ở đó — việc của Coordinator.
 
+## 8. `PKT-TC-SAVED-FIX1` — `CR-TC-SAVED-04` đã đóng bằng `OD-20260908-10` mục 1
+
+**Quyết định.** Lưu một target **chưa** có analysis nay được **PHÉP**; summary được đánh dấu
+thiếu bằng một chuỗi cố định, không suy luận (B16); `content_hash` tính trên đúng bytes đã lưu;
+analysis về sau gắn vào bằng reanalysis, **không** sửa snapshot cũ.
+
+**Nhãn được biểu diễn thế nào — và vì sao không DỪNG.** Packet nói: nếu schema không có slot thì
+dùng `summary = null` cộng một trường trạng thái schema đã cho; nếu không có cả hai thì DỪNG.
+Kiểm tra trên bản schema **không đổi**:
+
+- `summary` **là** `required` trong `snapshot_content`, `$ref` tới một object **không có nhánh
+  null**, `additionalProperties: false`, và **không có** `summary_state`. ⇒ `summary = null`
+  không biểu diễn được, và không có trường nhãn.
+- Nhưng **trạng thái thì có slot đã khai**: `saved_snapshot.analysis_id_at_save` là nullable và
+  mô tả của chính schema đọc là *"NULL **chỉ khi** target chưa có analysis valid nào"*. Đó đúng
+  là trường trạng thái mà packet cho phép dùng.
+
+Nên điều kiện DỪNG **không** thành lập, và không có trường nào bị bịa:
+
+| Thành phần | Giá trị | Nguồn hợp pháp |
+| --- | --- | --- |
+| **Trạng thái** (thứ consumer nên rẽ nhánh) | `snapshot.analysis_id_at_save = null` | Trường đã khai, mô tả nói đúng nghĩa này |
+| **Nhãn** (thứ người đọc thấy) | cả ba dòng bắt buộc = hằng `SUMMARY_NOT_ANALYSED` = `"(chưa phân tích)"` | Ba chuỗi `minLength: 1` đã có sẵn |
+| `summary.comparator` | `"unknown"` | Sự thật về dữ liệu: không có nguồn so sánh |
+| `summary.claim_kinds` | **vắng mặt** | Không có phát biểu nào; mảng rỗng vẫn khẳng định "đây là các loại phát biểu có mặt" |
+| `content.analysis_ref` | **vắng mặt** | Optional; không có analysis để truy vết |
+| `content.evidence_level` | `"post_only"` | Bậc **thấp nhất**; `REQ-D21` cấm nâng mức chứng cứ |
+
+Hằng nằm ở một chỗ và giống hệt nhau ở cả ba dòng, nên nó **không thể** trở thành suy luận — có
+test khẳng định hai target khác nhau sinh ra summary block **byte-identical**.
+
+**Ranh giới được giữ, không bị nới.** Một analysis **tồn tại** nhưng thiếu dòng của `REQ-D20`
+**vẫn bị từ chối** `VALIDATION_ERROR`, 0 hàng. Marker nghĩa là "chưa ai phân tích"; dùng nó cho
+một analysis hỏng sẽ là xếp lỗi dữ liệu dưới một nhãn nói điều ngược lại, và làm chính marker
+mất nghĩa cho ca nó sinh ra. Năm fixture âm vì vậy **vẫn từ chối như cũ**.
+
+**Không thêm cột.** `test_schema_matches_entities.py` vẫn xanh — thay đổi này hoàn toàn nằm
+trong `saved_snapshot.payload`, không có DDL nào bị chạm và không có migration mới.
+
+**CR mới:** `CR-TC-SAVED-10` — xin `saved-snapshot.schema.json` một trường trạng thái/nhãn thật
+(ví dụ `summary` nullable + `summary_state: present | not_analysed`, hoặc một `content.notice`),
+để consumer không phải so chuỗi với một hằng của code. Kèm theo: suy ra `evidence_level` bậc
+`abstract` từ `work_version.abstract_text` khi có, thay vì luôn `post_only` — làm được nhưng
+chưa làm, ghi `NOT_RUN`.
+
 Mọi mục ở trên là `SELF_VALIDATION`. **Không** mục nào là independent audit.
 
 ---
 
-*`PKT-TC-SAVED` · `worker-W5B` · `lease_released_at` 2026-09-08T02:10Z · ceiling
-`IMPLEMENTATION_VERIFIED` cho phạm vi card.*
+*`PKT-TC-SAVED` (e1) + `PKT-TC-SAVED-FIX1` (e2) · `worker-W5B` · `lease_released_at`
+2026-09-08T05:45Z · ceiling `IMPLEMENTATION_VERIFIED` cho phạm vi card.*

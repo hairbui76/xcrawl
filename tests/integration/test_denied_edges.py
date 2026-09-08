@@ -13,6 +13,7 @@ login half of SC51.
 from __future__ import annotations
 
 import collections
+import json
 import os
 import sqlite3
 from datetime import UTC, datetime, timedelta
@@ -880,23 +881,248 @@ def test_a_major_schema_version_mismatch_is_rejected(client) -> None:
     assert body["details_safe"]["violation_kind"] == "schema_version_unsupported"
 
 
-@pytest.mark.xfail(
-    reason="pending TC-storage-write-blocked-readiness: `storage.get_health` is consumed "
-    "through the StorageHealthPort but no implementation is wired yet, so the "
-    "write_blocked pre-check cannot be exercised end to end from this card.",
-    strict=False,
-)
-def test_login_is_refused_while_storage_is_write_blocked(engine) -> None:
-    class _Blocked:
-        def get_health(self) -> str:
-            return "write_blocked"
+# --------------------------------------------------------------------------------------
+# `storage.get_health` — driven through the REAL StorageGuard, not a stub
+# --------------------------------------------------------------------------------------
+#
+# These four tests replace an `xfail` whose reason said the storage card had not landed.
+# It has (`server/app/storage/{guard,health}.py`, `install_storage(app, guard)` on every
+# factory path), so the premise had rotted -- E0-21 caught it. What the real machine says
+# turns out to be more interesting than the stub was.
 
-    service = AuthService(engine, storage_health=_Blocked())
+
+def _write_blocked_guard() -> Any:
+    """A real ``StorageGuard`` driven to ``write_blocked`` through its own API.
+
+    ``record_write_failure`` is the ``T-ST-01`` transition; nothing here sets private state
+    or constructs a fake, so the state under test is one the production machine can reach.
+    """
+    from server.app.storage.guard import StorageGuard
+
+    guard = StorageGuard()
+    guard.record_write_failure()
+    return guard
+
+
+class _GuardHealthPort:
+    """Adapts the real guard to the ``StorageHealthPort`` protocol ``AuthService`` consumes.
+
+    Deliberately thin, and deliberately **not** a call to ``guard.get_health()``:
+    ``contracts/ports.yaml`` gives ``storage.get_health`` exactly two ``caller_modules``,
+    ``MOD-health-service`` and ``MOD-job-service``, and ``MOD-auth-service`` is not one of
+    them -- the real guard would answer that call with ``FORBIDDEN_EDGE``. See
+    ``CR-TC-AUTH-09``. ``current_health()`` is the in-process read the guard documents as
+    having no edge of its own.
+    """
+
+    def __init__(self, guard: Any) -> None:
+        self._guard = guard
+
+    def get_health(self) -> str:
+        return str(self._guard.current_health().value)
+
+
+def test_the_real_guard_reaches_write_blocked_through_its_own_transition() -> None:
+    """Premise check: the state the next tests rely on is one the machine actually enters."""
+    from rr_contracts.generated.states import StorageHealth
+
+    guard = _write_blocked_guard()
+    assert guard.current_health() is StorageHealth.WRITE_BLOCKED
+
+
+def test_login_is_refused_while_the_real_guard_reports_write_blocked(engine) -> None:
+    """The pre-check, end to end, against the real state machine.
+
+    ``AuthService`` is given the live guard's health rather than a hard-coded string, so a
+    change in the storage card's state machine breaks this test instead of passing it.
+    """
+    guard = _write_blocked_guard()
+    service = AuthService(engine, storage_health=_GuardHealthPort(guard))
+    service_for_setup = AuthService(engine)
+    service_for_setup.bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    before = _count(engine, "session")
+
+    with pytest.raises(AuthError) as caught:
+        service.login(OWNER_NAME, OWNER_PASSWORD)
+
+    assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
+    assert caught.value.http_status == 503
+    assert caught.value.details_safe["storage_health"] == "write_blocked"
+    assert caught.value.details_safe["failed_operation_id"] == "auth.login"
+    # I02: refused before the write, so nothing moved.
+    assert _count(engine, "session") == before
+
+
+def test_the_pre_check_is_stricter_than_the_storage_refusal_table(engine) -> None:
+    """An honest boundary, asserted rather than assumed (``CR-TC-AUTH-10``).
+
+    ``contracts/state/storage.yaml`` lists which operations ``write_blocked`` refuses, and
+    ``auth.login`` is **not** among them -- ``REFUSALS`` answers ``None`` for it. So the
+    guard would let a login through, while this card's pre-check stops it. Refusing is the
+    safe direction (``auth.login`` does write a ``session`` row, and I02 says never ACK a
+    write that did not commit), but it is a superset of the contract, and a superset that
+    nobody wrote down is indistinguishable from a bug.
+
+    This test pins both halves so the divergence stays visible until PC03 rules on it.
+    """
+    from rr_contracts.generated.operations import OperationId as Ops
+
+    guard = _write_blocked_guard()
+    assert guard.machine.refusal_for(Ops.AUTH_LOGIN) is None
+    assert guard.machine.refusal_for(Ops.INGEST_SUBMIT_BATCH) is ErrorCode.STORAGE_WRITE_FAILED
+
+    # `assert_writable` therefore does NOT raise for auth.login...
+    guard.assert_writable(Ops.AUTH_LOGIN)
+    # ...while this card's own pre-check does.
+    service = AuthService(engine, storage_health=_GuardHealthPort(guard))
+    AuthService(engine).bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
     with pytest.raises(AuthError) as caught:
         service.login(OWNER_NAME, OWNER_PASSWORD)
     assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
+
+
+def test_the_guard_refuses_this_card_the_storage_health_edge(engine) -> None:
+    """``MOD-auth-service`` has no ``allowed_edges`` row for ``storage.get_health``.
+
+    Card §4 lists it under *consumes*, but ``contracts/ports.yaml.caller_modules`` and
+    ``contracts/modules.yaml.allowed_edges`` both grant it only to ``MOD-health-service``
+    and ``MOD-job-service``. The real guard says so, and so does this card's own edge
+    registry -- two independent implementations of default deny agreeing. Recorded as
+    ``CR-TC-AUTH-09``; the code path this card actually uses is ``current_health()``, which
+    is an in-process read with no edge.
+    """
+    from rr_contracts.generated.operations import OperationId as Ops
+
+    from server.app.storage.guard import StorageRefused
+
+    guard = _write_blocked_guard()
+    with pytest.raises(StorageRefused) as refused:
+        guard.get_health(caller_module="MOD-auth-service")
+    assert refused.value.code in {ErrorCode.FORBIDDEN_EDGE, ErrorCode.CAPABILITY_DENIED}
+
+    with pytest.raises(AuthError) as by_this_card:
+        require_edge(Ops.STORAGE_GET_HEALTH, "MOD-auth-service")
+    assert by_this_card.value.code is ErrorCode.FORBIDDEN_EDGE
+
+
+def test_a_database_failure_during_login_is_storage_write_failed(engine) -> None:
+    """E2: the *other* path to 503 -- the database refusing, with no pre-check involved.
+
+    The failure is a genuine SQLAlchemy error from the write path (the ``session`` table is
+    gone), which is the shape a real disk-full takes once SQLAlchemy has wrapped the DBAPI
+    exception. The oracle is a row count plus the envelope's contents.
+    """
+    service = AuthService(engine)
+    service.bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    owner_rows = _count(engine, "owner")
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE session"))
+
+    with pytest.raises(AuthError) as caught:
+        service.login(OWNER_NAME, OWNER_PASSWORD)
+
+    assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
     assert caught.value.http_status == 503
-    raise AssertionError("integration with the real health channel is still NOT_RUN")
+    assert caught.value.details_safe["failed_operation_id"] == "auth.login"
+    assert _count(engine, "owner") == owner_rows
+
+    # The envelope carries no SQL, no file path and no credential
+    # (errors.yaml `forbidden_content_vi`).
+    rendered = json.dumps(caught.value.envelope("01J0000000000000000000000Z"), ensure_ascii=False)
+    for forbidden in ("INSERT", "session", OWNER_PASSWORD, str(engine.url)):
+        assert forbidden not in rendered, forbidden
+
+
+def test_the_disk_full_injector_fires_on_the_login_write_path(engine) -> None:
+    """E2 with the Phase 0 fault injector, all the way through to the contract's code.
+
+    ``WriteFaultInjector`` raises ``sqlite3.OperationalError`` from a
+    ``before_cursor_execute`` hook, and SQLAlchemy does **not** wrap an exception raised by
+    its own event listener -- so this is the bare DBAPI error, the case that used to escape
+    ``AuthService.login`` as an unhandled 500 (``CR-TC-AUTH-11``, now fixed by
+    ``WRITE_FAILURES``). Both shapes of write failure now land on the same code.
+
+    The fault is asserted to have actually fired: a test that passes because nothing
+    happened is worse than no test.
+    """
+    from server.app.db.faults import WriteFaultInjector
+
+    service = AuthService(engine)
+    service.bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    before = _count(engine, "session")
+
+    injector = WriteFaultInjector(engine)
+    with injector.disk_full(), pytest.raises(AuthError) as caught:
+        service.login(OWNER_NAME, OWNER_PASSWORD)
+
+    assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
+    assert caught.value.http_status == 503
+    assert caught.value.details_safe["failed_operation_id"] == "auth.login"
+    assert injector.writes_attempted > 0, "the fault never fired; the test proved nothing"
+    assert _count(engine, "session") == before
+
+    # The envelope carries no SQL, no credential and no database path.
+    rendered = json.dumps(caught.value.envelope("01J0000000000000000000000Z"), ensure_ascii=False)
+    for forbidden in ("INSERT", OWNER_PASSWORD, str(engine.url)):
+        assert forbidden not in rendered, forbidden
+
+    # And the fault is transient: once the disk comes back, login works and commits.
+    assert service.login(OWNER_NAME, OWNER_PASSWORD).session_token
+    assert _count(engine, "session") == before + 1
+
+
+def test_a_raw_dbapi_failure_during_logout_is_also_mapped(engine) -> None:
+    """The same clause on the other write path (``auth.logout``)."""
+    from server.app.db.faults import WriteFaultInjector
+
+    service = AuthService(engine)
+    service.bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    token = service.login(OWNER_NAME, OWNER_PASSWORD).session_token
+
+    injector = WriteFaultInjector(engine)
+    with injector.disk_full(), pytest.raises(AuthError) as caught:
+        service.logout(token)
+    assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
+    assert caught.value.details_safe["failed_operation_id"] == "auth.logout"
+
+    # Not revoked, because the revocation never committed -- the session still works.
+    assert service.authenticate(token).id
+
+
+def test_a_failed_idle_slide_does_not_break_a_live_session(engine) -> None:
+    """``auth.get_session`` has no 503 in the wire contract, so the slide is best-effort.
+
+    Extending the idle window is bookkeeping. If that write fails the session is still
+    live, and the request must neither become ``STORAGE_WRITE_FAILED`` (not a declared
+    response for ``GET /v1/auth/session``) nor an unhandled 500. The deadline simply does
+    not move.
+    """
+    from server.app.db.faults import WriteFaultInjector
+
+    service = AuthService(engine)
+    service.bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    result = service.login(OWNER_NAME, OWNER_PASSWORD)
+
+    # Push the stored deadline back so the next authenticate() wants to slide it forward.
+    stale = datetime.now(UTC) + timedelta(minutes=5)
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE session SET expires_at = :t"), {"t": to_timestamp_utc_ms(stale)}
+        )
+
+    injector = WriteFaultInjector(engine)
+    with injector.disk_full():
+        record = service.authenticate(result.session_token)
+
+    assert record.id == result.session.id
+    assert injector.writes_attempted > 0, "the slide never attempted a write"
+    with engine.begin() as connection:
+        stored = connection.execute(text("SELECT expires_at FROM session")).scalar_one()
+    assert str(stored) == to_timestamp_utc_ms(stale), "the failed slide must not have committed"
+
+    # With the disk back, the same call does move the deadline.
+    slid = service.authenticate(result.session_token)
+    assert slid.expires_at_ms > record.expires_at_ms
 
 
 def _fake_request(client: TestClient, headers: dict[str, str]) -> Any:

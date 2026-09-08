@@ -15,6 +15,14 @@ Two of the assertions here are about what the code does **not** contain
 -- "plain text only while ``CR-PC07-04`` is open" and "no edge to tag, settings, secrets or
 the data store" -- are absences, and an absence that is only maintained by review comes back.
 
+What is exercised against the real sibling services
+----------------------------------------------------
+``CMD-run-now`` and ``CMD-status`` go through ``server.app.jobs.service``
+(``TC-scheduler-lease-claim``) and ``CMD-save`` through ``server.app.saved.service``
+(``TC-saved-snapshot``) -- their own objects, not doubles. The doubles that remain
+(``NeedsUserRunNowPort``, ``RefusingPorts``) test this adapter's *mapping* in isolation, which
+is a different question from whether the two sides agree; both are asserted.
+
 Paths this card deliberately did not run
 -----------------------------------------
 The ``callback_data`` validation of ``CMD-save`` (fixture ``f-stale-callback-no-save``,
@@ -179,12 +187,23 @@ class RefusingPorts:
         raise AssertionError("save.create must not be called")
 
 
-def _message(update_id: int, chat_id: str, body: str) -> dict[str, Any]:
+def _message(
+    update_id: int, chat_id: str, body: str, *, at: datetime | None = None
+) -> dict[str, Any]:
+    """A Telegram ``message`` update, stamped **now** unless a time is given.
+
+    Now, not a fixed date: ``ING-06`` drops updates older than ``telegram_update_max_age``
+    (24 h), so a hard-coded ``date`` turns every test in this file into one that passes until
+    the wall clock walks past it and then fails for a reason that has nothing to do with what
+    it asserts. The age rule has its own test, which sets both ends of the interval
+    explicitly.
+    """
+    moment = at or datetime.now(tz=UTC)
     return {
         "update_id": update_id,
         "message": {
             "message_id": update_id,
-            "date": int(datetime(2026, 9, 7, tzinfo=UTC).timestamp()),
+            "date": int(moment.timestamp()),
             "chat": {"id": int(chat_id), "type": "private"},
             "text": body,
         },
@@ -746,19 +765,195 @@ def test_the_owner_routes_refuse_without_a_session(engine) -> None:
     assert _rows(engine, "SELECT COUNT(*) FROM telegram_link_code")[0][0] == 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    run=True,
-    reason=(
-        "pending TC-scheduler-lease-claim (Phase 6): server.app.job.service does not exist, "
-        "so run.list and run.run_now are exercised through the ports.yaml signature with a "
-        "double. The end-to-end proof that a real needs_user run is not resumed is NOT_RUN. "
-        "strict=True so the day that card lands this XPASSes loudly instead of staying a "
-        "quiet green -- an xfail nobody notices going stale is how a NOT_RUN becomes a lie."
-    ),
-)
-def test_run_now_against_the_real_job_service() -> None:
-    import server.app.job.service  # noqa: F401
+# --------------------------------------------------------------------------------------
+# CMD-run-now and CMD-status against the real job service (TC-scheduler-lease-claim landed)
+# --------------------------------------------------------------------------------------
+
+
+def _job_context(engine: Engine) -> Any:
+    """``TC-scheduler-lease-claim``'s own context, built the way a deployment builds it.
+
+    ``ScheduleSettings`` has no defaults on purpose (its card's ``SG-02``): the slots and the
+    timezone are Owner-accepted working values that the caller reads from settings, so they
+    are passed explicitly here rather than defaulted into existence.
+    """
+    from server.app.jobs.service import JobContext
+    from server.app.scheduler.evaluator import ScheduleSettings
+
+    return JobContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        settings=ScheduleSettings(slots_local=("08:00", "20:00"), timezone_iana="Asia/Ho_Chi_Minh"),
+    )
+
+
+class RealJobServiceAdapter:
+    """Binds this card's ``RunNowPort`` and ``RunListPort`` to ``server.app.jobs.service``.
+
+    This is the wiring a deployment does. The translation is the only logic here, and it is
+    where ``RN-01`` is decided on this side: the job service answers ``created: False`` with
+    the active run's ``status``, and it is this adapter -- not a reply template -- that turns
+    ``needs_user`` into ``blocked_needs_user``. Getting that mapping wrong is how a
+    "run queued" reply would be sent for a run that never moved.
+    """
+
+    def __init__(self, engine: Engine) -> None:
+        self.context = _job_context(engine)
+        self.run_now_calls = 0
+        self.list_calls = 0
+
+    def run_now(self, *, owner_id: str, request_id: str) -> RunNowResult:
+        from server.app.jobs import service as jobs_service
+
+        self.run_now_calls += 1
+        answer = jobs_service.run_now(self.context, request_id=request_id)
+        status = answer.get("status")
+        return RunNowResult(
+            run_id=str(answer["run_id"]),
+            queued=bool(answer["created"]),
+            blocked_needs_user=status == "needs_user",
+            status_label=str(status) if status is not None else None,
+        )
+
+    def list_runs(self, *, owner_id: str) -> RunSnapshot:
+        from server.app.jobs import service as jobs_service
+
+        self.list_calls += 1
+        runs = jobs_service.list_runs(self.context, limit=1)["runs"]
+        if not runs:
+            return RunSnapshot(run_id=None, status=None)
+        latest = runs[0]
+        return RunSnapshot(
+            run_id=str(latest["run_id"]),
+            status=str(latest["status"]),
+            outcome=latest["outcome"],
+            stop_reason_vi=latest["stop_reason"],
+            status_label=str(latest["status"]),
+        )
+
+
+def _run_rows(engine: Engine) -> list[tuple[Any, ...]]:
+    """Every column of every run, so "nothing changed" means every field, not just status."""
+    return _rows(engine, "SELECT * FROM run ORDER BY id")
+
+
+def test_fixture_l_run_now_against_the_real_job_service(engine, fixture_loader) -> None:
+    """``SC45`` / fixture ``l``, end to end into ``TC-scheduler-lease-claim``'s service.
+
+    Previously ``xfail(pending TC-scheduler-lease-claim)``. That card has landed, so the
+    premise no longer holds and the proof is real: a run is put into ``needs_user``, the linked
+    chat sends ``/run_now``, and the assertion is that **every column of the run row is
+    unchanged** -- fixture ``l``'s ``run__status_changes: 0`` and ``run__total: 1`` -- while the
+    chat still gets exactly one reply pointing into the app.
+
+    Two things this now proves that the double could not: the job service is genuinely asked
+    (``run_now_calls == 1``, so this is not the adapter refusing on its own), and it genuinely
+    writes nothing (``T-RUN-21`` returns before any UPDATE). ``assignment`` is checked too: a
+    second assignment row would mean a second run had been opened underneath.
+    """
+    fixture = fixture_loader("telegram/l-run-now-while-needs-user")
+    expected = fixture.data["expected"]["after_event_2"]
+
+    adapter = RealJobServiceAdapter(engine)
+    # Create the run through the real service, then park it in `needs_user` the way a
+    # challenge would. Seeding the row by hand would be a second definition of a run.
+    queued = adapter.run_now(owner_id=OWNER_ID, request_id="01JREQ0000000000000000000A")
+    assert queued.queued is True
+    with engine.begin() as connection:
+        connection.execute(
+            text("UPDATE run SET status = 'needs_user', stop_reason = 'captcha' WHERE id = :id"),
+            {"id": queued.run_id},
+        )
+    before = _run_rows(engine)
+    assignments_before = _rows(engine, "SELECT COUNT(*) FROM assignment")[0][0]
+
+    sender = RecordingSender()
+    context = TelegramContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        webhook_secret=WEBHOOK_SECRET,
+        sender=sender,
+        ports=CommandPorts(run_now=adapter, run_list=adapter),
+    )
+    outcome = receive_update(context, _message(1400, LINKED_CHAT, "/run_now"))
+
+    assert outcome.command == CommandId.RUN_NOW.value
+    assert outcome.replies == (REPLY_RUN_NOW_NEEDS_USER,)
+    assert expected["reply_vi"] == REPLY_RUN_NOW_NEEDS_USER
+    assert (
+        sender.send_message_count == expected["outbound_call_counts"]["telegram.sendMessage"] == 1
+    )
+    assert adapter.run_now_calls == 2, "the job service was really asked the second time"
+    assert _run_rows(engine) == before, "a needs_user run moved (run__status_changes must be 0)"
+    assert _rows(engine, "SELECT COUNT(*) FROM run")[0][0] == expected["counts"]["run__total"] == 1
+    assert _rows(engine, "SELECT COUNT(*) FROM assignment")[0][0] == assignments_before
+    assert "resume" not in outcome.replies[0].lower()
+
+
+def test_run_now_with_no_active_run_queues_one_real_run(engine) -> None:
+    """``RN-03``: nothing running ⇒ one ``manual`` run is queued and the chat is told so."""
+    adapter = RealJobServiceAdapter(engine)
+    sender = RecordingSender()
+    context = TelegramContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        webhook_secret=WEBHOOK_SECRET,
+        sender=sender,
+        ports=CommandPorts(run_now=adapter),
+    )
+    outcome = receive_update(context, _message(1410, LINKED_CHAT, "/run_now"))
+
+    assert outcome.replies == (commands_module.REPLY_RUN_NOW_QUEUED,)
+    rows = _rows(engine, "SELECT trigger_type, status FROM run")
+    assert rows == [("manual", "queued")]
+    assert sender.send_message_count == 1
+
+
+def test_run_now_twice_coalesces_onto_the_same_run(engine) -> None:
+    """``RN-02`` / ``T-RUN-21``: a second press returns the run already there, not a new one.
+
+    The reply changes (``already_running``), the row count does not. This is the half of
+    ``AMD-B10`` that is about *duplication* rather than about ``needs_user``.
+    """
+    adapter = RealJobServiceAdapter(engine)
+    sender = RecordingSender()
+    context = TelegramContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        webhook_secret=WEBHOOK_SECRET,
+        sender=sender,
+        ports=CommandPorts(run_now=adapter),
+    )
+    first = receive_update(context, _message(1420, LINKED_CHAT, "/run_now"))
+    second = receive_update(context, _message(1421, LINKED_CHAT, "/run_now"))
+
+    assert first.replies == (commands_module.REPLY_RUN_NOW_QUEUED,)
+    assert second.replies[0].startswith("Đang có một đợt chạy")
+    assert _rows(engine, "SELECT COUNT(*) FROM run")[0][0] == 1
+    assert sender.send_message_count == 2
+
+
+def test_status_against_the_real_job_service_mutates_nothing(engine) -> None:
+    """``ST-01``: ``/status`` reads ``run.list`` and writes nothing, through the real service."""
+    adapter = RealJobServiceAdapter(engine)
+    adapter.run_now(owner_id=OWNER_ID, request_id="01JREQ0000000000000000000B")
+    before = _run_rows(engine)
+
+    sender = RecordingSender()
+    context = TelegramContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        webhook_secret=WEBHOOK_SECRET,
+        sender=sender,
+        ports=CommandPorts(run_list=adapter),
+    )
+    outcome = receive_update(context, _message(1430, LINKED_CHAT, "/status"))
+
+    assert outcome.command == CommandId.STATUS.value
+    assert adapter.list_calls == 1
+    assert _run_rows(engine) == before
+    assert commands_module.FORBIDDEN_STATUS_PHRASE not in outcome.replies[0]
+    assert sender.send_message_count == 1
 
 
 # --------------------------------------------------------------------------------------

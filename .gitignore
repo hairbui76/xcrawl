@@ -1,7 +1,11 @@
-# Python
+# Python. `*.py[cod]` covers .pyc/.pyo/.pyd; `__pycache__/` matches at every depth, so a
+# cache dropped inside server/, worker/ or web/ is ignored too. Both rules were verified
+# with `git check-ignore -v` (P0 handoff addendum PKT-P0-FIX4) — stray caches this round
+# came from runs without PYTHONDONTWRITEBYTECODE=1, not from a gap in these patterns.
 .venv/
 __pycache__/
 *.py[cod]
+*.pyc
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/

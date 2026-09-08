@@ -58,6 +58,26 @@ SCHEMA_VERSION: Final[str] = "0.1.0"
 
 _HASH_PREFIX: Final[str] = "sha256:"
 
+#: The fixed marker that fills ``summary_block`` when the target has no valid analysis yet.
+#:
+#: ``OD-20260908-10`` item 1 (closing ``CR-TC-SAVED-04``) decided that saving an un-analysed
+#: target is **allowed** and that the summary is shown explicitly marked missing. This string is
+#: that mark. It is a constant, never derived from the target, so it cannot become an inference
+#: about content the system has not read — which is the whole of B16.
+#:
+#: It lives in the three required ``summary_block`` strings because the schema has no field for
+#: it: ``summary`` is required, ``$ref``s an object with no null branch, ``additionalProperties``
+#: is false, and there is no ``summary_state``. The *state* is carried by the schema's own
+#: declared slot — ``saved_snapshot.analysis_id_at_save = null``, whose description reads "NULL
+#: chỉ khi target chưa có analysis valid nào" — so a consumer tests that field, not this text.
+#: A proper text/marker slot is requested as ``CR-TC-SAVED-10``.
+SUMMARY_NOT_ANALYSED: Final[str] = "(chưa phân tích)"
+
+#: ``evidence_level`` for an un-analysed snapshot. The **lowest** rung, always: ``REQ-D21``
+#: forbids labelling a higher evidence level than the sources actually support, and with no
+#: analysis there is nothing that could justify ``abstract`` or ``full_text``.
+EVIDENCE_LEVEL_NOT_ANALYSED: Final[str] = "post_only"
+
 #: ``analysis-result.schema.json`` ``comparator.kind`` -> ``summary_block.comparator``.
 #: ``ref`` means an actual comparison source was cited; ``unknown`` means there was none and
 #: B16 forbids inventing one. There is no third value on either side, so an unrecognised
@@ -181,6 +201,41 @@ def summary_block(analysis_payload: Mapping[str, Any]) -> dict[str, Any] | None:
     return block
 
 
+def missing_summary() -> dict[str, Any]:
+    """The ``summary_block`` for a target with no valid analysis (``OD-20260908-10`` item 1).
+
+    All three required lines carry the same constant, so the block reads as a marker rather
+    than as three separate claims. ``comparator`` is ``unknown`` because there genuinely is no
+    comparison source — that is a fact about the data, not a guess — and ``claim_kinds`` is
+    omitted entirely: no claim of any kind has been made about this target, and an empty list
+    would still assert "these are the kinds of claims present".
+
+    The snapshot stays self-contained and its ``content_hash`` is computed over exactly these
+    bytes like any other, so an un-analysed save is immutable on the same terms as an analysed
+    one. Attaching a real analysis later is a **new** snapshot via reanalysis, never an edit of
+    this one.
+    """
+    return {
+        "content_vi": SUMMARY_NOT_ANALYSED,
+        "novelty_vi": SUMMARY_NOT_ANALYSED,
+        "limitation_vi": SUMMARY_NOT_ANALYSED,
+        "comparator": "unknown",
+    }
+
+
+def is_missing_summary(summary: Mapping[str, Any]) -> bool:
+    """True when ``summary`` is the marker of :func:`missing_summary`, not real content.
+
+    The check a consumer needs while the schema has no state field for it. The authoritative
+    signal remains ``saved_snapshot.analysis_id_at_save is None``; this is the content-side
+    companion, and both are asserted together in the tests so they cannot drift apart.
+    """
+    return all(
+        summary.get(field) == SUMMARY_NOT_ANALYSED
+        for field in ("content_vi", "novelty_vi", "limitation_vi")
+    )
+
+
 def display_title(*, work_title: str | None, post_text: str | None) -> str | None:
     """The one line the Saved screen shows for this item, captured at save time.
 
@@ -296,12 +351,16 @@ def build_content(
 
 __all__ = [
     "CONTENT_VERSION",
+    "EVIDENCE_LEVEL_NOT_ANALYSED",
     "SCHEMA_VERSION",
+    "SUMMARY_NOT_ANALYSED",
     "build_content",
     "canonical_json",
     "compute_content_hash",
     "display_title",
     "hash_matches",
+    "is_missing_summary",
+    "missing_summary",
     "source_post",
     "summary_block",
     "target_key",

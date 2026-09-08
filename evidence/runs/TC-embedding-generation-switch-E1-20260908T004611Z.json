@@ -1,0 +1,222 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-08-tc-embedding-generation-switch",
+  "created_at": "2026-09-08T00:46:19Z",
+  "producer_principal": "worker-W3C",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "2d0db93e7ccd90d97b55c4cdd5f2fe1c464291a2a29af5f4a76d08f9e973ec98",
+      "precode/decision-register.md": "089b2a9b1a5d5597271f2c7620611ac5504eca24e63e738b8d20678f8cd5f779",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+      "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+      "contracts/state/report.yaml": "77969cb473c84a7df90e6b784ad1afa637313e813ccbb59d99b1ea329241245f",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+      "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json": "e911021ea43f8d9168ea64da6919735a58c41a379a7e926b566128030939a359",
+      "acceptance/fixtures/reporting/m-density-worked-example.json": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+      "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json": "98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "agent-tasks/TC-embedding-generation-switch.md": "b24f896c65bcab0267dae137451218b7a703e3845715b5c2dd46f3bb313795ca"
+    },
+    "implementation_revision": "PKT-TC-EMBED-FIX2 working tree, pin epoch PC10-PIN-P3-20260908; generation.py=c1c5df0dfc61fbf8fb8894ab251fc1fa5ffd6a398223d05067107ccfd990bdf1; repository.py=78de3da8428bfe6a41eb9254cee691edef45b8217be3abbfcd4a56722bede13c; service.py=be0d9530f51cd0eb371986fea26e871b4bd951c081132baac82d8fcc88d241e6; 0006_tc_embedding_generation_switch.py=cac9da6e6a2232cb3c373177aa0e7d51b2b5e976639dfa4ec5604bff94674010; test_embedding_generation_guard.py=d700e74c2bdeab86a1a872d7850072034a7eee7ccc6e9725677322e576e24c58; test_generation_activation.py=9cdaa42b50cbde75655014e9dbf854c69cd310a7a07fac090b71b1298ffe63fe"
+  },
+  "environment": {
+    "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "pydantic": "2.13.5",
+      "fastapi": "0.115.14",
+      "pytest": "8.4.2",
+      "PyYAML": "6.0.3",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "uv": "0.12.9"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path",
+      "encoder": "server.app.embedding.generation.DeterministicHashEncoder — an offline SHA-256 stand-in, NOT a model. sentence-transformers is declared in server/pyproject.toml under the optional `embedding` extra, is not installed in this environment, and no model artifact was downloaded or loaded at any point.",
+      "network_calls_made": 0,
+      "secrets_used": "none — MOD-embedding-service has secret_access: none and network_egress: [] in contracts/modules.yaml"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC24",
+      "SC08",
+      "SC49",
+      "SC52"
+    ],
+    "requirement_ids": [
+      "REQ-D48",
+      "REQ-D49",
+      "REQ-D50",
+      "REQ-D59",
+      "REQ-S7.3-03",
+      "REQ-AC16",
+      "REQ-OQ09",
+      "REQ-A3"
+    ],
+    "invariant_ids": [
+      "I12",
+      "I05"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json",
+        "sha256": "e911021ea43f8d9168ea64da6919735a58c41a379a7e926b566128030939a359",
+        "bytes": 6580
+      },
+      {
+        "path": "acceptance/fixtures/reporting/m-density-worked-example.json",
+        "sha256": "719f9c4da1b1bd9138a1cdc60a1d2d501a9abf3945c85e991aa72a828baa3347",
+        "bytes": 29177
+      },
+      {
+        "path": "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json",
+        "sha256": "98bb69cb1fba77b89a65ee500fdfe79e8d19ffef86eb435311c88e2c8786044f",
+        "bytes": 19229
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      }
+    ],
+    "seed": null,
+    "clock": "system UTC clock of the execution host, which reads 2026-09-07 while the dispatch epoch is named PC10-PIN-P3-20260908; timestamps below are the measured clock, not the epoch name",
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/contract/test_embedding_generation_guard.py tests/integration/test_generation_activation.py -p no:warnings",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-08T00:46:11Z",
+    "ended_at": "2026-09-08T00:46:19Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture là oracle. (a) reporting/l: hai generation khác dimension (4 và 8) đọc TỪ fixture; mọi cosine giữa chúng bị từ chối TRƯỚC khi có phép nhân nào, đo bằng ComparisonLedger — cross_generation_performed = 0 và total_performed = 0 cho lần chạy đó. (b) reporting/l forbidden_effects: cấm rơi về generation cũ, cấm bỏ qua tag thiếu vector, cấm coi vector NULL là điểm 0 — tập ứng viên lẫn generation bị chặn TOÀN BỘ trước khi chấm điểm, và vector suy biến (norm 0) bị từ chối chứ không trả 0.0. (c) reporting/n after_event_7: built_vector_count (2) < expected_vector_count (4) ⇒ activate_generation trả EMBEDDING_GENERATION_MISMATCH và MỌI cột của cả hai hàng embedding_generation không đổi (so sánh trước/sau). (d) reporting/n after_event_9: chuyển active trong MỘT transaction ⇒ COUNT(state='active') = 1 tại mọi lần quan sát từ một connection KHÁC, G1 sang 'retired' và KHÔNG bị xóa, tag_vector của G1 còn nguyên. (e) O-5b: cosine cùng generation VẪN chạy (total_performed > 0) — một triển khai chặn tất cả không qua được. (f) boundary/a + allowed_edges: caller ngoài registry bị từ chối bằng đúng FORBIDDEN_EDGE (ruling R5-01 hàng 2), và allow list được đọc TỪ contracts/modules.yaml chứ không chép tay. (g) FE-22/FE-23: AST của cả ba file trong server/app/embedding/ không import httpx/requests/urllib/socket/http/subprocess/anthropic/openai/server.app.tag. (h) reporting/m (F-A3-P3-03): phần I12 của ví dụ mật độ ĐƯỢC chạy — mọi khối embedding_generation và mọi tham chiếu embedding_generation_id trong TOÀN BỘ fixture (3 khối đầy đủ + 6 tham chiếu, kể cả biến thể below_min_sample và cold_start) rút về ĐÚNG MỘT GenerationFingerprint, nên forbidden effect 'So sánh với kỳ trước thuộc embedding generation khác (I12)' không thể xảy ra trong ví dụ này; assert_single_generation chạy qua toàn tập với total_refused = 0 (mặt DƯƠNG: guard không chặn một kỳ hợp lệ); variant_cold_start pin insufficient_reason = 'generation_reset' và direction mang đúng generation hiện hành; parameters.metric = 'cosine' và parameters.rounding_decimals = SCORE_DECIMALS = 4 khớp code đã ship. Sáu tham số mật độ còn lại chỉ được kiểm là vẫn PROVISIONAL_BOOTSTRAP, KHÔNG được tính. (i) CR-TC-REPORT-04: làm tròn nay là half-up theo contracts/reporting/selection.md §3 ('làm tròn half-up về 4 chữ số thập phân'), KHÔNG phải round() half-to-even của Python. Oracle biên: 0.15625 (5/32, biểu diễn nhị phân CHÍNH XÁC nên thật sự là điểm hòa) ⇒ half-up 0.1563 trong khi round() cho 0.1562; 0.03125 ⇒ 0.0313 vs 0.0312; hai giá trị âm tương ứng ⇒ làm tròn RA XA số 0. Test khẳng định CẢ giá trị đúng LẪN sự khác biệt so với round(), nên đặt round() trở lại vẫn FAIL. (j) CR-TC-REPORT-08: chứng minh THỨ TỰ 'chặn trước publish commit' nay là THẬT, không còn xfail: build_report ghim G1 → record_build (T-RP-01) → generate_vectors + activate_generation chuyển sang G2 → publish_report của server.app.report.publisher gọi embedding_generation_matches như phép kiểm 3 của CAS ⇒ ReportError(EMBEDDING_GENERATION_MISMATCH), COUNT(report status='published') KHÔNG đổi, và hàng build mang abort_reason='embedding_generation_mismatch' (T-RP-04) — chính dấu hiệu cho thấy từ chối xảy ra BÊN TRONG đường publish chứ không phải trước khi vào.",
+    "expected": {
+      "card_tests": 51,
+      "card_failures": 0,
+      "cross_generation_cosines_performed": 0,
+      "same_generation_cosines_performed_gt_0": true,
+      "active_rows_after_every_event": 1,
+      "rows_changed_by_refused_activation": 0,
+      "g1_rows_deleted_after_switch": 0,
+      "network_calls": 0,
+      "alembic_heads": 1,
+      "density_fixture_distinct_generations": 1,
+      "card_xfailed": 0,
+      "publish_guard_ordering_proven": true
+    },
+    "observed": {
+      "card_tests": 51,
+      "card_passed": 51,
+      "card_xfailed": 0,
+      "card_failures": 0,
+      "cross_generation_cosines_performed": 0,
+      "same_generation_cosines_performed_gt_0": true,
+      "active_rows_after_every_event": 1,
+      "rows_changed_by_refused_activation": 0,
+      "g1_rows_deleted_after_switch": 0,
+      "network_calls": 0,
+      "alembic_heads": 1,
+      "gates_rerun": {
+        "tests/contract/test_schema_matches_entities.py": "PASS — the two new tables match contracts/data/entities.yaml field-for-field under all four traversal orders",
+        "tests/integration/test_denied_edges.py": "PASS — unchanged; FE-22 remains recorded there as NOT_TESTABLE_AT_THIS_LAYER for its sandbox half",
+        "ruff check + ruff format --check": "clean on server/app/embedding/, the migration and both test files",
+        "mypy --strict": "Success: no issues found in 47 source files"
+      },
+      "full_suite_note": "Full `pytest` re-run after this change: 1012 passed, 0 failed, 7 xfailed, 7 errors in 136 s. The 7 errors are all in tests/integration/test_permanent_failure_report_intact.py (card TC-telegram-unknown-delivery), which CR-TC-REPORT-09 assigns to W5C: its report stand-in does not satisfy the real `report` schema created by TC-report-coverage-publish-cas. No file of this card's write set is involved, and every embedding.* test passes.",
+      "density_fixture_distinct_generations": 1,
+      "density_fixture_generation_references": 6,
+      "density_arithmetic": "NOT_RUN — REQ-OQ08/REQ-A4, MOD-report-service, card §1 non-goal",
+      "publish_guard_ordering_proven": true
+    }
+  },
+  "result": "PASS",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 51,
+    "not_checked_vi": [
+      "KHÔNG có model embedding thật nào được nạp hay tải về. sentence-transformers là extra tùy chọn mà server/pyproject.toml cố ý không cài, và ADR-0011 ghi rõ 'No model is ever downloaded by this repo's test or CI paths'. Phép kiểm dimension của model THẬT: NOT_RUN.",
+      "Model embedding cụ thể vẫn là REQ-OQ09 sau cổng REQ-A3. DeterministicHashEncoder KHÔNG mang ngữ nghĩa nào: hai câu cùng chủ đề xa nhau đúng như hai câu không liên quan. Không con số tương đồng nào ở đây nói được điều gì về chất lượng.",
+      "Ngưỡng tương đồng (0.8000) và tham số mật độ vẫn PROVISIONAL_BOOTSTRAP (card §10 SG-01, REQ-A2/REQ-A4). Không dòng nào trong gói này đọc hay chỉnh chúng.",
+      "E4 (chất lượng): việc chứng minh THỨ TỰ chặn-trước-commit nay là thật, nhưng nó nói về THỨ TỰ, KHÔNG nói gì về chất lượng similarity. Ngưỡng 0.8000 vẫn PROVISIONAL_BOOTSTRAP.",
+      "THUẬT TOÁN MẬT ĐỘ của acceptance/fixtures/reporting/m-density-worked-example.json: NOT_RUN. Sáu tham số (radius, min_members, comparison_window_k, min_prior_windows, min_delta, prior_floor) là PROVISIONAL_BOOTSTRAP sau cổng REQ-A4/REQ-OQ08, và cả phép tính m_t, density_prior, delta lẫn quyết định evidence_state thuộc MOD-report-service / TC-report-coverage-publish-cas — card §1 ghi rõ đây là NON-GOAL. Gói này chỉ chạy lát cắt I12 của fixture đó (một generation duy nhất xuyên suốt) và KHÔNG tính một con số mật độ nào.",
+      "E2 (fault injection SQLite qua server/app/db/faults.py) CHƯA chạy cho đường ghi tag_vector và cho transaction activate. STORAGE_WRITE_FAILED được ánh xạ trong code nhưng chưa có lần chạy nào kích hoạt nó.",
+      "Đồng thời (concurrency) được kiểm bằng hai lời gọi TUẦN TỰ dựa vào ux_embedding_generation_model, KHÔNG bằng hai tiến trình chạy song song thật. 'Một thắng' đúng ở tầng ràng buộc; nó chưa được đo dưới tranh chấp thật.",
+      "Chỉ 2 trong 36 cạnh của boundary/a chạm module này (FE-22, FE-23). Nửa sandbox của FE-22 (network egress rỗng của container) KHÔNG được kiểm ở đây — tests/integration/test_denied_edges.py vẫn ghi nó là NOT_TESTABLE_AT_THIS_LAYER. Cái đã kiểm là nửa ENF-import-rule.",
+      "work_label.embedding_generation_id vẫn KHÔNG có REFERENCES tới embedding_generation: cột đó ra đời ở 0002b trước khi bảng này tồn tại, và SQLite không thêm FK vào bảng có sẵn mà không dựng lại bảng. Xem CR-TC-embedding-01.",
+      "MOD-embedding-service KHÔNG gọi storage.get_health: contracts/ports.yaml cho phép đúng hai caller và contracts/modules.yaml không có cạnh nào, dù card §4 liệt kê nó ở mục Consumes. Xem CR-TC-embedding-02. Nghĩa vụ STORAGE_WRITE_FAILED được đáp ứng bằng ánh xạ lỗi ghi, không bằng cổng health.",
+      "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy, và không mục nào ở đây được đọc là independent review."
+    ],
+    "uncertainty_vi": "contracts/errors.yaml liệt kê `operations` cho từng mã lỗi, và bốn mã mà contracts/ports.yaml gán cho embedding.* (VALIDATION_ERROR, NOT_FOUND, IDEMPOTENCY_CONFLICT, STORAGE_WRITE_FAILED) không có operation embedding.* nào trong danh sách đó; EMBEDDING_GENERATION_MISMATCH chỉ liệt kê activate_generation chứ không liệt kê generate_vectors và start_generation_rebuild. Code theo ports.yaml (là thẩm quyền của operation) và theo card §7. Xem CR-TC-embedding-03. Ngoài ra acceptance/scenarios.yaml SC52 đánh số bước trong expected_durable_state_vi lệch với event_order của chính nó (nói 'sau bước 4' cho việc chuyển active vốn là bước 7); fixture n không mơ hồ, nên đây là lỗi văn xuôi chứ không phải mâu thuẫn oracle — CR-TC-embedding-04.",
+    "unresolved_issue_refs": [
+      "CR-TC-embedding-01",
+      "CR-TC-embedding-02",
+      "CR-TC-embedding-03",
+      "CR-TC-embedding-04",
+      "REQ-OQ09",
+      "REQ-A3"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/reporting/l-embedding-generation-switch-blocked.json",
+      "acceptance/fixtures/reporting/m-density-worked-example.json",
+      "acceptance/fixtures/reporting/n-embedding-generation-switch-positive.json",
+      "acceptance/scenarios.yaml",
+      "agent-tasks/TC-embedding-generation-switch.md",
+      "contracts/capabilities.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/errors.yaml",
+      "contracts/modules.yaml",
+      "contracts/ops/deployment.md",
+      "contracts/ports.yaml",
+      "contracts/reporting/selection.md",
+      "contracts/state/report.yaml"
+    ],
+    "invalidated_by_rule_ids": [
+      "INV-06"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "Bốn operation embedding.* của contracts/ports.yaml, invariant I12 tại cổng của MOD-embedding-service, và hai bảng embedding_generation + tag_vector, trên baseline pin PC10-PIN-P3-20260908. Card §9 đặt trần IMPLEMENTATION_VERIFIED, nhưng bản ghi NÀY là SELF_VALIDATION và schema (allOf mục 6, protocol §9) chặn tự kiểm ở CONTRACT_READY: nhãn cao hơn cần một audit độc lập trên đúng những byte này. PKT-TC-EMBED-FIX2 bổ sung: quy tắc làm tròn half-up (CR-TC-REPORT-04) và bằng chứng THẬT cho thứ tự chặn-trước-publish-commit qua publish_report của W4A (CR-TC-REPORT-08) — phụ thuộc §11 của card nay đã được giải, không còn xfail.",
+    "not_established_vi": [
+      "KHÔNG thiết lập IMPLEMENTATION_VERIFIED: đó là trần của card, không phải của một lần tự kiểm. Cần INDEPENDENT_AUDIT theo §12 của card.",
+      "KHÔNG thiết lập bất kỳ điều gì về một model embedding thật: không model nào được nạp, dimension thật là NOT_RUN, REQ-OQ09 vẫn mở.",
+      "KHÔNG thiết lập chất lượng ngưỡng tương đồng (REQ-A2/REQ-A3, E4).",
+      "KHÔNG thiết lập hành vi dưới lỗi lưu trữ thật (E2 chưa chạy) hay dưới tranh chấp đồng thời thật.",
+      "KHÔNG phải independent audit: review_type là SELF_VALIDATION."
+    ]
+  }
+}

@@ -400,3 +400,113 @@ mentions of "embedding" in the whole run log are the Alembic upgrade lines for
 
 *`PKT-TC-EMBED-FIX1` · `worker-W3C` · `lease_released_at` 2026-09-07T20:22Z · claim unchanged
 `CONTRACT_READY` · `SELF_VALIDATION` — no item here is an independent audit.*
+
+---
+
+# ADDENDUM — `PKT-TC-EMBED-FIX2` (post-wave rulings `CR-TC-REPORT-04`, `-08`)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-EMBED-FIX2` · lease `LEASE-TC-EMBED-e3` (fencing 3) · worker `worker-W3C` |
+| rulings | `…/scratchpad/packets/FIX-P4-wave-rulings.md` — `CR-TC-REPORT-04` (rounding) and `CR-TC-REPORT-08` (xfail target) |
+| status | `DONE` · claim unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) · next actor `Coordinator` |
+| lease_released_at | 2026-09-08T00:52Z |
+
+## B.1 `CR-TC-REPORT-04` — the rounding was half-to-even, and the contract says half-up
+
+`contracts/reporting/selection.md` §3 says it twice: *"Mọi giá trị similarity được làm tròn
+**half-up** về 4 chữ số thập phân"*, and the parameter table repeats `rounding: half-up`.
+`cosine` used Python's built-in `round`, which rounds half to **even**. The two disagree on
+exactly one class of input — a tie — and a tie is a score sitting on the threshold the
+comparison is about, so this is the worst possible place for the two rules to differ.
+
+`generation.py` now has `round_half_up`, using `decimal.ROUND_HALF_UP` at `SCORE_DECIMALS`.
+`Decimal` rather than an `int(x * 10**n + 0.5)` trick: the trick is wrong for negative values,
+and cosine is legitimately negative.
+
+Two boundary tests added, and the choice of constant matters: `0.15625` is `5/32`, so it is
+**exactly** representable in binary and really is a tie — most decimal-looking ties (`0.12345`)
+are not, and a test built on one would have passed under both rules and proved nothing.
+
+| input | contract (half-up) | Python `round` |
+| --- | --- | --- |
+| `0.15625` | `0.1563` | `0.1562` |
+| `0.03125` | `0.0313` | `0.0312` |
+| `-0.15625` | `-0.1563` | `-0.1562` |
+
+`test_rounding_is_half_up_and_not_pythons_half_to_even` asserts **both** the expected value
+and the divergence from `round`, so restoring `round` fails rather than passing on a platform
+that happens to agree. `test_cosine_rounds_its_own_result_with_the_half_up_rule` recomputes the
+raw quotient and checks `cosine` applies that rule — otherwise the rule could be right in
+isolation while `cosine` quietly kept the built-in.
+
+## B.2 `CR-TC-REPORT-08` — the xfail pointed at a module that never existed, and is now real
+
+The marker imported `server.app.report.service`. That card's §3 never creates it; W4A's entry
+point is `server.app.report.publisher.publish_report`. Re-pointed — **and made real**, because
+the ruling's condition holds: the guard call is observable. W4A calls this card's predicate as
+check 3 of the six-check CAS, with a real `EmbeddingService` as `embedding_port`:
+
+```python
+if not context.embedding_port.embedding_generation_matches(
+    snapshot.owner_id, snapshot.generation.generation_id
+):
+```
+
+`test_the_guard_blocks_before_the_publish_commit` now walks the whole sequence: `build_report`
+pins G1 → `record_build` writes the `building` row (T-RP-01) → `generate_vectors` +
+`activate_generation` switch to G2 *between build and publish* → `publish_report` refuses.
+
+Three assertions, and the last two are what make it an **ordering** claim rather than a repeat
+of the predicate's unit test: the code is `EMBEDDING_GENERATION_MISMATCH`;
+`COUNT(report WHERE status='published')` is unchanged (fixture `l`); and the build row carries
+`abort_reason = 'embedding_generation_mismatch'` (T-RP-04) — which only happens *inside* the
+publish path, so the refusal provably occurred there and not before it was entered.
+
+Getting there needed one correction: without `record_build` the publisher answers `NOT_FOUND`
+at its idempotency check and never reaches the embedding guard (`publish_cas.idempotency_rule_vi`
+case 4, "publish does not create a build"). The first draft omitted it and failed with
+`NOT_FOUND` — a green test that skipped the guard would have been worse than a red one.
+
+**Card §11's dependency is discharged.** The stale "not established" line has been removed from
+the manifest's `claim` block rather than left standing.
+
+## B.3 Files, tests, and the superseded record
+
+| Path | Operation | Before (sha256) | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `server/app/embedding/generation.py` | MODIFY | `9a622ddf…50311b79` | `c1c5df0dfc61fbf8fb8894ab251fc1fa5ffd6a398223d05067107ccfd990bdf1` | 29115 |
+| `tests/contract/test_embedding_generation_guard.py` | MODIFY | `bbce004a…a7cc08dd` | `d700e74c2bdeab86a1a872d7850072034a7eee7ccc6e9725677322e576e24c58` | 32304 |
+| `tests/integration/test_generation_activation.py` | MODIFY | `8cf838b0…89443532` | `9cdaa42b50cbde75655014e9dbf854c69cd310a7a07fac090b71b1298ffe63fe` | 33749 |
+| `evidence/runs/TC-embedding-generation-switch-E1-20260908T004611Z.json` | CREATE | ABSENT | `d0eeabb649064aef456257ac0ff97c13b43670e068060426be9055d66fad54c2` | 19138 |
+| `evidence/runs/TC-embedding-generation-switch-E1-20260907T201528Z.json` | MODIFY | `67e31e5a…6343208e` | `0639eda088d56815d06d7e21d95edce97717f5dcfb8d2e0814e9e156d83a1203` — now `result: STALE` | 18749 |
+| `evidence/handoffs/TC-embedding-generation-switch-handoff.md` | MODIFY | `ca26615c…5e2d29a70` | (this file) | — |
+
+`server/app/embedding/{service,repository}.py` and the migration are **byte-identical** to §1,
+so §2 and §4 stand and `CR-TC-embedding-01…04` are unchanged.
+
+### Tests
+
+```
+PYTHONDONTWRITEBYTECODE=1 python -m pytest \
+  tests/contract/test_embedding_generation_guard.py \
+  tests/integration/test_generation_activation.py -p no:warnings
+```
+
+**51 passed, 0 xfailed** · exit 0 · 2026-09-08T00:46:11Z → 00:46:19Z (was 48 passed, 1 xfailed:
++3 rounding/ordering tests, and the one xfail became a pass). `ruff check`, `ruff format --check`
+and `mypy --strict` all clean for `server/app/embedding`.
+
+Full suite: **1012 passed, 0 failed, 7 xfailed, 7 errors** in 136 s. All 7 errors are in
+`tests/integration/test_permanent_failure_report_intact.py`, which `CR-TC-REPORT-09` assigns to
+W5C (its report stand-in does not satisfy the real `report` schema). Down from 18 as W5C's fix
+lands; none involves this card's files.
+
+The `20260907T201528Z` record is now `result: STALE` with a `stale_reason` naming this packet,
+both rulings and `INV-06`. The new record supersedes it and validates against
+`evidence/manifest.schema.json` with **0 errors**; so does the stale one.
+
+---
+
+*`PKT-TC-EMBED-FIX2` · `worker-W3C` · `lease_released_at` 2026-09-08T00:52Z · claim unchanged
+`CONTRACT_READY` · `SELF_VALIDATION` — no item here is an independent audit.*

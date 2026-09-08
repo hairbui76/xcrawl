@@ -30,9 +30,10 @@ from __future__ import annotations
 import hashlib
 import os
 import secrets
+import sqlite3
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Protocol
 
@@ -78,6 +79,20 @@ SESSION_SLIDE_MIN_STEP_MS = 60 * 1000
 #: `user_agent_redacted` is "họ trình duyệt + hệ điều hành", not the full UA string
 #: (secrets.md §2.3). This is the cap on what is kept.
 USER_AGENT_REDACTED_MAX_CHARS = 60
+
+
+#: Exceptions that mean "the write did not happen", mapped to ``STORAGE_WRITE_FAILED``.
+#:
+#: Same tuple, and for the same reason, as ``server/app/ingest/service.py``
+#: (``WRITE_FAILURES``) and ``server/app/identity/service.py``: SQLAlchemy wraps a failure
+#: raised inside ``cursor.execute`` as ``OperationalError``/``IntegrityError``, but a failure
+#: raised from a connection-level event hook -- which is how ``server/app/db/faults.py``
+#: reproduces a full disk -- arrives as the bare ``sqlite3`` exception and is **not** wrapped.
+#: Catching only ``SQLAlchemyError`` therefore let a genuine write failure escape as an
+#: unhandled 500 instead of the 503 the contract declares for this path (``CR-TC-AUTH-11``).
+#: ``sqlite3.Error`` is the base of every DBAPI error the driver raises, so it closes the
+#: gap without guessing at a list of subclasses.
+WRITE_FAILURES: tuple[type[Exception], ...] = (SQLAlchemyError, sqlite3.Error)
 
 
 # --------------------------------------------------------------------------------------
@@ -509,7 +524,7 @@ class AuthService:
                         result = self._insert_session(
                             connection, owner_id, moment, now_ms, user_agent
                         )
-        except SQLAlchemyError as exc:
+        except WRITE_FAILURES as exc:
             raise self._storage_write_failed(OperationId.AUTH_LOGIN, moment) from exc
 
         if refusal is not None:
@@ -601,7 +616,7 @@ class AuthService:
                     ),
                     {"t": to_timestamp_utc_ms(moment), "hash": hash_session_token(session_token)},
                 )
-        except SQLAlchemyError as exc:
+        except WRITE_FAILURES as exc:
             raise self._storage_write_failed(OperationId.AUTH_LOGOUT, moment) from exc
 
     # -- auth.get_session ----------------------------------------------------------------
@@ -644,21 +659,37 @@ class AuthService:
             )
             if not record.is_live(now_ms):
                 raise self._unauthorized_session()
-            slid = min(now_ms + IDLE_TIMEOUT_MS, record.issued_at_ms + ABSOLUTE_TIMEOUT_MS)
-            if slid - record.expires_at_ms >= SESSION_SLIDE_MIN_STEP_MS:
+
+        slid = min(now_ms + IDLE_TIMEOUT_MS, record.issued_at_ms + ABSOLUTE_TIMEOUT_MS)
+        if slid - record.expires_at_ms >= SESSION_SLIDE_MIN_STEP_MS and self._slide(
+            record.id, slid
+        ):
+            record = replace(record, expires_at_ms=slid)
+        return record
+
+    def _slide(self, session_id: str, expires_at_ms: int) -> bool:
+        """Extend the idle window. Returns whether the new deadline was committed.
+
+        A separate transaction from the read above, and a **best-effort** one: extending the
+        idle window is bookkeeping, not the answer to "is this session live". If the write
+        fails the session is still valid -- the deadline simply does not move, and the next
+        request tries again.
+
+        Swallowing the failure is what the wire contract requires, not a convenience:
+        ``contracts/http/openapi.yaml`` declares ``200 / 401 / 403 / 500`` for
+        ``GET /v1/auth/session`` and **no 503**, so a failed bookkeeping write must not turn
+        a valid session into ``STORAGE_WRITE_FAILED``. It must not turn into a 500 either,
+        which is what it did before this transaction was split out.
+        """
+        try:
+            with self._engine.begin() as connection:
                 connection.execute(
                     text("UPDATE session SET expires_at = :t WHERE id = :id"),
-                    {"t": to_timestamp_utc_ms(from_epoch_ms(slid)), "id": record.id},
+                    {"t": to_timestamp_utc_ms(from_epoch_ms(expires_at_ms)), "id": session_id},
                 )
-                record = SessionRecord(
-                    id=record.id,
-                    owner_id=record.owner_id,
-                    issued_at_ms=record.issued_at_ms,
-                    expires_at_ms=slid,
-                    revoked_at_ms=None,
-                    user_agent_redacted=record.user_agent_redacted,
-                )
-        return record
+        except WRITE_FAILURES:
+            return False
+        return True
 
     # -- internals -----------------------------------------------------------------------
 
@@ -730,6 +761,7 @@ __all__ = [
     "MESSAGE_SAFE",
     "SessionRecord",
     "StorageHealthPort",
+    "WRITE_FAILURES",
     "hash_bearer_token",
     "hash_session_token",
     "new_ulid",

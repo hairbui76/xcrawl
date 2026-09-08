@@ -185,7 +185,7 @@
       "full_suite": "826 passed, 9 xfailed, 1 failed — lần failed duy nhất là XPASS strict trong tests/integration/test_multipart_partial_receipt.py của TC-telegram-unknown-delivery, đúng thứ họ sẽ gỡ xfail"
     }
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [
     {
       "path": "server/app/telegram/ingress.py",
@@ -323,5 +323,6 @@
       "Hành vi dưới write_blocked đã được kiểm bằng bơm lỗi — E2, NOT_RUN.",
       "Bất kỳ khẳng định nào về independent review — bản ghi này là SELF_VALIDATION."
     ]
-  }
+  },
+  "stale_reason": "Superseded by EV-E1-03-tc-telegram-linking-auth (evidence/runs/TC-telegram-linking-auth-E1-20260908T004625Z.json) after PKT-TC-TGAUTH-FIX2. tests/contract/test_telegram_command_allowlist.py and tests/integration/test_unknown_chat_silent.py — both named in this record's own invalidated_by_paths — changed: the run-now xfail became four real tests against server/app/jobs/service.py (TC-scheduler-lease-claim landed), and both suites stopped stamping updates with a frozen date. The PASS this record carried was true for the bytes it names; it is marked STALE rather than deleted so the supersession stays visible."
 }

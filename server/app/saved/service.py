@@ -899,37 +899,49 @@ def _build_snapshot_content(
     analysis = _analysis_at_save(
         repository, owner_id=owner_id, target=target, analysis_id=analysis_id
     )
-    if analysis is None:
-        raise _validation_error(
-            OperationId.SAVE_CREATE, "snapshot.content.summary", "missing_required"
-        )
-    payload = json.loads(str(analysis["payload"]))
-    summary = snapshot_module.summary_block(payload)
-    if summary is None:
-        raise _validation_error(
-            OperationId.SAVE_CREATE, "snapshot.content.summary", "missing_required"
-        )
 
-    analysis_ref: dict[str, Any] = {
-        "analysis_id": str(analysis["id"]),
-        "analyzed_at": str(analysis["analyzed_at"]),
-    }
-    for column, key in (
-        ("generation_number", "generation_number"),
-        ("payload_hash", "payload_hash"),
-        ("provider_name", "provider_name"),
-        ("model_name", "model_name"),
-    ):
-        value = analysis.get(column)
-        if value is not None:
-            analysis_ref[key] = value
+    analysis_ref: dict[str, Any] | None = None
+    if analysis is None:
+        # No valid analysis for this target yet. `OD-20260908-10` item 1 allows the save and
+        # requires the summary to be marked missing rather than filled in. `analysis_id_at_save`
+        # stays NULL -- the schema's own declared signal for this case -- and `analysis_ref` is
+        # omitted, because there is no analysis to trace to.
+        summary = snapshot_module.missing_summary()
+        evidence_level = snapshot_module.EVIDENCE_LEVEL_NOT_ANALYSED
+    else:
+        payload = json.loads(str(analysis["payload"]))
+        parsed = snapshot_module.summary_block(payload)
+        if parsed is None:
+            # An analysis EXISTS but its payload does not carry the three lines REQ-D20
+            # requires. That is a defective analysis, not an un-analysed target, so it is
+            # still refused: writing the "not analysed yet" marker here would file a data
+            # defect under a label that says the opposite, and the marker would stop meaning
+            # what `OD-20260908-10` decided it means.
+            raise _validation_error(
+                OperationId.SAVE_CREATE, "snapshot.content.summary", "missing_required"
+            )
+        summary = parsed
+        evidence_level = str(analysis["evidence_level"])
+        analysis_ref = {
+            "analysis_id": str(analysis["id"]),
+            "analyzed_at": str(analysis["analyzed_at"]),
+        }
+        for column, key in (
+            ("generation_number", "generation_number"),
+            ("payload_hash", "payload_hash"),
+            ("provider_name", "provider_name"),
+            ("model_name", "model_name"),
+        ):
+            value = analysis.get(column)
+            if value is not None:
+                analysis_ref[key] = value
 
     content = snapshot_module.build_content(
         target_kind=target.kind,
         target_id=target.identifier,
         title=title,
         summary=summary,
-        evidence_level=str(analysis["evidence_level"]),
+        evidence_level=evidence_level,
         matched_tags=matched_tags,
         topic_labels=repository.topic_labels(owner_id, target.key),
         work_row=work_row,
@@ -937,7 +949,7 @@ def _build_snapshot_content(
         source_posts=[snapshot_module.source_post(row) for row in post_rows],
         analysis_ref=analysis_ref,
     )
-    return content, str(analysis["id"])
+    return content, (str(analysis["id"]) if analysis is not None else None)
 
 
 def _analysis_at_save(

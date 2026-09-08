@@ -30,7 +30,7 @@ import pytest
 from rr_contracts.generated.errors import ErrorCode
 from sqlalchemy import Engine, text
 
-from server.app.analysis.repository import AnalysisRepository
+from server.app.analysis.repository import AnalysisRepository, new_ulid
 from server.app.analysis.service import (
     LEASE_TTL_ANALYSIS_SECONDS,
     AnalysisContext,
@@ -433,18 +433,192 @@ def test_a_second_unknown_outcome_fails_the_item_instead_of_running_again(
     assert _valid_count(engine) == 0
 
 
-@pytest.mark.xfail(
-    reason="pending TC-report-coverage-publish-cas: pending_item_ledger is MOD-report-service's",
-    strict=True,
-)
-def test_a_failed_item_is_recorded_in_the_pending_item_ledger(ctx) -> None:
-    """B04/B17 -- a budget-exhausted item must not simply vanish from the report.
+def _seed_coverage_window(engine: Engine, fixture_loader) -> str:
+    """Insert fixture ``reporting/e``'s own ``coverage_window`` row and return its id.
 
-    ``pending_item_ledger`` belongs to ``MOD-report-service`` and does not exist yet, so this
-    is ``xfail`` rather than skipped, and :func:`ledger_state` reports the port as unwired
-    instead of the service pretending the entry was made.
+    ``EngineBoundPendingLedger`` anchors every pending row to a coverage window and raises
+    rather than inventing one, so a ledger test needs a real window. It is taken from the
+    fixture that states the pending/late-discovery case rather than made up here.
     """
+    window = fixture_loader("reporting/e-late-analysis-pending-then-late-discovery").rows(
+        "coverage_window"
+    )[0]
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                'INSERT INTO coverage_window (id, owner_id, "sequence", window_from, '
+                "window_to, ingest_sequence_from, ingest_sequence_to, "
+                "predecessor_window_id, report_id, advanced_at) "
+                "VALUES (:id, :owner_id, :seq, :window_from, :window_to, :seq_from, "
+                ":seq_to, NULL, NULL, :window_to)"
+            ),
+            {
+                "id": window["id"],
+                "owner_id": OWNER_ID,
+                "seq": window["sequence"],
+                "window_from": window["window_from"],
+                "window_to": window["window_to"],
+                "seq_from": window["ingest_sequence_from"],
+                "seq_to": window["ingest_sequence_to"],
+            },
+        )
+    return str(window["id"])
+
+
+def _wire_real_ledger(ctx: AnalysisContext, engine: Engine, *, busy_timeout_ms: int = 5000):  # type: ignore[no-untyped-def]
+    """Attach ``MOD-report-service``'s real ``PendingLedgerPort`` implementation.
+
+    W4B's ``EngineBoundPendingLedger``, not a double: the point of these two tests is the
+    seam between the two modules, and a stub would only prove the stub works.
+
+    The adapter gets an engine of its own so a test can give it a short ``busy_timeout_ms``.
+    Nothing needs that today -- ``_fail_task`` hands the port its own connection
+    (``CR-TC-BACKFILL-02b``), so no second connection contends for the write lock -- but the
+    knob stays: it is what turned "the ledger write hangs" from a five-second stall into a
+    fifth-of-a-second measurement while the port was still connection-less, and a future
+    caller that forgets to pass a connection deserves to find out quickly rather than slowly.
+    """
+    from sqlalchemy import event
+
+    from server.app.report.pending import EngineBoundPendingLedger, current_window_provider
+
+    ledger_engine = create_sqlite_engine(engine.url.database or ":memory:")
+
+    @event.listens_for(ledger_engine, "connect")
+    def _short_busy_timeout(dbapi_connection, _record):  # type: ignore[no-untyped-def]
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute(f"PRAGMA busy_timeout={busy_timeout_ms}")
+        finally:
+            cursor.close()
+
+    ctx.pending_ledger = EngineBoundPendingLedger(
+        engine=ledger_engine,
+        owner_id=OWNER_ID,
+        window_provider=current_window_provider(ledger_engine, OWNER_ID),
+        id_factory=new_ulid,
+    )
+    return ledger_engine
+
+
+def test_the_pending_ledger_port_is_wired_and_speaks_this_card_s_vocabulary(
+    ctx, engine, fixture_loader
+) -> None:
+    """B04/B17 — the half of the obligation that W4A/W4B made real.
+
+    ``pending_item_ledger`` now exists (revision ``0010_tc_report_coverage_publish_cas``) and
+    ``server.app.report.pending`` implements the ``PendingLedgerPort`` this service has been
+    carrying as ``None`` since Phase 3. Two things are checked here and neither is a stub:
+
+    * :func:`ledger_state` stops reporting the port as unwired — the honest signal it was
+      built to give, now flipping the other way;
+    * the two ``reason`` values this card produces, ``analysis_failed`` (budget spent on
+      invalid output, T-AN-07) and ``analysis_unknown`` (budget spent on outcomes nobody
+      knows, T-AN-10), are both members of the closed enum W4B enforces. Two modules agreeing
+      on a vocabulary is exactly the kind of thing that is true today and quietly false after
+      one refactor, so it is asserted rather than assumed.
+
+    The row that comes back carries the contract's shape: ``state = 'pending'`` (not resolved,
+    not abandoned — §5.3 reserves abandonment for an explicit Owner act) and
+    ``first_pending_window_id`` pinned to the window that *first* missed the item, which is
+    what the "phát hiện muộn, thuộc kỳ #N" label renders. A second call for the same target is
+    idempotent through ``ux_pending_owner_target_open``.
+    """
+    from server.app.report.pending import REASONS
+
+    window_id = _seed_coverage_window(engine, fixture_loader)
+    _wire_real_ledger(ctx, engine)
     assert ledger_state(ctx)["pending_ledger_wired"] is True
+    assert {"analysis_failed", "analysis_unknown"} <= REASONS
+
+    target_key = f"work:{WORK_ID}"
+    ctx.pending_ledger.record_pending(target_key=target_key, reason="analysis_unknown")
+    ctx.pending_ledger.record_pending(target_key=target_key, reason="analysis_unknown")
+
+    with engine.connect() as connection:
+        rows = (
+            connection.execute(
+                text(
+                    "SELECT target_key, reason, state, first_pending_window_id "
+                    "FROM pending_item_ledger WHERE owner_id = :owner_id"
+                ),
+                {"owner_id": OWNER_ID},
+            )
+            .mappings()
+            .all()
+        )
+    assert len(rows) == 1, "ux_pending_owner_target_open should make the second call a no-op"
+    assert rows[0]["target_key"] == target_key
+    assert rows[0]["reason"] == "analysis_unknown"
+    assert rows[0]["state"] == "pending"
+    assert rows[0]["first_pending_window_id"] == window_id
+
+
+def test_a_failed_item_is_recorded_in_the_pending_item_ledger(
+    ctx, engine, clock, fixture_loader
+) -> None:
+    """B04/B17 / I06 — a budget-exhausted item must not simply vanish from the report.
+
+    The whole obligation, end to end and now really asserted: two unknown outcomes exhaust
+    ``analysis_attempts_per_item``, ``auto_rerun_unknown_attempt`` moves the task to
+    ``failed``, and ``_fail_task`` puts the item in ``pending_item_ledger`` so period N+1 can
+    still carry it even though its ``discovered_at`` has fallen behind the cursor. Without the
+    ledger row the item is unreachable the moment coverage advances, which is the I06 failure
+    arriving quietly rather than loudly.
+
+    This was ``xfail(strict=True, run=True, raises=OperationalError)`` for one packet, pinned
+    to a *measured* failure: the port took no connection, so W4B's adapter opened a second one
+    and deadlocked against the write lock ``_fail_task`` already held. ``CR-TC-BACKFILL-02b``
+    gave the port an optional ``connection``, ``_fail_task`` now passes its own, and the
+    assertion below is the ordinary one. Pinning the failure mode is what made the flip
+    visible: a plain ``xfail`` would have gone green on its own and told nobody.
+
+    The row lands **inside the same transaction** as the ``failed`` state that caused it, so
+    there is no window in which an item is marked failed with nothing in the ledger.
+    """
+    _seed_coverage_window(engine, fixture_loader)
+    _wire_real_ledger(ctx, engine)
+
+    task = _crash_after_provider(ctx, clock)
+    clock.advance(LEASE_TTL_ANALYSIS_SECONDS + 120)
+    report_attempt_unknown(
+        ctx,
+        task_id=task["task_id"],
+        attempt_id=task["attempt_id"],
+        lease_id=task["lease_id"],
+        lease_epoch=task["lease_epoch"],
+    )
+    auto_rerun_unknown_attempt(ctx, task_id=task["task_id"])
+    second = _claim(ctx, request_id="claim-2")
+    clock.advance(LEASE_TTL_ANALYSIS_SECONDS + 120)
+    report_attempt_unknown(
+        ctx,
+        task_id=second["task_id"],
+        attempt_id=second["attempt_id"],
+        lease_id=second["lease_id"],
+        lease_epoch=second["lease_epoch"],
+    )
+
+    # `_fail_task` reaches the ledger on its own connection, so this commits as one unit.
+    assert auto_rerun_unknown_attempt(ctx, task_id=task["task_id"]) == "failed"
+    assert _task_state(engine) == "failed"
+
+    with engine.connect() as connection:
+        pending = (
+            connection.execute(
+                text(
+                    "SELECT target_key, reason, state FROM pending_item_ledger "
+                    "WHERE owner_id = :owner_id"
+                ),
+                {"owner_id": OWNER_ID},
+            )
+            .mappings()
+            .all()
+        )
+    assert len(pending) == 1
+    assert pending[0]["target_key"] == f"work:{WORK_ID}"
+    assert pending[0]["reason"] == "analysis_unknown"
+    assert pending[0]["state"] == "pending"
 
 
 # --------------------------------------------------------------- I10: the stale worker

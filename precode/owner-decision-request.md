@@ -573,6 +573,21 @@ Phạm vi Giai đoạn 5: "bắt đầu với văn bản thuần ngay,
        KHÔNG phải được THỎA — nó vẫn là 2/5 và chưa bao giờ đạt.
        CR-PC07-04 VẪN PARTIALLY_RESOLVED.
 
+── VÒNG MƯỜI · ĐÃ TRẢ LỜI 2026-09-08 · OD-20260908-10 · AUTH-OWNER-20260908-11 ──
+CR-TC-SAVED-04 (lưu target chưa phân tích):
+   CHO PHÉP + nhãn "chưa phân tích"                             ✅
+   >>> Nhãn là CHUỖI CỐ ĐỊNH, KHÔNG SUY LUẬN. AMD-B16 KHÔNG bị nới:
+       chỗ trống được NÓI RA, không được LẤP. Hiện thực nó thành văn
+       bản do model viết là VI PHẠM B16, không phải thi hành mục này.
+CR-TC-TGAUTH-02 (trigger Save tạm): GIỮ `/save <id>`            ✅
+   (ánh xạ vào CMD-save đã có; KHÔNG lệnh Telegram thứ tư.
+    Đường vòng CÓ HẠN — tự hết vai khi CR-PC07-04 được giải;
+    nó KHÔNG giải CR-PC07-04.)
+CR-TC-TGAUTH-04 (chat đã liên kết gửi text ngoài allowlist):
+   NHẮC NGẮN ba lệnh — CHỈ chat đã liên kết                     ✅
+   >>> Chat LẠ VẪN IM LẶNG, 0 outbound. AMD-B09 nguyên vẹn.
+   Hàng fixture quét biên: SỬA Ở VÒNG HỢP ĐỒNG KẾ TIẾP (CR cho PC08).
+
 ── VẪN CHỜ ─────────────────────────────────────────────────
 Ba dữ kiện Telegram còn lại — GIẢI BẰNG CÁCH NÀO: _______________
    (amendment công cụ cho fetch phân trang, hay Owner tự đọc trang?

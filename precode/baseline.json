@@ -1830,6 +1830,31 @@
           "decision_record": "precode/decision-register.md §0 (Cap nhat vong chin); chi tiet du kien o §8.14.x - noi dung cua worker-WT",
           "registered_by_ruling": "PKT-PC00-FIX27",
           "note_vi": "Bien ban vong chin KHONG thay the cac bien ban truoc; chung cong don. No CHI thay mot DIEU KIEN cua vong nam."
+        },
+        {
+          "anchor_id": "OD-20260908-10",
+          "label": "OD-20260908-10",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-08, vong muoi (3 muc)",
+          "source_file": "precode/owner-decisions-10.md",
+          "authority_created": "AUTH-OWNER-20260908-11",
+          "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08 - AskUserQuestion sau commit Giai doan 3/5 fb3944a",
+          "context_vi": "Ca ba muc deu la cho mot card Giai doan 5 CHAM VAO MOT RANG BUOC DA CHOT roi DUNG LAI thay vi tu chon - dung hanh vi worker.md doi.",
+          "decisions": [
+            "CR-TC-SAVED-04: CHO PHEP luu target chua co analysis, kem nhan 'chua phan tich' la CHUOI CO DINH, KHONG SUY LUAN. AMD-B16 KHONG bi noi: cho trong duoc NOI RA, khong duoc LAP. Hien thuc no thanh van ban do model viet la VI PHAM B16, khong phai thi hanh muc nay.",
+            "CR-TC-TGAUTH-02: giu /save <id> lam trigger van ban thuan cho toi khi nut inline kha thi; anh xa vao CMD-save DA CO; KHONG lenh Telegram thu tu (AMD-B10, F-PC00-01 giu nguyen). Duong vong CO HAN - tu het vai khi CR-PC07-04 duoc giai.",
+            "CR-TC-TGAUTH-04: chat DA LIEN KET nhan mot loi nhac ba lenh; chat LA VAN IM LANG, 0 outbound - AMD-B09 duoc bao toan nguyen ven."
+          ],
+          "not_decided": [
+            "KHONG giai CR-PC07-04 - van PARTIALLY_RESOLVED, ba du kien van BLOCKED_DEPENDENCY",
+            "KHONG noi AMD-B16 va KHONG cho chat la nhan bat ky outbound nao",
+            "KHONG sua fixture nao o vong nay - hang fixture quet bien thuoc VONG HOP DONG KE TIEP, mot CR cho PC08 (CR-PC00-34)",
+            "KHONG them lenh Telegram - van dung BA lenh",
+            "KHONG nang tran claim cua file nao; khong dong finding nao"
+          ],
+          "phase_4_6_status_20260908_vi": "SU KIEN CO NGAY, KHONG PHAI MOT CLAIM: dot SAU card Giai doan 4 (M4/M5) va Giai doan 6 (M7/M8) - report, backfill, ui-runs, ui-reports, scheduler, backup - da land va dang o vong sua TRUOC KHI DONG BANG. Chua co freeze, chua co manifest FC-P4, chua co audit doc lap; PC00 KHONG noi gi ve chat luong hay muc bang chung cua sau card ay.",
+          "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi)",
+          "registered_by_ruling": "PKT-PC00-FIX30",
+          "note_vi": "Bien ban vong muoi KHONG thay the bien ban nao; chung cong don."
         }
       ],
       "invariants": [

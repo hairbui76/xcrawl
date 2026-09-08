@@ -418,3 +418,205 @@ module boundary the fixture itself crosses.
 
 *`PKT-TC-ANALYSIS-FIX1` · `worker-W3B` · `lease_released_at` 2026-09-07T20:30Z · claim
 unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) — no item here is an independent audit.*
+
+---
+
+# ADDENDUM 2 — `PKT-TC-ANALYSIS-FIX2` (pending-ledger xfail re-checked)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-ANALYSIS-FIX2` · lease `LEASE-TC-ANALYSIS-e3` (fencing 3) · `worker-W3B` |
+| scope granted | card §3 test files + this handoff + manifest re-issue |
+| status | **`DONE`** — premise re-checked against the tree, half flipped to a real passing test, half kept `xfail` with the measured reason. |
+| claim change | **none.** Still `CONTRACT_READY` / `SELF_VALIDATION`. |
+| lease_released_at | 2026-09-08T00:52Z |
+
+## B.1 The premise, checked rather than assumed
+
+W4A's `pending_item_ledger` (revision `0010_tc_report_coverage_publish_cas`) and W4B's
+`server/app/report/pending.py` are both on disk, and `EngineBoundPendingLedger` implements
+`record_pending(*, target_key, reason)` — exactly the `PendingLedgerPort` Protocol this
+service has carried since Phase 3. So the port fits. The question CR-TC-BACKFILL-02/-08 left
+open is whether it fits **at the call site that matters**, and that was measured with a probe
+before any test was touched:
+
+```
+call OUTSIDE a transaction          -> ok in 0.00s
+call INSIDE an open write txn       -> FAILED after 5.01s:
+                                       OperationalError: database is locked
+```
+
+`_fail_task` calls the ledger from inside `TXN-analysis-*`. The port takes no connection, so
+`EngineBoundPendingLedger` opens a **second** one; on SQLite the outer transaction already
+holds RESERVED, so the inner INSERT waits out `busy_timeout` and dies. That is W4B's own
+`CR-TC-BACKFILL-02` ("the port should carry the connection"), now with a measurement attached
+rather than a prediction. Fixing it means changing the port signature or using a
+connection-carrying variant — a `server/` edit, which this packet's lease does not cover, and
+a retry loop would be the wrong answer anyway.
+
+## B.2 What changed in the tests
+
+**New, passing** — `test_the_pending_ledger_port_is_wired_and_speaks_this_card_s_vocabulary`.
+Everything that is genuinely real now is asserted through W4B's actual implementation, no
+stub: `ledger_state()` flips to `wired: True` (the honest signal, now honest in the other
+direction); both `reason` values this card produces — `analysis_failed` (T-AN-07) and
+`analysis_unknown` (T-AN-10) — are members of W4B's closed `REASONS` enum, asserted because
+two modules agreeing on a vocabulary is the kind of thing that goes quietly false after one
+refactor; and a real `record_pending` writes exactly one row with `state='pending'` and
+`first_pending_window_id` pinned to a `coverage_window` seeded from fixture `reporting/e`'s
+own row, with a second call a no-op through `ux_pending_owner_target_open`.
+
+**Kept `xfail`, much tighter** — `test_a_failed_item_is_recorded_in_the_pending_item_ledger`.
+It was `xfail(strict=True)` asserting one line, with the reason "the table does not exist".
+It is now `xfail(strict=True, run=True, raises=OperationalError)` and **drives the real
+obligation end to end**: two unknown outcomes exhaust the attempt budget,
+`auto_rerun_unknown_attempt` moves the task to `failed`, and the ledger row is asserted. Three
+things improved: the test actually runs, the failure mode is pinned (a *different* breakage
+now fails rather than passing as expected-failure), and the day the port grows a connection
+parameter this flips to a failure someone has to look at instead of sitting green. The
+adapter's engine gets a 200 ms `busy_timeout` of its own so the proof costs a fifth of a
+second rather than five.
+
+## B.3 Hashes
+
+| Path | Operation | Before | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `tests/integration/test_attempt_not_result.py` | MODIFY | `7e6d533d99ada902596fd92b90a62fd8960eda03f0a0d36f5cc6b2cb9d807134` (25637 B) | `6bb729cecde8cd525fd999a90320ed08114f395e10a20399f44ecb221526f1ba` | 33753 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260908T004550Z.json` | CREATE | ABSENT | `a9a6e088e068b966cc05ceee77c253e7e6c1ae14f6af1466a655ee394e219ec1` | 24756 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json` | MODIFY | `61dbbd2a…` (22533 B) | `01fe7860069174769660050037eb40d9960f266e3b478872d342e5bcb1bde054` | 23113 |
+| `evidence/handoffs/TC-analysis-once-per-generation-handoff.md` | MODIFY | — | (this file) | — |
+
+`tests/contract/test_analysis_key.py` (`70db817c…`) and
+`tests/integration/test_analysis_once_per_key.py` (`35cf9c70…`) are **unchanged**, as is
+every file under `server/`. Nothing under `contracts/`, `acceptance/`, `precode/` or
+`agent-tasks/` was touched. The chain of evidence records is now
+`EV-E1-01` (STALE) → `EV-E1-02` (STALE) → **`EV-E1-03` (PASS)**, each carrying a
+`stale_reason` naming the packet and the byte change that retired it; all three validate
+against `evidence/manifest.schema.json` with **0 errors**.
+
+## B.4 Verification
+
+Card command, `2026-09-08T00:45:50Z` → `00:45:59Z`, **exit 0**, **35 tests: 34 passed, 1
+xfailed, 0 failed** (was 34/33/1). Per file: 10 / 13 / 12. `ruff check`,
+`ruff format --check` and `mypy --strict` (64 source files now) clean.
+
+**Full suite: `1022 passed, 7 xfailed, 0 failed`, exit 0** (125.6 s). A run a few minutes
+earlier showed 7 *errors* in `tests/integration/test_permanent_failure_report_intact.py` —
+fixture-setup errors visible only in a whole-suite run, which passed 7/7 when that file was
+run alone and were gone by the next full run. The Phase 4/6 sibling cards were landing during
+that window; no file of this card's write set is involved.
+
+## B.5 CRs
+
+No new change requests of this card's own. `CR-TC-ANALYSIS-01`…`-08` stand.
+**`CR-TC-BACKFILL-02` (W4B's) is now supported by a measurement** rather than by inspection,
+and this card is a concrete consumer blocked by it: until the port carries a connection, the
+B04/B17 end-to-end obligation cannot be satisfied from inside `TXN-analysis-*`. Recorded in
+the manifest's `unresolved_issue_refs`.
+
+---
+
+*`PKT-TC-ANALYSIS-FIX2` · `worker-W3B` · `lease_released_at` 2026-09-08T00:52Z · claim
+unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) — no item here is an independent audit.*
+
+### B.6 Correction to §7 of the base handoff
+
+§7 recorded "no `__pycache__` exists anywhere in the tree". That was true when it was
+written and is **no longer true**: `tests/__pycache__` and
+`shared/rr_contracts/rr_contracts/__pycache__` exist as of this addendum. Every command in
+all three of this card's packets ran under `PYTHONDONTWRITEBYTECODE=1`, including the mypy and
+schema-validation invocations, so they are not this worker's — they appeared during the window
+in which the Phase 4/6 sibling cards were landing. They are left in place rather than deleted:
+removing another worker's tool output is a mutation outside this lease. Recorded here so the
+earlier sentence is not read as still current.
+
+---
+
+# ADDENDUM 3 — `PKT-TC-ANALYSIS-FIX3` (pending-ledger obligation closed)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-ANALYSIS-FIX3` · lease `LEASE-TC-ANALYSIS-e4` (fencing 4) · `worker-W3B` |
+| scope granted | `server/app/analysis/service.py` (the `_fail_task` call), `tests/integration/test_attempt_not_result.py`, this handoff, manifest re-issue |
+| status | **`DONE`** — B04/B17 is now a real assertion. **Zero xfails remain from this card.** |
+| claim change | **none.** Still `CONTRACT_READY` / `SELF_VALIDATION`. |
+| lease_released_at | 2026-09-08T01:12Z |
+
+## C.1 The change
+
+W4B closed `CR-TC-BACKFILL-02` by giving `PendingLedgerPort.record_pending` an optional
+`connection` (`CR-TC-BACKFILL-02b`); both their implementations now accept it. `_fail_task`
+passes its own:
+
+```python
+ctx.pending_ledger.record_pending(
+    target_key=task.target_key, reason=reason, connection=connection
+)
+```
+
+**Two regions of `service.py` changed, not one**, and the second is not optional: the
+`PendingLedgerPort` Protocol in this file declares the signature being called, so passing a
+keyword it did not admit fails `mypy --strict` before it fails anything else. The Protocol now
+declares `connection: Connection | None = None` with a docstring saying why it is optional on
+the wire and mandatory in practice here. Reporting this rather than quietly stretching "one
+line": the packet named the call site, and the type declaration of that call site is part of
+making the call correct.
+
+The docstrings that described the old state were corrected in the same edit — `_fail_task` no
+longer says the table "does not exist yet", and now says what passing the connection buys:
+the pending row commits in the **same transaction** as the `failed` state that caused it, so
+there is no window in which an item is marked failed with nothing in the ledger, and the port
+cannot deadlock against the write lock the caller already holds.
+
+## C.2 The test
+
+`test_a_failed_item_is_recorded_in_the_pending_item_ledger` is no longer marked at all. It
+drives the whole obligation and asserts it: two unknown outcomes exhaust
+`analysis_attempts_per_item`, `auto_rerun_unknown_attempt` returns `failed`, the task row is
+`failed`, and exactly one `pending_item_ledger` row exists with `state='pending'`,
+`reason='analysis_unknown'`, the right `target_key`, and `first_pending_window_id` pointing at
+the `coverage_window` taken from fixture `reporting/e`.
+
+Worth recording because it is the reason this was cheap: the previous packet did not leave a
+plain `xfail`. It left `xfail(strict=True, run=True, raises=OperationalError)` — the test ran,
+and the failure mode was pinned to the *measured* deadlock. A bare `xfail` would have turned
+green the moment W4B shipped the fix and told nobody; `strict` turned it into an XPASS the
+coordinator could act on. The `busy_timeout_ms` knob in `_wire_real_ledger` is kept, with its
+comment rewritten: nothing needs it today, and a future caller that forgets to pass a
+connection deserves to find out in a fifth of a second rather than five.
+
+## C.3 Hashes
+
+| Path | Operation | Before | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `server/app/analysis/service.py` | MODIFY | `a95b78401683a077775c2333f07d375296a161b23bc19825fe94cec129ed3991` (83223 B) | `21d40f835bead5653b40c8cd68881df6b65e73e2252d75b2b081b676322e66a7` | 84252 |
+| `tests/integration/test_attempt_not_result.py` | MODIFY | `6bb729cecde8cd525fd999a90320ed08114f395e10a20399f44ecb221526f1ba` (33753 B) | `edaa07b673b57dfe0c6b521ecf5056aea50acb90df365664edebddfd4d69d461` | 33727 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260908T010738Z.json` | CREATE | ABSENT | `0a150783080b0020527248087b68b26956bf6e3bba02bdc12a8fa72a0dba0e65` | 23937 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260908T004550Z.json` | MODIFY | `a9a6e088…` (24756 B) | `3600363210cdf869f3b58fe100e3a294becfc5fb20c01b0bf726482e4b0802b6` | 25442 |
+| `evidence/handoffs/TC-analysis-once-per-generation-handoff.md` | MODIFY | — | (this file) | — |
+
+`key.py`, `repository.py`, `router.py`, the migration, `tests/contract/test_analysis_key.py`
+and `tests/integration/test_analysis_once_per_key.py` are **unchanged**. Nothing under
+`contracts/`, `acceptance/`, `precode/` or `agent-tasks/` was touched. Evidence chain:
+`EV-E1-01` → `EV-E1-02` → `EV-E1-03` (all `STALE`, each with a `stale_reason` naming its
+packet) → **`EV-E1-04` (`PASS`)**; all four validate with **0 errors**.
+
+## C.4 Verification
+
+Card command, `2026-09-08T01:07:38Z` → `01:07:45Z`, **exit 0**, **35 tests: 35 passed, 0
+xfailed, 0 failed** (was 34 passed + 1 xfail). Per file: 10 / 13 / 12.
+**Full suite: `1028 passed, 6 xfailed, 0 failed`, exit 0** (123.9 s) — none of the six
+remaining xfails belongs to this card. `ruff check`, `ruff format --check` and `mypy --strict`
+(64 source files) all clean.
+
+## C.5 CRs
+
+`CR-TC-BACKFILL-02` is **closed** from this consumer's side and removed from the manifest's
+`unresolved_issue_refs`; `CR-TC-BACKFILL-02b` is the fix that closed it.
+`CR-TC-ANALYSIS-01`…`-08` stand unchanged. The "not established" list in the manifest loses
+its pending-ledger entry: that obligation is now established.
+
+---
+
+*`PKT-TC-ANALYSIS-FIX3` · `worker-W3B` · `lease_released_at` 2026-09-08T01:12Z · claim
+unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) — no item here is an independent audit.*

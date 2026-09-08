@@ -68,6 +68,11 @@ WEBHOOK_SECRET = "a-webhook-secret-of-sufficient-length"
 #: named separately, so "nothing changed" cannot quietly include them.
 AUDIT_TABLES = frozenset({"telegram_update_log", "telegram_link_attempt"})
 
+#: The instant the fixtures' events happen at. Where a test pins the server clock it pins the
+#: update's ``date`` to the same instant, so ING-06's age window is never accidentally under
+#: test.
+AT = datetime(2026, 9, 7, tzinfo=UTC)
+
 
 def _migrate(db_path: Path) -> None:
     """``alembic upgrade heads`` — the migrations are the only schema source.
@@ -180,13 +185,23 @@ def _link(engine: Engine, chat_id: str = LINKED_CHAT, generation: int = 1) -> No
         )
 
 
-def _message(update_id: int, chat_id: str, body: str) -> dict[str, Any]:
-    """A Telegram ``message`` update, shaped the way the Bot API sends one."""
+def _message(
+    update_id: int, chat_id: str, body: str, *, at: datetime | None = None
+) -> dict[str, Any]:
+    """A Telegram ``message`` update, shaped the way the Bot API sends one.
+
+    ``date`` defaults to **now** rather than to a fixed day: ``ING-06`` drops anything older
+    than 24 h, so a frozen timestamp would silently turn these tests into age tests once the
+    wall clock passed it -- and they would then pass for the wrong reason (nothing happens
+    either way when the update is dropped). :func:`test_an_update_older_than_the_max_age_is_dropped`
+    sets both ends of the interval on purpose.
+    """
+    moment = at or datetime.now(tz=UTC)
     return {
         "update_id": update_id,
         "message": {
             "message_id": update_id,
-            "date": int(datetime(2026, 9, 7, tzinfo=UTC).timestamp()),
+            "date": int(moment.timestamp()),
             "chat": {"id": int(chat_id), "type": "private"},
             "from": {"id": int(chat_id), "is_bot": False},
             "text": body,
@@ -224,8 +239,8 @@ def test_fixture_h_unknown_chat_status_is_completely_silent(engine, fixture_load
 
     outcome = receive_update(
         _context(engine, sender, ports),
-        _message(9001, STRANGER_CHAT, "/status"),
-        now=datetime(2026, 9, 7, 0, 0, tzinfo=UTC),
+        _message(9001, STRANGER_CHAT, "/status", at=AT),
+        now=AT,
     )
 
     expected = fixture.data["expected"]
@@ -271,8 +286,8 @@ def test_the_stranger_chat_id_is_nowhere_in_the_database(engine, fixture_loader)
     _link(engine)
     receive_update(
         _context(engine, RecordingSender(), CommandPorts()),
-        _message(9002, STRANGER_CHAT, "/status"),
-        now=datetime(2026, 9, 7, tzinfo=UTC),
+        _message(9002, STRANGER_CHAT, "/status", at=AT),
+        now=AT,
     )
     connection = sqlite3.connect(engine.url.database or "")
     try:
@@ -301,12 +316,12 @@ def test_a_stranger_never_gets_a_reply_whatever_it_sends(engine) -> None:
     sender = RecordingSender()
     context = _context(engine, sender, CommandPorts())
     payloads: list[dict[str, Any]] = [
-        _message(1, STRANGER_CHAT, "xin chào"),
-        _message(2, STRANGER_CHAT, "/status"),
-        _message(3, STRANGER_CHAT, "/run_now"),
-        _message(4, STRANGER_CHAT, "/save 01JR1TEM100000000000000000"),
-        _message(5, STRANGER_CHAT, "/unlink"),
-        _message(6, STRANGER_CHAT, "/tag add ai"),
+        _message(1, STRANGER_CHAT, "xin chào", at=AT),
+        _message(2, STRANGER_CHAT, "/status", at=AT),
+        _message(3, STRANGER_CHAT, "/run_now", at=AT),
+        _message(4, STRANGER_CHAT, "/save 01JR1TEM100000000000000000", at=AT),
+        _message(5, STRANGER_CHAT, "/unlink", at=AT),
+        _message(6, STRANGER_CHAT, "/tag add ai", at=AT),
         {
             "update_id": 7,
             "callback_query": {
@@ -318,7 +333,7 @@ def test_a_stranger_never_gets_a_reply_whatever_it_sends(engine) -> None:
         {"update_id": 8, "channel_post": {"chat": {"id": int(STRANGER_CHAT)}, "text": "/status"}},
     ]
     for payload in payloads:
-        outcome = receive_update(context, payload, now=datetime(2026, 9, 7, tzinfo=UTC))
+        outcome = receive_update(context, payload, now=AT)
         assert outcome.replies == ()
     assert sender.send_message_count == 0
 
@@ -343,7 +358,9 @@ def test_over_the_rate_limit_the_code_is_not_even_looked_up(engine) -> None:
     )
     now = datetime(2026, 9, 7, 0, 0, tzinfo=UTC)
     for index in range(policy.rate_limit_attempts + 1):
-        receive_update(context, _message(100 + index, STRANGER_CHAT, "RR-ZZZZZZZZ"), now=now)
+        receive_update(
+            context, _message(100 + index, STRANGER_CHAT, "RR-ZZZZZZZZ", at=now), now=now
+        )
 
     with engine.connect() as connection:
         outcomes = [
@@ -391,7 +408,7 @@ def test_a_replayed_update_produces_no_second_effect(engine) -> None:
     context = TelegramContext(
         engine=engine, owner_id=OWNER_ID, webhook_secret=WEBHOOK_SECRET, sender=sender
     )
-    payload = _message(300, STRANGER_CHAT, issued.code)
+    payload = _message(300, STRANGER_CHAT, issued.code, at=now)
 
     first = receive_update(context, payload, now=now)
     second = receive_update(context, payload, now=now)
@@ -429,7 +446,7 @@ def test_an_update_older_than_the_max_age_is_dropped(engine) -> None:
         sender=RecordingSender(),
         ports=CommandPorts(run_now=run_now),
     )
-    stale = _message(400, LINKED_CHAT, "/run_now")
+    stale = _message(400, LINKED_CHAT, "/run_now", at=AT)
     two_days_later = datetime(2026, 9, 9, tzinfo=UTC)
 
     outcome = receive_update(context, stale, now=two_days_later)
@@ -449,7 +466,7 @@ def test_the_audit_row_records_the_server_clock(engine) -> None:
     moment = datetime(2026, 9, 7, 1, 2, 3, 456000, tzinfo=UTC)
     receive_update(
         TelegramContext(engine=engine, owner_id=OWNER_ID, webhook_secret=WEBHOOK_SECRET),
-        _message(500, STRANGER_CHAT, "hello"),
+        _message(500, STRANGER_CHAT, "hello", at=moment),
         now=moment,
     )
     with engine.connect() as connection:

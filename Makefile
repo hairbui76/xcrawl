@@ -28,7 +28,7 @@ gen-check:  ## Fail if regenerating would change anything (the no-hand-edit gate
 	$(UV) run python shared/rr_contracts/generate.py --check
 	cd web && node scripts/generate.mjs --check
 
-lint:  ## ruff + mypy (server core) + eslint + prettier
+lint:  ## ruff + mypy --strict (server/worker/collector/probe) + eslint + prettier
 	$(UV) run ruff check .
 	$(UV) run ruff format --check .
 	$(UV) run mypy

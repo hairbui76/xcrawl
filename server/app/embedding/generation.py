@@ -66,13 +66,16 @@ import struct
 from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
 from rr_contracts.generated.errors import RETRY_CLASS, SCOPE, ErrorCode
 
 #: ``contracts/reporting/selection.md`` §3: every score is rounded to four decimals before
-#: it meets a threshold. One place, so two callers cannot disagree at the boundary.
+#: it meets a threshold, **half-up**. One place, so two callers cannot disagree at the
+#: boundary -- and :func:`round_half_up`, not the built-in ``round``, which rounds half to
+#: even and would move a tie onto the wrong side of a threshold (``CR-TC-REPORT-04``).
 SCORE_DECIMALS: int = 4
 
 #: ``struct`` format for one vector component. ``<`` little-endian, ``d`` IEEE 754 binary64:
@@ -395,6 +398,9 @@ def cosine(a: Vector, b: Vector, *, ledger: ComparisonLedger | None = None) -> f
         raised **before** any multiplication, so a refused pair contributes nothing to
         :attr:`ComparisonLedger.performed`.
 
+    Rounded with :func:`round_half_up`, which is the contract's rule and **not** the
+    built-in ``round``; see that function for why the difference matters at a threshold.
+
     ``selection.md`` §3.1: with ``normalization = 'l2'`` the vectors are unit length and the
     cosine is the dot product. That shortcut is *not* taken here -- the denominators are
     computed either way -- because "the vectors are unit length" is a property of a model
@@ -419,7 +425,7 @@ def cosine(a: Vector, b: Vector, *, ledger: ComparisonLedger | None = None) -> f
                 "violation_kind": "zero_norm",
             },
         )
-    return round(dot / (norm_a * norm_b), SCORE_DECIMALS)
+    return round_half_up(dot / (norm_a * norm_b))
 
 
 def assert_single_generation(
@@ -439,6 +445,30 @@ def assert_single_generation(
     """
     for fingerprint in fingerprints:
         assert_comparable(expected, fingerprint, ledger=ledger)
+
+
+def round_half_up(value: float, *, decimals: int = SCORE_DECIMALS) -> float:
+    """Round to ``decimals`` places, **half away from zero** — the contract's rule.
+
+    ``contracts/reporting/selection.md`` §3 is explicit: *"Mọi giá trị similarity được làm
+    tròn **half-up về 4 chữ số thập phân**"*, and its parameter table repeats it
+    (``rounding: half-up, 4 chữ số thập phân``) with the reason — reproducibility across runs
+    and across machines.
+
+    Python's built-in :func:`round` does **not** do that. It rounds half to **even**
+    (banker's rounding), so ``round(0.12345, 4)`` is ``0.1234`` where the contract requires
+    ``0.1235``. The difference shows up on exactly one input in ten thousand, and only ever at
+    a tie — which is the worst possible failure mode for a threshold comparison, because the
+    ties are the scores sitting on the boundary the threshold is testing. ``CR-TC-REPORT-04``.
+
+    :class:`~decimal.Decimal` rather than an ``int(x * 10**n + 0.5)`` trick: the trick is wrong
+    for negative values and wrong again whenever the binary float sits just under the tie
+    (``2.675`` is really ``2.67499999…``). Quantizing the ``Decimal`` built from the float's
+    exact binary value with ``ROUND_HALF_UP`` gives the answer the contract names, and cosine
+    scores are legitimately negative, so the negative half is not hypothetical.
+    """
+    quantum = Decimal(1).scaleb(-decimals)
+    return float(Decimal(value).quantize(quantum, rounding=ROUND_HALF_UP))
 
 
 def coverage_satisfied(*, built: int, expected: int | None) -> bool:

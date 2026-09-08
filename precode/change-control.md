@@ -220,6 +220,46 @@ Mục này giữ CR **đã được thi hành**, viết đúng định dạng §
 `CONTRACT_READY`, vì với chúng thì "đã áp dụng" và "đã được Owner phê chuẩn" là hai chuyện khác nhau
 và phải đọc được tách bạch.
 
+### CR-PC00-35 (gộp `F-A3-P4-02`) — `ADR-0011` nói sai về `tools/` và về phạm vi kiểm kiểu
+
+Hai mục được xét như **một impact set** theo §6: cả hai chạm đúng một file (`precode/adr/ADR-0011-…`),
+đều là **đính chính câu mô tả đã hết đúng**, và tách ra sẽ tạo hai vòng sửa cho cùng một phạm vi.
+
+```yaml
+cr_id: CR-PC00-35             # gộp F-A3-P4-02 (cùng impact set: một file, một loại sửa)
+raised_by: >
+  CR-PC00-35 do worker-W1n tự phát hiện tại PKT-PC00-FIX30 — phép kiểm hai chiều dựng ở PKT-PC00-FIX17
+  (so câu trong ADR với thực tế trên đĩa) TỰ ĐỎ khi tools/backup_cli.py xuất hiện.
+  F-A3-P4-02 do audit A3-P4-R1 nêu (MEDIUM).
+addressed_to: PC00 (chủ precode/adr/ADR-0011-frameworks-and-toolchain.md)
+status: APPLIED               # đã thi hành ở PKT-PC00-FIX32, 2026-09-08
+authority: AUTH-OWNER-20260908-11 (OD-20260908-10) → ruling post-A3-P4-R1
+source_of_change: >
+  Hai câu trong ADR-0011 đúng khi viết và hết đúng về sau. (1) Hàng "Lint / format" ghi
+  `mypy --strict` cho "lõi server"; cấu hình làm ĐÚNG THEO CÂU ẤY (files = ["server/app"]),
+  nên 23 file sản phẩm ở worker/app, collector/app, probe/ không được thứ gì kiểm kiểu — một
+  câu mơ hồ trong ADR trở thành một lỗ thật trong CI. (2) Ghi chú "Sự kiện Giai đoạn 0" nói
+  "tools/ chưa được tạo"; card TC-backup-restore-drill đã tạo tools/backup_cli.py ngày 2026-09-08.
+before: >
+  "mypy --strict cho lõi server"; "tools/ chưa được tạo — nó nằm ngoài write set của gói đó".
+after: >
+  "mypy --strict trên MỌI cây mã sản phẩm Python — server/app, worker/app, collector/app, probe";
+  ghi chú tools/ được đánh dấu đã hết đúng, trỏ tới khối Amendment AMD-ADR0011-01.
+  Thêm: .gitignore nay phủ __pycache__/ (worker-WS).
+impact: >
+  ADR-0011 là file CARD-PINNED và nằm trong read set của mọi task card ⇒ 19 card chuyển STALE theo
+  INV-06; worker-WP re-pin epoch P4b sau khi W1n nhả lease. KHÔNG file contracts/ hay acceptance/
+  nào đổi. Status ADR giữ accepted; ratified_by: OD-20260907-02 KHÔNG đổi — không lựa chọn kỹ
+  thuật nào bị sửa.
+verification: >
+  E0 (e0_check.py) chạy chỉ đọc sau khi sửa; assertion hai chiều tools/↔ADR trong validate.py của
+  PC00 chuyển từ ĐỎ về XANH mà KHÔNG bị nới lỏng. Việc phạm vi mypy mới CHẠY SẠCH thì thuộc
+  addendum P0-FIX4 của worker-WS và lượt xác minh A3-P4-R2 — KHÔNG được suy ra từ file này.
+not_done_here: >
+  Không đóng F-A3-P4-02 (vòng đời protocol.md §8); không sửa cấu hình mypy hay .gitignore (của WS);
+  không nâng trần claim của file nào.
+```
+
 ### CR-TC-AUTH-02 (gộp CR-TC-AUTH-03) — `ENT-owner` nhận cột credential và lockout
 
 Hai CR được xét như **một impact set** theo §6: chúng chạm đúng một entity, đúng một file hợp đồng và

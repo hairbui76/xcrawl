@@ -199,6 +199,41 @@ def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
     app.include_router(analysis_router)
     # <<< TC-analysis-once-per-generation <<<
 
+    # >>> TC-report-coverage-publish-cas (MOD-report-service) >>>
+    # One delimited include, import inside the delimiters (F-A3R1-13). The two routes read
+    # `app.state.report_context` (a `PublishContext`: engine, tag port, embedding port) and
+    # nothing is defaulted here -- a deployment that wired no context gets 500 INTERNAL rather
+    # than a router that invents a database or writes its own tag service, and an
+    # unconfigured owner session answers 401 rather than serving reports to everybody.
+    #
+    # `report.build` and `report.publish` are NOT routed: both are `transport: internal` in
+    # contracts/ports.yaml, so the job service calls the builder in process. Exposing them
+    # over HTTP would open the edge FE-13 exists to forbid.
+    from server.app.report.router import install_reports
+
+    install_reports(app)
+    # <<< TC-report-coverage-publish-cas <<<
+
+    # >>> TC-scheduler-lease-claim (MOD-scheduler, MOD-job-service) >>>
+    # One delimited include, imports inside the delimiters (F-A3R1-13). The eleven `worker.*`
+    # and `run.*` routes read `app.state.job_context` (a `JobContext`: engine, owner id,
+    # schedule settings, clock, and the two allowed ports -- `ingest.get_checkpoint` and
+    # `delivery.create_intent`). Nothing is defaulted here: a deployment that wired no context
+    # gets 500 INTERNAL rather than a router that invents a database handle, an owner id or a
+    # schedule, and an unconfigured owner session answers 401 rather than serving run history
+    # to everybody.
+    #
+    # `scheduler.evaluate_due`, `job.enqueue_scheduled_run` and `job.coalesce_overdue` are NOT
+    # routed: all three are `transport: internal` in contracts/ports.yaml, so the scheduler
+    # loop calls them in process. Exposing them would let something outside the server start a
+    # run, which is exactly the edge default-deny exists to forbid.
+    from server.app.jobs.router import install_job_error_handlers
+    from server.app.jobs.router import router as jobs_router
+
+    install_job_error_handlers(app)
+    app.include_router(jobs_router)
+    # <<< TC-scheduler-lease-claim <<<
+
     @app.get("/healthz", operation_id=OperationId.HEALTH_GET_LIVENESS.value)
     def get_liveness() -> JSONResponse:
         """``health.get_liveness`` — DB-independent liveness (HC-01).

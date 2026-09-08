@@ -32,6 +32,12 @@ dev = [
   "pre-commit>=3.8,<4",
   "PyYAML>=6.0,<7",
   "jsonschema>=4.23,<5",
+  # Stubs for the two untyped libraries the worker's AI adapter imports. Without them the
+  # widened strict gate fails on `import-untyped`, which is a missing stub, not a type
+  # defect. They live here rather than in worker/pyproject.toml because the gate is
+  # repo-wide (closes CR-TC-adapter-06).
+  "types-PyYAML>=6.0,<7",
+  "types-jsonschema>=4.23,<5",
   "httpx>=0.27,<0.29",
 ]
 
@@ -70,11 +76,26 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.mypy]
 python_version = "3.12"
-# `mypy --strict` on the server core only (ADR-0011, row "Lint / format").
-# The strict gate is the server core (ADR-0011 row "Lint / format"). rr_contracts is
-# followed for its types but not held to the gate: it is machine output, and datamodel-
-# codegen's style is not ours to fix.
-files = ["server/app"]
+# Scope: EVERY Python production tree, checked with `--strict` (F-A3-P4-02).
+#
+# ADR-0011's ratified row said "mypy --strict cho lõi server", and `files = ["server/app"]`
+# matched it exactly -- but that row was written when `server/app` was the only production
+# Python in the repo. `worker/app`, `collector/app` and `probe/` shipped afterwards, and the
+# gate did not follow them: 23 production files were type-checked by nothing. Widening the
+# list is the fix; ADR-0011 is amended under the same finding.
+#
+# Not in the list, each for a stated reason:
+#   * `shared/rr_contracts/rr_contracts/generated/` -- machine output. It is FOLLOWED for its
+#     types (see mypy_path) but not held to the gate; datamodel-codegen's style is not ours
+#     to fix, and a generated file cannot be hand-corrected anyway.
+#   * test trees (`tests/`, `server/tests`, `collector/tests`, `worker/tests`,
+#     `shared/rr_contracts/tests`) -- pytest fixtures arrive untyped from plugins, so strict
+#     mode there measures the plugins more than the tests. Most of those files also belong to
+#     other cards, and putting them behind this gate would let the skeleton block their
+#     workers. `server/tests/test_smoke.py` is a Phase-0 file and IS kept strict-clean by
+#     hand (verified with an explicit `mypy --strict` run, see the P0 handoff addendum
+#     PKT-P0-FIX4) even though the gate does not reach it.
+files = ["server/app", "worker/app", "collector/app", "probe"]
 strict = true
 namespace_packages = true
 explicit_package_bases = true

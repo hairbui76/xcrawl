@@ -1,0 +1,215 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-04-tc-owner-auth-session",
+  "created_at": "2026-09-08T01:46:00Z",
+  "producer_principal": "worker-WA",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7",
+      "precode/baseline.json": "e8cf3910c6f2351a2c7c4a8620121b0415a58c5c7ec86eee7ba5d33c343c1a70",
+      "precode/decision-register.md": "a38e2ce1a953279b7d1ca0ba6ae2ad52f97886a887f98e596b9ade0f4fdb211b",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ui/screens.yaml": "e1a57407c0733aa709b464b61da3313f0f6109f5696bd8b39b7e77fc5d5d9074",
+      "precode/adr/ADR-0010-secret-scoping-and-cli-isolation.md": "aa91b92d087681b3df902091bbe5d875e644fee6b2e08e53025ba97136eb6317",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "acceptance/fixtures/recovery/README.md": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+      "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+      "acceptance/fixtures/recovery/i-collector-token-calls-save.json": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+      "acceptance/fixtures/recovery/g-ssrf-redirect-private.json": "d5973052f973b738a66c926d98d662e2bb821e7de7e938acbf040f5328dec2ec",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
+      "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+      "acceptance/scenarios.yaml": "76d94809c1dac796d52eb8fc78bf72470f1b3dede533b5407c535537111e74c4",
+      "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+      "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849"
+    },
+    "implementation_revision": "PKT-TC-AUTH-FIX4 working tree; server/app/auth/service.py sha256 f60cd7a55420f8fc041d32634e2209f402b17a34389dbf898d9cb7648ea8f04a; tests/integration/test_denied_edges.py sha256 6e2bf6ec9ee54d5c653e4054d8fe0040a468a625603adeb51af11786a4372f0f"
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic",
+    "runtimes": {
+      "python": "3.12.3",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "argon2-cffi": "23.1.0",
+      "pydantic": "2.13.5",
+      "pytest": "8.4.2",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "uv": "0.12.9",
+      "sqlite": "3.45.1"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC17",
+      "SC26",
+      "SC39",
+      "SC40",
+      "SC41",
+      "SC49",
+      "SC51"
+    ],
+    "requirement_ids": [
+      "REQ-D01",
+      "REQ-D04",
+      "REQ-D05",
+      "REQ-P0-01",
+      "REQ-S11.1-01",
+      "REQ-S11.2-01",
+      "REQ-S11.2-02",
+      "REQ-S9.3-08"
+    ],
+    "invariant_ids": [
+      "I01",
+      "I02",
+      "I11",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json",
+        "sha256": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+        "bytes": 4024
+      },
+      {
+        "path": "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+        "sha256": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+        "bytes": 5229
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/ui/sc51-first-time-setup.json",
+        "sha256": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+        "bytes": 13282
+      }
+    ],
+    "seed": null,
+    "clock": null,
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:warnings",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-08T01:42:43Z",
+    "ended_at": "2026-09-08T01:44:55Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Phát hành lại EV-E1-03 sau PKT-TC-AUTH-FIX4 (sửa CR-TC-AUTH-11). (A) Ma trận scheme và sweep default-deny giữ nguyên: 17 owner mutation đòi cookie AND CSRF, 0 route nhận cookie một mình, 36 cạnh SC49 phân hoạch 12/10/14. (B) Cửa write_blocked chạy qua StorageGuard THẬT. (C) MỚI — CẢ HAI hình dạng lỗi ghi nay cùng ánh xạ về STORAGE_WRITE_FAILED 503: lỗi đã được SQLAlchemy bọc (bảng session bị DROP) VÀ lỗi DBAPI thô do WriteFaultInjector ném từ event hook. Trước FIX4 dạng thứ hai thoát ra thành 500 chưa xử lý. Áp cho cả auth.login và auth.logout; sau một logout thất bại phiên VẪN dùng được (revocation không commit). (D) MỚI — trượt idle window là best-effort trong transaction riêng: khi ghi hỏng, auth.get_session vẫn trả phiên hợp lệ, hạn cũ KHÔNG bị đổi trên đĩa, và request KHÔNG thành 503 (openapi không khai 503 cho route đó) cũng không thành 500.",
+    "expected": {
+      "denied_edges_tests_passed": 44,
+      "denied_edges_xfailed": 1,
+      "scheme_matrix_tests_passed": 21,
+      "schema_tests_passed": 10,
+      "e0_checks_pass": 27,
+      "e0_violations": 0,
+      "e0_21_violations": 0,
+      "wrapped_write_failure_code": "STORAGE_WRITE_FAILED",
+      "wrapped_write_failure_status": 503,
+      "raw_dbapi_write_failure_code": "STORAGE_WRITE_FAILED",
+      "raw_dbapi_write_failure_status": 503,
+      "session_rows_changed_when_refused": 0,
+      "session_usable_after_failed_logout": true,
+      "failed_idle_slide_breaks_session": false,
+      "failed_idle_slide_commits_new_deadline": false,
+      "strict_xfails_remaining_in_card_files": 1,
+      "full_suite_passed": 1042,
+      "full_suite_failed": 0,
+      "full_suite_xfailed": 3
+    },
+    "observed": {
+      "denied_edges_tests_passed": 44,
+      "denied_edges_xfailed": 1,
+      "scheme_matrix_tests_passed": 21,
+      "schema_tests_passed": 10,
+      "e0_checks_pass": 27,
+      "e0_violations": 0,
+      "e0_21_violations": 0,
+      "wrapped_write_failure_code": "STORAGE_WRITE_FAILED",
+      "wrapped_write_failure_status": 503,
+      "raw_dbapi_write_failure_code": "STORAGE_WRITE_FAILED",
+      "raw_dbapi_write_failure_status": 503,
+      "session_rows_changed_when_refused": 0,
+      "session_usable_after_failed_logout": true,
+      "failed_idle_slide_breaks_session": false,
+      "failed_idle_slide_commits_new_deadline": false,
+      "strict_xfails_remaining_in_card_files": 1,
+      "full_suite_passed": 1042,
+      "full_suite_failed": 0,
+      "full_suite_xfailed": 3,
+      "remaining_xfail": "test_fixture_h_seq4_literal_expectation — CR-TC-AUTH-01, strict=True",
+      "pytest_output_tail": "1042 passed, 3 xfailed in 131.20s (exit 0)"
+    }
+  },
+  "result": "PASS",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 1045,
+    "not_checked_vi": [
+      "Vẫn KHÔNG có ổ đĩa đầy thật: WriteFaultInjector tái tạo điều kiện quan sát được, không tái tạo hành vi của SQLite trên volume đầy thật. REQ-S9.3-08 (file DB không hỏng) vẫn NOT_RUN — thuộc một live drill.",
+      "E3/E4 chưa chạy: không trình duyệt thật, không TLS thật, không reverse proxy.",
+      "Không có bearer token thật nào tồn tại; TokenRegistry chỉ giữ sha256.",
+      "14 trong 36 cạnh của boundary/a KHÔNG do lớp này quyết định; ghi NOT_TESTABLE_AT_THIS_LAYER, không đếm là pass.",
+      "Cửa sổ 15 phút của lockout không biểu diễn được bằng bốn cột của AMD-ENT-owner-01 (CR-TC-AUTH-07).",
+      "Đường ĐỌC của authenticate() vẫn để lỗi database nổi lên thành 500 INTERNAL — đó là mã openapi khai cho GET /v1/auth/session, nên KHÔNG sửa; chỉ đường GHI (trượt idle window) được tách ra và nuốt lỗi.",
+      "CR-TC-AUTH-09 và CR-TC-AUTH-10 vẫn mở: chúng là lệch hợp đồng/card, không phải lỗi code, và được ghim bằng test đang PASS.",
+      "Schema test chỉ so 16 bảng có migration với entities.yaml.",
+      "Đây là SELF_VALIDATION. Không có audit độc lập; nhãn IMPLEMENTATION_VERIFIED cần Coordinator/Auditor."
+    ],
+    "uncertainty_vi": "Một `xfail(strict=True)` còn lại: CR-TC-AUTH-01, fixture recovery/h seq4 vẫn pin FORBIDDEN_EDGE cho ca thiếu CSRF trong khi bốn nguồn hiện hành nói CSRF_REJECTED. Đó là drift của fixture, không phải của code, và fixture là read-only với card này.",
+    "unresolved_issue_refs": [
+      "CR-PC08-03",
+      "CR-PC08-04",
+      "CR-PC09-02",
+      "REQ-OQ03"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "contracts/http/openapi.yaml",
+      "contracts/ports.yaml",
+      "contracts/errors.yaml",
+      "contracts/ops/secrets.md",
+      "contracts/data/entities.yaml",
+      "contracts/modules.yaml",
+      "contracts/state/storage.yaml",
+      "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json",
+      "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/ui/sc51-first-time-setup.json",
+      "acceptance/scenarios.yaml"
+    ]
+  }
+}

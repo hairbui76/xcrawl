@@ -598,3 +598,187 @@ Không file nào khác bị chạm. `server/app/**` không đổi trong đợt n
 Không CR mới. `CR-TC-AUTH-01`, `-04`, `-05`, `-07`, `-08` vẫn mở như addendum trước.
 
 `lease_released_at`: 2026-09-07T11:45Z — sau mốc này tôi không ghi thêm file nào.
+
+---
+
+# ADDENDUM — `PKT-TC-AUTH-FIX3` (E0-21: marker-reason freshness)
+
+| Trường | Giá trị |
+| --- | --- |
+| `packet_id` | `PKT-TC-AUTH-FIX3` · authority `AUTH-COORD-TC-AUTH-FIX3` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-TC-AUTH-e4` (fencing 4) |
+| **`status`** | **`DONE_WITH_CONCERNS`** — ba CR mới, mỗi cái là một chỗ hợp đồng lệch mà việc bỏ stub phơi ra |
+| `next_actor` | `Coordinator` · `lease_released_at` 2026-09-08T01:40Z |
+
+## C.1 Cái gì đã rotten, và vì sao nó rotten
+
+E0-21 bắt đúng: một `xfail` trong `tests/integration/test_denied_edges.py` mang lý do
+"pending TC-storage-write-blocked-readiness … no implementation is wired yet". Card đó **đã
+về** (`server/app/storage/{guard,health}.py`, `install_storage(app, guard)` trên mọi đường
+dựng factory). Tệ hơn nhãn sai: thân test dựng một class `_Blocked` trả chuỗi
+`"write_blocked"` rồi kết thúc bằng `raise AssertionError(...)` — nó chưa bao giờ chạm state
+machine thật, nên `xfail(strict=False)` của nó luôn "đúng" vì một lý do do chính nó tạo ra.
+Một test tự làm cho mình fail thì không đo gì cả.
+
+## C.2 Thay bằng gì
+
+Năm test thật, không stub nào, trong `tests/integration/test_denied_edges.py`:
+
+| Test | Đo gì |
+| --- | --- |
+| `…real_guard_reaches_write_blocked_through_its_own_transition` | kiểm tiền đề: `StorageGuard()` + `record_write_failure()` (`T-ST-01`) **thật sự** vào `write_blocked` |
+| `…login_is_refused_while_the_real_guard_reports_write_blocked` | `AuthService` đọc `current_health()` của **guard thật**; login ⇒ `STORAGE_WRITE_FAILED` **503**, `details_safe.storage_health == "write_blocked"`, `failed_operation_id == "auth.login"`, `COUNT(session)` **không đổi** (I02) |
+| `…pre_check_is_stricter_than_the_storage_refusal_table` | ghim **cả hai** vế của một chỗ lệch: `machine.refusal_for(AUTH_LOGIN)` là `None` và `assert_writable(AUTH_LOGIN)` **không** raise, trong khi pre-check của card này raise |
+| `…guard_refuses_this_card_the_storage_health_edge` | `guard.get_health(caller_module="MOD-auth-service")` ⇒ `StorageRefused`; `require_edge(STORAGE_GET_HEALTH, "MOD-auth-service")` ⇒ `FORBIDDEN_EDGE` — hai bản cài đặt default-deny độc lập cùng nói một câu |
+| `…database_failure_during_login_is_storage_write_failed` | E2 thật: lỗi ghi ở tầng database ⇒ `STORAGE_WRITE_FAILED` 503; envelope **không** chứa SQL, tên bảng, URL database hay mật khẩu |
+| `…disk_full_injector_fires_on_the_login_write_path` | E2 với `WriteFaultInjector` thật: `writes_attempted > 0` (fault có bắn), `COUNT(session)` không đổi, và login kế tiếp sau khi hết lỗi **commit bình thường** |
+
+`_GuardHealthPort` là adapter mỏng trên guard thật — **không** phải fake: giá trị đến từ
+`current_health()` của cùng object mà `record_write_failure()` vừa dịch chuyển. Nó cố ý
+**không** gọi `guard.get_health()`; xem `CR-TC-AUTH-09`.
+
+## C.3 Ba CR mới — mỗi cái là thứ stub đang che
+
+| ID | Nội dung |
+| --- | --- |
+| `CR-TC-AUTH-09` (MEDIUM) | **§4 của card khai `consumes: storage.get_health`, nhưng hợp đồng không cho.** `contracts/ports.yaml` `storage.get_health.caller_modules` là `[MOD-health-service, MOD-job-service]`, và `contracts/modules.yaml.allowed_edges` chỉ có đúng hai hàng đó vào `MOD-data-store`. `MOD-auth-service` không có hàng nào. `StorageGuard` thật từ chối lời gọi đó, và registry cạnh của chính card này cũng vậy. Card đang mô tả một cạnh không tồn tại. **Đề nghị:** PC01/PC10 hoặc thêm `MOD-auth-service` vào `caller_modules` + `allowed_edges`, hoặc sửa §4 của card. Cho tới lúc đó code dùng `current_health()` — một phép đọc trong tiến trình, không có cạnh. |
+| `CR-TC-AUTH-10` (LOW) | **Pre-check của card này chặt hơn `contracts/state/storage.yaml`.** `REFUSALS[write_blocked]` **không** liệt kê `auth.login`, nên state machine sẽ cho login đi qua khi `write_blocked`; pre-check của card chặn. Chặn là hướng an toàn (`auth.login` **có** ghi một hàng `session`, và I02 cấm ACK một write chưa commit) và `openapi.yaml` **có** khai response 503 cho `/v1/auth/login`, nhưng một tập cha không ai viết ra thì không phân biệt được với một lỗi. **Đề nghị:** PC03 quyết định thêm `auth.login` vào `_WRITE_BLOCKED_REFUSALS` hay ghi rõ nó cố ý nằm ngoài. |
+| `CR-TC-AUTH-11` (LOW) | **`AuthService.login` chỉ bắt `SQLAlchemyError`.** Một `sqlite3.Error` thô ném ra dưới lớp bọc của SQLAlchemy (đúng cái mà event hook của `WriteFaultInjector` làm) **thoát ra ngoài** thành 500 thay vì 503 `STORAGE_WRITE_FAILED`. `server/app/ingest/service.py` và `server/app/identity/service.py` đã bắt `sqlite3.Error` cùng chỗ; auth nên như vậy. `server/app/auth/service.py` **ngoài write set** của gói này, nên khoảng trống được ghim bằng `xfail(strict=True, run=True)` chứ không vá lén. Một disk-full **thật** trong production đi qua `cursor.execute` và **được** SQLAlchemy bọc, nên đường 503 vẫn hoạt động ở đó — test `…database_failure_during_login…` chứng minh điều đó bằng một lỗi đã bọc. |
+
+## C.4 Hai `xfail` còn lại, và vì sao chúng hợp lệ
+
+| Vị trí | Lý do | E0-21 |
+| --- | --- | --- |
+| `test_fixture_h_seq4_literal_expectation` | `CR-TC-AUTH-01` — fixture còn pin `FORBIDDEN_EDGE` cho ca thiếu CSRF. `strict=True`. Mô tả một **defect thật**, không khai vắng mặt một card nào. | PASS |
+| `test_a_raw_dbapi_write_failure_should_also_be_storage_write_failed` | `CR-TC-AUTH-11` (mới). `strict=True, run=True` — nó **chạy** và **phải** fail cho tới khi service bắt `sqlite3.Error`. | PASS |
+
+Không `xfail` nào của tôi còn khai rằng một card đang thiếu.
+
+## C.5 Changes
+
+| Path | Op | After (sha256) | Bytes |
+| --- | --- | --- | --- |
+| `tests/integration/test_denied_edges.py` | MODIFY | `f895d3b548f3eb9c9386e8ffe815977f896ded40227e2ede4ee46251723f7351` | 49400 |
+| `evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json` | **CREATE** | `e842540e3ba513aa2b8b3b9c8e5add285680c28f1bd90aa81ee2502468d2ae97` | 11917 |
+| `evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json` | MODIFY (→ STALE) | `6af3cff0c6200010f14a459ac61c11521fa54dc38aa5bd328013d88427bf10c4` | 12557 |
+
+`server/app/**` **không đổi** trong gói này. `evidence/runs/…101529Z.json` giữ nguyên
+`STALE` từ FIX2.
+
+## C.6 Evidence — `SELF_VALIDATION`, E2
+
+| Lệnh | Kết quả |
+| --- | --- |
+| `uv run python evidence/tools/e0_check.py --repo .` | **27/27 PASS, 0 violation**; `E0-21-marker-reason-freshness` **PASS, checked=5, violations=0** (trước: FAIL 1) |
+| `uv run pytest tests/integration/test_denied_edges.py` | **42 passed, 2 xfailed**, exit 0 |
+| `uv run pytest tests/contract/test_auth_scheme_matrix.py` | **21 passed**, exit 0 |
+| `uv run pytest tests/contract/test_schema_matches_entities.py` | **10 passed**, exit 0 |
+| `uv run pytest` (toàn cây) | **1 038 passed, 1 failed, 4 xfailed**, 134 s (2026-09-08T01:32:43Z→01:34:58Z) |
+| `uv run ruff check .` · `uv run mypy` | exit **0** · exit **0**, 87 file |
+| SRC-SPEC / SRC-PLAN sha256 | khớp §4 |
+
+**Về một test fail ngoài card này.**
+`tests/integration/test_pending_survives_cursor.py::test_fixture_e_the_late_discovery_is_still_a_new_discovery`
+fail trong lượt chạy toàn cây. Nó **pass khi chạy riêng** (29 passed) **và** pass khi chạy
+cùng `tests/integration/test_denied_edges.py`. Đó là nhiễu giữa các file ở chỗ khác trong
+cây, không phải hồi quy từ gói này; file đó không nằm trong write set của tôi và tôi không
+chạm vào nó. Ghi lại thay vì để im lặng.
+
+Manifest mới: `evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json`
+(`EV-E1-03-tc-owner-auth-session`, `evidence_level: E2` — lần đầu card này có bằng chứng E2
+thật, vì fault injection nay chạy thật). Bản `…114030Z` chuyển `result: STALE` với
+`stale_reason` nêu đích danh bản thay thế. Cả hai validate sạch với
+`evidence/manifest.schema.json`.
+
+`lease_released_at`: 2026-09-08T01:40Z — sau mốc này tôi không ghi thêm file nào.
+
+---
+
+# ADDENDUM — `PKT-TC-AUTH-FIX4` (`CR-TC-AUTH-11` đã sửa)
+
+| Trường | Giá trị |
+| --- | --- |
+| `packet_id` | `PKT-TC-AUTH-FIX4` · authority `AUTH-COORD-TC-AUTH-FIX4` (parent `AUTH-OWNER-20260907-03`) · lease `LEASE-TC-AUTH-e5` (fencing 5) |
+| **`status`** | **`DONE`** |
+| `next_actor` | `Coordinator` · `lease_released_at` 2026-09-08T01:50Z |
+
+## D.1 Lỗi, và cách sửa
+
+`AuthService.login` và `AuthService.logout` bắt `SQLAlchemyError`. SQLAlchemy bọc một lỗi
+ném ra **bên trong** `cursor.execute` thành `OperationalError`/`IntegrityError` — nhưng một
+lỗi ném ra từ một **connection-level event hook** thì **không** được bọc, và đó chính là cách
+`server/app/db/faults.py` tái tạo một ổ đĩa đầy. Hệ quả: một lần ghi hỏng có thật đi thẳng ra
+ngoài thành một `sqlite3.OperationalError` chưa xử lý — HTTP **500** — thay vì **503**
+`STORAGE_WRITE_FAILED` mà `contracts/http/openapi.yaml` khai cho `/v1/auth/login`.
+
+Sửa theo đúng mẫu hai package khác đã dùng (`server/app/ingest/service.py` hằng
+`WRITE_FAILURES`, và `server/app/identity/service.py`):
+
+```python
+WRITE_FAILURES: tuple[type[Exception], ...] = (SQLAlchemyError, sqlite3.Error)
+```
+
+`sqlite3.Error` là lớp cơ sở của mọi lỗi DBAPI mà driver ném ra, nên nó bịt khoảng trống mà
+không phải đoán một danh sách subclass. Hai chỗ `except SQLAlchemyError` đổi thành
+`except WRITE_FAILURES`.
+
+## D.2 Một khoảng trống thứ hai, cùng lớp, ở `authenticate()`
+
+Cùng hình dạng lỗi cũng thoát ra được từ lệnh `UPDATE` trượt idle window bên trong
+`authenticate()` — và ở đó **không** được phép trả 503: `contracts/http/openapi.yaml` khai
+cho `GET /v1/auth/session` đúng `200 / 401 / 403 / 500`, **không có 503**. Trượt hạn là việc
+sổ sách, không phải câu trả lời cho "phiên này còn sống không".
+
+Nên phép ghi đó tách ra thành `AuthService._slide()`, một transaction **riêng** và
+**best-effort**: hỏng thì trả `False`, phiên vẫn hợp lệ, hạn cũ **không** đổi trên đĩa,
+request không thành 503 và cũng không thành 500. Trước thay đổi này nó thành 500.
+
+## D.3 Test
+
+`xfail(strict=True, run=True)` của `CR-TC-AUTH-11` **bị gỡ** và thay bằng khẳng định thật;
+thêm hai test cho hai đường vừa nêu.
+
+| Test | Đo gì |
+| --- | --- |
+| `…disk_full_injector_fires_on_the_login_write_path` | lỗi DBAPI **thô** trong `auth.login` ⇒ `STORAGE_WRITE_FAILED` **503**, `failed_operation_id="auth.login"`, `writes_attempted > 0` (fault có bắn thật), `COUNT(session)` không đổi, envelope không chứa SQL / mật khẩu / URL database, và login kế tiếp sau khi hết lỗi commit bình thường |
+| `…database_failure_during_login_is_storage_write_failed` (đã có) | lỗi **đã được bọc** ⇒ cùng mã, cùng status — hai hình dạng, một câu trả lời |
+| `…raw_dbapi_failure_during_logout_is_also_mapped` (mới) | cùng mệnh đề trên `auth.logout`; và vì revocation **không** commit, phiên **vẫn dùng được** sau đó |
+| `…failed_idle_slide_does_not_break_a_live_session` (mới) | `authenticate()` dưới fault: trả phiên hợp lệ, `expires_at` trên đĩa **y nguyên**, không 503 không 500; khi đĩa trở lại, cùng lời gọi **có** đẩy hạn lên |
+
+`tests/integration/test_denied_edges.py`: **44 passed, 1 xfailed** (trước: 42 + 2). Chỉ còn
+đúng một `xfail`, `strict=True`, và nó là `CR-TC-AUTH-01` — drift của fixture, không phải của
+code.
+
+## D.4 Changes
+
+| Path | Op | After (sha256) | Bytes |
+| --- | --- | --- | --- |
+| `server/app/auth/service.py` | MODIFY | `f60cd7a55420f8fc041d32634e2209f402b17a34389dbf898d9cb7648ea8f04a` | 32961 |
+| `tests/integration/test_denied_edges.py` | MODIFY | `6e2bf6ec9ee54d5c653e4054d8fe0040a468a625603adeb51af11786a4372f0f` | 50795 |
+| `evidence/runs/TC-owner-auth-session-E1-20260908T014455Z.json` | **CREATE** | `a036553c4a63307978f177f7d3366d05948102c4bd1ab454e568b1d194f1c9e6` | 11331 |
+| `evidence/runs/TC-owner-auth-session-E1-20260908T013458Z.json` | MODIFY (→ STALE) | `a21a572051849e52cc5e16c2c24c07194494c0c68c88873cc143a505371a6099` | 12689 |
+
+## D.5 Evidence — `SELF_VALIDATION`, E2
+
+| Lệnh | Kết quả |
+| --- | --- |
+| `uv run pytest` (toàn cây) | **1 042 passed, 0 failed, 3 xfailed**, exit **0**, 131 s (2026-09-08T01:42:43Z→01:44:55Z) |
+| `uv run pytest tests/integration/test_denied_edges.py` | **44 passed, 1 xfailed**, exit 0 |
+| `uv run pytest tests/contract/test_auth_scheme_matrix.py` | **21 passed**, exit 0 |
+| `uv run pytest tests/contract/test_schema_matches_entities.py` | **10 passed**, exit 0 |
+| `uv run python evidence/tools/e0_check.py --repo .` | **27/27 PASS, 0 violation**; `E0-21` PASS, checked=3, violations=0 |
+| `uv run ruff check .` · `ruff format --check .` · `uv run mypy` | exit **0** · 165 file đã format · exit **0**, 87 file |
+| SRC-SPEC / SRC-PLAN sha256 | khớp §4 |
+
+Lượt chạy toàn cây lần này **không còn** lỗi nào: `tests/integration/test_pending_survives_cursor.py`
+— test của card khác đã fail do nhiễu giữa các file ở đợt FIX3 — nay xanh.
+
+## D.6 Trạng thái CR
+
+| ID | Trạng thái |
+| --- | --- |
+| `CR-TC-AUTH-11` | **ĐÓNG** — sửa trong `server/app/auth/service.py`, xfail thay bằng khẳng định thật. |
+| `CR-TC-AUTH-09` | **CÒN MỞ** (hợp đồng): card §4 khai `consumes: storage.get_health` nhưng `ports.yaml.caller_modules` / `modules.yaml.allowed_edges` không cho `MOD-auth-service`. Ghim bằng test đang PASS. |
+| `CR-TC-AUTH-10` | **CÒN MỞ** (hợp đồng): `contracts/state/storage.yaml` không liệt kê `auth.login` trong tập bị từ chối khi `write_blocked`; pre-check của card là một tập cha. Ghim bằng test đang PASS. |
+| `CR-TC-AUTH-01`, `-04`, `-05`, `-07`, `-08` | **CÒN MỞ** như các addendum trước. |
+
+`lease_released_at`: 2026-09-08T01:50Z — sau mốc này tôi không ghi thêm file nào.

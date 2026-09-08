@@ -179,7 +179,7 @@
    "late_summary_enqueued_tasks": 1
   }
  },
- "result": "PASS",
+ "result": "STALE",
  "artifacts": [],
  "limitations": {
   "mock_or_live": "mock",
@@ -250,5 +250,6 @@
   "invalidated_by_rule_ids": [
    "INV-06"
   ]
- }
+ },
+ "stale_reason": "Superseded by EV-E1-03-tc-analysis-once-per-generation (evidence/runs/TC-analysis-once-per-generation-E1-20260908T004550Z.json) under packet PKT-TC-ANALYSIS-FIX2, lease LEASE-TC-ANALYSIS-e3. W4A landed pending_item_ledger (revision 0010_tc_report_coverage_publish_cas) and W4B landed the PendingLedgerPort implementation (server/app/report/pending.py), so the pending-ledger xfail was re-checked against the tree; tests/integration/test_attempt_not_result.py changed (7e6d533d… -> 6bb729ce…). No claim changed and nothing in this record was contradicted."
 }

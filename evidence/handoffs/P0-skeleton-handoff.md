@@ -935,3 +935,187 @@ không phải cách khẳng định nó: `uv.lock` hash giống hệt, và số 
 ghi trong gói này: `server/pyproject.toml` và addendum này. Không lệnh git mutation, không
 mạng, không secret, không `__pycache__` lạc. `B.6` mục 1 nay **đóng**; mục 2 (`F-A3R1-02`,
 `worker-WA`) và mục 3 vẫn thuộc người khác.
+
+---
+
+# Addendum — `PKT-P0-FIX4`
+
+- `packet_id`: `PKT-P0-FIX4` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e5` ·
+  **`status`: `DONE_WITH_CONCERNS`** · `next_actor`: `Coordinator` ·
+  `lease_released_at`: 2026-09-08T00:20Z.
+- Nguồn: `A3-P4-R1-report.md` `F-A3-P4-02` (MEDIUM) và `FIX-A3P4R1-rulings.md`.
+- Lease: `pyproject.toml`, `uv.lock`, `.github/workflows/python.yml`, `Makefile`,
+  `.gitignore`, `server/tests/test_smoke.py`, addendum này. Không file nào khác được ghi.
+- **`DONE_WITH_CONCERNS`** vì suite đầy đủ có **1 fail** và hai cửa E0/card có FAIL — cả ba
+  thuộc worker khác trong cùng đợt, không do gói này. Chi tiết ở D.5.
+
+## D.1 Cái mà `F-A3-P4-02` thực sự tìm ra
+
+`pyproject.toml` khai `files = ["server/app"]`, và ADR-0011 hàng "Lint / format" nói
+`mypy --strict` **"cho lõi server"**. CI khớp ADR **chính xác** — nên không có gì trong
+FC-P4 vi phạm. Vấn đề không phải một lần lệch chuẩn; nó là **chuẩn đã thôi phủ sản phẩm**.
+ADR-0011 được viết khi `server/app` là mã sản phẩm Python **duy nhất**. Từ đó `worker/app`,
+`collector/app` và `probe/` ra đời — adapter AI, collector, công cụ probe — và **không file
+nào trong chúng được bất kỳ job CI nào kiểm kiểu**. Khoảng trống này rộng dần qua bốn giai
+đoạn, không nhìn thấy được từ bên trong một card nào.
+
+Đó là lý do sửa nằm ở gói bộ khung chứ không ở từng card: chỉ file bộ khung mới đổi được
+phạm vi cửa, và `types-*` phải vào dev deps ở `pyproject.toml` gốc — đúng thứ đã chặn
+`CR-TC-adapter-06`.
+
+## D.2 Thay đổi
+
+| File | Op | sha256 sau | Bytes |
+| --- | --- | --- | --- |
+| `pyproject.toml` | MODIFY | `9e98948fdae08ae333ecf9d4a47244c157c09ad14002d8b06f477c7ac1d55450` | 4 277 |
+| `uv.lock` | MODIFY | `a4a274b3a4f0f0a9d41c40df7814e1e4387c541fc11a819763314101b0d1158c` | 193 757 |
+| `server/tests/test_smoke.py` | MODIFY | `127f8fa8b7a46bb37bd8f23c3c029ee5f4c0f0e9bb391045aebb5d6e07c41186` | 7 905 |
+| `.github/workflows/python.yml` | MODIFY | `a5f2b5ffe8adc380246ed717c966ec4617a8ed13a4bb1ff5ae0932b3d036e7ce` | — |
+| `Makefile` | MODIFY | `4b69521180bb197520cca0529c7a2e65f632d59de8cd6dcfc7cefa066ee220ce` | — |
+| `.gitignore` | MODIFY | `b972490e60228f85da4c130db7ab50997e6922667a00be5a0f107c2c2cacbf6c` | 1 081 |
+
+### (1) Phạm vi mypy
+
+```
+- files = ["server/app"]
++ files = ["server/app", "worker/app", "collector/app", "probe"]
+```
+
+`strict = true` **giữ nguyên**. Số file đi từ **64 → 87** (`server/app` 64, `worker/app` 7,
+`collector/app` 7, `probe` 9). Comment trong `pyproject.toml` nay nói thẳng **cái gì không
+nằm trong danh sách và vì sao** — mã sinh ra (máy sinh, không sửa tay được) và các cây test.
+
+### (2) Hai gói stub — đóng `CR-TC-adapter-06`
+
+`types-PyYAML>=6.0,<7` và `types-jsonschema>=4.23,<5` vào `[dependency-groups] dev`. Resolve
+thành `types-pyyaml==6.0.12.20260906` và `types-jsonschema==4.26.0.20260518` (123 gói, +2).
+Chúng vào `pyproject.toml` gốc chứ không vào `worker/pyproject.toml` vì cửa là **toàn repo**
+— và chính chỗ đặt này là thứ mà card không có quyền ghi, nên `CR-TC-adapter-06` mới bị kẹt.
+
+Hai lỗi rộng-phạm-vi mà audit báo (`worker/app/adapter/base.py:39` `yaml`,
+`worker/app/adapter/validate.py:40` `jsonschema`) là **thiếu stub, không phải lỗi kiểu** —
+sau khi cài, cả hai biến mất mà **không một dòng mã sản phẩm nào** bị đụng tới.
+
+### (3) `server/tests/test_smoke.py` — sửa thật, và quyết định về phạm vi được ghi rõ
+
+**Quyết định (packet yêu cầu nêu tường minh): cây test KHÔNG nằm trong `files`.** Ba lý do,
+ghi cả trong `pyproject.toml`:
+
+1. Fixture pytest đến từ plugin và phần lớn **không có kiểu**; `--strict` ở đó đo plugin
+   nhiều hơn đo test.
+2. `tests/`, `collector/tests`, `worker/tests`, `shared/rr_contracts/tests` **thuộc card
+   khác**. Đưa chúng vào cửa nghĩa là bộ khung có thể **chặn** worker của những card đó —
+   một quyền mà gói này không nên có.
+3. ADR-0011 đặt cửa cho **mã sản phẩm**; mở rộng sang test là một quyết định khác, cần ADR
+   riêng.
+
+**Nhưng file smoke là file của Giai đoạn 0, nên tôi sửa nó cho sạch dù cửa không với tới.**
+Năm lỗi, hai lớp:
+
+- `client.app.title` / `client.app.routes` — `TestClient.app` mang kiểu ASGI callable, không
+  có `.title` hay `.routes`. Sửa **không** bằng `cast` (cast sẽ nói dối về kiểu của vật):
+  thêm một fixture `app() -> FastAPI` riêng, `client(app)` dựng trên nó, và hai test dùng
+  thẳng `app`. Kiểu thật đi suốt.
+- `int(pragmas["foreign_keys"])` ×3 — `read_pragmas` trả `dict[str, object]` vì `PRAGMA` trả
+  đúng kiểu của chính pragma đó (chuỗi cho `journal_mode`, số cho ba cái kia). Sửa bằng một
+  helper `_pragma_int` **assert `isinstance(value, int)`** rồi mới trả. Thu hẹp bằng assert
+  chứ không bằng cast, nên nếu một ngày pragma trả về text thì test **fail to tiếng** thay
+  vì âm thầm biến phép so sánh thành vô nghĩa. Hai `# type: ignore[no-untyped-def]` trên
+  `tmp_path` cũng được thay bằng annotation `Path` thật.
+
+`uv run mypy --strict server/tests/test_smoke.py` → **`Success: no issues found in 1 source
+file`**. `pytest` trên chính file đó → **8 passed**.
+
+### (4) Tên bước CI và Makefile
+
+| Chỗ | Trước | Sau |
+| --- | --- | --- |
+| `.github/workflows/python.yml` | `mypy --strict (server core)` | `mypy --strict (all Python production trees)` + comment nêu bốn cây |
+| `Makefile` mục tiêu `lint` | `mypy (server core)` | `mypy --strict (server/worker/collector/probe)` |
+
+**Ngoài lease:** `.pre-commit-config.yaml:35` vẫn ghi `name: mypy --strict (server core)`.
+File đó không nằm trong lease của gói này; hook chạy đúng lệnh (`uv run mypy`, phạm vi lấy từ
+`pyproject.toml`) nên **hành vi đúng, chỉ nhãn cũ**. Cần một gói có grant để đổi.
+
+### (5) `.gitignore`
+
+`__pycache__/` và `*.py[cod]` **đã có từ `PKT-P0-SKELETON`**; tôi thêm `*.pyc` tường minh
+theo packet và một comment giải thích. Quan trọng hơn con số dòng: tôi **chứng minh** các
+luật thật sự bắt, thay vì khai là chúng có:
+
+```
+$ git check-ignore -v -- server/app/__pycache__/x.pyc worker/app/__pycache__/y.pyc probe/z.pyc collector/app/w.pyo
+.gitignore:6:__pycache__/   server/app/__pycache__/x.pyc
+.gitignore:6:__pycache__/   worker/app/__pycache__/y.pyc
+.gitignore:8:*.pyc          probe/z.pyc
+.gitignore:7:*.py[cod]      collector/app/w.pyo
+```
+
+Cả bốn đều bị bỏ qua, ở mọi độ sâu. **Nên cache lạc trong đợt này không đến từ lỗ hổng
+trong `.gitignore`** — chúng đến từ lượt chạy quên `PYTHONDONTWRITEBYTECODE=1`. Comment mới
+trong file nói đúng điều đó, để lần sau không ai đi vá nhầm chỗ.
+
+## D.3 Bằng chứng — `EV-P0-13`, `SELF_VALIDATION`
+
+2026-09-08T00:05–00:18Z, `PYTHONDONTWRITEBYTECODE=1`, `/mnt/virtual/repo/xcrawl`.
+
+| Cửa | Exit | Kết quả |
+| --- | --- | --- |
+| `uv lock` + `uv sync --all-packages` | **0** | 123 gói resolve; `+ types-jsonschema==4.26.0.20260518`, `+ types-pyyaml==6.0.12.20260906` |
+| **`uv run mypy`** (phạm vi mới) | **0** | **`Success: no issues found in 87 source files`** |
+| `uv run mypy --strict server/tests/test_smoke.py` | **0** | `Success: no issues found in 1 source file` |
+| `uv run ruff check .` | **0** | `All checks passed!` |
+| `uv run ruff format --check .` | **0** | 165 file |
+| `pytest server/tests/test_smoke.py` | **0** | 8 passed |
+| `git check-ignore -v` (4 đường dẫn) | — | 4/4 bị bỏ qua |
+| **`uv run pytest`** (toàn bộ) | **1** | **1 030 passed, 1 failed, 5 xfailed** — xem D.5 |
+| `evidence/tools/e0_check.py` | — | **27 checks: PASS 26 · FAIL 1** — xem D.5 |
+| `evidence/tools/verify_cards.py` | — | **12 PASS / 1 FAIL**, 3 730 assertion, 38 vi phạm — xem D.5 |
+
+Trước lúc cài stub, phạm vi rộng cho đúng **2 lỗi**, cả hai là `import-untyped`. Sau khi cài:
+0. **Không một dòng mã sản phẩm nào ngoài lease bị sửa** — đúng chỉ thị của packet.
+
+## D.4 Điều gói này **không** chứng minh
+
+Cửa nay **với tới** 87 file; nó không nói rằng 23 file mới vào phạm vi là **đúng**. Chúng
+sạch dưới `--strict` — mỗi worker đã tự báo strict-clean cho gói của mình, và lượt chạy này
+xác nhận điều đó ở mức toàn repo. `--strict` bắt được thiếu annotation và sai kiểu; nó không
+bắt được logic sai. Ngoài ra cửa vẫn **không** với tới cây test và mã sinh ra, theo quyết
+định ở D.2 (3).
+
+## D.5 Ba cửa đỏ — không cửa nào của gói này
+
+Tôi báo cả ba thay vì im lặng, và cả ba đều là **việc đang bay của worker khác trong cùng
+đợt**, đúng như dòng `Order` của ruling dự liệu.
+
+**(a) `pytest` — 1 fail: `tests/integration/test_pending_survives_cursor.py::test_fixture_e_the_late_discovery_is_still_a_new_discovery`.**
+Lý do nguyên văn: `[XPASS(strict)] CR-TC-BACKFILL-09: publisher._write_first_announcements
+announces an item whose summary_state is still 'pending', so the late discovery returns as
+prior_reference`. Đây **chính là** `F-A3-P4-01`, và nó **XPASS** nghĩa là **W4A đã sửa xong**
+`publisher`; bước còn lại theo ruling là *"W4B then flips its strict xfail (gated on W4A's
+addendum)"*. Một `xfail(strict=True)` đã hết lý do tồn tại — tức là một tin **tốt** hiển thị
+dưới dạng đỏ. Không thuộc lease của tôi; sửa nó là W4B.
+
+**(b) `e0_check.py` — 1 FAIL: `E0-21-marker-reason-freshness`** trên
+`tests/integration/test_denied_edges.py`: marker nói `TC-storage-write-blocked-readiness`
+còn thiếu, nhưng handoff của card đó đã tồn tại. Đây là check **mới** mà PC09-P4 vừa thêm
+theo `F-A3-P4-03`, và nó đang bắt đúng thứ nó sinh ra để bắt. File thuộc card khác.
+
+**(c) `verify_cards.py` — `pins` FAIL, 38 vi phạm** trên hai file:
+`precode/adr/ADR-0011-frameworks-and-toolchain.md` (`da5181b2…` → `defbe74e…`) và
+`precode/decision-register.md` (`8d6a87fb…` → `a38e2ce1…`). Đó là **W1n** đang sửa ADR-0011
+theo cùng finding `F-A3-P4-02` này. Ruling xếp `WP re-pin P4b (ADR-0011 moved)` **sau** W1n
+và tôi, nên pin lệch ở thời điểm này là **đúng lịch**, không phải hỏng.
+
+Không cửa nào trong ba cửa trên đổi trạng thái vì thay đổi của tôi: sửa của tôi gồm cấu hình
+mypy, hai gói stub chỉ-kiểu (không có mã chạy), một comment `.gitignore`, hai nhãn, và một
+file test của chính Giai đoạn 0.
+
+## D.6 Kết thúc
+
+`lease_released_at`: **2026-09-08T00:20Z** (`LEASE-P0-e5`). Sáu file trong lease được ghi,
+cộng addendum này. Mạng chỉ dùng để cài hai gói stub từ PyPI, đúng như packet cho phép.
+Không lệnh git mutation, không secret, không `__pycache__` lạc.
+
+Việc còn mở thuộc người khác: nhãn `.pre-commit-config.yaml` (ngoài lease), `F-A3-P4-01`
+(W4A/W4B), `E0-21` trên `test_denied_edges.py`, và re-pin P4b (WP, sau khi W1n xong ADR-0011).

@@ -29,11 +29,12 @@ evidence artifact trong packaging phase; không chèn report vào manifest mà r
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
 
-Thư mục được bổ sung **bảy** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
+Thư mục được bổ sung **tám** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
 epoch 9, `PKT-PC00-FIX18` chép mười file của giai đoạn mã, `PKT-PC00-FIX19` chép lại sổ tiến độ trước khi
 commit, `PKT-PC00-FIX24` chép hai biên bản Owner của Giai đoạn 2, `PKT-PC00-FIX25` chép **hai file dựng lại
-từ transcript** để đóng `CR-PC00-30`, và `PKT-PC00-FIX29` chép **mười một** file của Giai đoạn 3 + Giai đoạn 5
-— tất cả đều **được ghi ra đĩa TRƯỚC khi dispatch** (xem "Cách đọc"). **Ba lần giữa đều thay** bản
+từ transcript** để đóng `CR-PC00-30`, `PKT-PC00-FIX29` chép **mười một** file của Giai đoạn 3 + Giai đoạn 5, và
+`PKT-PC00-FIX31` chép **năm** file của Giai đoạn 4 + Giai đoạn 6 — tất cả đều **được ghi ra đĩa TRƯỚC khi
+dispatch** (xem "Cách đọc"). **Ba lần giữa đều thay** bản
 `coordinator-ledger.md` bằng bản mới hơn; hash mỗi bản bị thay được ghi ngay trong hàng của nó
 (`PKT-PC00-FIX24` **không** chép lại sổ — xem "Cách đọc"). Mỗi lần chép đều `cmp`-verified và hash được tính
 lại sau khi chép.
@@ -63,11 +64,15 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A3-code-review-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 1 — audit **code** đầu tiên (`FC-P1` epoch 1) | `670da439c78156c3af4a48de2e382a1f14d1cf3b4f2f3f66f74e8e28bef5f218` | 3951 |
 | `A3-r2-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 2 — xác minh `F-A3R1-*` (`FC-P1` epoch 2) | `e55841a9b22b56fefbca24bebdab5bd532ac063125c41f90148e538097a69670` | 3309 |
 | `A3-r3-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 3 — xác minh `F-A3R2-*` + đăng ký của PC09 (`FC-P1` epoch 3) | `8f2fe8e7f0b3b41fdfae4a90c74d8ead9d43fb93ba625a2fac1b64920e72bd82` | 2444 |
+| `A3-p4-r1-packet.md` | TASK_PACKET cho `auditor-A3` — audit độc lập Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8), `FC-P4` epoch 1 | `22864f6be434a0b87ab08920dde3702127bc76264ebfe345fb3bc1e1a2503fed` | 5955 |
+| `A3-p4-r2-packet.md` | TASK_PACKET cho `auditor-A3` — xác minh có phạm vi `F-A3-P4-01..03`, `FC-P4` epoch 2 | `aaa1266df1314f589164394c0a48b46f74bb4ca7a450732cd82e71fa4ead3380` | 3724 |
 | `A3-p3-r1-packet.md` | TASK_PACKET cho `auditor-A3` — audit độc lập Giai đoạn 3 (M3) + Giai đoạn 5 (M6, văn bản thuần), `FC-P3` epoch 1 | `78a99d783d537b8a7927aff29fae4a4b8841ea0d68a6cf7512db5591bd679348` | 5861 |
 | `A3-p3-r2-packet.md` | TASK_PACKET cho `auditor-A3` — xác minh có phạm vi `F-A3-P3-01..03`, `FC-P3` epoch 2 | `b6244eaf19495f022d733c482097a2ac0fbe5fad42d771ea9d558950062a6277` | 2660 |
 | `A3-p2-r1-packet.md` ⚠ | TASK_PACKET cho `auditor-A3`, vòng Giai đoạn 2 (`FC-P2`) — **DỰNG LẠI TỪ TRANSCRIPT**, không phải bản soạn trước khi dispatch; xem "Cách đọc" | `0994854f2c50ecd793db6d266516a0e85dac7a3e5906e7ced105e4d4a2e5ed09` | 3700 |
 | `ADR-0011-frameworks-ruling.md` | Ruling của Coordinator chọn framework và toolchain cho stack B, dưới ủy quyền của Owner ("You pick, record as ADR") — bản gốc sinh ra `ADR-0011`. **Xem erratum ở "Cách đọc"** | `09050e65a0c1d6f16fb5463fe8fde1a567cefc9792b1c665ed8c04b2c660555f` | 4487 |
 | `FIX-A1R1-rulings.md` | Ruling R-01..R-09 sau AUDIT_REPORT A1-R1 | `94cdf17b1922dbff89273a316bb9e71e218f50d9f253a5f87cbae4769d1e1ff4` | 6380 |
+| `FIX-A3P4R1-rulings.md` | Ruling của Coordinator sau `A3-P4-R1` — đợt sửa `F-A3-P4-01..03`; giao `W1n` sửa `ADR-0011` (`AMD-ADR0011-01`) và `W6n` dựng phép kiểm `E0-21` | `145f9c40d16377743dcc81ebb1b2852b49f1c01fdcc1a85505b974f49bb2ca31` | 2619 |
+| `FIX-P4-wave-rulings.md` | Ruling của Coordinator khi đợt sáu card Giai đoạn 4/6 land — vòng sửa **trước khi đóng băng** | `6abcf68f8a9e299c1f473563e79424e4b9bea4a4418c1811259f24b0fb74d1a7` | 3863 |
 | `FIX-A3P3R1-rulings.md` | Ruling của Coordinator sau `A3-P3-R1` — đợt sửa `F-A3-P3-01..03` (gồm cả `ruff format` đỏ làm R1 chỉ PASS **có điều kiện**) | `565ac37c014e8b37a57f07503a1d8d094944b196d46b87baa2007289c29875a5` | 2104 |
 | `FIX-A3R1-rulings.md` | Ruling sau AUDIT_REPORT `A3-R1` — vòng ruling **đầu tiên về code**, gồm cả amendment `AMD-ENT-owner-01` | `ec3805a9682fe16784671258721a7337f386d82279e5a75426ebefaac004997d` | 4678 |
 | `FIX-R5-rulings.md` | Ruling sau AUDIT_REPORT `A2-R5` | `e2a0e26eb6686112aa8de5bed9c2a04adf1732555b005a3d8c4d98e7b0f12beb` | 3680 |
@@ -78,6 +83,7 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `FIX7-rulings.md` | Ruling đợt FIX7 | `0a4960a4ba9819ec400eb8e4023b2c04f5910e8868812036ddac8fc825e0861a` | 2183 |
 | `OWNER-DECISIONS-20260907.md` | **Biên bản quyết định của Owner** ngày 2026-09-07 (`OD-20260907-01`, authority `AUTH-OWNER-20260907-02`) — bản gốc do Coordinator phát; bản chuyển ngữ đầy đủ ở `precode/owner-decisions.md` | `31d496a04dc221b030b51f64da2e18a5231f219cbcd011467cf329d1208572c4` | 4750 |
 | `OWNER-DECISIONS-20260907-02.md` | **Biên bản quyết định của Owner, vòng hai** (`OD-20260907-02`, authority `AUTH-OWNER-20260907-03`): phê chuẩn `ADR-0011` và mở lối vào Giai đoạn 0/1 — bản gốc do Coordinator phát; bản chuyển ngữ đầy đủ ở `precode/owner-decisions-02.md` | `599d8427870ebdfc921d1ad105e7bf9e45b1f5b62eeb5f66f0dd31e31477245f` | 2455 |
+| `OWNER-DECISIONS-20260908-10.md` | **Biên bản Owner vòng mười** (`OD-20260908-10`, authority `AUTH-OWNER-20260908-11`): lưu target chưa phân tích kèm nhãn cố định; giữ `/save <id>`; nhắc ba lệnh **chỉ** cho chat đã liên kết — bản gốc; chuyển ngữ ở `precode/owner-decisions-10.md` | `98e5e1f199988f55c0cb6a3653c0da5740f4b5d30316bf344f4593c35e73e5b5` | 1487 |
 | `OWNER-DECISIONS-20260908-05.md` | **Biên bản Owner vòng năm** (`OD-20260908-05`, authority `AUTH-OWNER-20260908-06`): ủy quyền **nghiên cứu** `REQ-OQ03`; quyền mạng hẹp chỉ-đọc-tài-liệu `core.telegram.org`; lối vào Giai đoạn 5 **có điều kiện** — bản gốc; chuyển ngữ ở `precode/owner-decisions-05.md` | `4ef0b5e717134c6f6c32d896f1b976d4cb5ac3e99e587228d43c5de523c3679e` | 2089 |
 | `OWNER-DECISIONS-20260908-07.md` | **Biên bản Owner vòng bảy** (`OD-20260908-07`, authority `AUTH-OWNER-20260908-08`): nới công cụ tìm dữ kiện Telegram sang WebSearch; chốt **Owner tự ký** `REQ-A5` — bản gốc; chuyển ngữ ở `precode/owner-decisions-07.md` | `8381871fe118753d4872db471fc3e1a53713337b0129b38bcc18c904bd220f11` | 1912 |
 | `OWNER-DECISIONS-20260908-08.md` | **Biên bản Owner vòng tám** (`OD-20260908-08`, authority `AUTH-OWNER-20260908-09`): Owner **đích thân ký** `REQ-A5` cho Anthropic, chấp nhận tường minh bảo đảm `TC-A5-01` — bản gốc; chuyển ngữ ở `precode/owner-decisions-08.md` | `3eec90776b5b7b5d710c7048a7789e1f12b9f78c46484facccfeec9a2bd484b9` | 1716 |
@@ -99,7 +105,7 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `PHASE0-skeleton-packet.md` | TASK_PACKET `PKT-P0-SKELETON` — dựng bộ khung repo của Giai đoạn 0 (bảy trong tám cây; `tools/` nằm ngoài write set) | `ad76109b3130d3035ea3522c89ead65988314132a903e9c858dcc9a43303a513` | 8193 |
 | `PHASE1-card-dispatch-template.md` | Template dispatch dùng chung cho bốn card Giai đoạn 1 | `70630dfc6ab4718da09c5763dc0ec3803578836cb81b8cd71e9ff42cb3a1cc5f` | 3988 |
 | `PHASE3-5-card-dispatch.md` | Packet dispatch của đợt sáu card: Giai đoạn 3 (M3) + Giai đoạn 5 (M6, văn bản thuần) | `bf2de67f6983af3d3b02fec808b06c9a8acd84d1f31ac6b929054b6c296c2b30` | 9276 |
-| `PHASE4-6-card-dispatch.md` 🕒 | Packet dispatch Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8) — **ĐÃ SOẠN, CHƯA DISPATCH** tại thời điểm chép; xem "Cách đọc" | `7dfd6712680e7941ee400ff824a2835225f8567a583e0972cb8c23e4290620a1` | 9596 |
+| `PHASE4-6-card-dispatch.md` | Packet dispatch Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8) — **ĐÃ DISPATCH** ngày 2026-09-08 sau khi `FC-P3` audit PASS + PC09 + commit, đúng như header của chính nó nêu; sáu card đã land. Nhãn 🕒 của `PKT-PC00-FIX29` được gỡ ở `PKT-PC00-FIX31`. **Byte không đổi** — chỉ trạng thái đổi | `7dfd6712680e7941ee400ff824a2835225f8567a583e0972cb8c23e4290620a1` | 9596 |
 | `PKT-PC06-FIX-OQ03.md` | TASK_PACKET giải `REQ-OQ03` và đẩy `REQ-A5` cho nhà cung cấp được chọn (`worker-WAI`) | `af87d6795767724462f81c3692501a61168fa419208ef5b1c7f4f0692529bd4a` | 5228 |
 | `PKT-PC07-FIX-TELEGRAM.md` | TASK_PACKET giải `CR-PC07-04` — năm dữ kiện giới hạn định dạng Telegram (`worker-WT`) | `716f590513a6dd3dc5f26e01ae504d4a78f1078d18be434f8da8aa87c43b5c37` | 2816 |
 | `PHASE2-dispatch-log.md` ⚠ | **Nhật ký dispatch của Giai đoạn 2** — mọi packet đã phát trong phase, theo thứ tự thời gian, kèm ghi chú của Coordinator về khoảng trống và vì sao bản dựng lại này đóng nó. **DỰNG LẠI TỪ TRANSCRIPT**, không phải bản soạn trước khi dispatch; xem "Cách đọc" | `2c23d63f7f2c196bc8a367ea97bedca9d2d7ac43093bbb19754338e476633640` | 22150 |
@@ -182,12 +188,18 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   thành file **trước**, dispatch từ file đó, rồi chép nguyên văn vào đây. Khác biệt không nằm ở nội dung mà ở
   **thứ tự**: với các file này, chuỗi "soạn → phát → chép" tự nó là một bảo đảm rằng văn bản tồn tại **trước**
   lúc dispatch — đúng thứ mà bản dựng lại của Giai đoạn 2 **không** chứng minh được. Thói quen đã thành lại
-  quy trình, và hồ sơ ghi được sự khác biệt ấy thay vì làm phẳng nó.
-- **🕒 `PHASE4-6-card-dispatch.md` là packet ĐÃ SOẠN, CHƯA DISPATCH** tại thời điểm chép (2026-09-07T20:43Z).
-  Nó **không** cấp quyền cho ai và **không** có lease nào đang chạy dưới nó; chính header của file cũng nói
-  vậy (*"prepared … dispatched after FC-P3 audit PASS"*). Một packet chưa phát nằm cạnh mười bốn packet đã
-  phát rất dễ bị đọc như packet thứ mười lăm — nhãn 🕒 tồn tại để chặn đúng chuyện đó. Khi nó thực sự được
-  dispatch, trạng thái ấy đổi ở **sổ điều phối**, không phải bằng cách sửa file này.
+  quy trình, và hồ sơ ghi được sự khác biệt ấy thay vì làm phẳng nó. **Năm file của Giai đoạn 4/6 chép ở
+  `PKT-PC00-FIX31` cũng cùng tính chất** — kể cả `A3-p4-r2-packet.md` và `FIX-A3P4R1-rulings.md`, hai file
+  không nằm trong danh sách ban đầu của gói nhưng cùng được soạn trước khi phát.
+- **`PHASE4-6-card-dispatch.md` NAY ĐÃ ĐƯỢC DISPATCH — nhãn 🕒 đã được gỡ, byte thì không đổi.** Khi
+  `PKT-PC00-FIX29` chép nó (2026-09-07T20:43Z) nó là packet **đã soạn, chưa phát**, và mang nhãn 🕒 vì một
+  packet chưa phát nằm cạnh mười bốn packet đã phát rất dễ bị đọc như packet thứ mười lăm. Ngày 2026-09-08
+  nó **đã được phát** sau khi `FC-P3` audit PASS + PC09 + commit — đúng điều kiện mà header của chính nó nêu
+  — và sáu card đã land. `PKT-PC00-FIX31` gỡ nhãn.
+  **Điều đáng giữ:** `sha256` của file **không đổi** (`7dfd6712…`) qua cả hai trạng thái. Thứ đổi là **sự
+  kiện bên ngoài**, không phải nội dung; nên trạng thái ấy sống ở **danh mục này**, không phải bằng cách sửa
+  file lưu trữ. Đó cũng là lý do cột hash vẫn đối chiếu được với bản gốc: một bản sao nguyên văn không được
+  đổi byte chỉ vì thế giới quanh nó đã đổi.
 - **Hai file không phải packet cũng không phải ruling.** `phase1-cr-consolidated.txt` là bảng gom CR từ các
   handoff — một công cụ làm việc, không phải văn bản có thẩm quyền; trạng thái CR chuẩn sống ở
   `precode/review.md` §12. `PHASE1-card-dispatch-template.md` là **template**, không phải một packet đã phát:

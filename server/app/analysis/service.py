@@ -360,9 +360,19 @@ class TaskInputPort(Protocol):
 
 
 class PendingLedgerPort(Protocol):
-    """``pending_item_ledger`` (``MOD-report-service``, PC04)."""
+    """``pending_item_ledger`` (``MOD-report-service``, PC04).
 
-    def record_pending(self, *, target_key: str, reason: str) -> None: ...
+    ``connection`` is optional on the wire and **mandatory in practice for this module**:
+    :func:`_fail_task` calls the port from inside an open ``TXN-analysis-*`` transaction, and
+    an implementation that opened a connection of its own would deadlock against the write
+    lock this one already holds (measured, `CR-TC-BACKFILL-02`). Passing the caller's
+    connection also makes the pending row commit *with* the failure that caused it, so a
+    rollback cannot leave the two disagreeing.
+    """
+
+    def record_pending(
+        self, *, target_key: str, reason: str, connection: Connection | None = None
+    ) -> None: ...
 
 
 class AdapterCallCounter(Protocol):
@@ -1814,13 +1824,21 @@ def _fail_task(ctx: AnalysisContext, connection: Connection, *, task: TaskRow, r
     ``failed`` here means the run knows the item has no analysis, **not** that the item has
     no research (I13): the display must keep "analysis failed" and "outcome unknown" apart.
     The item also has to reach ``pending_item_ledger`` so the report can carry it as a pending
-    entry rather than dropping it (B04/B17). That table belongs to ``MOD-report-service`` and
-    does not exist yet, so when no port is wired this records nothing and says so in the
-    return of :func:`ledger_state`, instead of pretending the ledger entry was made.
+    entry rather than dropping it (B04/B17). That table belongs to ``MOD-report-service``; when
+    no port is wired this records nothing and says so in the return of :func:`ledger_state`,
+    instead of pretending the ledger entry was made.
+
+    The ledger write is handed **this** transaction's connection (`CR-TC-BACKFILL-02b`). Two
+    things follow, and both are the point rather than a detail: the pending row commits in the
+    same transaction as the ``failed`` state that caused it, so no rollback can leave an item
+    marked failed with nothing in the ledger; and the port cannot deadlock against the write
+    lock this connection already holds, which is what a second connection did.
     """
     ctx.repository.release_task(connection, task_id=task.id, state=AnalysisItemState.FAILED.value)
     if ctx.pending_ledger is not None:
-        ctx.pending_ledger.record_pending(target_key=task.target_key, reason=reason)
+        ctx.pending_ledger.record_pending(
+            target_key=task.target_key, reason=reason, connection=connection
+        )
     return AnalysisItemState.FAILED.value
 
 

@@ -14,8 +14,10 @@ failure here means the skeleton broke, not that a feature regressed.
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from rr_contracts.generated.constants import CONTRACT_SCHEMA_VERSION
 from rr_contracts.generated.errors import ErrorCode
@@ -26,12 +28,24 @@ from server.app.main import StubReadinessProvider, create_app
 
 
 @pytest.fixture()
-def client() -> TestClient:
-    return TestClient(create_app())
+def app() -> FastAPI:
+    """The bare application factory: no session dependency, no readiness provider injected.
+
+    Exposed separately from :func:`client` because ``TestClient.app`` is typed as the ASGI
+    callable, which has no ``.title`` or ``.routes``. Reaching for those through the client
+    would need a cast that lies about what the object is; a second fixture keeps the real
+    type all the way through.
+    """
+    return create_app()
 
 
-def test_app_boots(client: TestClient) -> None:
-    assert client.app.title.startswith("Research Radar")
+@pytest.fixture()
+def client(app: FastAPI) -> TestClient:
+    return TestClient(app)
+
+
+def test_app_boots(app: FastAPI) -> None:
+    assert app.title.startswith("Research Radar")
 
 
 def test_liveness_returns_only_up_and_schema_version(client: TestClient) -> None:
@@ -47,7 +61,9 @@ def test_liveness_returns_only_up_and_schema_version(client: TestClient) -> None
     assert response.headers["X-Schema-Version"] == CONTRACT_SCHEMA_VERSION
 
 
-def test_readiness_is_routed_and_denies_an_unauthenticated_caller(client: TestClient) -> None:
+def test_readiness_is_routed_and_denies_an_unauthenticated_caller(
+    client: TestClient, app: FastAPI
+) -> None:
     """`health.get_readiness` is routed, and the bare app factory refuses it with 401.
 
     History of this test, kept deliberately. In Phase 0 it was a tripwire asserting **404**:
@@ -78,7 +94,7 @@ def test_readiness_is_routed_and_denies_an_unauthenticated_caller(client: TestCl
     assert response.status_code == 401, "readiness must be routed and must deny by default"
     assert response.json()["code"] == ErrorCode.UNAUTHORIZED.value
 
-    routed = {getattr(route, "operation_id", None) for route in client.app.routes}
+    routed = {getattr(route, "operation_id", None) for route in app.routes}
     assert OperationId.HEALTH_GET_READINESS.value in routed
     assert OperationId.HEALTH_GET_LIVENESS.value in routed
 
@@ -102,18 +118,32 @@ def test_stub_readiness_provider_reports_not_computed() -> None:
     assert snapshot["storage"] is None
 
 
-def test_engine_applies_every_pragma(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def _pragma_int(pragmas: dict[str, object], name: str) -> int:
+    """Read one pragma back as an int, asserting SQLite really returned a number.
+
+    ``read_pragmas`` is typed ``dict[str, object]`` because ``PRAGMA`` returns whatever the
+    pragma's own type is -- a string for ``journal_mode``, an integer for the other three.
+    Narrowing with an ``isinstance`` assertion rather than a cast means the test also fails
+    (loudly, here) if a pragma ever starts coming back as text, which would silently make
+    ``int(...)`` comparisons meaningless.
+    """
+    value = pragmas[name]
+    assert isinstance(value, int), f"PRAGMA {name} returned {value!r}, expected an integer"
+    return value
+
+
+def test_engine_applies_every_pragma(tmp_path: Path) -> None:
     engine = create_sqlite_engine(tmp_path / "smoke.db")
     with engine.connect() as connection:
         pragmas = read_pragmas(connection)
     assert str(pragmas["journal_mode"]).lower() == "wal"
-    assert int(pragmas["foreign_keys"]) == 1
-    assert int(pragmas["busy_timeout"]) == 5000
-    assert int(pragmas["synchronous"]) == 1  # NORMAL
+    assert _pragma_int(pragmas, "foreign_keys") == 1
+    assert _pragma_int(pragmas, "busy_timeout") == 5000
+    assert _pragma_int(pragmas, "synchronous") == 1  # NORMAL
     assert len(SQLITE_PRAGMAS) == 4
 
 
-def test_foreign_keys_are_actually_enforced(tmp_path) -> None:  # type: ignore[no-untyped-def]
+def test_foreign_keys_are_actually_enforced(tmp_path: Path) -> None:
     """A pragma that is set but not enforced would be worse than no pragma at all."""
     from sqlalchemy import text
 

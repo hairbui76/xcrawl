@@ -110,6 +110,14 @@
       "scope": "Ratifies OD-20260908-09 (1 item): Phase 5 (Telegram) is authorised to start NOW, SCOPED TO PLAIN TEXT ONLY - message splitting on the resolved 4096-character limit and send-rate throttling on the resolved rate-limit facts, both of which carry verbatim citations. parse_mode (Markdown/HTML), inline keyboards and callback_data-bearing buttons are EXPLICITLY OUT OF SCOPE and STAY UNIMPLEMENTED behind an SG-01 guard - NOT stubbed-and-hidden - until the remaining three Telegram facts resolve. This REPLACES the Phase 5 entry condition set by OD-20260908-05 item 2 ('once the five facts land'), which was NEVER MET (2 of 5). Parent of the scoped Phase 5 dispatch. Does NOT resolve CR-PC07-04 (still PARTIALLY_RESOLVED, three facts still BLOCKED_DEPENDENCY), does NOT permit formatting or keyboards, does NOT grant new network access (api.telegram.org still forbidden, no bot token, no real message sent), does NOT create runtime evidence (E3/E4 still NOT_RUN), does NOT raise any claim ceiling, does NOT close any finding.",
       "decision_record": "precode/owner-decisions-09.md",
       "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260908-11",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-08",
+      "scope": "Ratifies OD-20260908-10 (3 items), all raised by Phase 5 cards hitting an already-settled constraint. (1) CR-TC-SAVED-04: save.create MAY succeed for a target with no analysis, with the summary block explicitly marked missing via a FIXED, NON-INFERENTIAL label - AMD-B16 is NOT relaxed; the gap is STATED, not FILLED. Implementing it as model-written prose would violate B16, not satisfy this item. (2) CR-TC-TGAUTH-02: /save <id> stays as the plain-text Save trigger until an inline button becomes possible, mapped onto the EXISTING CMD-save - NO fourth Telegram command (AMD-B10, F-PC00-01 unchanged). A time-limited workaround; it does NOT resolve CR-PC07-04, which stays PARTIALLY_RESOLVED. (3) CR-TC-TGAUTH-04: a LINKED chat sending text outside the three-command allowlist gets a short reminder; an UNKNOWN chat stays silent with ZERO outbound, preserving AMD-B09. The boundary-sweep fixture row is NOT corrected here - that is the next contract round, a CR to PC08. Does NOT raise any claim ceiling, does NOT close any finding.",
+      "decision_record": "precode/owner-decisions-10.md",
+      "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
     }
   ],
   "coding_phase": {

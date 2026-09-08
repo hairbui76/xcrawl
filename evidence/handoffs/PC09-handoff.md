@@ -2156,3 +2156,129 @@ Tất cả `SELF_VALIDATION`, chạy bằng công cụ tôi vừa sửa.
 - **lease_released_at (UTC):** 2026-09-08T04:05Z. `LEASE-PC09-e4` nhả tại đây.
 - **Claim:** `DRAFT_FOR_REVIEW`. Sáu nhãn `IMPLEMENTATION_VERIFIED` thuộc `A3-P3-R2` §4, có
   phạm vi từng card; tôi chỉ chép, kèm hash của bản gốc.
+
+---
+
+# ADDENDUM — `PKT-PC09-P4` (Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8))
+
+## V1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC09-P4` · authority `AUTH-COORD-PC09-P4` (cha `AUTH-OWNER-20260908-11`) · lease `LEASE-PC09-e5` (+ `-e5-tool` ×2) |
+| candidate | `FC-P4` **epoch 2**, 645 entry, `manifest_sha256 d6d507588c4c50aa05476dd03aa2e1656a256fc1e2b21d8ce7b760b3e73e8037`, epoch `PC10-PIN-P4b-20260908` |
+| status | **DONE_WITH_CONCERNS** · next actor `Coordinator` · `lease_released_at` **2026-09-08T02:20Z** |
+
+**Cổng chờ, và một điều tôi phải khai.** Packet đầu đặt cổng ở `A3-P4-R1`; tôi chờ 39 phút, cổng
+mở, và tôi **đã áp dụng 27 dòng scenario** dựa trên R1. Chỉ thị đổi cổng sang `A3-P4-R2` đến
+**sau** khi 27 dòng đó đã nằm trên đĩa. Tôi không tự coi đánh giá dựa trên R1 là chốt: khi R2
+tới, tôi **xét lại từng dòng trên epoch 2**, và việc đó đã đổi hai ghi chú (xem V3). Nếu
+Coordinator đọc khác, các dòng đó cần được xem lại chứ không phải được tin.
+
+## V2. Bộ công cụ — hai lượt sửa, và một lỗ trong cửa kiểm tôi vừa viết
+
+* **`CR-TC-uiruns-08`** — `E0-20` chỉ duyệt cây `tests/` của Python, nên fixture của card UI
+  (Vitest nạp theo tên dưới `web/tests/`) là vô hình và **không card UI nào có thể pass**.
+  Oracle nói "được một test tham chiếu"; phép đo nói "được một test **Python** tham chiếu". Sửa
+  bằng cách **kéo phép đo theo oracle**. e0 trước: 25 PASS / 1 FAIL. Sau: 26/26. Vi phạm biến
+  mất vì fixture **thật sự** được tham chiếu, không vì quy tắc bị nới.
+* **`F-A3-P4-03` → `E0-21-marker-reason-freshness`** (check thứ 27). Lần thứ tư một auditor tìm
+  bằng tay cùng một hình dạng: một `xfail` mà **lý do** nói "chưa tồn tại" về thứ nay đã tồn
+  tại. Marker vẫn đúng (`strict=True`), nhưng câu giải thích đã mục, và người đọc tin câu đó.
+* **`F-A3-P4R2-01` — lỗ trong chính `E0-21`, tìm ra bởi auditor trong cùng vòng.** Regex kết
+  thúc ở `\)\s*$`; dưới `re.S`, `$` là **cuối chuỗi**, nên dạng một dòng `xfail(reason="…")`
+  **không khớp nhánh nào** và lý do bị **bỏ qua hoàn toàn**. Hậu quả không phải cảnh báo sai mà
+  là **im lặng** — đúng kiểu hỏng "0 được kiểm đọc thành sạch" mà công cụ này cảnh báo ở §5b.
+  Sửa bằng cách **bỏ regex**: file test là Python hợp lệ, nên nó được `ast.parse`. Marker mang
+  `reason` không phải literal nay được **đếm và in ra** như một lỗ, chứ không lặng lẽ tính sạch.
+
+Mutation: `E0-20` **10/10**, `E0-21` **8/8** (năm trong tám là đối chứng dương). Ba bộ đột biến
+cũ chạy lại: **11/11, 12/12, 6/6**. Một false positive thật bị bắt trong lúc viết `E0-21`
+(`contracts/telegram/delivery.md` trông như bảng `delivery`) và được sửa bằng cách chỉ khớp tên
+bảng khi nó là **cả một span backtick** — một cửa kiểm kêu oan dạy người ta bỏ qua nó.
+
+Bộ đột biến của `E0-21` cũng phải viết lại: bản đầu sửa hai lý do đã mục **đang có trên đĩa**, và
+khi WM sửa chúng thì đột biến ngừng land. Một self-test phụ thuộc vào văn của người khác là một
+self-test lặng lẽ ngừng kiểm; nay mỗi hàng tự trồng marker của nó.
+
+## V3. Đăng ký, và việc xét lại trên epoch 2
+
+19 card đã hiện thực; **cả 19 manifest mới nhất pin-clean** (0 pin bytes-đã-sản-xuất lệch), tôi
+băm lại từng cặp `{path, sha256}` chứ không đọc `ended_at`. Tôi chờ `PKT-TC-TGAUTH-FIX3` và
+đăng ký bản `…T015949Z` — bản `…T004625Z` mà `F-A3-P4R2-02` chỉ ra vẫn pin một
+`server/app/main.py` cũ. **Ghi lại phán quyết thường trực: manifest per-card KHÔNG được pin
+`server/app/main.py`** — đó là factory dùng chung mà mọi card append một include vào, nên nó
+dịch sau lần chạy của bất kỳ card nào; nó là file **duy nhất** mà một manifest per-card có thể
+bị dự đoán là sẽ mục.
+
+Index 94 → **109 bản ghi**, 109/109 validate. Hai bản ghi `INDEPENDENT_AUDIT` mới cho R1 và R2,
+sáu cho card; 31 bản chạy cũ ở `superseded_card_runs`, **giữ lại** chứ không xóa.
+
+**Việc xét lại trên epoch 2 đã đổi thật.** `CR-TC-BACKFILL-09` — publisher công bố cả mục còn
+`summary_state = pending`, khiến một phát hiện muộn thật quay lại thành `prior_reference` — đã
+được **sửa**, và `A3-P4-R2` §2 kiểm đúng chỗ đáng lo nhất: điều kiện được dẫn từ
+`time-and-tags.md` §5.3 + §8.2, và **hợp đồng không bị sửa để code pass** (file nguyên vẹn từng
+byte). Ghi chú của `SC22` và `SC09` được viết lại: chặn còn lại là **thuần oracle**, không còn
+là khuyết tật code.
+
+## V4. Scenario — 11 chuyển nhãn, và ba dòng không thể chuyển bằng code
+
+27 dòng được xét; **11 chuyển**: `SC05` (E1); `SC08`, `SC20`, `SC24`, `SC27`, `SC33`, `SC34`,
+`SC37`, `SC38`, `SC42`, `SC53` (E2). Tổng: **NOT_RUN 35 · PASS (E1) 4 · PASS (E2) 17**, tức
+**21/48** ở cấp ≤ E2. Phạm vi chứng minh bằng máy: parse trước/sau, **đúng 27 dòng đổi**.
+
+**Ba CR được ghi vì oracle sai, không vì thiếu code** (packet yêu cầu):
+
+| CR | Dòng | Khuyết tật |
+| --- | --- | --- |
+| `CR-PC09-22` | `SC09` | oracle đòi `report_item.reference_date`; `ENT-report-item` **không khai** trường đó |
+| `CR-PC09-23` | `SC22` | oracle đếm `pending_item_ledger.report_id` và `.consumed_at` — **cả hai không tồn tại** — và kỳ vọng **2** mục trong khi fixture `e` mang **1**. W4B dừng đúng chỗ (`SG-PC09`) thay vì tự thêm cột |
+| `CR-PC09-24` | `SC49` | không phải oracle sai mà là **giới hạn tầng đo**: 14 cạnh `CAPABILITY_DENIED` chỉ đo được trên máy có Chrome thật. `SC49` **sẽ không** chuyển bằng thêm test ở tầng này |
+
+## V5. Cổng — và trạng thái sản phẩm
+
+`G6` `NOT_MET`: **21/48 · 0/5 · 0/2**. `SP1` `NOT_MET`: **0/5–10**. Không cổng nào chuyển.
+
+**`NOT_READY_FOR_PRODUCT_CODE` giữ nguyên — nhưng lý do đã đổi hoàn toàn.** Ở Giai đoạn 0 nó có
+nghĩa *"chưa có code"*. Nay nó có nghĩa: **code đã có, đã được audit độc lập chín lượt, và chưa
+từng chạy một lần nào trong thế giới thật.**
+
+`G6-X2` và `G6-X3` được viết lại để nói điều quan trọng nhất còn lại: **chúng không chờ thêm
+code.** Năm dòng E3 và drill restore chờ những việc chỉ **Owner** làm được, trên máy của Owner.
+Viết thêm bao nhiêu test cũng không chuyển được chúng. Danh sách đầy đủ mười việc đó ở
+`precode/review.md` §17.6.
+
+## V6. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P4-01` | `e0_check.py --json-out evidence/runs/E0-20260908T021143Z.json` | **27 check · 27 PASS · 0 FAIL · 0 vi phạm**, exit 0 |
+| `EV-PC09-P4-02` | `selftest_p3.py` (`E0-20`, gồm hai hàng `web/tests` mới) | **10/10** |
+| `EV-PC09-P4-03` | `selftest_p4.py` (`E0-21`, gồm hai hàng dạng một dòng) | **8/8** |
+| `EV-PC09-P4-04` | `selftest_p1/p2/fix1` chạy lại | **11/11 · 6/6 · 12/12** |
+| `EV-PC09-P4-05` | `validate_index.py` | **109 record, 0 invalid** |
+| `EV-PC09-P4-06` | băm lại từng pin của 50 manifest trên đĩa | **19/19 bản mới nhất: 0 pin sản-xuất lệch** |
+| `EV-PC09-P4-07` | parse `scenarios.yaml` trước/sau | **đúng 27 dòng đổi**, 11 chuyển nhãn |
+| `EV-PC09-P4-08` | `gate.py` | **CONSISTENT** |
+
+Tất cả `SELF_VALIDATION`, chạy bằng công cụ tôi vừa sửa.
+
+## V7. Mối lo còn lại
+
+1. **`E0-21` là bằng chứng sống rằng một cửa kiểm mới có thể có lỗ ngay khi ra đời.** Tôi viết
+   nó ở lượt trước; auditor tìm ra `F-A3-P4R2-01` trong cùng vòng. Bản sửa `ast` của tôi
+   **chưa được ai độc lập kiểm** — cùng hạng với `E0-20` và bản thu hẹp `E0-12`.
+2. **`SC49` sẽ không chuyển bằng thêm test ở tầng này** — một sự thật cấu trúc, không phải một
+   việc còn tồn.
+3. **`MOD-tag-service` chưa có card nào** (`CR-TC-BACKFILL-07`); `tag` là bảng do card khác tạo hộ.
+4. **`F-A3R4-01`, `F-A3-P2-01/-02`, `F-A3-P4R2-01/-02`** vẫn mở.
+5. **Đồng thời vẫn được lập luận từ cấu trúc** cộng hai oracle ở tầng index; **không** có race
+   test đa tiến trình.
+6. **E3 và E4 bằng 0 ở mọi nhóm scenario, qua cả sáu giai đoạn.** Đây là dòng quan trọng nhất
+   của toàn bộ addendum này.
+
+## V8. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-08T02:20Z.
+- **Claim:** `DRAFT_FOR_REVIEW`. Sáu nhãn `IMPLEMENTATION_VERIFIED` thuộc `A3-P4-R2` §6, có
+  phạm vi từng card; tôi chỉ chép, kèm hash của bản gốc.
