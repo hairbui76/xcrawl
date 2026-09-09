@@ -2,14 +2,14 @@
 
 | Trường | Giá trị |
 | --- | --- |
-| packet | `PKT-TC-BACKUP` (e1) + `PKT-TC-BACKUP-FIX1` (e2) + **`PKT-TC-BACKUP-FIX2`** (e3) · lease `LEASE-TC-BACKUP-e3` · authority `AUTH-COORD-TC-BACKUP` (dưới `AUTH-OWNER-20260908-10`) |
+| packet | `PKT-TC-BACKUP` (e1) + `PKT-TC-BACKUP-FIX1` (e2) + `PKT-TC-BACKUP-FIX2` (e3) + `PKT-TC-BACKUP-FIX3` (e4) + `PKT-TC-BACKUP-FIX4` (e5) + `PKT-TC-BACKUP-FIX5` (e6) + **`PKT-TC-BACKUP-FIX6`** (e7, manifest-only) · lease `LEASE-TC-BACKUP-e7` · authority `AUTH-COORD-TC-BACKUP` (dưới `AUTH-OWNER-20260908-10`) |
 | worker | `worker-W6B` (tái dùng `worker-W5B`) |
 | card | `agent-tasks/TC-backup-restore-drill.md` (§1–§13 ràng buộc) |
-| pin epoch | `PC10-PIN-P3b-20260908` — SG-HASH ngay trước dòng code đầu tiên: **26/26 file khớp, 0 lệch** |
+| pin epoch | `PC10-PIN-P5c-20260909` (đã pin lại sau PC02-FIX16…19) — SG-HASH chạy lại ở e7: **26/26 khớp, 0 lệch** |
 | status | `DONE` · claim `IMPLEMENTATION_VERIFIED` cho phạm vi E1/E2 của card |
-| evidence | **`evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json`** (validate sạch). Bản e1 `…T042000Z.json` và e2 `…T061000Z.json` nay **STALE** |
+| evidence | **`evidence/runs/TC-backup-restore-drill-E1-20260909T104000Z.json`** (validate sạch). Bản e1/e2/e3 nay **STALE**; e4 không bao giờ được phát hành riêng — một bộ số duy nhất cho cả hai phần của FIX3 |
 | next actor | Coordinator |
-| `lease_released_at` | e1 2026-09-08T04:25Z · e2 2026-09-08T06:10Z · **e3 2026-09-08T06:40Z** |
+| `lease_released_at` | e1 2026-09-08T04:25Z · e2 2026-09-08T06:10Z · e3 2026-09-08T06:40Z · e4 2026-09-09T08:20Z · e5 2026-09-09T09:30Z · e6 2026-09-09T10:05Z · **e7 2026-09-09T10:45Z** |
 
 ## 1. Cổng chờ
 
@@ -43,13 +43,17 @@ Mọi target `ABSENT` trước khi ghi; không file nào bị ghi đè.
 | `server/app/backup/verify.py` | CREATE | `b370d83e905ad8323dfc26f5e5e4b6d2ef834bf1548e0dfe04c22bf466abf629` | 10630 |
 | `server/app/backup/restore.py` | CREATE | `09b761d60ab876c9672936327b0a6a1dc7b714dbd85c168218eaee0069b6c664` | 16739 |
 | `server/app/backup/reconcile.py` | CREATE | `a4c7872cd7e4a11c021dff4aa2b1d5b3cb542196868d6f50feab0417f7db632d` | 22376 |
-| `tools/backup_cli.py` | CREATE | `d7fd1b206c253a06287aa981e6efd917dde6d730fe268748263138405c16a22c` | 13960 |
+| `tools/backup_cli.py` | CREATE | `85d6cc03be34655b3f98f6fffe390fca9a53070390dd6eec2164249c61b7e02b` | 24035 |
 | `server/migrations/versions/0012_tc_backup_restore_drill.py` | CREATE | `4454be392837728303e55f97a2d071432cbd6c3fc3beca79cd2643cae4adefc1` | 9506 |
 | `tests/integration/test_wal_unsafe_detected.py` | CREATE | `1b6c0cc0157903bd88180538653560931e1a3c5e2c206a730d403c8d1f9f400e` | 18323 |
-| `tests/integration/test_restore_side_effect_lock.py` | CREATE | `2c5ace98cd476b2fc50bb3241711c24599f66ae78bfc2ece6b758ffed488c58a` | 42737 |
+| `tests/integration/test_restore_side_effect_lock.py` | CREATE | `88754bfc6008e90289d08922f349a3755852808c6cef398073b8f6be0e61c76c` | 60564 |
 | `evidence/runs/TC-backup-restore-drill-E1-20260908T042000Z.json` | CREATE (e1, nay **STALE**) | (bản ghi bằng chứng) | 16653 |
 | `evidence/runs/TC-backup-restore-drill-E1-20260908T061000Z.json` | CREATE (e2, nay **STALE**) | (bản ghi bằng chứng) | 17072 |
-| `evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json` | CREATE (e3) | (bản ghi bằng chứng thay thế) | 18181 |
+| `evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json` | CREATE (e3, nay **STALE**) | (bản ghi bằng chứng) | 18181 |
+| `evidence/runs/TC-backup-restore-drill-E1-20260909T082000Z.json` | CREATE (e4, nay **STALE**) | (bản ghi bằng chứng) | 19386 |
+| `evidence/runs/TC-backup-restore-drill-E1-20260909T093000Z.json` | CREATE (e5, nay **STALE**) | (bản ghi bằng chứng) | 20370 |
+| `evidence/runs/TC-backup-restore-drill-E1-20260909T100500Z.json` | CREATE (e6, nay **STALE**) | (bản ghi bằng chứng) | 21284 |
+| `evidence/runs/TC-backup-restore-drill-E1-20260909T104000Z.json` | CREATE (e7) | (bản ghi bằng chứng thay thế) | 21646 |
 | `evidence/handoffs/TC-backup-restore-drill-handoff.md` | CREATE | (file này) | — |
 
 **`server/app/main.py` KHÔNG bị chạm** — card này không có router, nên không có include block.
@@ -65,20 +69,18 @@ land: **1** (`0012_tc_backup_restore_drill`), kiểm bằng `len(heads) == 1` th
 
 ```
 python -m pytest tests/integration/test_wal_unsafe_detected.py -q       → 10 passed
-python -m pytest tests/integration/test_restore_side_effect_lock.py -q  → 25 passed
+python -m pytest tests/integration/test_restore_side_effect_lock.py -q  → 38 passed
 python -m pytest tests/contract/test_schema_matches_entities.py -q      → 10 passed
 ```
 
 `ruff check` + `ruff format --check` sạch; `mypy --strict` sạch trên 6 file nguồn.
 
-**Toàn bộ suite (sau FIX2): 1025 passed, 7 xfailed, exit 0 — 0 FAILED, 0 ERROR.** Các lỗi setup
-của W5C (`CR-TC-REPORT-09`) đã được chính họ sửa; cây test nay xanh hoàn toàn.
+**Toàn bộ suite (sau FIX5): 1179 passed, 3 xfailed, exit 0 — 0 FAILED, 0 ERROR.**
+Ba lỗi gói này báo hôm 2026-09-08 (`test_collector_loop.py` ×2, `test_task_credential_lease.py` ×1) đã được chủ của hai file đó sửa; không cái nào thuộc write set của card này.
 
-**Toàn bộ suite:** **990 passed, 9 xfailed, exit 0** khi loại trừ hai file
-`tests/integration/test_delivery_unknown_no_retry.py` và `test_permanent_failure_report_intact.py`.
-Chạy không loại trừ: exit 1 với **0 dòng FAILED** và đúng **18 setup ERROR**, toàn bộ nằm trong
-hai file đó — đúng breakage mà W4A đã ghi là `CR-TC-REPORT-09`. Hai file thuộc write set của
-W5C; gói này không chạm tới chúng.
+*(Lịch sử: ở vòng FIX1 con số là 990 passed khi loại trừ hai file của W5C, và exit 1 với 18
+setup ERROR khi không loại trừ — `CR-TC-REPORT-09` của W4A. W5C đã sửa; giữ lại ghi chú này
+để không mất dấu việc cây test từng đỏ vì lý do của card khác.)*
 
 **Oracle 1 — bản copy WAL-unsafe bị từ chối (fixture `d`).** Khuyết tật được **tạo thật**, không
 mô phỏng: ghi rồi checkpoint 3 hàng, ghi tiếp 4 hàng (nằm trong `-wal`), rồi copy **chỉ** file
@@ -234,9 +236,179 @@ hành biết mình đang ở ca nào chứ không chỉ biết "mệnh đề 6 t
 đi ra ngoài dưới dạng `RESTORE_UNVERIFIED` với mệnh đề 6 trong `unmet_clauses`, và storage vẫn ở
 `recovery_required` — không có ngoại lệ nào thoát khỏi operation.
 
+## 10. `PKT-TC-BACKUP-FIX3` — `_resolve_owner` ném `AttributeError` thay vì envelope
+
+**Lỗi thật, do WR tìm ra.** `tools/backup_cli.py` dựng ngoại lệ bằng
+`BackupError.__new__(BackupError)` — một instance **không chạy `__init__`**, nên không có
+`code`, `message_safe` hay `details_safe`. Handler `except BackupError` trong `main` gọi
+`refused.envelope(...)` và nổ `AttributeError`; người vận hành nhận traceback thay vì lời từ
+chối mà chính CLI ghi trong docstring. Đã kiểm chứng lại trước khi sửa:
+`'BackupError' object has no attribute 'code'`.
+
+Dòng đó còn kèm `# pragma: no cover - unreachable in practice`. Chú thích ấy **sai**: bảng
+`owner` rỗng là một deployment mới trước `bootstrap_owner`, và cũng là môi trường đích của một
+restore trước khi artifact được đưa vào — đúng hai lúc có người ngồi gõ chính công cụ này. Một
+nhánh được dán nhãn "không thể xảy ra" là nhánh không ai kiểm, nên nó hỏng lặng lẽ.
+
+**Sửa.** `_resolve_owner` nay raise `BackupError(NOT_FOUND, details_safe={"resource_kind":
+"owner"})` được khởi tạo đầy đủ, cho **cả hai** ca: không có hàng `owner` nào, và một
+`--owner-id` được truyền vào nhưng không tồn tại. Ca thứ hai trước đây lọt qua và chỉ vỡ vài
+bước sau bằng một vi phạm khóa ngoại — thông điệp khi đó nói tên ràng buộc chứ không nói cái sai.
+
+**Test.** Bốn test mới chạy qua `main()` chứ không gọi thẳng service — lỗi nằm ở đường xử lý lỗi
+của chính CLI, nên một test gọi service sẽ vẫn xanh trong khi người dùng vẫn thấy traceback:
+owner không tồn tại ⇒ exit `2` + envelope `NOT_FOUND` + `correlation_id`, không tạo artifact;
+bảng `owner` rỗng ⇒ cùng lời từ chối; token sai ⇒ exit `3` + `UNAUTHORIZED` **trước khi** mở DB
+(kẻ chưa xác thực không học được gì về việc có owner hay không); và một đường thành công
+snapshot → verify để ba test từ chối kia không thể xanh chỉ vì CLI hỏng toàn diện.
+
+**Về `maintenance_window` của WR.** Ghi nhận, **không** đổi gì ở phía này. Card này đã đi qua
+`StorageGuard` (`enter_maintenance` / `mark_recovery_required` / `complete_reconciliation`) chứ
+không tự giữ trạng thái, nên khi trạng thái được persist qua tiến trình thì quy trình hai bước
+`maintenance` → `restore` trở nên đúng xuyên tiến trình mà không cần sửa gì ở đây. Chờ addendum
+của họ; sửa trước khi có amendment sẽ là đoán hình dạng một hợp đồng chưa tồn tại.
+
+## 11. `PKT-TC-BACKUP-FIX3` phần 2 — `G-3` / `CR-TC-storage-07` đóng ở phía CLI
+
+**Cổng chờ.** Không ghi gì cho phần này cho tới khi `evidence/handoffs/TC-storage-write-blocked-readiness-handoff.md`
+mang addendum `PKT-TC-STORAGE-FIX4` với `lease_released_at 2026-09-09T07:30Z`. Mã của WR
+(`StorageGuard(store=…)`, migration `0015`) đã có mặt **trước** đó, nhưng mã đã land không phải
+là cổng — handoff mới là, vì nó chứng minh WR đã ngừng ghi và giao diện đã đứng yên.
+
+**Vấn đề.** `_guard()` dựng một `StorageGuard` trong bộ nhớ. `backup_cli maintenance --open` và
+`backup_cli restore` là **hai tiến trình**, nên cửa sổ chết cùng tiến trình thứ nhất và tiến
+trình thứ hai thấy `healthy`. Vì `restore_snapshot` từ chối ngoài `maintenance` (`T-ST-05`),
+runbook hai bước đã ghi trong tài liệu **không chạy được**: người vận hành mở cửa sổ rồi bị báo
+là không có cửa sổ nào — bị từ chối vì đã làm đúng.
+
+**Sửa, đúng ba điểm WR chỉ định:**
+
+1. `_guard()` dùng `StorageGuard.from_engine(engine, owner_id=…, reconciliation_check=…)` — hàm
+   dựng có persistence. `StorageGuard()` trần vẫn đúng cho unit test của chính máy trạng thái;
+   sai ở đây.
+2. `maintenance --open/--close` truyền `reason` / `opened_by` / `closed_by` (cột `T-ST-03/04/09`
+   của `maintenance_window`). `--reason` lấy `choices` **từ chính hằng `MAINTENANCE_REASONS`**
+   của module storage, không phải một danh sách chép tay ở đây: tập đó đóng trong
+   `entities.yaml`, và một bản sao trong file này sẽ tự do trôi khỏi nguồn. `--reason` là bắt
+   buộc khi mở: người vận hành biết lý do, công cụ này thì không. `opened_by`/`closed_by` là
+   `ACT-backup-operator` — CLI chỉ nhận đúng một lớp principal nên không có gì để suy đoán.
+3. `guard.link_restore_record(restore_id)` được gọi **sau** khi `restore_snapshot` trả về, tức
+   sau khi hàng `restore_record` đã commit. `maintenance_window.restore_record_id` là khóa
+   ngoại, còn `restore_snapshot` gọi `mark_recovery_required` **trước** khi INSERT — liên kết ở
+   thời điểm mark sẽ trỏ vào một hàng chưa tồn tại. Docstring của WR nói đúng điều đó từ phía
+   họ.
+
+**Test hai tiến trình.** `test_maintenance_window_survives_into_a_separate_cli_invocation`: mỗi
+bước là một lần gọi `main()` **riêng**, với engine riêng và guard riêng — đó là điều làm nó
+thành test hai tiến trình chứ không phải hai lời gọi hàm. Mở cửa sổ ở lần gọi 1 (và kiểm hàng
+trên đĩa: `opened_by`, `reason`, `closed_at IS NULL`, `restore_record_id IS NULL`); lần gọi 2 là
+tiến trình mới và **chạm tới đường restore** — `recovery_required`, `integrity_check_outcome =
+not_run`, `dispatcher_unlocked_at` NULL — rồi cửa sổ trỏ đúng vào `restore_record` vừa tạo và
+hàng đó tồn tại thật; lần gọi 3 xác nhận khóa vẫn thật xuyên tiến trình.
+
+Kèm ca âm `test_restore_still_refuses_without_a_window_in_a_fresh_process`: **không** mở cửa sổ
+⇒ vẫn `VALIDATION_ERROR` trên `storage_health`, 0 hàng `restore_record`. Làm cửa sổ bền vững sẽ
+vô nghĩa nếu nó biến thành một đường đi vào.
+
+**Không đổi gì trong `server/app/backup/`.** Card này vốn đi qua guard chứ không tự giữ trạng
+thái, nên toàn bộ thay đổi nằm ở `tools/backup_cli.py` — bốn module dịch vụ và migration giữ
+nguyên hash.
+
+## 12. `PKT-TC-BACKUP-FIX4` — `F-A3-P5-01`: CLI không bao giờ được in traceback
+
+**Lỗi, và nó là của tôi.** `docs/owner-runbook.md` hướng dẫn `backup_cli maintenance --open`.
+Guard bắt buộc `reason` (cả hai cột audit đều NOT NULL), `--reason` ở đây vẫn optional, nên lệnh
+trong runbook đi thẳng vào `MaintenanceWindowRequired` và **traceback ra terminal**, vượt qua
+envelope JSON mà chính công cụ này khai. Người vận hành làm đúng tài liệu và nhận một stack
+trace.
+
+Tệ hơn: ở FIX3 tôi **đã viết** một kiểm tra `--reason is None`, nhưng phép thay chuỗi áp nó vào
+file đã im lặng không khớp — một lần sửa trước đó trong cùng script đã đổi văn bản xung quanh, và
+tôi không assert gì cả. Tôi báo cáo nó như đã xong. Bài học đã áp dụng ngay trong lần sửa này:
+mọi phép thay chuỗi ở đây đều có `assert ... in s` trước khi ghi, và bản sửa được **chạy thử
+bằng chính CLI** trước khi viết test.
+
+**Sửa.**
+
+1. `--reason` bắt buộc khi `--open`, trả **envelope** + exit 2 — không dùng
+   `argparse(required=True)`: argparse ghi usage ra stderr và để stdout trống, nên thứ gì đang
+   parse JSON của công cụ này sẽ nhận được **không gì cả**. Ngược lại, *reason lạ* thì để
+   argparse xử lý, vì `choices` là thứ nêu đúng tập hợp lệ cho người vận hành.
+2. `main()` nay ánh xạ **mọi** ngoại lệ của guard/storage sang envelope: `StorageRefused` (giữ
+   nguyên mã đã đăng ký của nó, chỉ thêm `correlation_id` theo `EPR-01`),
+   `MaintenanceWindowRequired` và `ForbiddenTransition` (→ `VALIDATION_ERROR` trên
+   `storage_health`, cùng cách `restore_snapshot` đã báo sai tiền điều kiện — `CR-TC-BACKUP-05`),
+   và một `except Exception` cuối cùng → `INTERNAL`. Văn bản ngoại lệ **không** được lặp lại ở
+   đâu (có thể chứa đường dẫn hoặc giá trị mà envelope không nhận); chỉ **tên lớp** đi ra
+   **stderr**, để người phát triển còn đầu mối, trong khi **stdout luôn là envelope sạch**.
+
+**Test (4 mới).** Thiếu `--reason` ⇒ envelope + exit 2 + 0 hàng `maintenance_window`; reason lạ ⇒
+argparse exit 2 với "invalid choice" trên stderr; `--close` khi không có cửa sổ ⇒ envelope
+`ForbiddenTransition`, và khẳng định văn bản nội bộ ("NOT NULL") **không** lọt ra; và một ca
+tổng quát ép một ngoại lệ bất kỳ trong `_dispatch` để chứng minh stdout vẫn là JSON parse được
+cho cả lỗi chưa ai lường trước — đảm bảo này không phụ thuộc vào việc đã liệt kê đủ mọi loại
+ngoại lệ.
+
+
+## 13. `PKT-TC-BACKUP-FIX5` — `F-A3-P5R2-01`: `NOT_FOUND` chỉ sai chỗ
+
+**Lỗi.** Trên một CSDL đã migrate nhưng **chưa bootstrap**, envelope đúng —
+`details_safe.resource_kind: "owner"` — nhưng câu chữ lấy từ bảng **theo MÃ** trong
+`server/app/backup/snapshot.py`, vốn chỉ có một chuỗi cho cả `NOT_FOUND`: *"Không tìm thấy
+snapshot được yêu cầu."* Owner đi tìm một snapshot trong khi việc phải làm là tạo tài khoản.
+
+Một câu **sai hướng** tệ hơn một mã trần: mã trần buộc người đọc tra cứu, còn câu này chỉ họ đi
+một nơi cụ thể và sai. Đó là lý do finding này đáng sửa dù xếp LOW.
+
+**Sửa.** `message_safe` của `NOT_FOUND` nay chọn theo `details_safe.resource_kind` — trường mà
+mọi `NOT_FOUND` trong gói này vốn đã đặt. Bốn giá trị: `owner`, `backup_snapshot`,
+`backup_artifact`, `restore_record`. Chỉ **câu chữ** đổi; `code`, `scope`, `retry_class` và
+`details_safe` giữ nguyên như tầng dịch vụ tạo ra.
+
+Câu cho `owner` **nêu đích danh lệnh** — `uv run rr-admin bootstrap-owner` — chứ không mô tả nó:
+"chạy lệnh bootstrap" để người đọc lại phải đi tìm tên lệnh. Có một test khẳng định lệnh đó **có
+thật**: `rr-admin` là console script trong `pyproject.toml` và `bootstrap-owner` là subparser
+của nó. Chỉ người ta chạy một lệnh không tồn tại sẽ đúng là loại lỗi đang được sửa ở đây — một
+chỉ dẫn cụ thể, tự tin, và sai.
+
+**Vị trí sửa, và CR.** Đặt ở biên CLI vì `server/app/backup/snapshot.py` — nơi bảng theo mã nằm
+và là chỗ đúng để sửa — **không** thuộc lease của packet này. `CR-TC-BACKUP-08`: chuyển việc
+chọn câu vào chính `BackupError` khi nó dựng envelope, để mọi caller được hưởng chứ không chỉ
+CLI này.
+
+**Test (3 mới).** Snapshot thiếu thật ⇒ câu vẫn nói "snapshot" (nửa **không được** đổi; nếu đổi
+thì đây không phải sửa mà là hoán); owner thiếu ⇒ câu nêu `bootstrap-owner` và **không** chứa
+chữ "snapshot", chạy trên fixture `database` trần (đã migrate, chưa seed) vì đó **chính là**
+trạng thái audit mô tả; và lệnh được nêu tồn tại thật.
+
+
+## 14. `PKT-TC-BACKUP-FIX6` — `F-A3-P5R3-01`: pin ĐỌC đã cũ (manifest-only)
+
+**Không đổi một dòng mã nào.** Lease chỉ gồm handoff và manifest.
+
+`PC02-FIX16…19` viết lại `acceptance/fixtures/recovery/README.md` và
+`.../l-purge-all-two-phase-and-negatives.json` (lan truyền tập purge). Hai dòng
+`inputs.fixtures` của manifest e6 vì thế trỏ vào byte không còn tồn tại. Kết luận **không** đổi
+— hai test do fixture điều khiển đã chạy lại trên byte hiện tại và vẫn xanh (48 passed) — nhưng
+**một pin đọc đã cũ vẫn là một khẳng định sai về thứ đã thực sự được đọc**, nên nó được sửa chứ
+không được chú thích.
+
+| | |
+| --- | --- |
+| Fixture được pin lại | `recovery/README.md`, `recovery/l-purge-all-two-phase-and-negatives.json` |
+| `contract_hashes` được làm mới từ §0 của card | 9 file (ADR-0011, baseline.json, decision-register.md, modules.yaml, ports.yaml, ops/backup-restore.md, openapi.yaml, scenarios.yaml, ops/secrets.md) |
+| Artifacts | **xác minh lại là y nguyên** — không giả định, có kiểm |
+| Sau khi phát hành | 0 pin đọc cũ, 0 contract hash cũ, 0 artifact pin cũ |
+
+**Baseline của chính card thì không cũ:** SG-HASH chạy lại cho kết quả **26/26 khớp, 0 lệch** ở
+epoch `PC10-PIN-P5c-20260909` — PC10 đã pin lại card sau đợt đó. Chỉ **ảnh chụp trong manifest**
+là cũ, và chỉ nó được sửa. `contract_hashes` nay lấy thẳng từ §0 của card để manifest và card
+không thể bất đồng về baseline mà cả hai cùng khai.
+
+
 Mọi mục ở trên là `SELF_VALIDATION`. **Không** mục nào là independent audit.
 
 ---
 
-*`PKT-TC-BACKUP` (e1) + `PKT-TC-BACKUP-FIX1` (e2) + `PKT-TC-BACKUP-FIX2` (e3) · `worker-W6B` · `lease_released_at` 2026-09-08T06:40Z · ceiling
+*`PKT-TC-BACKUP` (e1) + `PKT-TC-BACKUP-FIX1` (e2) + `PKT-TC-BACKUP-FIX2` (e3) + `PKT-TC-BACKUP-FIX3` (e4) + `PKT-TC-BACKUP-FIX4` (e5) + `PKT-TC-BACKUP-FIX5` (e6) + `PKT-TC-BACKUP-FIX6` (e7) · `worker-W6B` · `lease_released_at` 2026-09-09T10:45Z · ceiling
 `IMPLEMENTATION_VERIFIED` cho phạm vi E1/E2 của card; diễn tập thật `NOT_RUN`.*

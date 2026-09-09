@@ -96,6 +96,7 @@ from server.app.analysis.key import (
     AnalysisKeyError,
     analysis_key_from_inputs,
     analysis_key_from_mapping,
+    compute_source_fingerprint,
     sha256_of,
 )
 from server.app.analysis.repository import (
@@ -134,6 +135,23 @@ AI_INFERENCE_TIMEOUT_SECONDS: dict[str, int] = {
     "label": 120,
     "summary": 300,
     "direction_phrasing": 180,
+}
+
+#: ``contracts/ai/tasks.yaml`` ``tasks[].prompt_version`` / ``schema_version``, one pair per
+#: task type. These are **configuration, not row data**: they version the prompt template and
+#: the result schema globally, which is why ``ENT-analysis-generation.reason`` has
+#: ``prompt_version_change`` and ``schema_version_change`` as reanalysis triggers -- a change
+#: to either opens new generations across the corpus rather than editing rows. Quoted here the
+#: same way the retry budgets above are, and never re-derived.
+PROMPT_VERSION: dict[str, str] = {
+    "label": "1.0.0",
+    "summary": "1.0.0",
+    "direction_phrasing": "1.0.0",
+}
+SCHEMA_VERSION: dict[str, str] = {
+    "label": "0.1.0",
+    "summary": "0.1.0",
+    "direction_phrasing": "0.1.0",
 }
 
 #: ``ENT-analysis-generation.reason`` -- the closed list of legal reanalysis triggers.
@@ -450,18 +468,26 @@ class AnalysisContext:
 class TargetRequest:
     """One target ``analysis.enqueue_tasks`` is asked to queue work for.
 
-    The caller supplies the source fingerprint because the caller is the module that just
-    committed the sources (ingest) or just selected the target (report builder). It is
-    computed with :func:`server.app.analysis.key.compute_source_fingerprint`, whose inputs
-    are content hashes and nothing else -- no tag, no provider, no report id.
+    ``source_fingerprint`` is **advisory**. The key always uses
+    :func:`derived_source_fingerprint` over the sources the task-input port will hand the
+    model, because that is what ``ENT-analysis.source_fingerprint`` is defined to be and
+    because the key has to be one value across the enqueue lookup, the task input and the
+    commit -- the enqueue lookup is what makes REQ-AC06 true, so three spellings of it would
+    not read as a bug, they would read as the model being called again. A caller that supplies
+    a disagreeing value is told so in the response entry
+    (``source_fingerprint_hint_ignored``) rather than overruled in silence or refused;
+    ``CR-TC-ANALYSIS-10`` proposes removing the field from the port.
+
+    ``prompt_version`` and ``schema_version`` default to the contract's per-task-type values
+    (``contracts/ai/tasks.yaml`` §2); they are configuration, not caller input.
     """
 
     target_kind: str
     target_id: str
     task_type: str
-    source_fingerprint: str
-    prompt_version: str
-    schema_version: str
+    source_fingerprint: str | None = None
+    prompt_version: str | None = None
+    schema_version: str | None = None
     max_evidence_level: str = "post_only"
 
 
@@ -748,13 +774,18 @@ def _enqueue(
                 task_type=target.task_type,
             ),
         )
+        sources = _sources_for(ctx, target_key)
+        fingerprint = derived_source_fingerprint(sources)
+        hint_ignored = (
+            target.source_fingerprint is not None and target.source_fingerprint != fingerprint
+        )
         key = analysis_key_from_inputs(
             owner_id=ctx.owner_id,
             target_key=target_key,
             task_type=target.task_type,
-            source_fingerprint=target.source_fingerprint,
-            prompt_version=target.prompt_version,
-            schema_version=target.schema_version,
+            source_fingerprint=fingerprint,
+            prompt_version=target.prompt_version or PROMPT_VERSION[target.task_type],
+            schema_version=target.schema_version or SCHEMA_VERSION[target.task_type],
             generation_number=generation_number,
         )
         if _valid_result_for(ctx, connection, key) is not None:
@@ -815,15 +846,22 @@ def _enqueue(
             attempt_budget_remaining=ANALYSIS_ATTEMPTS_PER_ITEM,
         )
         ctx.repository.insert_task(connection, task)
-        created.append(
-            {
-                "task_id": task.id,
-                "target_key": target_key,
-                "task_type": target.task_type,
-                "analysis_key": key.as_dict(),
-                "generation_number": generation_number,
-            }
-        )
+        entry: dict[str, Any] = {
+            "task_id": task.id,
+            "target_key": target_key,
+            "task_type": target.task_type,
+            "analysis_key": key.as_dict(),
+            "generation_number": generation_number,
+        }
+        if hint_ignored:
+            # Reported rather than raised, and rather than silently preferred. The key must
+            # be ONE value across enqueue, task input and commit or REQ-AC06 stops holding,
+            # so the derived one always wins; but a caller whose hash of what it committed
+            # disagrees with the hash of what the task-input port will serve has found a real
+            # wiring defect and should be told, not overruled in silence. See
+            # `CR-TC-ANALYSIS-10`.
+            entry["source_fingerprint_hint_ignored"] = True
+        created.append(entry)
     return {"created": created, "skipped": skipped}
 
 
@@ -1026,6 +1064,11 @@ def get_task_input(
     return {
         "task_id": task.id,
         "task_type": task.task_type,
+        # `contracts/ai/tasks.yaml` §2 lists `analysis_key` as REQUIRED input for all three
+        # tasks. Omitting it was `CR-TC-adapter-10`: without it a worker cannot submit at all,
+        # because `analysis-result.schema.json` requires the key and four of its components
+        # are things only the server knows.
+        "analysis_key": analysis_key_for(ctx, generation, sources).as_dict(),
         "target_ref": {
             "kind": generation.target_kind,
             "id": generation.target_work_id or generation.target_post_id,
@@ -1045,6 +1088,58 @@ def get_task_input(
         "max_evidence_level": max_evidence_level(sources),
         "inference_timeout_seconds": AI_INFERENCE_TIMEOUT_SECONDS[task.task_type],
     }
+
+
+def _sources_for(ctx: AnalysisContext, target_key: str) -> list[TaskSource]:
+    return [] if ctx.task_input is None else list(ctx.task_input.sources_for(target_key=target_key))
+
+
+def derived_source_fingerprint(sources: Sequence[TaskSource]) -> str:
+    """``ENT-analysis.source_fingerprint`` from the sources actually handed to the model.
+
+    The contract defines the fingerprint as a hash of the source content that was used, so the
+    place that fetches that content is the place that can compute it. Deriving it in one
+    function and calling that function everywhere is what keeps the key the enqueue path looks
+    up, the key the worker is given and the key the result is stored under from being three
+    different values -- and it is the enqueue lookup that AC-06 rests on, so a drift there
+    would not read as a bug, it would read as the model being called again.
+    """
+    return compute_source_fingerprint(
+        work_version_content_fingerprint=next(
+            (source.source_hash for source in sources if source.kind == "work_version"), None
+        ),
+        post_source_snapshot_hashes=[
+            source.source_hash for source in sources if source.kind == "post"
+        ],
+    )
+
+
+def analysis_key_for(
+    ctx: AnalysisContext, generation: GenerationRow, sources: Sequence[TaskSource]
+) -> AnalysisKey:
+    """The seven components of ADR-0008, computed by the **server**.
+
+    Four come from the ``analysis_generation`` row, which is the durable record of the
+    assignment; ``source_fingerprint`` from the sources about to be handed out; and the two
+    versions from the contract constants above.
+
+    Why the server and not the worker: ``analysis.get_task_input`` is a worker's only data
+    path (B12), and of the seven components a worker can see exactly none of the last three --
+    it does not know which sources the server considered committed, and it has no business
+    choosing a prompt or schema version. A worker that assembled its own key could submit a
+    result filed under a key nothing ever asked for, which SV-01 would then have no way to
+    catch, because SV-01's whole method is comparing the submitted key with the assigned one.
+    That gap is ``CR-TC-adapter-10``, and this function is the fix.
+    """
+    return analysis_key_from_inputs(
+        owner_id=ctx.owner_id,
+        target_key=generation.target_key,
+        task_type=generation.task_type,
+        source_fingerprint=derived_source_fingerprint(sources),
+        prompt_version=PROMPT_VERSION[generation.task_type],
+        schema_version=SCHEMA_VERSION[generation.task_type],
+        generation_number=generation.generation_number,
+    )
 
 
 def max_evidence_level(sources: Iterable[TaskSource]) -> str:

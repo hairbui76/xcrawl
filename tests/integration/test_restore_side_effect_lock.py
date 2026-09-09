@@ -655,6 +655,422 @@ def test_cli_requires_the_backup_operator_token() -> None:
             authenticate(presented=presented, expected=expected)
 
 
+def _run_cli(
+    monkeypatch: pytest.MonkeyPatch, database: Path, *args: str, token: str = "op-token"
+) -> tuple[int, dict[str, Any]]:
+    """Invoke the CLI end to end and return ``(exit_code, parsed JSON)``.
+
+    Goes through ``main`` rather than the service functions on purpose: the defect this covers
+    lived in the CLI's own error path, so a test that called the service directly would have
+    stayed green while the operator got a traceback.
+    """
+    import io
+    import json as _json
+    from contextlib import redirect_stdout
+
+    from tools.backup_cli import EXPECTED_TOKEN_ENV, TOKEN_ENV, main
+
+    monkeypatch.setenv(TOKEN_ENV, token)
+    monkeypatch.setenv(EXPECTED_TOKEN_ENV, "op-token")
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        code = main(["--database", str(database), *args])
+    printed = buffer.getvalue().strip()
+    return code, (_json.loads(printed) if printed else {})
+
+
+def test_not_found_for_a_snapshot_still_says_snapshot(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The half that must NOT change: a genuinely missing snapshot still reads as one.
+
+    The fix is only meaningful if the other message kept saying what it always did; otherwise
+    it is not a fix, it is a swap.
+    """
+    code, payload = _run_cli(
+        monkeypatch, database, "verify", "--snapshot-id", "01JNOSUCHSNAPSHOT00000000"
+    )
+    assert code == 2
+    assert payload["code"] == ErrorCode.NOT_FOUND.value
+    assert payload["details_safe"]["resource_kind"] == "backup_snapshot"
+    assert "snapshot" in payload["message_safe"].lower()
+
+
+def test_not_found_for_a_missing_owner_names_the_bootstrap_command(
+    database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``F-A3-P5R2-01``: a ``NOT_FOUND`` must not aim the reader at the wrong thing.
+
+    The envelope was already correct — ``details_safe.resource_kind: "owner"`` — but the
+    sentence came from a per-code table and read "Không tìm thấy snapshot được yêu cầu.", so an
+    Owner on a migrated-but-un-bootstrapped database went hunting for a snapshot instead of
+    creating the account. A misleading sentence is worse than a bare code: it points somewhere
+    specific and wrong.
+
+    Uses the bare ``database`` fixture — migrated, never seeded — because that IS the state the
+    audit describes. (Requesting ``engine`` would seed an owner and rows that reference it.)
+    """
+    code, payload = _run_cli(
+        monkeypatch, database, "snapshot", "--artifact", str(tmp_path / "unused.db")
+    )
+    assert code == 2
+    assert payload["code"] == ErrorCode.NOT_FOUND.value
+    assert payload["details_safe"]["resource_kind"] == "owner"
+    assert "owner" in payload["message_safe"]
+    assert "bootstrap-owner" in payload["message_safe"]
+    # It must not send the reader after a snapshot.
+    assert "snapshot" not in payload["message_safe"].lower()
+    # Only the sentence changed: code, scope and retry class stay the contract's.
+    assert payload["scope"] == "request"
+    assert payload["retry_class"] == "none"
+    assert not (tmp_path / "unused.db").exists()
+
+
+def test_the_bootstrap_command_the_message_names_actually_exists() -> None:
+    """The message names a command; that command has to be real.
+
+    Telling an operator to run something that does not exist would be the same defect class as
+    the one being fixed — a specific, confident, wrong instruction. ``rr-admin`` is a console
+    script in ``pyproject.toml`` and ``bootstrap-owner`` is one of its subparsers, so this
+    asserts both rather than trusting the string.
+    """
+    import tomllib
+
+    from tools.backup_cli import NOT_FOUND_MESSAGE
+
+    scripts = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"][
+        "scripts"
+    ]
+    assert "rr-admin" in scripts
+
+    from tools.rr_admin import build_parser as admin_parser
+
+    subcommands = {
+        name
+        for action in admin_parser()._actions
+        for name in getattr(action, "choices", None) or {}
+    }
+    assert "bootstrap-owner" in subcommands
+    assert "rr-admin bootstrap-owner" in NOT_FOUND_MESSAGE["owner"]
+
+
+def test_cli_reports_an_unknown_owner_as_an_envelope_not_a_traceback(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An owner id that does not exist ⇒ exit 2 and a ``NOT_FOUND`` envelope.
+
+    The CLI documents exit ``2`` for a contract refusal and ``0``/``3`` for the other two
+    outcomes; an ``AttributeError`` escaping ``main`` is none of them. Checking the parsed
+    envelope, not just the exit code, is what makes this a test of the *refusal* rather than of
+    "something went wrong".
+    """
+    code, payload = _run_cli(
+        monkeypatch,
+        database,
+        "--owner-id",
+        "01JNOSUCHOWNER00000000000",
+        "snapshot",
+        "--artifact",
+        str(tmp_path / "unused.db"),
+    )
+    assert code == 2
+    assert payload["code"] == ErrorCode.NOT_FOUND.value
+    assert payload["details_safe"] == {"resource_kind": "owner"}
+    assert payload["correlation_id"]
+    assert not (tmp_path / "unused.db").exists()
+
+
+def test_cli_reports_an_empty_owner_table_as_an_envelope(
+    database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """No ``owner`` row at all ⇒ the same refusal, not a crash.
+
+    This is the case the old code called "unreachable in practice" while raising an
+    uninitialised exception for it. It is reached by a fresh deployment before
+    ``bootstrap_owner``, and by a restore target before the artifact is in place — both times
+    with an operator at the keyboard running exactly this tool.
+    """
+    empty = create_sqlite_engine(database)
+    try:
+        with empty.begin() as connection:
+            connection.exec_driver_sql("DELETE FROM owner")
+    finally:
+        empty.dispose()
+
+    code, payload = _run_cli(
+        monkeypatch, database, "snapshot", "--artifact", str(tmp_path / "unused.db")
+    )
+    assert code == 2
+    assert payload["code"] == ErrorCode.NOT_FOUND.value
+    assert payload["details_safe"] == {"resource_kind": "owner"}
+
+
+def test_cli_rejects_a_bad_token_before_touching_the_database(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A wrong token ⇒ exit 3 and an ``UNAUTHORIZED`` payload, and no owner lookup at all.
+
+    Ordering matters: authentication is answered before the database is opened, so an
+    unauthenticated caller learns nothing about whether an owner exists.
+    """
+    code, payload = _run_cli(
+        monkeypatch,
+        database,
+        "snapshot",
+        "--artifact",
+        str(tmp_path / "unused.db"),
+        token="wrong-token",
+    )
+    assert code == 3
+    assert payload["code"] == ErrorCode.UNAUTHORIZED.value
+    assert payload["required_auth_scope"] == "backup_operator"
+    assert "token" not in str(payload).lower().replace("operator token", "")
+
+
+def test_cli_snapshot_and_verify_round_trip(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The happy path through the CLI: exit 0 twice, and the snapshot verifies.
+
+    Present so the refusal tests above cannot pass by the CLI being broken for everything.
+    """
+    artifact = tmp_path / "cli.db"
+    code, payload = _run_cli(
+        monkeypatch, database, "snapshot", "--artifact", str(artifact), "--request-id", "REQ-cli"
+    )
+    assert code == 0, payload
+    assert payload["state"] == "completed"
+    assert artifact.exists()
+
+    code, verified = _run_cli(
+        monkeypatch, database, "verify", "--snapshot-id", payload["backup_snapshot_id"]
+    )
+    assert code == 0, verified
+    assert verified["state"] == "verified"
+    assert verified["counts_match"] is True
+
+
+def test_maintenance_open_without_a_reason_is_an_envelope_not_a_traceback(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``F-A3-P5-01``: the runbook's own command must not crash.
+
+    ``docs/owner-runbook.md`` shows ``backup_cli maintenance --open``. The guard makes
+    ``reason`` mandatory (both audit columns are NOT NULL), ``--reason`` stayed optional here,
+    and ``MaintenanceWindowRequired`` went straight past the CLI's error handling to the
+    terminal — the operator followed the documented command and got a Python traceback.
+
+    Refused as an envelope with exit 2, not via ``argparse(required=True)``: argparse writes a
+    usage dump to stderr and leaves stdout empty, so anything parsing this tool's JSON would
+    receive nothing. The check is on stdout being a *complete* envelope for that reason.
+    """
+    code, payload = _run_cli(monkeypatch, database, "maintenance", "--open")
+    assert code == 2
+    assert payload["code"] == ErrorCode.VALIDATION_ERROR.value
+    assert payload["details_safe"]["field_path"] == "--reason"
+    assert payload["details_safe"]["violation_kind"] == "required_field_missing"
+    assert payload["correlation_id"]
+    with engine.connect() as connection:
+        assert (
+            int(connection.exec_driver_sql("SELECT COUNT(*) FROM maintenance_window").scalar_one())
+            == 0
+        )
+
+
+def test_maintenance_open_with_an_unknown_reason_is_rejected_by_argparse(
+    database: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An unknown reason is argparse's job: ``choices`` names the valid set back to the operator.
+
+    Deliberately a different mechanism from the missing case. "You forgot a flag" is answered
+    in the tool's own vocabulary; "that is not one of the five reasons" is answered by showing
+    the five, which an envelope with a ``violation_kind`` would not do.
+    """
+    from tools.backup_cli import EXPECTED_TOKEN_ENV, TOKEN_ENV, main
+
+    monkeypatch.setenv(TOKEN_ENV, "op-token")
+    monkeypatch.setenv(EXPECTED_TOKEN_ENV, "op-token")
+    with pytest.raises(SystemExit) as exited:
+        main(["--database", str(database), "maintenance", "--open", "--reason", "nonsense"])
+    assert exited.value.code == 2
+    assert "invalid choice" in capsys.readouterr().err
+
+
+def test_an_illegal_state_transition_is_an_envelope_not_a_traceback(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``--close`` with nothing open raises ``ForbiddenTransition`` below; the CLI renders it.
+
+    The state machine is closed on purpose, so asking for an edge it does not have is a normal
+    operator mistake, not a crash. It is ``VALIDATION_ERROR`` on ``storage_health`` for the same
+    reason ``restore_snapshot`` reports a wrong health that way — ``ports.yaml`` gives
+    ``backup.*`` no code for a bad precondition (``CR-TC-BACKUP-05``).
+    """
+    code, payload = _run_cli(monkeypatch, database, "maintenance", "--close")
+    assert code == 2
+    assert payload["code"] == ErrorCode.VALIDATION_ERROR.value
+    assert payload["details_safe"]["field_path"] == "storage_health"
+    # The internal exception text is never echoed -- only its class name, which carries no path
+    # or value.
+    assert payload["details_safe"]["violation_kind"] == "ForbiddenTransition"
+    assert "NOT NULL" not in str(payload)
+
+
+def test_an_unexpected_exception_still_leaves_a_clean_envelope(
+    engine: Engine,
+    database: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The catch-all: stdout stays parseable JSON even for a bug nobody anticipated.
+
+    Requires the seeded ``engine`` so the run actually reaches ``_dispatch``: without an
+    ``owner`` row it would stop earlier at the ``NOT_FOUND`` refusal, which is a different
+    path and already covered.
+
+    ``F-A3-P5-01`` was one instance of a general shape — an exception from a lower layer
+    reaching the terminal. Asserted by forcing an arbitrary failure inside the dispatch, so the
+    guarantee does not depend on having enumerated every exception type in advance. The class
+    name goes to stderr so a developer keeps a thread to pull; the exception's *message* is
+    echoed nowhere, since it can carry a path or a value the envelope does not admit.
+    """
+    import tools.backup_cli as cli
+
+    monkeypatch.setenv(cli.TOKEN_ENV, "op-token")
+    monkeypatch.setenv(cli.EXPECTED_TOKEN_ENV, "op-token")
+
+    def _boom(*_args: Any, **_kwargs: Any) -> None:
+        raise RuntimeError("/home/someone/secret/path leaked in a message")
+
+    monkeypatch.setattr(cli, "_dispatch", _boom)
+    code = cli.main(["--database", str(database), "maintenance", "--close"])
+    captured = capsys.readouterr()
+    assert code == 2
+    payload = __import__("json").loads(captured.out)
+    assert payload["code"] == ErrorCode.INTERNAL.value
+    assert payload["correlation_id"]
+    assert "secret/path" not in captured.out
+    assert "secret/path" not in captured.err
+    assert "RuntimeError" in captured.err
+
+
+def test_maintenance_window_survives_into_a_separate_cli_invocation(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Gap ``G-3`` / ``CR-TC-storage-07``: open the window in one process, restore in the next.
+
+    This is the documented runbook, and until ``PKT-TC-STORAGE-FIX4`` it could not actually be
+    executed. ``restore_snapshot`` refuses outside ``maintenance`` (``T-ST-05``), and
+    ``_guard()`` built an in-memory guard — so the window died with the first process and the
+    second was told there was no window. The operator would have followed the runbook exactly
+    and been refused for doing so.
+
+    Every step below is a **separate** ``main()`` call with its own engine and its own guard,
+    which is what makes this a two-process test rather than a two-function one.
+    """
+    artifact = tmp_path / "twostep.db"
+    code, snapshot_payload = _run_cli(
+        monkeypatch, database, "snapshot", "--artifact", str(artifact), "--request-id", "REQ-2p"
+    )
+    assert code == 0, snapshot_payload
+    code, _ = _run_cli(
+        monkeypatch, database, "verify", "--snapshot-id", snapshot_payload["backup_snapshot_id"]
+    )
+    assert code == 0
+
+    # -- invocation 1: open the window -------------------------------------------------
+    code, opened = _run_cli(monkeypatch, database, "maintenance", "--open", "--reason", "restore")
+    assert code == 0, opened
+    assert opened["storage_health"] == "maintenance"
+    assert opened["window_id"]
+
+    # It is on disk, with the operator recorded -- not merely in the exited process's memory.
+    with engine.connect() as connection:
+        row = (
+            connection.exec_driver_sql(
+                "SELECT id, opened_by, reason, closed_at, restore_record_id"
+                " FROM maintenance_window WHERE owner_id = ? AND closed_at IS NULL",
+                (OWNER_ID,),
+            )
+            .mappings()
+            .one()
+        )
+    assert row["opened_by"] == "ACT-backup-operator"
+    assert row["reason"] == "restore"
+    assert row["restore_record_id"] is None  # nothing has run inside it yet
+
+    # -- invocation 2: a FRESH process reaches the restore path ------------------------
+    code, restored = _run_cli(
+        monkeypatch,
+        database,
+        "restore",
+        "--snapshot-id",
+        snapshot_payload["backup_snapshot_id"],
+        "--request-id",
+        "RR-2p",
+        "--confirm",
+        CONFIRMATION_PHRASE,
+    )
+    assert code == 0, restored
+    assert restored["storage_health"] == "recovery_required"
+    assert restored["integrity_check_outcome"] == "not_run"
+    assert restored["dispatcher_unlocked_at"] is None
+
+    # The window now points at the restore that ran inside it -- written after the INSERT,
+    # because the column is a foreign key onto `restore_record`.
+    with engine.connect() as connection:
+        linked = connection.exec_driver_sql(
+            "SELECT restore_record_id FROM maintenance_window WHERE id = ?", (row["id"],)
+        ).scalar_one()
+        exists = int(
+            connection.exec_driver_sql(
+                "SELECT COUNT(*) FROM restore_record WHERE id = ?", (linked,)
+            ).scalar_one()
+        )
+    assert linked == restored["restore_id"]
+    assert exists == 1
+
+    # -- invocation 3: the lock is real across processes too ---------------------------
+    code, status = _run_cli(monkeypatch, database, "status", "--restore-id", restored["restore_id"])
+    assert code == 2, status  # not reconciled: clauses still unmet
+    assert status["reconciliation_complete"] is False
+
+
+def test_restore_still_refuses_without_a_window_in_a_fresh_process(
+    engine: Engine, database: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The negative half: persistence must not become a way in.
+
+    Making the window durable would be worth nothing if a process that never opened one could
+    restore anyway. No ``maintenance --open``, so ``T-ST-05`` has no edge to take.
+    """
+    artifact = tmp_path / "nowindow.db"
+    code, payload = _run_cli(
+        monkeypatch, database, "snapshot", "--artifact", str(artifact), "--request-id", "REQ-nw"
+    )
+    assert code == 0
+    _run_cli(monkeypatch, database, "verify", "--snapshot-id", payload["backup_snapshot_id"])
+
+    code, refused = _run_cli(
+        monkeypatch,
+        database,
+        "restore",
+        "--snapshot-id",
+        payload["backup_snapshot_id"],
+        "--request-id",
+        "RR-nw",
+        "--confirm",
+        CONFIRMATION_PHRASE,
+    )
+    assert code == 2
+    assert refused["code"] == ErrorCode.VALIDATION_ERROR.value
+    assert refused["details_safe"]["field_path"] == "storage_health"
+    with engine.connect() as connection:
+        assert (
+            int(connection.exec_driver_sql("SELECT COUNT(*) FROM restore_record").scalar_one()) == 0
+        )
+
+
 def test_restore_requires_the_typed_confirmation(engine: Engine, tmp_path: Path) -> None:
     """``ports.yaml``: restore needs a typed confirmation, and a wrong one changes nothing."""
     guard = _guard(engine)

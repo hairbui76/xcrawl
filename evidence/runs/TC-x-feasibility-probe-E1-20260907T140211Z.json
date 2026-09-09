@@ -156,7 +156,7 @@
     "attempts": 0,
     "error_classification": null
   },
-  "result": "NOT_RUN",
+  "result": "STALE",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "none",
@@ -213,5 +213,6 @@
       "Selector và marker khớp trang X thật — chưa đối chiếu lần nào.",
       "Cổng SP1 đạt — điều kiện của nó (Owner chấp nhận §6) chưa đủ."
     ]
-  }
+  },
+  "stale_reason": "SUPERSEDED bởi EV-E1-02-tc-x-feasibility-probe (evidence/runs/TC-x-feasibility-probe-E1-20260908T035712Z.json) sau PKT-TC-PROBE-FIX2. Hai lý do, cả hai đều làm bản ghi này hết hiệu lực chứ không sai vào lúc nó được viết: (1) implementation_revision trỏ tới probe/x_feasibility/{config,run_probe}.py ở phiên bản mang lỗi wiring G-5 — output_dir tương đối giải theo thư mục chứa file config, và --dry-run vẫn ghi probe.log xuống đĩa; (2) mọi hash hợp đồng trong baseline đã đổi từ đó (contracts/ops/collector-probe.md nay v0.5.0, contracts/retry-policy.yaml v0.8.0, precode/baseline.json, precode/decision-register.md, contracts/data/entities.yaml). Kết luận thì KHÔNG đổi và bản mới ghi lại đúng như vậy: probe live vẫn NOT_RUN."
 }

@@ -35,6 +35,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
+from jsonschema import Draft202012Validator, FormatChecker
 from rr_contracts.generated.constants import CONTRACT_SCHEMA_VERSION
 from rr_contracts.generated.errors import RETRY_CLASS, SCOPE, ErrorCode
 from sqlalchemy import Engine, text
@@ -626,7 +627,7 @@ def test_source_blocked_records_an_unblock_condition_and_rotates_nothing(ctx, en
         },
     )
 
-    assert answer["run_status"] == "blocked"
+    assert answer["run"]["status"] == "blocked"
     status, reason, unblock = rows(
         engine, "SELECT status, stop_reason, unblock_condition_vi FROM run"
     )[0]
@@ -855,6 +856,458 @@ def test_release_revokes_the_lease_and_bumps_the_epoch(ctx, engine) -> None:
     assert second["released"] is False
     assert lease_snapshot(engine) == after
     assert held_leases(engine) == 0
+
+
+# --- CR-TC-COLLECTOR-12: the response on the wire, not a copy of it ----------------------------
+
+
+def _wired_app(engine: Engine, clock: FakeClock, **context_kwargs: Any) -> Any:
+    counter = {"n": 0}
+
+    def ids() -> str:
+        counter["n"] += 1
+        return f"01JTEST{counter['n']:019d}"[:26]
+
+    app = create_app()
+    app.state.engine = engine
+    app.state.token_registry = TokenRegistry({COLLECTOR_TOKEN: PrincipalKind.COLLECTOR})
+    app.state.job_context = JobContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        settings=ScheduleSettings(slots_local=("08:00", "20:00"), timezone_iana="Asia/Ho_Chi_Minh"),
+        clock=clock,
+        id_factory=ids,
+        **context_kwargs,
+    )
+    return app
+
+
+def test_the_claim_response_over_http_validates_against_the_schema(engine, clock) -> None:
+    """``CR-TC-COLLECTOR-12``, at the layer the defect was found.
+
+    ``contracts/ports.yaml`` names ``worker-assignment.schema.json`` as the response schema of
+    ``worker.claim_assignment``, and the document is ``additionalProperties: false`` with an
+    explicit ``required`` list. The bytes a collector actually receives are what has to satisfy
+    it — a constructed object validating proves the shape is *expressible*, not that the
+    router sends it, and the two diverged: the live response failed in seven places while the
+    contract test was green.
+
+    So this reads the **HTTP body**. Everything before it is real: the app factory, the token
+    registry, the router, the service, the migrated database.
+    """
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    start_run(ctx)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/workers/assignments/claim",
+            headers={**WIRE_HEADERS, "Authorization": f"Bearer {COLLECTOR_TOKEN}"},
+            json=claim_body(WORKER_A, "claim-over-http"),
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert "assignment" in body, "the run is queued, so a claim must return work"
+
+    schema = json.loads(
+        (REPO_ROOT / "contracts" / "schemas" / "worker-assignment.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    errors = sorted(
+        Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(body),
+        key=lambda error: list(error.path),
+    )
+    assert errors == [], "\n".join(f"{list(e.path)}: {e.message}" for e in errors)
+
+
+def test_a_no_work_response_over_http_validates_too(engine, clock) -> None:
+    """The other branch of the ``oneOf``. ``no_work`` is a 200, not an error (fixture ``g``)."""
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    start_run(ctx)
+    claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/workers/assignments/claim",
+            headers={**WIRE_HEADERS, "Authorization": f"Bearer {COLLECTOR_TOKEN}"},
+            json=claim_body(WORKER_B, "claim-b"),
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["no_work"]["reason"] == "assignment_already_held"
+
+    schema = json.loads(
+        (REPO_ROOT / "contracts" / "schemas" / "worker-assignment.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert list(Draft202012Validator(schema).iter_errors(body)) == []
+
+
+# --- CR-TC-COLLECTOR-11: the alert intent lands in the caller's transaction --------------------
+
+
+class _RecordingAlertPort:
+    """An alert port that writes through the connection it is handed.
+
+    Deliberately not a mock that only records the call: the defect was that a port opening its
+    **own** SQLite writer deadlocked against the caller's open transaction, so a port that
+    never writes could not have reproduced it. This one writes a real ``outbox_intent`` row on
+    the connection it receives, which is exactly what the real adapter does through
+    ``delivery.create_intent(connection=…)``.
+    """
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+        self.connections: list[Any] = []
+
+    def create_alert_intent(self, *, run_id: str, stop_reason: str, connection: Any) -> str | None:
+        self.calls.append((run_id, stop_reason))
+        self.connections.append(connection)
+        intent_id = "01JNTENT00000000000000000A"
+        # The real `outbox_intent` columns (migration 0009). `intent_type='telegram_alert'`
+        # with `subject_ref = run_id` is what `ux_outbox_alert_per_run` keys on -- REQ-AC04
+        # lives on that index, not in this port.
+        connection.execute(
+            text(
+                "INSERT INTO outbox_intent (id, owner_id, intent_type, subject_ref, "
+                "created_in_transaction_at, dispatch_state, restore_generation) "
+                "VALUES (:id, :o, 'telegram_alert', :run, "
+                "'2026-09-07T08:00:00.000Z', 'ready', 0)"
+            ),
+            {"id": intent_id, "o": OWNER_ID, "run": run_id},
+        )
+        return intent_id
+
+
+def test_the_alert_intent_is_written_in_the_callers_transaction(engine, clock) -> None:
+    """``CR-TC-COLLECTOR-11``. Two things had to be true at once, and now are.
+
+    *One writer.* ``report_stop`` holds an open ``session_scope``; SQLite allows one writer, so
+    a port that opened its own connection got ``database is locked``. The port is handed the
+    caller's connection, and this test asserts it is **the same object**, not merely that a
+    write succeeded — a port that opened its own connection and happened not to deadlock would
+    still be wrong.
+
+    *One commit.* ``run.alert_intent_id`` is ``REFERENCES outbox_intent (id)``. The intent row
+    and the pointer to it therefore have to land together; if they did not, a crash between
+    them would leave the pointer naming a row that never appears. Foreign keys are ``ON`` for
+    every connection this engine hands out, so the update below would fail outright were the
+    intent not already there in the same transaction.
+    """
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    port = _RecordingAlertPort()
+    ctx.alert_port = port
+
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+
+    answer = report_stop(
+        ctx,
+        {
+            "lease_id": lease["lease_id"],
+            "lease_epoch": lease["lease_epoch"],
+            "stop_reason": "challenge_required",
+        },
+    )
+
+    assert answer["alert_intent_created"] is True
+    assert len(port.calls) == 1
+    assert port.connections[0] is not None
+    assert (
+        count(engine, "SELECT COUNT(*) FROM outbox_intent WHERE intent_type = 'telegram_alert'")
+        == 1
+    )
+    pointer = rows(engine, "SELECT alert_intent_id, status FROM run")[0]
+    assert pointer == ("01JNTENT00000000000000000A", "needs_user")
+
+
+def test_a_second_stop_report_does_not_create_a_second_alert(engine, clock) -> None:
+    """``REQ-AC04`` / ``delivery_alert_per_run = 1``: at most one alert per run.
+
+    The second report finds ``run.alert_intent_id`` already set and does not call the port at
+    all, so the uniqueness does not depend on the port being idempotent — though the real one
+    is, on ``logical_delivery_key``.
+    """
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    port = _RecordingAlertPort()
+    ctx.alert_port = port
+
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+    body = {
+        "lease_id": lease["lease_id"],
+        "lease_epoch": lease["lease_epoch"],
+        "stop_reason": "challenge_required",
+    }
+
+    first = report_stop(ctx, body)
+    second = report_stop(ctx, body)
+
+    assert first["alert_intent_created"] is True
+    assert second["alert_intent_created"] is False
+    assert len(port.calls) == 1
+    assert (
+        count(engine, "SELECT COUNT(*) FROM outbox_intent WHERE intent_type = 'telegram_alert'")
+        == 1
+    )
+
+
+# --- CR-TC-COLLECTOR-16: the report_stop body, both statuses, read off the fixtures ------------
+
+
+def _pinned_stop_response(fixture: str, *, seq: int) -> dict[str, Any]:
+    """The ``response_body`` a fixture pins for one ``worker.report_stop`` event."""
+    data = load(fixture)
+    event = next(
+        item
+        for item in data["events"]
+        if item.get("operation") == "worker.report_stop" and item.get("seq") == seq
+    )
+    body: dict[str, Any] = event["response_body"]
+    return body
+
+
+def test_the_stop_response_over_http_has_the_shape_the_fixture_pins(engine, clock) -> None:
+    """``CR-TC-COLLECTOR-16``. The fixture is the oracle, and the **keys** come from it.
+
+    ``contracts/http/openapi.yaml`` types this response as a ``GenericObject``, so the only
+    concrete shape anywhere is the one ``collection/c-challenge-mid-batch.json`` pins, and
+    ``acceptance/fixtures/README`` §3.2 makes it the sole oracle. This card used to answer
+    ``{run_status, stop_reason, alert_created}`` — three keys, none of them the fixture's —
+    and because ``collector/app/client.py`` reads the fixture's keys, every field of its
+    ``StopAck`` came back blank against the real server.
+
+    The expected key set is **read from the fixture**, not typed here, so a change to the
+    pinned example fails this test instead of leaving it agreeing with a stale copy of
+    itself. The nested ``run`` block is checked the same way, and its four state fields are
+    compared by value: the fixture's challenge case is ``needs_user`` / ``collecting`` /
+    ``outcome: null`` / ``captcha``, which is exactly T-RUN-09.
+    """
+    pinned = _pinned_stop_response("collection/c-challenge-mid-batch", seq=3)
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    ctx.alert_port = _RecordingAlertPort()
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+    assignment_id = claimed["assignment"]["assignment_id"]
+
+    with TestClient(app) as client:
+        response = client.post(
+            f"/v1/workers/assignments/{assignment_id}/stop",
+            headers={**WIRE_HEADERS, "Authorization": f"Bearer {COLLECTOR_TOKEN}"},
+            json={
+                "request_id": "01JREQ0000000000000000000A",
+                "schema_version": "0.1.0",
+                "assignment_id": assignment_id,
+                "stop_report_id": "01JSTOP000000000000000000A",
+                "lease_id": lease["lease_id"],
+                "lease_epoch": lease["lease_epoch"],
+                "stop_reason": "challenge_required",
+                "last_acked_ingest_sequence": 20,
+            },
+        )
+
+    assert response.status_code == pinned_status("collection/c-challenge-mid-batch", seq=3)
+    body = response.json()
+    assert set(body) == set(pinned), f"live {sorted(body)} vs fixture {sorted(pinned)}"
+    assert set(body["run"]) == set(pinned["run"])
+    assert body["run"] == {
+        "status": "needs_user",
+        "phase": "collecting",
+        "outcome": None,
+        "stop_reason": "captcha",
+    }
+    assert body["alert_intent_created"] is True
+    assert body["alert_intent_id"]
+
+
+def test_a_repeated_stop_report_still_returns_the_alert_id(engine, clock) -> None:
+    """Fixture ``collection/c`` event 4: ``alert_intent_created: false``, and the id **stays**.
+
+    ``REQ-AC04`` is about not creating a second intent, not about forgetting the first. A
+    replay that answered ``null`` would tell the collector the alert does not exist.
+    """
+    pinned = _pinned_stop_response("collection/c-challenge-mid-batch", seq=4)
+    assert pinned["alert_intent_created"] is False
+    assert pinned["alert_intent_id"]
+
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    ctx.alert_port = _RecordingAlertPort()
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+    request = {
+        "lease_id": lease["lease_id"],
+        "lease_epoch": lease["lease_epoch"],
+        "stop_reason": "challenge_required",
+    }
+
+    first = report_stop(ctx, request)
+    second = report_stop(ctx, request)
+
+    assert set(second) == set(pinned)
+    assert second["alert_intent_created"] is False
+    assert second["alert_intent_id"] == first["alert_intent_id"]
+
+
+def test_the_layout_changed_stop_answers_409_with_the_fixtures_echo_body(engine, clock) -> None:
+    """Fixture ``collection/a-feed-layout-changed.json``: 409, and the object beside the envelope.
+
+    A 409 that is an **acknowledgement**, not a failure — the run really did move to
+    ``blocked`` and the alert really was created, and the collector must not retry it
+    (``client._STOP_ECHO_CODES``). So this asserts three separate things: the status, the
+    top-level key set read off the fixture, and — the part that matters for durability — that
+    the run and the intent were committed before the 409 was raised.
+
+    ``run`` and ``alert_intent_created`` are siblings of ``error``, not entries in
+    ``details_safe``: ``contracts/errors.yaml`` closes ``SOURCE_LAYOUT_CHANGED``'s
+    ``details_safe_keys`` to six keys and none of them is ``run``. The fixture agrees, and
+    that disagreement with ``collector/app/client.py`` — which reads them out of
+    ``details_safe`` — is ``CR-TC-SCHED-08``.
+    """
+    pinned = _pinned_stop_response("collection/a-feed-layout-changed", seq=2)
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    ctx.alert_port = _RecordingAlertPort()
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+    assignment_id = claimed["assignment"]["assignment_id"]
+
+    with TestClient(app) as client:
+        response = client.post(
+            f"/v1/workers/assignments/{assignment_id}/stop",
+            headers={**WIRE_HEADERS, "Authorization": f"Bearer {COLLECTOR_TOKEN}"},
+            json={
+                "request_id": "01JREQ0000000000000000000A",
+                "schema_version": "0.1.0",
+                "assignment_id": assignment_id,
+                "stop_report_id": "01JSTOP000000000000000000B",
+                "lease_id": lease["lease_id"],
+                "lease_epoch": lease["lease_epoch"],
+                "stop_reason": "source_layout_changed",
+                "last_acked_ingest_sequence": 20,
+                "missing_required_fields": ["author.handle", "published_at"],
+                "posts_seen": 40,
+                "posts_parsed_ok": 12,
+            },
+        )
+
+    assert response.status_code == 409 == pinned_status("collection/a-feed-layout-changed", seq=2)
+    body = response.json()
+    assert set(body) == set(pinned), f"live {sorted(body)} vs fixture {sorted(pinned)}"
+    assert body["error"]["code"] == pinned["error"]["code"] == "SOURCE_LAYOUT_CHANGED"
+    assert body["error"]["correlation_id"]
+    assert set(body["run"]) == set(pinned["run"])
+    assert body["run"]["status"] == "blocked"
+    assert body["run"]["unblock_condition_vi"]
+    assert body["alert_intent_created"] is True
+
+    # The acknowledgement committed: this is a 409 that changed durable state on purpose.
+    assert rows(engine, "SELECT status, stop_reason FROM run")[0] == (
+        "blocked",
+        "source_layout_changed",
+    )
+    assert (
+        count(engine, "SELECT COUNT(*) FROM outbox_intent WHERE intent_type = 'telegram_alert'")
+        == 1
+    )
+
+    # `details_safe` stays inside its allowlist -- `run` is NOT smuggled in there.
+    assert set(body["error"]["details_safe"]) <= {
+        "run_id",
+        "phase",
+        "stop_reason",
+        "missing_required_fields",
+        "posts_seen",
+        "posts_parsed_ok",
+    }
+
+
+def test_a_limit_stop_reports_the_budget_it_hit_and_no_alert_id(engine, clock) -> None:
+    """Fixture ``collection/e-limit-reached-stop.json``: ``limit_hit``/``limit_kind`` in
+    ``run``, and **no** ``alert_intent_id`` key at all.
+
+    Two things the fixture settles that a reasonable implementation would get wrong. Hitting a
+    budget moves the phase to ``enriching`` (T-RUN-02) rather than ending the run — AMD-B02:
+    stopping early is not failing, and I13 turns on the difference. And omitting the key is
+    not the same as sending ``null``: ``null`` would claim there is an alert with no id, when
+    in fact a limit stop creates none.
+    """
+    pinned = _pinned_stop_response("collection/e-limit-reached-stop", seq=2)
+    assert "alert_intent_id" not in pinned
+
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    ctx.alert_port = _RecordingAlertPort()
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+
+    answer = report_stop(
+        ctx,
+        {
+            "lease_id": lease["lease_id"],
+            "lease_epoch": lease["lease_epoch"],
+            "stop_reason": "limit_reached",
+            "limit_kind": "posts",
+            "posts_observed_total": 200,
+        },
+    )
+
+    assert set(answer) == set(pinned)
+    assert set(answer["run"]) == set(pinned["run"])
+    assert answer["run"]["status"] == "running"
+    assert answer["run"]["phase"] == "enriching"
+    assert answer["run"]["stop_reason"] == "limit_reached"
+    assert answer["run"]["limit_hit"] is True
+    assert answer["run"]["limit_kind"] == "posts"
+    assert answer["alert_intent_created"] is False
+    assert "alert_intent_id" not in answer
+
+
+def test_a_limit_stop_without_a_limit_kind_is_refused(engine, clock) -> None:
+    """The ``run`` CHECK needs it, and only the collector knows which budget it hit.
+
+    Guessing would put a reason in front of the Owner that nobody measured.
+    """
+    app = _wired_app(engine, clock)
+    ctx = app.state.job_context
+    start_run(ctx)
+    claimed = claim_assignment(ctx, claim_body(WORKER_A, "claim-a"))
+    lease = claimed["assignment"]["lease"]
+
+    with pytest.raises(JobError) as raised:
+        report_stop(
+            ctx,
+            {
+                "lease_id": lease["lease_id"],
+                "lease_epoch": lease["lease_epoch"],
+                "stop_reason": "limit_reached",
+            },
+        )
+    assert raised.value.code is ErrorCode.VALIDATION_ERROR
+
+
+def pinned_status(fixture: str, *, seq: int) -> int:
+    data = load(fixture)
+    event = next(
+        item
+        for item in data["events"]
+        if item.get("operation") == "worker.report_stop" and item.get("seq") == seq
+    )
+    return int(event["response_status"])
 
 
 # --- the migration graph -------------------------------------------------------------------------

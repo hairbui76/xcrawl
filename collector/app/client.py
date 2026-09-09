@@ -156,6 +156,7 @@ class ServerError(Exception):
         details_safe: Mapping[str, Any] | None = None,
         retry_after_ms: int | None = None,
         http_status: int | None = None,
+        body: Mapping[str, Any] | None = None,
     ) -> None:
         super().__init__(f"{code.value}: {message_safe}")
         self.code = code
@@ -166,6 +167,14 @@ class ServerError(Exception):
         self.details_safe = dict(details_safe or {})
         self.retry_after_ms = retry_after_ms
         self.http_status = http_status
+        #: The whole response body, not just the envelope. An error response may carry
+        #: *siblings* of ``error`` -- ``worker.report_stop``'s 409 for
+        #: ``source_layout_changed`` answers ``{error, run, alert_intent_created,
+        #: alert_intent_id}`` -- and those are not inside the envelope. They cannot live in
+        #: ``details_safe`` either: ``contracts/errors.yaml`` closes that object to the
+        #: ``details_safe_keys`` of the code, so putting them there would be a contract
+        #: violation, not a shortcut (``CR-TC-SCHED-08``).
+        self.body: dict[str, Any] = dict(body or {})
 
     @property
     def is_lease_lost(self) -> bool:
@@ -311,6 +320,7 @@ class CollectorClient:
             details_safe=envelope.get("details_safe") or {},
             retry_after_ms=envelope.get("retry_after_ms"),
             http_status=response.status_code,
+            body=body if isinstance(body, dict) else None,
         )
 
     def _post(
@@ -454,11 +464,16 @@ class CollectorClient:
         except ServerError as error:
             if error.code not in _STOP_ECHO_CODES:
                 raise
-            run = error.details_safe.get("run")
+            # Siblings of ``error``, never ``details_safe``: ``a-feed-layout-changed``
+            # answers ``{error, run, alert_intent_created, alert_intent_id}``, and
+            # ``contracts/errors.yaml`` closes ``details_safe`` to the code's own
+            # ``details_safe_keys`` -- ``run`` is not among them for any code
+            # (``CR-TC-SCHED-08``).
+            run = error.body.get("run")
             return StopAck(
                 run=dict(run) if isinstance(run, dict) else {},
-                alert_intent_created=bool(error.details_safe.get("alert_intent_created", False)),
-                alert_intent_id=None,
+                alert_intent_created=bool(error.body.get("alert_intent_created", False)),
+                alert_intent_id=error.body.get("alert_intent_id"),
                 echoed_code=error.code,
             )
         return StopAck(

@@ -29,12 +29,12 @@ evidence artifact trong packaging phase; không chèn report vào manifest mà r
 thể nằm trong chính snapshot mà nó ký, và một manifest không thể chứa chính nó. Nếu về sau có một epoch mới,
 epoch đó có thể bao gồm thư mục này như **bằng chứng** (role `EVIDENCE`), không phải như candidate.
 
-Thư mục được bổ sung **tám** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
+Thư mục được bổ sung **chín** lần: `PKT-PC00-FIX9` chép hồ sơ tới epoch 7, `PKT-PC00-FIX12` chép tiếp tới
 epoch 9, `PKT-PC00-FIX18` chép mười file của giai đoạn mã, `PKT-PC00-FIX19` chép lại sổ tiến độ trước khi
 commit, `PKT-PC00-FIX24` chép hai biên bản Owner của Giai đoạn 2, `PKT-PC00-FIX25` chép **hai file dựng lại
 từ transcript** để đóng `CR-PC00-30`, `PKT-PC00-FIX29` chép **mười một** file của Giai đoạn 3 + Giai đoạn 5, và
-`PKT-PC00-FIX31` chép **năm** file của Giai đoạn 4 + Giai đoạn 6 — tất cả đều **được ghi ra đĩa TRƯỚC khi
-dispatch** (xem "Cách đọc"). **Ba lần giữa đều thay** bản
+`PKT-PC00-FIX31` chép **năm** file của Giai đoạn 4 + Giai đoạn 6, và `PKT-PC00-FIX33` chép hồ sơ **đợt nối
+dây tích hợp** — tất cả đều **được ghi ra đĩa TRƯỚC khi dispatch** (xem "Cách đọc"). **Ba lần giữa đều thay** bản
 `coordinator-ledger.md` bằng bản mới hơn; hash mỗi bản bị thay được ghi ngay trong hàng của nó
 (`PKT-PC00-FIX24` **không** chép lại sổ — xem "Cách đọc"). Mỗi lần chép đều `cmp`-verified và hash được tính
 lại sau khi chép.
@@ -64,6 +64,9 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A3-code-review-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 1 — audit **code** đầu tiên (`FC-P1` epoch 1) | `670da439c78156c3af4a48de2e382a1f14d1cf3b4f2f3f66f74e8e28bef5f218` | 3951 |
 | `A3-r2-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 2 — xác minh `F-A3R1-*` (`FC-P1` epoch 2) | `e55841a9b22b56fefbca24bebdab5bd532ac063125c41f90148e538097a69670` | 3309 |
 | `A3-r3-packet.md` | TASK_PACKET cho `auditor-A3`, vòng 3 — xác minh `F-A3R2-*` + đăng ký của PC09 (`FC-P1` epoch 3) | `8f2fe8e7f0b3b41fdfae4a90c74d8ead9d43fb93ba625a2fac1b64920e72bd82` | 2444 |
+| `A3-p5-r3-packet.md` | TASK_PACKET cho `auditor-A3` — xác minh **một mục** `F-A3-P5R2-01`, `FC-P5` epoch 3 | `cd781387099618ebe395b4c977cb6d398b659f2256c5758e3a4b64e48578e7a9` | 1567 |
+| `A3-p5-r2-packet.md` | TASK_PACKET cho `auditor-A3` — xác minh có phạm vi `F-A3-P5-01..04` + `CR-P0-10`, `FC-P5` epoch 2 | `4f89d86547cb9f1da4547ef4f2189f0074aa27dd117922348597bf94edea0884` | 3785 |
+| `A3-p5-r1-packet.md` | TASK_PACKET cho `auditor-A3` — audit độc lập **đợt nối dây tích hợp**, `FC-P5` | `f15864e781e680b3a4181aa860b7993db9e9db626e07d1cb68f0851210c75765` | 5650 |
 | `A3-p4-r1-packet.md` | TASK_PACKET cho `auditor-A3` — audit độc lập Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8), `FC-P4` epoch 1 | `22864f6be434a0b87ab08920dde3702127bc76264ebfe345fb3bc1e1a2503fed` | 5955 |
 | `A3-p4-r2-packet.md` | TASK_PACKET cho `auditor-A3` — xác minh có phạm vi `F-A3-P4-01..03`, `FC-P4` epoch 2 | `aaa1266df1314f589164394c0a48b46f74bb4ca7a450732cd82e71fa4ead3380` | 3724 |
 | `A3-p3-r1-packet.md` | TASK_PACKET cho `auditor-A3` — audit độc lập Giai đoạn 3 (M3) + Giai đoạn 5 (M6, văn bản thuần), `FC-P3` epoch 1 | `78a99d783d537b8a7927aff29fae4a4b8841ea0d68a6cf7512db5591bd679348` | 5861 |
@@ -71,6 +74,7 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `A3-p2-r1-packet.md` ⚠ | TASK_PACKET cho `auditor-A3`, vòng Giai đoạn 2 (`FC-P2`) — **DỰNG LẠI TỪ TRANSCRIPT**, không phải bản soạn trước khi dispatch; xem "Cách đọc" | `0994854f2c50ecd793db6d266516a0e85dac7a3e5906e7ced105e4d4a2e5ed09` | 3700 |
 | `ADR-0011-frameworks-ruling.md` | Ruling của Coordinator chọn framework và toolchain cho stack B, dưới ủy quyền của Owner ("You pick, record as ADR") — bản gốc sinh ra `ADR-0011`. **Xem erratum ở "Cách đọc"** | `09050e65a0c1d6f16fb5463fe8fde1a567cefc9792b1c665ed8c04b2c660555f` | 4487 |
 | `FIX-A1R1-rulings.md` | Ruling R-01..R-09 sau AUDIT_REPORT A1-R1 | `94cdf17b1922dbff89273a316bb9e71e218f50d9f253a5f87cbae4769d1e1ff4` | 6380 |
+| `FIX-A3P5R1-rulings.md` | Ruling của Coordinator sau `A3-P5-R1` — đợt sửa `F-A3-P5-01..04` cộng `CR-P0-10` | `d0073961375172a53b054ecc64f011239c159c6f590d6fb1497043e331a5eccc` | 3091 |
 | `FIX-A3P4R1-rulings.md` | Ruling của Coordinator sau `A3-P4-R1` — đợt sửa `F-A3-P4-01..03`; giao `W1n` sửa `ADR-0011` (`AMD-ADR0011-01`) và `W6n` dựng phép kiểm `E0-21` | `145f9c40d16377743dcc81ebb1b2852b49f1c01fdcc1a85505b974f49bb2ca31` | 2619 |
 | `FIX-P4-wave-rulings.md` | Ruling của Coordinator khi đợt sáu card Giai đoạn 4/6 land — vòng sửa **trước khi đóng băng** | `6abcf68f8a9e299c1f473563e79424e4b9bea4a4418c1811259f24b0fb74d1a7` | 3863 |
 | `FIX-A3P3R1-rulings.md` | Ruling của Coordinator sau `A3-P3-R1` — đợt sửa `F-A3-P3-01..03` (gồm cả `ruff format` đỏ làm R1 chỉ PASS **có điều kiện**) | `565ac37c014e8b37a57f07503a1d8d094944b196d46b87baa2007289c29875a5` | 2104 |
@@ -104,6 +108,7 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
 | `PC10-packet.md` | TASK_PACKET PC10 — task card cho coding, bàn giao bộ hợp đồng | `ebb5cee9c6c61acc07be033092c4257056592e553fe8df6c9e89880b245cac32` | 5642 |
 | `PHASE0-skeleton-packet.md` | TASK_PACKET `PKT-P0-SKELETON` — dựng bộ khung repo của Giai đoạn 0 (bảy trong tám cây; `tools/` nằm ngoài write set) | `ad76109b3130d3035ea3522c89ead65988314132a903e9c858dcc9a43303a513` | 8193 |
 | `PHASE1-card-dispatch-template.md` | Template dispatch dùng chung cho bốn card Giai đoạn 1 | `70630dfc6ab4718da09c5763dc0ec3803578836cb81b8cd71e9ff42cb3a1cc5f` | 3988 |
+| `WIRING-wave-1.md` ✚ | Packet dispatch **đợt nối dây tích hợp** (wave 1), cộng **phụ lục wave 2** và **ruling `AMD-ENT-maintenance-01`** — file này **tích lũy trong suốt đợt**, không đóng băng tại lúc dispatch; xem "Cách đọc" | `b602c02b50720d1aac947d5983173993cf429913eac3960fcf36707598691139` | 6418 |
 | `PHASE3-5-card-dispatch.md` | Packet dispatch của đợt sáu card: Giai đoạn 3 (M3) + Giai đoạn 5 (M6, văn bản thuần) | `bf2de67f6983af3d3b02fec808b06c9a8acd84d1f31ac6b929054b6c296c2b30` | 9276 |
 | `PHASE4-6-card-dispatch.md` | Packet dispatch Giai đoạn 4 (M4/M5) + Giai đoạn 6 (M7/M8) — **ĐÃ DISPATCH** ngày 2026-09-08 sau khi `FC-P3` audit PASS + PC09 + commit, đúng như header của chính nó nêu; sáu card đã land. Nhãn 🕒 của `PKT-PC00-FIX29` được gỡ ở `PKT-PC00-FIX31`. **Byte không đổi** — chỉ trạng thái đổi | `7dfd6712680e7941ee400ff824a2835225f8567a583e0972cb8c23e4290620a1` | 9596 |
 | `PKT-PC06-FIX-OQ03.md` | TASK_PACKET giải `REQ-OQ03` và đẩy `REQ-A5` cho nhà cung cấp được chọn (`worker-WAI`) | `af87d6795767724462f81c3692501a61168fa419208ef5b1c7f4f0692529bd4a` | 5228 |
@@ -182,6 +187,36 @@ người chép. Đọc chúng như dữ liệu lịch sử, không như tài li�
   không có cưỡng chế ở mức hệ điều hành, nên "ghi packet ra đĩa" là một **thói quen** chứ không phải một
   ràng buộc — và một thói quen thì bỏ được mà không có gì báo động. Nếu muốn nó không tái diễn, cách sửa là
   một **guard**, không phải một lời nhắc.
+- **QUAN SÁT 2026-09-09 — KHÔNG có composition root nào chạy được TRƯỚC đợt nối dây này.** Ghi lại theo yêu
+  cầu của Coordinator, vì đây là điều Owner cần biết và nó **không** hiện ra ở bất kỳ verdict audit nào trước
+  đó. `docs/owner-runbook.md` (`worker-WS2`, `PKT-DOCS-OWNER-RUNBOOK`) phát hiện: các card **được xây và
+  kiểm đối chiếu port và harness**, nhưng **không tồn tại một composition root** — `create_app()` **không
+  dựng service nào**, `RR_DATABASE_URL` **chỉ được Alembic đọc**, và đăng nhập **trả 500 ngoài môi trường
+  test**. Nói gọn: **Owner không thể thử bất cứ thứ gì đầu-cuối.**
+
+  **Vì sao chín vòng audit độc lập trước đó đều xanh.** Không vòng nào sai. Mỗi vòng đo đúng thứ nó được
+  giao: **card đối chiếu harness**, hợp đồng đối chiếu fixture, migration đối chiếu schema. **Không vòng nào
+  được giao đo hệ thống đã lắp ráp**, nên khoảng trống nằm ở **cái được audit**, không nằm ở **cách audit**.
+  Đó là lý do `A3-P5-R1` khác hẳn mọi báo cáo trước nó về phương pháp: nó dựng `uvicorn` **thật**, gọi `curl`
+  **thật** qua TCP, chạy CLI như **tiến trình hệ điều hành** — và chỉ khi đó bốn `F-A3-P5-*` mới lộ ra.
+
+  **Bài học cho việc cấp packet, không phải cho các auditor:** một chuỗi `PASS` chỉ mạnh bằng **phạm vi rộng
+  nhất từng được giao cho ai đó đo**. Runbook tự nó nói thẳng điều ấy ngay ở đầu — *"Tài liệu này **KHÔNG**
+  nói sản phẩm chạy được"* — và liệt kê **chín** khoảng trống (`G-1`…`G-9`) ở §11. Trạng thái sau đợt nối dây
+  vẫn là: Owner **dựng và soi được** hệ thống, **chưa** làm cho nó *chạy* được đầu-cuối (`A3-P5-R1` §5).
+- **✚ `WIRING-wave-1.md` là file TÍCH LŨY, không phải ảnh chụp lúc dispatch.** Khác mọi packet khác trong thư
+  mục này, nó được ghi thêm **trong suốt** đợt: bản chép ở đây (`b602c02b…`, 6418 byte) gồm cả **phụ lục
+  wave 2** và **ruling `AMD-ENT-maintenance-01`** ngày 2026-09-08, trong khi bản lúc mới dispatch nhỏ hơn
+  (`5fc320f3…`, 5108 byte — giá trị `worker-W1n` đọc được lúc 2026-09-08T02:0xZ, ghi lại ở đây để đối chiếu).
+  Nó vẫn là **bản sao nguyên văn** của file nguồn tại thời điểm chép; điều cần biết là **thời điểm** ấy nằm ở
+  cuối đợt, không phải đầu đợt.
+- **`AMD-ENT-maintenance-01` là amendment kỹ thuật của Coordinator — OWNER CHƯA ĐƯỢC HỎI.** Ruling nằm trong
+  `WIRING-wave-1.md`: `contracts/state/storage.yaml` `T-ST-03` đòi "ghi một hàng maintenance-window" nhưng
+  `contracts/data/entities.yaml` **không khai entity nào như vậy** (`CR-TC-storage-06`). `worker-WR` **dừng ở
+  `SG-EDGE`** thay vì tự bịa entity — đúng hành vi giao thức đòi, cùng loại với lần `worker-WT` từ chối một
+  `WebSearch` ngoài allowlist. Amendment **cùng hình dạng với `AMD-ENT-owner-01`**, thứ mà Owner **về sau đã
+  phê chuẩn** ở `OD-20260907-03`. `A3-P5-R1` §6 nói thẳng: nó **nên được đưa lên vòng Owner kế tiếp thay vì
+  mặc nhiên thành sự thật vì không ai phản đối**. Cho tới lúc đó nó là **`PROVISIONAL`**.
 - **Mười một file của Giai đoạn 3/5 được GHI RA ĐĨA TRƯỚC KHI DISPATCH — bài học `CR-PC00-30` đã được áp
   dụng.** Đây là điểm tương phản trực tiếp với `PHASE2-dispatch-log.md` ⚠ ngay trên: Giai đoạn 2 phát packet
   bằng `SendMessage` rồi phải **dựng lại từ transcript** sau khi phase kết thúc; Giai đoạn 3/5 soạn packet

@@ -291,14 +291,14 @@ Thuộc PC03 (`storage.yaml` `T-ST-01`/`T-ST-02`); phần vận hành liên quan
 
 ## 8.1 Phạm vi `data.purge_all` — **ĐÃ CHỐT** (OD-20260907-01 mục 24)
 
-Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`. Ba tập phủ đúng 60 entity, không chồng lấn:
+Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`. Ba tập phủ đúng 61 entity, không chồng lấn:
 
 - **Xóa — 37 bảng:** post/work và liên kết, identity alias/conflict/merge audit,
   work_label, analysis và các bảng phụ thuộc, embedding_generation, tag_vector, report/report_item,
   emerging_direction, các ledger coverage/pending/backfill/first_announced/rescan, Saved, delivery và outbox,
   run/assignment/assignment_lease/checkpoint/ingest_receipt, source_fetch_log, telegram_update_log, và
   `telegram_link_attempt` (bộ đếm rate-limit — dữ liệu vận hành, không phải cấu hình; CR-PC05-07).
-- **Giữ lại theo quyết định của Owner — 21 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`.
+- **Giữ lại theo quyết định của Owner — 22 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`, `maintenance_window`.
 - **Không bao giờ xóa — 2 bảng:** `schema_migration`, `data_deletion_audit`. `schema_migration` là cấu trúc kho; `data_deletion_audit` giữ vĩnh viễn
   theo tham số PC08 đã phê chuẩn, và chính lần purge này ghi thêm một hàng vào đó.
 

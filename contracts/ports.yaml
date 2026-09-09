@@ -1765,8 +1765,8 @@ operations:
       `kind: purge_all`. Sau khi xong, `storage.health` vẫn ở `maintenance` cho tới khi owner mở lại — **không** tự
       động resume dispatcher (cùng nguyên tắc với NC-10).
     exclusions_vi: >
-      **ĐÃ CHỐT** (OD-20260907-01 mục 24). Ba tập, phủ đúng 60 entity, không chồng lấn. Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`.
-      **Giữ lại theo quyết định của Owner — 21 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`.
+      **ĐÃ CHỐT** (OD-20260907-01 mục 24). Ba tập, phủ đúng 61 entity, không chồng lấn. Nguồn chuẩn: ruling của Coordinator ngày 2026-09-07 (`PURGE-LIST-ruling.md`, CR-PC05-06), sửa mâu thuẫn của `TXN-purge-all` bản trước (`schedule_occurrence` nằm ở cả hai tập; `worker_registration` và `data_deletion_audit` bị xếp nhầm vào nhóm xóa). W3 ghi cùng bộ này vào `contracts/data/entities.yaml`.
+      **Giữ lại theo quyết định của Owner — 22 bảng:** `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`, `maintenance_window`.
       **Không bao giờ xóa — 2 bảng:** `schema_migration`, `data_deletion_audit` — `schema_migration` là cấu trúc kho, còn `data_deletion_audit` giữ vĩnh
       viễn theo tham số PC08 đã phê chuẩn; chính lần purge này ghi thêm một hàng audit vào đó.
       **Xóa — 37 bảng:** post/work và liên kết, identity alias/conflict/merge audit, work_label, analysis và các
@@ -1791,7 +1791,7 @@ operations:
       `UNAUTHORIZED`. `storage.health ≠ maintenance` → `CONFLICT`. Challenge không tồn tại → `NOT_FOUND`.
       Lỗi ghi giữa chừng → `STORAGE_WRITE_FAILED`; transaction rollback, không có trạng thái "xóa một nửa".
     state_effects_vi: >
-      Xem transaction_vi và exclusions_vi. Ba tập bảng (37 xóa / 21 giữ / 2 không bao giờ xóa) theo ruling
+      Xem transaction_vi và exclusions_vi. Ba tập bảng (37 xóa / 22 giữ / 2 không bao giờ xóa) theo ruling
       CR-PC05-06 + CR-PC05-07; CR-PC01-05 khép lại.
     scenario_refs: [SC44]
     scenario_note_vi: >

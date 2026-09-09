@@ -2,7 +2,7 @@
 # Ngôn ngữ: văn xuôi tiếng Việt; mọi identifier/key/enum bằng tiếng Anh (baseline §3).
 
 contract_id: CT-data-entities
-version: 0.2.0
+version: 0.3.0
 status: accepted
 ratification_ref: OD-20260907-01
 owner_role: data contract owner
@@ -63,6 +63,9 @@ decision_refs:
   - AMD-ENT-owner-01
   - CR-TC-AUTH-02
   - CR-TC-AUTH-03
+  - AMD-ENT-maintenance-01
+  - CR-TC-storage-04
+  - CR-TC-storage-06
 invariant_refs: [I02, I03, I04, I08, I12, I15, I16, I17]
 producers:
   - MOD-ingest-service
@@ -264,6 +267,81 @@ amendments:
       - "KHÔNG khẳng định schema đang chạy đã khớp bốn cột này — điều đó do revision Alembic base và `tests/contract/test_schema_matches_entities.py` chứng minh, không do file này. Sinh lại bộ model KHÔNG phải một bước ở đây (F-A3R2-04, CR-P0-06)."
       - "KHÔNG đóng F-A3R1-02 hay F-A3R1-06; đóng finding thuộc thẩm quyền disposition sau xác minh độc lập."
       - "KHÔNG khai entity riêng cho login attempt: lockout được đếm TRÊN hàng owner, không có bảng lịch sử đăng nhập."
+
+  - amendment_id: AMD-ENT-maintenance-01
+    date: "2026-09-08"
+    status: PROVISIONAL
+    subject_vi: "Thêm entity `maintenance_window` — chỗ ghi mà `contracts/state/storage.yaml` T-ST-03 đã yêu cầu từ đầu."
+    decision_refs: [CR-TC-storage-04, CR-TC-storage-06]
+    finding_refs: [CR-TC-storage-06]
+    version_change: "0.2.0 → 0.3.0"
+    version_rule_vi: >-
+      `precode/change-control.md` §2 KHÔNG có hàng nào cho "thêm một bảng mới" — cùng khoảng
+      trống mà `CR-PC10-13` đã mở cho `AMD-ENT-owner-01` (thêm cột NOT NULL có DEFAULT). Mục 4
+      của chính file này liệt kê "Thêm bảng mới" là additive, và đó là căn cứ thực chất: bảng
+      mới không đổi một cột nào của 60 bảng cũ, không consumer nào đang đọc một bảng chưa tồn
+      tại. Chọn minor, KHÔNG major. Bậc version này là một DEVIATION có thẩm quyền cho tới khi
+      PC10 trả lời `CR-PC10-13`.
+    deviation_from: "precode/change-control.md §2 (khoảng trống: không có hàng nào cho việc thêm một bảng mới)"
+    deviation_authority: AUTH-COORD-PC02-FIX16
+    deviation_change_request: CR-PC10-13
+    before_vi: >-
+      `contracts/state/storage.yaml` T-ST-03 khai transaction "Ghi một hàng maintenance window",
+      T-ST-04 "Ghi kết thúc maintenance window", T-ST-09 "hàng maintenance window được ghi khi
+      ghi được lại". `contracts/data/entities.yaml` (60 entity) KHÔNG khai bảng nào để ghi ba
+      hàng đó: không entity nào tên `maintenance_window`/`storage_health`, không trường nào ở
+      60 entity chứa `maintenance`, và 49 bảng sau `alembic upgrade head` cũng không có.
+    after_vi: >-
+      Thêm đúng MỘT entity `maintenance_window` (`ENT-maintenance-window`, `status: specified`,
+      `owner_module: MOD-data-store`) với 10 trường, một partial unique "nhiều nhất một cửa sổ
+      mở" và ba CHECK. Không entity nào khác bị sửa; không trường nào của 60 entity cũ đổi.
+      Tập `retained_by_owner_decision` của `TXN-purge-all` nhận thêm `maintenance_window`
+      (21 → 22, total 60 → 61).
+    reason_vi: >-
+      Hai hợp đồng đã đóng băng nói ngược nhau: state contract nói một hàng ĐƯỢC GHI, entity
+      contract nói không có bảng nào. Hệ quả đo được (`CR-TC-storage-06`, gap G-3): WR DỪNG
+      đúng ở `SG-EDGE` thay vì bịa một bảng, nên trạng thái `maintenance` của storage chỉ sống trong
+      bộ nhớ — `backup_cli maintenance --open` không sống nổi tới lần gọi sau, và T-ST-05
+      (restore) không tới được vì nó đòi `maintenance` trước. Đây là khoảng trống hợp đồng, y
+      hệt `F-A3R1-02` với credential của owner, và cách sửa cũng vậy: khai chỗ ghi, không nới lỏng gate.
+    fields_derivation_vi: >-
+      Mỗi trường buộc phải có một transition đòi nó, không phải một trường "cho đủ": `opened_at`
+      + `opened_by` từ T-ST-03 guard (hành động explicit của `backup_operator`); `reason` từ bốn
+      mục đích của T-ST-03/-04/-05 cộng `disk_cleanup` mà T-ST-09 guard nói đích danh;
+      `storage_health_at_open` từ chỗ T-ST-09 CẤM lách sang `healthy`; `closed_at` + `closed_by`
+      từ T-ST-04; `snapshot_verified_at` từ điều cấm "đóng cửa sổ khi verify chưa pass" của
+      T-ST-04 — không có nó thì điều cấm chỉ ép được trong một tiến trình; `restore_record_id`
+      từ T-ST-05. Hai trường `id`/`owner_id` theo quy ước owner scoping của mục 1.
+      So với đề xuất trong `CR-TC-storage-06`: đây là HỢP của danh sách WR đề xuất và danh sách
+      trong ruling — `closed_by`, `storage_health_at_open`, `restore_record_id` từ ruling;
+      `snapshot_verified_at` từ WR. Không bỏ trường nào của hai bên, vì mỗi trường có một
+      transition đứng sau.
+    ratification:
+      kind: coordinator_technical_amendment
+      authority: AUTH-COORD-PC02-FIX16
+      basis_vi: >-
+        Amendment kỹ thuật hòa giải hai hợp đồng Owner ĐÃ phê chuẩn (`storage.yaml` và
+        `entities.yaml` cùng thuộc các phạm vi của OD-20260907-01); nó không thêm một quyết định
+        sản phẩm mới, chỉ khai chỗ ghi mà một trong hai đã yêu cầu.
+      owner_disclosure_vi: >-
+        Phải trình Owner ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối. Trạng thái là
+        `PROVISIONAL`, KHÔNG phải `ACCEPTED`: chưa biên bản Owner nào nhắc entity này.
+    claim_ceiling_effect_vi: >-
+      `claim_ceiling` GIỮ `CONTRACT_READY`. Nhưng nội dung đã đổi sau lượt xác minh gần nhất, nên
+      lượt audit kế tiếp PHẢI xác minh lại `ENT-maintenance-window` và ba tập purge trên epoch mới.
+    downstream_vi: >-
+      File này KHÔNG phải nguồn của bộ sinh (`CR-P0-06`), nên KHÔNG có bước sinh lại. Amendment
+      tới code bằng hai đường viết tay: một revision Alembic tạo bảng, và
+      `tests/contract/test_schema_matches_entities.py` (nay sẽ ĐÒI bảng này tồn tại — gate đó so
+      khớp hai chiều, nên entity khai mà migration chưa tạo cũng là một lỗi đỏ, đúng như mong
+      muốn: WR bị chặn cho tới khi tạo thật). Mọi card pin hash file này chuyển `STALE`.
+      `contracts/modules.yaml` `data_owner_of` của MOD-data-store CHƯA có token
+      `maintenance_window` — `CR-PC02-24`, PC01 sửa, tôi không ghi được file đó.
+    not_claimed_vi:
+      - "KHÔNG khẳng định bảng đã tồn tại trong schema đang chạy — chưa có migration nào tạo nó; đó là việc của WR trên lease kế tiếp."
+      - "KHÔNG đóng `CR-TC-storage-06`; đóng CR thuộc thẩm quyền disposition sau xác minh độc lập."
+      - "KHÔNG giải `CR-TC-storage-04` (thiếu entity `storage_probe` cho đường `write_blocked → healthy`) — đó là một khoảng trống KHÁC, vẫn mở."
+      - "KHÔNG persist `write_blocked` hay `recovery_required`: cái đầu bị T-ST-01 cấm, cái sau đã đọc được từ `restore_record`."
 
 # ---------------------------------------------------------------------------
 # 1. Quy ước chung
@@ -562,6 +640,7 @@ pc01_token_alignment:
       - {entity: source_connection, owner_module: MOD-settings-service}
       - {entity: outbox_intent, owner_module: MOD-delivery-service}
       - {entity: schema_migration, owner_module: MOD-data-store}
+      - {entity: maintenance_window, owner_module: MOD-data-store, added_by: AMD-ENT-maintenance-01, change_request: CR-PC02-24, note_vi: "Entity MỚI thêm ngày 2026-09-08, SAU khi contracts/modules.yaml đã đóng băng. `data_owner_of` của MOD-data-store trong modules.yaml CHƯA có token này — PC01 phải thêm (CR-PC02-24). PC02 không ghi được file đó; ghi ở đây để chênh lệch là một dòng đọc được chứ không phải một khoảng lặng."}
   newly_contracted_entities:
     note: >-
       Hai mươi token PC01 trước đây không có hợp đồng entity nào; R-03 yêu cầu PC02 thêm hợp
@@ -2115,6 +2194,56 @@ entities:
     owned_by_package: PC08.
     forbidden: "Mở khóa dispatcher khi integrity_check_outcome != 'passed'; replay outbox của generation cũ; reset first_announced_ledger."
 
+  - name: maintenance_window
+    entity_id: ENT-maintenance-window
+    status: specified
+    owner_module: MOD-data-store
+    amendment_refs: [AMD-ENT-maintenance-01]
+    decision_refs: [CR-TC-storage-04, CR-TC-storage-06, AMD-ENT-maintenance-01]
+    source_refs:
+      - "contracts/state/storage.yaml T-ST-03 (operator_opens_maintenance)"
+      - "contracts/state/storage.yaml T-ST-04 (maintenance_window_closed)"
+      - "contracts/state/storage.yaml T-ST-09 (operator_opens_maintenance_to_fix)"
+      - "contracts/state/storage.yaml T-ST-05 (restore_executed)"
+      - "SRC-PLAN §7 I15"
+    purpose: >-
+      Cửa sổ bảo trì do Operator mở CÓ CHỦ ĐÍCH. `contracts/state/storage.yaml` T-ST-03 nói
+      thẳng transaction của nó là "ghi một hàng maintenance window", nhưng trước amendment này
+      hợp đồng entity không khai bảng nào để ghi — nên trạng thái `maintenance` của storage chỉ sống
+      trong bộ nhớ tiến trình và biến mất khi khởi động lại (CR-TC-storage-06, gap G-3). Bảng
+      này là chỗ ghi đó, và không hơn.
+    what_it_is_not_vi: >-
+      KHÔNG phải nơi lưu trạng thái storage health nói chung. `write_blocked` CẤM được persist
+      (T-ST-01 và `forbidden_transitions` hàng 4: nó phải được suy ra từ lần ghi thất bại thật,
+      không phải đọc từ một hàng cũ). `recovery_required` cũng không cần bảng mới — một
+      `restore_record` có `dispatcher_unlocked_at IS NULL` ĐÃ là trạng thái đó trên đĩa. Bảng
+      này chỉ trả lời đúng một câu hỏi: cửa sổ bảo trì có đang mở không, ai mở, vì sao.
+    fields:
+      - {name: id, type: string_ulid, nullable: false, constraints: "PK."}
+      - {name: owner_id, type: string_ulid, nullable: false, constraints: "FK → owner.id (D01)."}
+      - {name: opened_at, type: timestamp_utc_ms, nullable: false, constraints: "Giờ server. T-ST-03: vào maintenance là một hành động EXPLICIT tại một thời điểm — không có đường tự động vào."}
+      - {name: opened_by, type: string, nullable: false, constraints: "Principal đã mở, phải mang scope `backup_operator` (T-ST-03 guard). Một cửa sổ không có principal thì không chứng minh được hành động explicit, nên cột này NOT NULL."}
+      - {name: reason, type: enum, nullable: false, constraints: "`snapshot` | `migration` | `restore` | `purge_all` | `disk_cleanup`. Bốn giá trị đầu là bốn mục đích T-ST-03/T-ST-04/T-ST-05 nêu; `disk_cleanup` là mục đích thứ năm mà T-ST-09 guard nói đích danh (\"dọn ổ, migrate, restore\"). Enum ĐÓNG: thêm giá trị là amendment."}
+      - {name: storage_health_at_open, type: enum, nullable: false, constraints: "`healthy` | `write_blocked` — trạng thái mà cửa sổ được mở TỪ đó. T-ST-03 mở từ `healthy`, T-ST-09 mở từ `write_blocked`. Cần cột này vì T-ST-09 CẤM dùng đường đó để lách sang `healthy`: đóng một cửa sổ mở từ `write_blocked` không được phép tự trả về `healthy` khi nguyên nhân chặn ghi chưa hết."}
+      - {name: closed_at, type: timestamp_utc_ms, nullable: true, constraints: "NULL = cửa sổ ĐANG MỞ. Đây là cột làm cho trạng thái đọc được bởi một tiến trình khác — lý do tồn tại của cả bảng. T-ST-04 ghi kết thúc cửa sổ vào đây."}
+      - {name: closed_by, type: string, nullable: true, constraints: "Principal đã đóng. NOT NULL khi `closed_at` NOT NULL (CHECK bên dưới). Người mở và người đóng không bắt buộc là một."}
+      - {name: snapshot_verified_at, type: timestamp_utc_ms, nullable: true, constraints: "Thời điểm `backup.verify_snapshot` trả pass. T-ST-04 CẤM đóng cửa sổ khi verify chưa pass; không có cột này thì điều cấm đó chỉ ép được TRONG một tiến trình, và một tiến trình khác đóng cửa sổ vẫn lọt. NULL khi `reason` không phải `snapshot`."}
+      - {name: restore_record_id, type: string_ulid, nullable: true, constraints: "FK → restore_record.id. NOT NULL khi cửa sổ này là cửa sổ mà T-ST-05 chạy restore bên trong; NULL với mọi mục đích khác. Nối cửa sổ với lần khôi phục để `recovery_required` truy được về cửa sổ sinh ra nó."}
+    keys:
+      primary: [id]
+      unique:
+        - {name: ux_maintenance_window_open, columns: [owner_id], partial: "WHERE closed_at IS NULL", guarantees: "Nhiều nhất MỘT cửa sổ đang mở tại một thời điểm — đúng giả định của T-ST-03/T-ST-09 khi chúng nói về *the* window.", does_not_guarantee: "KHÔNG bảo đảm cửa sổ đang mở là đúng mục đích, và KHÔNG bảo đảm trạng thái storage health trong bộ nhớ đã đồng bộ với hàng này."}
+    checks:
+      - {name: ck_maintenance_window_closed_by, expression: "closed_at IS NULL OR closed_by IS NOT NULL", rationale_vi: "Đóng cửa sổ là một hành động của người; một lần đóng không có principal không kiểm toán được."}
+      - {name: ck_maintenance_window_verify_before_close, expression: "closed_at IS NULL OR reason <> 'snapshot' OR snapshot_verified_at IS NOT NULL", requirement_refs: [REQ-AC12], decision_refs: [CR-TC-storage-06], rationale_vi: "T-ST-04 `forbidden_vi`: \"Đóng cửa sổ khi verify chưa pass\". Guard chỉ ép được điều đó trong một tiến trình; CHECK ép nó ở tầng kho. Chỉ áp cho `reason = 'snapshot'` vì T-ST-04 guard nói rõ nhánh còn lại là \"hoặc migration hoàn tất\", không có snapshot để verify."}
+      - {name: ck_maintenance_window_closed_after_open, expression: "closed_at IS NULL OR closed_at >= opened_at"}
+    versioning: "Không phiên bản hóa. Một cửa sổ là một hàng; lịch sử cửa sổ là các hàng đã đóng, KHÔNG xóa."
+    non_goals:
+      - "Không lưu trạng thái storage health như một cột trạng thái — health được SUY RA (cửa sổ mở ⇒ maintenance), không được ghi thẳng."
+      - "Không persist `write_blocked` (T-ST-01, forbidden_transitions hàng 4)."
+      - "Không thay `restore_record`: quan hệ là tham chiếu, không phải sao chép."
+    owned_by_package: "PC03 (state machine storage.yaml) định nghĩa chuyển trạng thái; PC02 chỉ khóa hình dạng bảng. Hiện thực: card TC-storage-write-blocked-readiness."
+
   - name: data_deletion_audit
     entity_id: ENT-data-deletion-audit
     status: declared_only
@@ -2711,7 +2840,7 @@ transactions:
         PURGE-LIST 2026-09-07, OD-20260907-01 mục 24). Mọi artefact khác COPY nguyên văn,
         không tự dựng danh sách riêng. Ba tập PHẢI phủ kín và rời nhau đôi một trên toàn bộ
         `entities` — kiểm tự động bởi EV-PC02-08.
-      counts: {purged: 37, retained: 21, never_purged: 2, total: 60}
+      counts: {purged: 37, retained: 22, never_purged: 2, total: 61}
       purged:
         note_vi: "Dữ liệu NGHIÊN CỨU và dữ liệu VẬN HÀNH sinh ra từ nó. Xóa toàn bộ hàng."
         list: [post, post_work, work, work_version, identity_alias, identity_conflict, identity_merge_audit, work_label, analysis, analysis_generation, analysis_attempt, analysis_task, embedding_generation, tag_vector, report, report_item, emerging_direction, coverage_window, pending_item_ledger, backfill_ledger, first_announced_ledger, rescan_ledger, saved_item, saved_snapshot, delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run, assignment, assignment_lease, checkpoint, ingest_receipt, source_fetch_log, telegram_update_log, telegram_link_attempt]
@@ -2744,6 +2873,7 @@ transactions:
           - {table: restore_record, reason_vi: "Nhật ký khôi phục; đi cùng backup."}
           - {table: purge_challenge, reason_vi: "Chính bảng cấp phép cho thao tác này."}
           - {table: worker_registration, reason_vi: "Đăng ký collector và ràng buộc token là CẤU HÌNH, không chứa dữ liệu nghiên cứu; xóa sẽ buộc đăng ký lại collector (ruling PURGE-LIST 2026-09-07)."}
+          - {table: maintenance_window, reason_vi: "Cửa sổ bảo trì là bản ghi VẬN HÀNH của Operator, không phải dữ liệu nghiên cứu; và một cửa sổ ĐANG MỞ mà bị xóa giữa chừng sẽ làm trạng thái storage health trong bộ nhớ và trên đĩa lệch nhau ngay giữa thao tác purge — chính lúc không được phép lệch (AMD-ENT-maintenance-01)."}
       never_purged:
         - {table: schema_migration, why_vi: "Mô tả cấu trúc kho, không phải dữ liệu của owner; xóa sẽ làm kho không xác định được phiên bản."}
         - {table: data_deletion_audit, why_vi: "Bản ghi xóa được giữ VĨNH VIỄN theo tham số PC08 đã phê chuẩn (OD-20260907-01 mục 23); chính thao tác purge ghi một hàng audit vào đây."}

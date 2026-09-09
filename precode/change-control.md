@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-change-control
-version: 0.1.5
+version: 0.1.7
 status: draft
 owner_role: implementation planning owner
 source_refs: [SRC-PLAN §16, SRC-PLAN §5, SRC-PLAN §12, SRC-PLAN §14, SRC-PLAN §17, SRC-SPEC §13.2]
@@ -947,3 +947,181 @@ migration: >
 Owner chọn phương án (a) của chính CR: Worker đọc, **Owner ký xác nhận**, và chữ ký là thứ làm §5 thoả.
 Người đóng là **Owner**, không phải người phát hiện (§1 luật 3 được tôn trọng). Bản ghi: `precode/
 decision-register.md` §8.15.1.
+
+### CR-TC-storage-06 (cùng gốc `CR-TC-storage-04`) — `maintenance_window`: chỗ ghi mà state contract đã đòi
+
+```yaml
+cr_id: CR-TC-storage-06
+raised_by: WR (card TC-storage-write-blocked-readiness) — DỪNG ở SG-EDGE thay vì bịa một bảng
+addressed_to: PC02 (chủ hợp đồng contracts/data/entities.yaml)
+status: PROVISIONAL           # thi hành dưới amendment kỹ thuật AMD-ENT-maintenance-01; Owner chưa phát biểu
+source_of_change: >
+  Mâu thuẫn nội bộ giữa hai hợp đồng đã đóng băng. contracts/state/storage.yaml T-ST-03 khai
+  transaction "Ghi một hàng maintenance window", T-ST-04 "Ghi kết thúc maintenance window",
+  T-ST-09 "hàng maintenance window được ghi khi ghi được lại". contracts/data/entities.yaml
+  không khai bảng nào để ghi ba hàng đó.
+before: >
+  contracts/data/entities.yaml v0.2.0: 60 entity, không entity nào tên maintenance_window hay
+  storage_health; không trường nào trong 60 entity chứa "maintenance"; 49 bảng sau
+  `alembic upgrade head` cũng không có. Mọi lần nhắc "maintenance" trong file trỏ RA NGOÀI, sang
+  contracts/state/storage.yaml.
+after: >
+  Thêm đúng MỘT entity `maintenance_window` (ENT-maintenance-window, status specified,
+  owner_module MOD-data-store) với 10 trường (id, owner_id, opened_at, opened_by, reason,
+  storage_health_at_open, closed_at, closed_by, snapshot_verified_at, restore_record_id),
+  partial unique ux_maintenance_window_open trên (owner_id) WHERE closed_at IS NULL, và ba CHECK.
+  Version 0.2.0 -> 0.3.0. Amendment AMD-ENT-maintenance-01 tại mục 0b của chính file đó.
+  Tập retained_by_owner_decision của TXN-purge-all nhận thêm maintenance_window: 21 -> 22,
+  tổng 60 -> 61.
+reason: >
+  "before" không đủ, không sai. Hệ quả đo được (gap G-3): trạng thái maintenance chỉ sống trong
+  bộ nhớ tiến trình, nên backup_cli maintenance --open không sống nổi tới lần gọi sau, và
+  T-ST-05 (restore) không tới được vì nó đòi maintenance trước. WR dừng đúng: hai lối tắt đều
+  sai — bảng `settings` thuộc MOD-settings-service (FORBIDDEN_EDGE trong mọi thứ trừ tên gọi),
+  còn bịa một bảng không khai sẽ bị tests/contract/test_schema_matches_entities.py bắt ở chiều
+  "mọi bảng phải có entity cùng tên".
+version_rule: >
+  §2 KHÔNG có hàng nào cho "thêm một bảng mới" — cùng khoảng trống mà CR-PC10-13 đã mở cho
+  AMD-ENT-owner-01. Mục 4 của entities.yaml liệt kê "Thêm bảng mới" là additive và đó là căn cứ
+  thực chất: không cột nào của 60 bảng cũ đổi, không consumer nào đang đọc một bảng chưa tồn tại.
+deviation:
+  deviation_from: "§2 của chính file này — khoảng trống: không có hàng nào cho việc thêm một bảng mới"
+  authority: AUTH-COORD-PC02-FIX16
+  change_request: CR-PC10-13    # cùng khoảng trống, cố ý KHÔNG mở một CR mới
+affected:
+  requirements: [REQ-D58, REQ-AC12, REQ-S7.3-01]
+  contracts:
+    - contracts/data/entities.yaml     # 0.2.0 -> 0.3.0
+    - contracts/state/storage.yaml     # không đổi; là NGUỒN của thay đổi này (T-ST-03/-04/-05/-09)
+  modules:      [MOD-data-store]
+  generated: []                        # entities.yaml không phải nguồn của bộ sinh (CR-P0-06)
+  reaches_code_through:
+    - "một revision Alembic tạo bảng (WR, lease kế tiếp)"
+    - tests/contract/test_schema_matches_entities.py
+  purge_sets: >
+    retained 21 -> 22, tổng 60 -> 61. Mọi artefact khác nêu con số cũ phải được cập nhật
+    (PKT-PC02-FIX17); entities.yaml là nguồn có thẩm quyền, artefact khác COPY nguyên văn.
+  task_cards:
+    rule: "§4 INV-06/INV-09 — mọi card pin hash contracts/data/entities.yaml chuyển STALE."
+  evidence: [EV-PC02-01, EV-PC02-03, EV-PC02-06, EV-PC02-08]
+migration: >
+  Dữ liệu: không cần. Bảng mới, rỗng, không backfill. Đường lùi: nếu Owner phản đối, gỡ entity và
+  G-3 quay lại trạng thái chưa hiện thực được — KHÔNG được thay bằng cách ghi vào `settings`.
+```
+
+**Ruling 2026-09-08 (`AUTH-COORD-PC02-FIX18`) — tập trường RỘNG HƠN được CHẤP NHẬN, và nó không
+phải một deviation.** `AMD-ENT-maintenance-01` khai HỢP của hai danh sách: bảy tên trong ruling
+`WIRING-wave-1.md` cộng `snapshot_verified_at` mà `CR-TC-storage-06` của WR nêu, và giá trị enum
+thứ năm `disk_cleanup`. Coordinator phán: cả hai truy được về câu chữ của state contract —
+`snapshot_verified_at` về `T-ST-04` `forbidden_vi` ("Đóng cửa sổ khi verify chưa pass", chỉ ép
+được across-process nếu có cột), `disk_cleanup` về `T-ST-09` guard ("dọn ổ, migrate, restore").
+Vì vậy nó là **phái sinh đúng của nguồn**, ghi ở `fields_derivation_vi` của amendment, **không**
+ghi thành `deviation_from`. Không có khoảng trống quy tắc nào bị bắc cầu ở đây.
+
+**Ba điều amendment này KHÔNG làm.** Nó **không** giải `CR-TC-storage-04` (thiếu entity
+`storage_probe` cho đường `write_blocked → healthy`) — một khoảng trống KHÁC, vẫn mở. Nó
+**không** persist `write_blocked` hay `recovery_required`: cái đầu bị `T-ST-01` và
+`forbidden_transitions` hàng 4 cấm, cái sau đã đọc được từ `restore_record` đang có
+(`dispatcher_unlocked_at IS NULL`). Và nó **không** khẳng định bảng đã tồn tại trong schema đang
+chạy — chưa có migration nào tạo nó.
+
+### CR-PC02-24 — `contracts/modules.yaml` chưa có token `maintenance_window`
+
+```yaml
+cr_id: CR-PC02-24
+raised_by: worker-W3n (PKT-PC02-FIX16)
+addressed_to: PC01 (chủ contracts/modules.yaml)
+status: OPEN
+source_of_change: "Entity mới được thêm SAU khi modules.yaml đã đóng băng."
+before: >
+  contracts/modules.yaml, MOD-data-store.data_owner_of = [sqlite_database_file (artifact),
+  wal (artifact), schema_migration].
+after: "Thêm `maintenance_window` vào data_owner_of của MOD-data-store."
+reason: >
+  Ruling R-03: tên entity trong entities.yaml là thẩm quyền, và modules.yaml data_owner_of dùng
+  đúng các tên đó. Phép so hai chiều (EV-PC02-06) hiện FAIL đúng một phần tử:
+  "PC02 entity KHÔNG có owner token trong modules.yaml: ['maintenance_window']". PC02 đã làm
+  nửa của mình (owner_module trên entity + một dòng ở mục 4b newly_owned_entities); nửa còn lại
+  thuộc PC01. Ghi ra thay vì để phép so im lặng FAIL.
+affected:
+  requirements: []
+  contracts: [contracts/modules.yaml]
+  modules:   [MOD-data-store]
+  fixtures:  []
+  evidence:  [EV-PC02-06]
+migration: "Không cần."
+```
+
+### Deviation ghi nhận — `PKT-PC02-FIX17` không bump version của chín artefact lan truyền
+
+```yaml
+deviation_id: DEV-PC02-FIX17-01
+deviation_from: "§2 của chính file này — luật 'đổi một hợp đồng ⇒ tăng version'"
+authority: AUTH-COORD-PC02-FIX18      # ruling 2026-09-08; parent AUTH-OWNER-20260907-05
+status: ACCEPTED
+scope:
+  - contracts/ports.yaml
+  - contracts/modules.yaml
+  - contracts/http/openapi.yaml
+  - contracts/ops/secrets.md
+  - contracts/ops/backup-restore.md
+  - contracts/ui/screens.yaml
+  - acceptance/scenarios.yaml
+  - acceptance/fixtures/recovery/README.md
+  - acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json
+what_changed_in_them: >
+  CHỈ các dòng đếm và dòng liệt kê tập của `data.purge_all`: retained 21 -> 22, tổng 60 -> 61,
+  và thêm tên `maintenance_window` vào câu liệt kê. Không một chữ nào khác.
+reason_vi: >
+  Chín file này KHÔNG tự thay đổi hợp đồng — chúng SAO CHÉP một tập đã có thẩm quyền ở
+  `contracts/data/entities.yaml` `TXN-purge-all`, và chính file đó ĐÃ mang bậc version của thay
+  đổi (0.2.0 -> 0.3.0 cùng `AMD-ENT-maintenance-01`). Bump thêm chín lần nữa cho cùng một
+  amendment sẽ ghi chín thay đổi hợp đồng vào sổ ở nơi chỉ có một, và làm chín vòng re-pin card
+  cho một sự kiện.
+openapi_specific_vi: >
+  `contracts/http/openapi.yaml` `info.version` là phiên bản API mà consumer PIN. Nó nói về hình
+  dạng wire, và hình dạng wire không đổi ở đây — chỉ một câu mô tả trong `description` đổi con
+  số. Bump nó sẽ báo cho consumer một thay đổi API không tồn tại. Giữ nguyên là lựa chọn CÓ CHỦ
+  ĐÍCH, không phải bỏ sót.
+limits_vi: >
+  Deviation này CHỈ áp cho lan truyền con số của một amendment đã được version ở nguồn. Nó KHÔNG
+  là tiền lệ cho việc sửa nội dung hợp đồng mà không bump version. Hash của cả chín file vẫn đổi,
+  nên §4 (INV-06/INV-09) vẫn chạy: mọi card pin chúng vẫn `STALE` và WP vẫn phải re-pin.
+change_request: CR-PC10-13            # cùng chỗ §2 cần viết lại; không mở CR mới
+```
+
+### CR-PC02-25 — `E0-18` không so sánh con số trong văn xuôi
+
+```yaml
+cr_id: CR-PC02-25
+raised_by: worker-W3n (PKT-PC02-FIX17), theo yêu cầu của Coordinator ở PKT-PC02-FIX18
+addressed_to: W6n / PC09 (chủ evidence/tools/e0_check.py)
+status: OPEN
+source_of_change: >
+  Ở PKT-PC02-FIX17, chín artefact còn ghi "21 bảng giữ lại" và "60 entity" sau khi entities.yaml
+  đã đổi sang 22/61. `E0-18-purge-set-agreement` PASS suốt thời gian đó.
+before: >
+  E0-18 kiểm hai điều: (a) ba tập phân hoạch đúng tập entity, và (b) không artefact nào còn đánh
+  dấu phạm vi purge là chưa quyết. Nó CỐ Ý không so sánh liệt kê trong văn xuôi — comment ngay
+  trong e0_check.py ghi rằng bản làm việc đó cho 24 vi phạm, khoảng 20 là dương tính giả, và
+  "a noisy check is worse than no check"; giới hạn được ghi ở evidence/tools/README.md §5g.
+after: >
+  Mở rộng E0-18 (hoặc thêm E0-18b) để bắt CHUỖI ĐẾM thay vì liệt kê tự do: quét trong ngữ cảnh
+  purge các mẫu có cấu trúc đủ hẹp để không nhiễu — ví dụ "<n> bảng giữ lại", "giữ <n>",
+  "GIỮ LẠI (<n> bảng)", "(37 xóa / <n> giữ / <n>)", "<n> entity", "retained <n>" — và so ba con
+  số đó với `len()` của ba tập trong entities.yaml. Đây là bài toán KHÁC với so khớp danh sách
+  tên và không mang theo lớp dương tính giả đã làm bản trước bị bỏ.
+reason: >
+  Giới hạn đã được ghi trung thực, nhưng nó nằm ở §5g của README công cụ, không ở nơi người đọc
+  kết quả nhìn. Trong một wave thật, một PASS của E0-18 đã được hiểu là "các con số đã đồng bộ",
+  và chín artefact chỉ được tìm ra bằng `grep` thủ công. Một dòng note trong output của chính
+  check ("prose counts NOT compared — see CR-PC02-25") đã đủ chặn cách hiểu sai đó, kể cả trước
+  khi có ai viết phép kiểm mới.
+affected:
+  requirements: []
+  contracts: []
+  modules:   []
+  fixtures:  []
+  evidence:  [evidence/tools/e0_check.py, evidence/tools/README.md]
+migration: "Không cần. Đây là mở rộng phép kiểm, không đổi hợp đồng."
+```

@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-decision-register
-version: 0.1.3
+version: 0.1.4
 status: draft
 owner_role: requirements owner (PC00)
 source_refs:
@@ -1317,3 +1317,31 @@ xác nhận nội dung đã đọc"*); (2) mệnh đề cuối của `disabled_r
 `TC-A5-01` đã đổi hình: phần bảo đảm với Anthropic được Owner nhận, phần chính sách nguồn vẫn mở). Trường
 `terms_check.reviewer` của cả hai mục mang câu đính chính và trỏ tới `CR-PC06-OQ03-08`. Sửa hai câu ấy cần
 một packet khác — viết trước rồi hợp thức hoá sau chính là thứ `BLOCKED_SCOPE` sinh ra để chặn.
+
+### 8.16 Amendment kỹ thuật thứ hai của Coordinator — `AMD-ENT-maintenance-01` (2026-09-08)
+
+Cùng dạng với §8.11: một amendment thực hiện **sau** khi `contracts/data/entities.yaml` đã
+`CONTRACT_READY`, dưới thẩm quyền kỹ thuật của Coordinator, và **chưa** có câu trả lời của Owner.
+PC00 **ghi nhận, không thẩm định lại** nội dung kỹ thuật; chủ sở hữu vẫn là PC02.
+
+| ID | Gói | Quyết định | Trạng thái | Đưa lên Owner ở mục |
+| --- | --- | --- | --- | --- |
+| `AMD-ENT-maintenance-01` | PC02 | `contracts/data/entities.yaml` (0.2.0 → 0.3.0) thêm entity `maintenance_window` (`ENT-maintenance-window`, `owner_module: MOD-data-store`; 10 trường: `id`, `owner_id`, `opened_at`, `opened_by`, `reason`, `storage_health_at_open`, `closed_at`, `closed_by`, `snapshot_verified_at`, `restore_record_id`; partial unique "nhiều nhất một cửa sổ đang mở"; ba CHECK) — chỗ ghi mà `contracts/state/storage.yaml` T-ST-03/T-ST-04/T-ST-09 đã đòi từ đầu nhưng hợp đồng entity không khai. Tập `retained_by_owner_decision` của `TXN-purge-all`: 21 → 22, tổng 60 → 61. Thi hành qua `CR-TC-storage-06` (cùng gốc `CR-TC-storage-04`), ghi ở `precode/change-control.md` §10 | **PROVISIONAL** — amendment kỹ thuật dưới `AUTH-COORD-PC02-FIX16`; Owner phê chuẩn ở vòng kế tiếp và **có thể phản đối** | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: cửa sổ bảo trì nay là một hàng bền, và nó nằm trong tập GIỮ LẠI khi `data.purge_all` chạy) |
+
+**Vì sao Coordinator ký được.** Amendment hòa giải hai hợp đồng mà Owner **đã** phê chuẩn — state
+contract nói một hàng được ghi, entity contract không khai bảng nào để ghi — nên nó không thêm một
+quyết định sản phẩm mới. Đúng loại mâu thuẫn nội bộ mà `precode/change-control.md` §7 giao cho
+ruling của Coordinator đóng.
+
+**Bốn điều nó KHÔNG làm.** Nó không mang nhãn `ACCEPTED`; nó **không** đóng `CR-TC-storage-06`;
+nó **không** giải `CR-TC-storage-04` (thiếu `storage_probe` cho đường `write_blocked → healthy` —
+một khoảng trống khác, vẫn mở); và nó **không** khẳng định bảng đã tồn tại trong schema đang chạy.
+Chưa migration nào tạo nó — đó là việc của WR trên lease kế tiếp — nên
+`tests/contract/test_schema_matches_entities.py` sẽ **ĐỎ** cho tới lúc đó. Gate ấy so khớp hai
+chiều, và ở đây chiều "entity đã khai nhưng bảng chưa có" đỏ **đúng như mong muốn**: nó là thứ ép
+WR tạo bảng thật thay vì để hợp đồng và kho tiếp tục nói hai chuyện khác nhau.
+
+**Hệ quả đã biết.** Mọi task card pin hash `entities.yaml` chuyển `STALE`; `contracts/modules.yaml`
+`data_owner_of` của MOD-data-store chưa có token `maintenance_window` (`CR-PC02-24`, PC01 sửa —
+phép so hai chiều EV-PC02-06 đang FAIL đúng một phần tử vì việc này); và mọi artefact nêu
+"37 / 21 / 2" hoặc "60 entity" nay sai — cập nhật trong `PKT-PC02-FIX17`.

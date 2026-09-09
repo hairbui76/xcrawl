@@ -128,6 +128,27 @@ STOP_REASON_EFFECT: Mapping[str, tuple[str, str]] = {
     "local_storage_unavailable": ("queued", "storage_unavailable"),
 }
 
+#: The two stop reasons that also move the **phase**, and where to. T-RUN-02 and T-RUN-25 both
+#: close the collection segment and go on to ``enriching`` rather than ending the run: hitting
+#: a budget is not a failure (AMD-B02), and neither is being asked to slow down. Fixture
+#: ``collection/e-limit-reached-stop.json`` pins ``phase: "enriching"`` in the response, so a
+#: reply that left the phase at ``collecting`` would be reporting a state the run is not in.
+STOP_REASON_PHASE: Mapping[str, str] = {
+    "limit_reached": "enriching",  # T-RUN-02
+    "rate_limited": "enriching",  # T-RUN-25
+}
+
+#: The stop reason whose acknowledgement is a **409 envelope** rather than a 200 body.
+#: Pinned by ``collection/a-feed-layout-changed.json``, and only for this one reason:
+#: ``collection/c`` answers 200 to ``challenge_required`` and ``collection/e`` answers 200 to
+#: ``limit_reached``. No fixture pins ``session_expired``, ``source_blocked`` or
+#: ``rate_limited``, and no contract rule derives the split, so those three answer 200 and the
+#: gap is reported as ``CR-TC-SCHED-07`` rather than guessed. The collector accepts either
+#: shape (``client._envelope`` reads both nestings), so a later ruling costs no client change.
+STOP_REASON_ECHO_CODE: Mapping[str, ErrorCode] = {
+    "source_layout_changed": ErrorCode.SOURCE_LAYOUT_CHANGED,
+}
+
 #: The two stop reasons that make a run wait for the Owner. T-RUN-15 keeps these across a
 #: lease expiry instead of returning the run to ``queued``, which is the difference between
 #: "the worker died" and "the Owner has to do something".
@@ -177,12 +198,32 @@ class CheckpointPort(Protocol):
 class AlertIntentPort(Protocol):
     """``delivery.create_intent`` — at most one alert per run (``REQ-AC04``).
 
-    Returns the intent id, or ``None`` when one already exists for this run. The uniqueness
-    is enforced by ``ux_outbox_alert_per_run`` on ``outbox_intent``, which is the delivery
-    card's table; this module records the pointer and never counts as the authority.
+    Returns the intent id, or ``None`` when one already exists for this run. The uniqueness is
+    enforced by ``ux_outbox_alert_per_run`` on ``outbox_intent``, the delivery card's table;
+    this module records the pointer and is never the authority.
+
+    ``connection`` is the caller's **open transaction**, and passing it is not an optimisation
+    (``CR-TC-COLLECTOR-11``). Two reasons, either of which alone would settle it:
+
+    *SQLite has one writer.* :func:`report_stop` calls this from inside its own
+    ``session_scope``. An adapter that opened a second connection to write the intent got
+    ``database is locked`` on a real deployment — the first challenge of the first run would
+    have raised, and the Owner would never have been told the run was waiting for them.
+
+    *The foreign key must hold at commit.* ``run.alert_intent_id`` is
+    ``REFERENCES outbox_intent (id)``. The intent row and the pointer to it therefore have to
+    land in **one** commit; an adapter that committed separately would leave a window in which
+    the pointer names a row that does not exist yet, and a crash inside that window leaves it
+    naming one that never will.
+
+    ``delivery.create_intent`` already accepts ``connection=`` for exactly this — its
+    docstring calls it the outbox pattern — so threading it through costs nothing and makes
+    the single-commit requirement structural instead of a rule an adapter has to remember.
     """
 
-    def create_alert_intent(self, *, run_id: str, stop_reason: str) -> str | None: ...
+    def create_alert_intent(
+        self, *, run_id: str, stop_reason: str, connection: Connection
+    ) -> str | None: ...
 
 
 #: The six ``no_work.reason`` values of ``contracts/schemas/worker-assignment.schema.json``.
@@ -196,6 +237,106 @@ NO_WORK_REASONS: frozenset[str] = frozenset(
         "assignment_already_held",
     }
 )
+
+
+#: ``source_limits`` of ``worker-assignment.schema.json``. Every one of the five required
+#: properties is a ``const`` in the schema, so these are not defaults that a deployment tunes
+#: — they are the contract's values, and sending anything else fails validation.
+#:
+#: ``contracts/ops/collector-probe.md`` §8 says why the block is sent at all: *"để collector
+#: không phải suy diễn"*. An empty object (which is what this card shipped before
+#: ``CR-TC-COLLECTOR-12``) told the collector none of it, so the one place these limits are
+#: stated was a contract nobody honoured on the wire.
+SOURCE_LIMITS: Mapping[str, Any] = {
+    "author_thread_only": True,  # REQ-D31: only the author's own thread is opened
+    "external_replies": "excluded",  # REQ-D31: outsiders' replies are deferred to P1
+    "image_only_post_policy": "post_only_no_id_guess",  # REQ-D33, I03: never guess an id
+    "chrome_scope": "x_only",  # REQ-D32, NC-08: the collector's Chrome does not visit arXiv
+    "paper_metadata_source": "server_api",  # REQ-D32: metadata comes from the server
+    "max_thread_context_posts": 50,  # PROVISIONAL, entities.yaml §limits
+}
+
+
+#: ``assignment.x_coverage_note_vi`` — ``minLength: 1``, and the schema explains why it is
+#: required rather than optional: *"`completed` không có nghĩa đã quét đủ toàn bộ X"*
+#: (AMD-B05). The collector copies it verbatim into the run metadata when it reports a stop,
+#: so this sentence is what stops a partially observed feed from being displayed as a complete
+#: sweep. It is built from the run's own limits rather than fixed, because the numbers it
+#: quotes are the ones that run actually used.
+def coverage_note(*, max_posts: int, max_duration_s: int) -> str:
+    minutes = max_duration_s // 60
+    return (
+        f"Chỉ quan sát được phần feed tìm kiếm trả về trong ngân sách {max_posts} bài / "
+        f"{minutes} phút; phần feed ngoài cửa sổ đó KHÔNG được quét."
+    )
+
+
+class StopEcho(JobError):
+    """A ``worker.report_stop`` acknowledgement that the contract shapes as an error envelope.
+
+    ``collection/a-feed-layout-changed.json`` answers 409 ``SOURCE_LAYOUT_CHANGED`` to a
+    **successful** report: the run really did move to ``blocked`` and the alert intent really
+    was created, and the 409 is how the server says "acknowledged, and here is the code for
+    what you reported". The collector treats these as acknowledgements rather than failures
+    (``client._STOP_ECHO_CODES``) and does not retry them.
+
+    The transaction has therefore already committed when this is raised.
+
+    The three extra fields ride **alongside** the envelope, not inside ``details_safe``:
+    ``contracts/errors.yaml`` closes ``details_safe_keys`` for ``SOURCE_LAYOUT_CHANGED`` to
+    six keys, none of them ``run``, and :class:`JobError` drops anything outside that set — so
+    putting them there would silently lose them. The fixture agrees: its ``run`` and
+    ``alert_intent_created`` are siblings of ``error``, not children of ``details_safe``.
+    """
+
+    def __init__(
+        self,
+        code: ErrorCode,
+        *,
+        details_safe: dict[str, Any] | None = None,
+        body: Mapping[str, Any],
+    ) -> None:
+        super().__init__(code, details_safe=details_safe)
+        self.body = dict(body)
+
+    def envelope_body(self, correlation_id: str) -> dict[str, Any]:
+        """The whole response: ``{error, run, alert_intent_created[, alert_intent_id]}``."""
+        return {"error": self.envelope(correlation_id), **self.body}
+
+
+@dataclass(frozen=True, slots=True)
+class SearchConfig:
+    """``search_config`` of the claim payload: what the collector searches X for.
+
+    **Configuration, not a service call.** ``contracts/modules.yaml`` gives
+    ``MOD-job-service`` four outbound edges — ingest, report, delivery, data-store — and
+    ``MOD-tag-service`` is not among them, so this module may not ask the tag service what the
+    tags are. It receives them. No card in the nineteen creates the ``tag`` /
+    ``tag_config_version`` tables either (the same gap ``CR-TC-REPORT-01`` records on the
+    report side), so ``tag_config_version_id`` has no real source yet and a deployment must
+    supply one; ``CR-TC-SCHED-06``.
+
+    The default id below is a **placeholder**, and a visible one on purpose: it reads as
+    ``PENDNGTAGSERVCE`` rather than looking like a real snapshot id, so a deployment that
+    forgot to configure the tag snapshot is obvious in a stored payload instead of plausible.
+    The missing vowels are not a typo — Crockford base32 excludes ``I``, ``L``, ``O`` and
+    ``U`` (they read back as ``1``, ``1``, ``0`` and ``V``), and the schema's ULID pattern
+    enforces that alphabet, so the word has to be spelled without them.
+
+    ``tags`` defaults to empty, which the schema permits and which is honest: this module has
+    no way to know them and will not invent a search term.
+    """
+
+    tags: tuple[str, ...] = ()
+    #: 26 characters of Crockford base32. Not a ULID anybody issued — see the class docstring.
+    tag_config_version_id: str = "PENDNGTAGSERVCE00000000000"
+
+    def wire(self) -> dict[str, Any]:
+        return {
+            "tags": list(self.tags),
+            "tag_config_version_id": self.tag_config_version_id,
+            "source_limits": dict(SOURCE_LIMITS),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,6 +369,8 @@ class JobContext:
     checkpoint_port: CheckpointPort | None = None
     alert_port: AlertIntentPort | None = None
     limits: RunLimits = field(default_factory=RunLimits)
+    #: What the collector searches for. Configuration -- see :class:`SearchConfig`.
+    search_config: SearchConfig = field(default_factory=SearchConfig)
     #: LM-08: set while a restore has not been reconciled. Every lease is stale in that state
     #: regardless of its TTL, and only ``backup.reconcile_after_restore`` clears it.
     restore_pending: bool = False
@@ -942,7 +1085,15 @@ def _assignment_payload(
     occurrence_ids = json.loads(run["schedule_occurrence_ids"])
     catch_up = None
     if run["catch_up_window_from"] is not None:
-        catch_up = {"from": run["catch_up_window_from"], "to": run["catch_up_window_to"]}
+        # `occurrence_count` is required alongside `from`/`to`: the window is what the
+        # Telegram message quotes (REQ-D15), and "three periods" is part of that sentence.
+        catch_up = {
+            "from": run["catch_up_window_from"],
+            "to": run["catch_up_window_to"],
+            "occurrence_count": len(occurrence_ids),
+        }
+    max_posts = int(config.get("per_run_post_limit", ctx.limits.max_posts))
+    max_duration_s = int(config.get("per_run_duration_limit_s", ctx.limits.max_duration_s))
     return {
         "assignment": {
             "assignment_id": assignment_id,
@@ -957,20 +1108,20 @@ def _assignment_payload(
                     {"id": assignment_id},
                 ).scalar_one()
             ),
-            "search_config": {
-                "tags": [],
-                "tag_config_version_id": None,
-                "source_limits": {},
-            },
+            "search_config": ctx.search_config.wire(),
             "stop_conditions": {
-                "max_posts": config.get("per_run_post_limit", ctx.limits.max_posts),
-                "max_duration_s": config.get("per_run_duration_limit_s", ctx.limits.max_duration_s),
+                "max_posts": max_posts,
+                "max_duration_s": max_duration_s,
                 "evaluation": "first_of_either",
                 "on_challenge": "report_stop_and_halt",
                 "on_blocked": "report_stop_and_halt_no_rotation",
             },
             "checkpoint": checkpoint,
-            "is_resume": bool(occurrence_ids) and int(run["attempt_count"]) > 0,
+            # LM-07: a resume always issues a NEW lease, so "is this a resume?" is "has this
+            # run been claimed before?". `attempt_count` counts departures from `queued` and
+            # this claim has already incremented it, so a first claim reads 1.
+            "is_resume": int(run["attempt_count"]) > 1,
+            "x_coverage_note_vi": coverage_note(max_posts=max_posts, max_duration_s=max_duration_s),
         }
     }
 
@@ -1070,8 +1221,28 @@ def report_stop(ctx: JobContext, body: Mapping[str, Any]) -> dict[str, Any]:
     rotate an account or a proxy — ``ports.yaml`` says so in as many words.
 
     At most one alert intent per run (``REQ-AC04``, ``delivery_alert_per_run = 1``): the
-    second ``report_stop`` for the same run reports ``alert_created: False``. The uniqueness
-    lives on ``outbox_intent``; this only records the pointer.
+    second ``report_stop`` for the same run reports ``alert_intent_created: False`` **and
+    still returns the id** of the intent the first one made. The uniqueness lives on
+    ``outbox_intent``; this only records the pointer.
+
+    The response shape is the fixture's
+    -----------------------------------
+    ``acceptance/fixtures/collection/c-challenge-mid-batch.json`` events 3 and 4 pin it::
+
+        {"run": {"status", "phase", "outcome", "stop_reason"},
+         "alert_intent_created": bool,
+         "alert_intent_id": str | null}
+
+    and that fixture is the only concrete shape there is: ``contracts/http/openapi.yaml``
+    types this response as a ``GenericObject``, so nothing else constrains it, and
+    ``acceptance/fixtures/README`` §3.2 makes the fixture the sole oracle. This function used
+    to answer ``{run_status, stop_reason, alert_created}`` — three keys, none of them the
+    fixture's — and because ``collector/app/client.py`` reads the fixture's keys, every field
+    of its ``StopAck`` came back blank against the real server (``CR-TC-COLLECTOR-16``). The
+    run block is nested rather than flattened for a reason worth keeping: ``status``,
+    ``phase``, ``outcome`` and ``stop_reason`` are the state **quadruple** of
+    ``contracts/state/run.yaml``, and reading any one of them alone is how I13's three
+    outcomes get collapsed into one.
     """
     ctx.assert_writable(OperationId.WORKER_REPORT_STOP)
     lease_id = _required(body, "lease_id", OperationId.WORKER_REPORT_STOP)
@@ -1088,6 +1259,23 @@ def report_stop(ctx: JobContext, body: Mapping[str, Any]) -> dict[str, Any]:
         )
     now = ctx.now()
     status, stored_reason = STOP_REASON_EFFECT[reason]
+    # T-RUN-02 / T-RUN-25: two reasons close the collection segment and move on.
+    next_phase = STOP_REASON_PHASE.get(reason)
+    limit_hit = reason == "limit_reached"
+    limit_kind = body.get("limit_kind")
+    if limit_hit and limit_kind not in ("posts", "duration"):
+        # `run` CHECKs `limit_hit = 0 OR limit_kind IS NOT NULL`, and the collector is the
+        # only party that knows which budget it hit. Refusing beats guessing: a wrong
+        # `limit_kind` is displayed to the Owner as the reason the run stopped.
+        raise JobError(
+            ErrorCode.VALIDATION_ERROR,
+            details_safe={
+                "operation_id": OperationId.WORKER_REPORT_STOP.value,
+                "field_path": "limit_kind",
+                "violation_kind": "missing_or_not_in_enum",
+            },
+        )
+
     with session_scope(ctx.engine) as connection:
         lease = _lease_by_id(connection, ctx.owner_id, lease_id)
         assert_current_lease(
@@ -1113,9 +1301,21 @@ def report_stop(ctx: JobContext, body: Mapping[str, Any]) -> dict[str, Any]:
             if status == "blocked"
             else None
         )
+        # AMD-B05: when the feed was only partly observed the sentence is mandatory, and the
+        # `run` CHECK enforces it. The collector may send its own (fixture `e` does); this
+        # falls back to the one built from the budget the run actually ran under.
+        coverage = body.get("x_coverage_note_vi") or (
+            coverage_note(max_posts=ctx.limits.max_posts, max_duration_s=ctx.limits.max_duration_s)
+            if limit_hit
+            else run["x_coverage_note_vi"]
+        )
         connection.execute(
             text(
                 "UPDATE run SET status = :s, stop_reason = :r, unblock_condition_vi = :u, "
+                "phase = COALESCE(:phase, phase), "
+                "limit_hit = :limit_hit, limit_kind = :limit_kind, "
+                "x_coverage_note_vi = :coverage, "
+                "posts_observed_total = COALESCE(:observed, posts_observed_total), "
                 "rate_limited_at = CASE WHEN :r = 'rate_limited' THEN :now "
                 "ELSE rate_limited_at END WHERE owner_id = :o AND id = :id"
             ),
@@ -1123,27 +1323,96 @@ def report_stop(ctx: JobContext, body: Mapping[str, Any]) -> dict[str, Any]:
                 "s": status,
                 "r": stored_reason,
                 "u": unblock,
+                "phase": next_phase,
+                "limit_hit": 1 if limit_hit else int(bool(run["limit_hit"])),
+                "limit_kind": limit_kind if limit_hit else run["limit_kind"],
+                "coverage": coverage,
+                "observed": body.get("posts_observed_total"),
                 "now": timestamp_utc_ms(now),
                 "o": ctx.owner_id,
                 "id": run["id"],
             },
         )
         alert_created = False
-        if (
-            status in OWNER_WAIT_STATUSES
-            and ctx.alert_port is not None
-            and run["alert_intent_id"] is None
-        ):
-            intent_id = ctx.alert_port.create_alert_intent(
-                run_id=str(run["id"]), stop_reason=stored_reason
+        # Fixture event 4 of `collection/c`: a repeat reports `alert_intent_created: false`
+        # and STILL returns the id the first report made. So the pointer already on the run is
+        # the starting value, not `None` -- a replay answering `null` would tell the collector
+        # the alert does not exist.
+        alert_intent_id: str | None = (
+            str(run["alert_intent_id"]) if run["alert_intent_id"] is not None else None
+        )
+        if status in OWNER_WAIT_STATUSES and ctx.alert_port is not None and alert_intent_id is None:
+            # The caller's open transaction, threaded through: one commit for the intent row
+            # and the pointer to it (CR-TC-COLLECTOR-11).
+            created_id = ctx.alert_port.create_alert_intent(
+                run_id=str(run["id"]),
+                stop_reason=stored_reason,
+                connection=connection,
             )
-            if intent_id is not None:
+            if created_id is not None:
                 connection.execute(
                     text("UPDATE run SET alert_intent_id = :i WHERE owner_id = :o AND id = :id"),
-                    {"i": intent_id, "o": ctx.owner_id, "id": run["id"]},
+                    {"i": created_id, "o": ctx.owner_id, "id": run["id"]},
                 )
                 alert_created = True
-    return {"run_status": status, "stop_reason": stored_reason, "alert_created": alert_created}
+                alert_intent_id = created_id
+        # Read back inside the transaction: the response reports the state that was written,
+        # not the arguments that were passed to write it.
+        updated = _run_row(connection, ctx.owner_id, str(run["id"]))
+        assert updated is not None  # noqa: S101 - updated inside this transaction
+
+    answer = _stop_ack(updated, alert_created=alert_created, alert_intent_id=alert_intent_id)
+    echo_code = STOP_REASON_ECHO_CODE.get(reason)
+    if echo_code is None:
+        return answer
+    raise StopEcho(
+        echo_code,
+        details_safe={
+            "run_id": str(updated["id"]),
+            "phase": updated["phase"],
+            "stop_reason": stored_reason,
+            "missing_required_fields": body.get("missing_required_fields"),
+            "posts_seen": body.get("posts_seen"),
+            "posts_parsed_ok": body.get("posts_parsed_ok"),
+        },
+        body=answer,
+    )
+
+
+def _stop_ack(
+    run: Mapping[str, Any], *, alert_created: bool, alert_intent_id: str | None
+) -> dict[str, Any]:
+    """The ``worker.report_stop`` acknowledgement, shaped by the fixtures.
+
+        Three pinned examples, and the shape is the intersection of what they show:
+
+    ``collection/c`` (challenge)
+            ``{run{status, phase, outcome, stop_reason}, alert_intent_created, alert_intent_id}``
+        ``collection/e`` (limit)
+            adds ``limit_hit`` / ``limit_kind`` to ``run``; **no** ``alert_intent_id`` key at all
+        ``collection/a`` (layout)
+            adds ``unblock_condition_vi`` to ``run``; the whole object rides beside an ``error``
+
+        So ``run`` is the state quadruple plus whatever else is *true* of this stop, and
+        ``alert_intent_id`` is present only when an intent exists. Omitting the key rather than
+        sending ``null`` is the fixtures' own distinction, and it is the honest one: ``null``
+        would say "there is an alert and it has no id".
+    """
+    state: dict[str, Any] = {
+        "status": run["status"],
+        "phase": run["phase"],
+        "outcome": run["outcome"],
+        "stop_reason": run["stop_reason"],
+    }
+    if run["limit_hit"]:
+        state["limit_hit"] = True
+        state["limit_kind"] = run["limit_kind"]
+    if run["unblock_condition_vi"] is not None:
+        state["unblock_condition_vi"] = run["unblock_condition_vi"]
+    answer: dict[str, Any] = {"run": state, "alert_intent_created": alert_created}
+    if alert_intent_id is not None:
+        answer["alert_intent_id"] = alert_intent_id
+    return answer
 
 
 def release_assignment(ctx: JobContext, body: Mapping[str, Any]) -> dict[str, Any]:
@@ -1585,15 +1854,21 @@ __all__ = [
     "NON_TERMINAL_RUN_STATUSES",
     "NO_WORK_REASONS",
     "ONLINE_THRESHOLD_SECONDS",
+    "STOP_REASON_ECHO_CODE",
     "STOP_REASON_EFFECT",
+    "STOP_REASON_PHASE",
     "TERMINAL_RUN_STATUSES",
     "WIRE_TO_STORED_WORKER_KIND",
     "AlertIntentPort",
     "CheckpointPort",
     "JobContext",
+    "SOURCE_LIMITS",
     "RunLimits",
+    "SearchConfig",
+    "StopEcho",
     "StorageGuardPort",
     "cancel_run",
+    "coverage_note",
     "claim_assignment",
     "coalesce_overdue",
     "enqueue_scheduled_run",

@@ -159,17 +159,67 @@ def _owner_session(request: Request, operation: OperationId) -> str:
     return str(owner_id)
 
 
-def _context(request: Request) -> PublishContext:
+#: The one sentence an unwired deployment answers with. A **fixed literal**: it interpolates
+#: nothing, so it cannot carry a value ``details_safe_keys`` does not allow
+#: (``contracts/errors.yaml`` §error_envelope, ``message_safe``), and it contains none of the
+#: four things ``forbidden_content_vi`` bars — no transcript, no credential, no stack trace, no
+#: table name. It names the gap and the change request that tracks it, because a disclosed gap
+#: that reads as "unexpected" is indistinguishable from a crash (``F-A3-P5-03``).
+UNWIRED_MESSAGE_SAFE = (
+    "Dịch vụ báo cáo chưa được cấu hình trong bản triển khai này (CR-P0-07): "
+    "chưa có cổng tag-service và cổng embedding. Yêu cầu của bạn hợp lệ và "
+    "không có dữ liệu nào bị đọc hay ghi."
+)
+
+
+def _context(request: Request, operation: OperationId) -> PublishContext:
     """``app.state.report_context``. Never defaulted: a router does not invent a database.
 
-    An unconfigured deployment gets ``INTERNAL`` (500), which is honest, rather than a
-    connection to some file this module chose or a tag port this module wrote itself.
+    Which code an unwired deployment answers with (``F-A3-P5-03``, ``CR-P0-07``)
+    ---------------------------------------------------------------------------
+    ``INTERNAL`` (500) — chosen, not settled for. The rule was: use whatever
+    ``contracts/http/openapi.yaml`` declares for these two operations' *unavailability*, or
+    else the closest **declared** code; never a new one.
+
+    openapi declares no unavailability response here. ``503 STORAGE_WRITE_FAILED`` appears on
+    27 operations and **every one of them is a mutation**; ``/v1/reports`` and
+    ``/v1/reports/{report_id}`` are reads and declare exactly ``200 / 401 / 403 / 500``
+    (``report.get`` adds ``404``). So the choice is among those, and three of the four would
+    state something untrue:
+
+    * ``UNAUTHORIZED`` (401) — the caller's identity is fine. It would also send a logged-in
+      owner back to a login screen because of a server-side gap.
+    * ``FORBIDDEN_EDGE`` (403) — ``MOD-web-ui -> MOD-report-service`` **is** in
+      ``allowed_edges``. Ruling R5-01 row 2 reserves this code for an edge the registry does
+      not have, and card §10 ``SG-DENY`` makes picking the wrong code a FAIL on its own.
+    * ``NOT_FOUND`` (404) — declared on ``report.get`` only, and it would assert something
+      about a *report* that this path never looked for.
+
+    ``INTERNAL`` is what remains, it is declared on **both** routes, and it does not misstate
+    the cause: ``errors.yaml`` calls it "lỗi không phân loại được ở phía server", and its one
+    relevant prohibition — *"Dùng INTERNAL để che một mã đã có trong danh mục này"* — is
+    satisfied, because none of the 28 codes covers "this deployment has not wired a port".
+
+    What changes is therefore the **body**, which is what the finding is about.
+    ``message_safe`` stops saying "unexpected" and names the gap and ``CR-P0-07``, and
+    ``operation_id`` is now the route's own: it used to be hard-coded to ``report.get``, so
+    ``GET /v1/reports`` answered with the wrong operation id — the exact body the audit quoted.
+
+    Order matters and is unchanged: headers, then identity, then availability. An anonymous
+    caller still gets ``401`` and is told nothing about how this deployment is wired.
+
+    ``CR-TC-REPORT-11``: ``INTERNAL.details_safe_keys`` is closed to
+    ``{correlation_id, operation_id}``, so the reason can only be named in prose and a client
+    cannot branch on it. The change request asks PC01/PC03 for either a ``503`` plus a
+    catalogued unavailability code declared on the read routes, or a ``reason_ref`` key on
+    ``INTERNAL``.
     """
     context = getattr(request.app.state, "report_context", None)
     if not isinstance(context, PublishContext):
         raise ReportError(
             ErrorCode.INTERNAL,
-            details_safe={"operation_id": OperationId.REPORT_GET.value},
+            message_safe=UNWIRED_MESSAGE_SAFE,
+            details_safe={"operation_id": operation.value},
         )
     return context
 
@@ -205,7 +255,7 @@ def list_reports(
     try:
         _require_wire_headers(request, OperationId.REPORT_LIST)
         owner_id = _owner_session(request, OperationId.REPORT_LIST)
-        context = _context(request)
+        context = _context(request, OperationId.REPORT_LIST)
     except ReportError as error:
         return _error_response(error)
 
@@ -282,7 +332,7 @@ def get_report(request: Request, report_id: str) -> Any:
     try:
         _require_wire_headers(request, OperationId.REPORT_GET)
         owner_id = _owner_session(request, OperationId.REPORT_GET)
-        context = _context(request)
+        context = _context(request, OperationId.REPORT_GET)
     except ReportError as error:
         return _error_response(error)
 
@@ -301,4 +351,4 @@ def get_report(request: Request, report_id: str) -> Any:
     return _ok(body)
 
 
-__all__ = ["install_reports", "router"]
+__all__ = ["UNWIRED_MESSAGE_SAFE", "install_reports", "router"]

@@ -620,3 +620,130 @@ its pending-ledger entry: that obligation is now established.
 
 *`PKT-TC-ANALYSIS-FIX3` · `worker-W3B` · `lease_released_at` 2026-09-08T01:12Z · claim
 unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) — no item here is an independent audit.*
+
+---
+
+# ADDENDUM 4 — `PKT-TC-ANALYSIS-FIX4` (`CR-TC-adapter-10`: the task input carries the key)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-ANALYSIS-FIX4` · lease `LEASE-TC-ANALYSIS-e5` (fencing 5) · `worker-W3B` |
+| scope granted | `server/app/analysis/{service,router,repository}.py`, this card's tests, handoff, manifest re-issue |
+| status | **`DONE`** — no STOP was required; the schema not only permits the field, it requires it. |
+| claim change | **none.** `CONTRACT_READY` / `SELF_VALIDATION`. |
+| lease_released_at | 2026-09-08T06:50Z |
+
+## D.1 Schema check first — and it settled the question
+
+The packet's STOP condition did not fire, for a stronger reason than "the schema permits it":
+
+* `contracts/http/openapi.yaml` types the 200 of `/v1/analysis/tasks/{task_id}/input` as
+  `GenericObject` — `type: object` with no `additionalProperties: false`, and its own
+  description says the real shape belongs to another package and must arrive before G3.
+* `contracts/ai/tasks.yaml` §2 is that package, and it lists **`analysis_key` in
+  `input.required` for all three task types**, described as "Bảy thành phần §1".
+
+So the field was never optional. Omitting it was a defect on this side, not a gap needing a
+contract change, and `CR-TC-adapter-10` is a correct finding against this card. Nothing was
+sent out-of-band and no new field was invented.
+
+## D.2 What carried the key, and the one thing that had to be reworked
+
+`analysis.get_task_input` now returns `analysis_key` with all seven ADR-0008 components,
+computed by `analysis_key_for()`:
+
+| component | source |
+| --- | --- |
+| `owner_id`, `target_key`, `task_type`, `generation_number` | the `analysis_generation` row — the durable record of the assignment |
+| `source_fingerprint` | `derived_source_fingerprint()` over the sources the task-input port is about to hand the model — which is what `ENT-analysis.source_fingerprint` is *defined* to be |
+| `prompt_version`, `schema_version` | the per-task-type constants of `contracts/ai/tasks.yaml` §2, quoted the way the retry budgets already are. They are configuration, not row data: that is why `ENT-analysis-generation.reason` has `prompt_version_change` and `schema_version_change` as reanalysis triggers |
+
+The load-bearing part is that the key is now **one value in three places** — the enqueue
+"already analysed?" lookup, the task input, and the committed row. Three spellings of it would
+not have read as a bug; it would have read as the model being called again, which is REQ-AC06
+failing silently. So `enqueue_tasks` derives the fingerprint too.
+
+**The rework, reported because it matters.** The first version made a disagreeing
+caller-supplied `source_fingerprint` a `VALIDATION_ERROR`. That is defensible in the abstract
+and was wrong in practice: it broke **7 landed tests in W3A's `tests/integration/
+test_worker_loop.py`**, whose fake task-input port does not hash to the fingerprint their
+enqueue call passes. A design in which one card's test double can refuse another card's work
+is a worse failure than the one it prevents. The field is now **advisory**: the derived value
+always wins, and a disagreement is *reported* in the response entry as
+`source_fingerprint_hint_ignored` — not obeyed, not silently dropped, and not fatal.
+`CR-TC-ANALYSIS-10` proposes removing the field from the port entirely, which is the real fix.
+W3A's suite is 18/18 green.
+
+`router.py` and `repository.py` were in the lease and needed no change: the key is assembled
+in the service and travels in the existing payload, so no route, no column and no SQL moved.
+
+## D.3 `CR-TC-adapter-08`, recorded from this side
+
+`contracts/ports.yaml` has no `analysis.release_task`, and this card did **not** invent one.
+The consequence, stated as measured behaviour: when a worker refuses *before* calling the
+provider — the credential is refused, or the adapter is `enabled: false` — it has no way to
+hand the task back. The task sits `running` until `lease_ttl_analysis` (900 s) elapses and
+`reap_expired_leases` returns it to `pending`. The worker is right not to call
+`report_attempt_unknown` there: no inference ran, so `cost_uncertain = true` would be a claim
+the system cannot support. So a task is parked for fifteen minutes by a refusal that was
+instant and certain. This is a contract change request, not a code defect, and it is recorded
+in the manifest's `unresolved_issue_refs`.
+
+## D.4 Hashes
+
+| Path | Operation | Before | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `server/app/analysis/service.py` | MODIFY | `21d40f835bead5653b40c8cd68881df6b65e73e2252d75b2b081b676322e66a7` (84252 B) | `6e07239edf68c2f669475491ba0709ca1ef448b63600c30e2701dab420413725` | 89567 |
+| `tests/integration/test_analysis_once_per_key.py` | MODIFY | `35cf9c70…` (33739 B) | `30a87681f4cb6d757b39203a7c0dbb0ab573493184fa0f1542f2aec2bf454f96` | 41482 |
+| `tests/integration/test_attempt_not_result.py` | MODIFY | `edaa07b6…` (33727 B) | `f76f26ff247471a2789853a36064f46fadf5d6cc349a4400ce102c3543ca29c1` | 34466 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260908T064438Z.json` | CREATE | ABSENT | `c288dd8ed7d162f3e102d3bf5deb2e6522a9109fe67b5f706086bedddb367ca5` | 27482 |
+| `evidence/runs/TC-analysis-once-per-generation-E1-20260908T010738Z.json` | MODIFY | `0a150783…` (23937 B) | `afa090fd419aed135d8a62d8d550c89e7ebee1deba48a23ce988a0f2cc8b9325` | 24433 |
+| `evidence/handoffs/TC-analysis-once-per-generation-handoff.md` | MODIFY | — | (this file) | — |
+
+`router.py` (`e08ae84f…`), `repository.py` (`648ae9b4…`), `key.py`, the migration and
+`tests/contract/test_analysis_key.py` (`70db817c…`) are **unchanged**. Nothing under
+`contracts/`, `acceptance/`, `precode/`, `agent-tasks/` or `worker/` was touched. Evidence
+chain `EV-E1-01`…`-04` are all `STALE` with reasons; **`EV-E1-05`** is `PASS`; all five
+validate with 0 errors.
+
+## D.5 Verification
+
+Card command `2026-09-08T06:44:38Z` → `06:44:48Z`, exit 0: **36 tests, 36 passed, 0 xfailed,
+0 failed** (10 / 15 / 11), up from 35. The new tests are the fingerprint/hint behaviour and
+**`test_the_worker_loop_completes_a_whole_cycle_against_this_service`** — W3A's
+`AnalysisWorkerLoop` driven over real HTTP against this card's router with
+`analysis_key_resolver=None`, reaching `CycleOutcome.SUBMITTED` with one valid row and one
+attempt, and the key the adapter received asserted to have all seven components.
+
+Full suite: **1128 passed, 3 xfailed, 2 failed**, exit 1. Both failures are
+`tests/integration/test_collector_loop.py` strict-XPASS on that card's own
+`CR-TC-COLLECTOR-11`/`-12` — their pinned expectations flipped because someone else's fix
+landed; nothing to do with analysis. `ruff check`, `ruff format --check` clean on this card's
+three test files and `server/app/analysis/`; `mypy` reports 0 errors in `server/app/analysis`.
+The tree currently carries ruff/mypy errors in `server/app/secret/`,
+`server/app/settings_service/` and two other cards' test files — outside this lease.
+
+---
+
+*`PKT-TC-ANALYSIS-FIX4` · `worker-W3B` · `lease_released_at` 2026-09-08T06:50Z · claim
+unchanged (`CONTRACT_READY`, `SELF_VALIDATION`) — no item here is an independent audit.*
+
+### D.6 `STALE_BASELINE` — reported, not worked around
+
+An SG-HASH re-check run immediately before releasing this lease found **three of the card's
+§0 pinned sources changed byte-for-byte while this packet was running**:
+`contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/http/openapi.yaml`.
+
+The diff was read rather than assumed. It is entirely inside the `data.purge_all` prose — the
+purge keep-list grows to 22 tables with `maintenance_window`, and the entity total goes 60 →
+61. Filtering all three diffs for `analysis` returns nothing: no `analysis.*` operation, no
+`MOD-analysis-service` edge, no `/v1/analysis/**` route is touched. So the PASS above is
+still true of the bytes it ran against, and nothing in this addendum's reasoning depends on
+the changed text.
+
+It is still a stop condition. SG-HASH reads **bytes, not intent** — that is the whole reason
+the mechanism exists — so the card is `STALE` and owes a PC10 re-pin before the next packet.
+This worker did not touch §0 and did not adjust the manifest's `contract_hashes` to match
+disk: rewriting the recorded baseline to make a check pass is the defect the check is for.
+The manifest records the drift in `limitations.not_checked_vi`; the Coordinator holds the
+re-pin.

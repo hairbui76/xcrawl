@@ -3536,3 +3536,262 @@ Không CR mới. `CR-PC10-13` (bản port chỉ quét §4 ở phép kiểm `oper
 ---
 
 *PKT-PC10-FIX27 · worker-WP · `lease_released_at` 2026-09-08T01:55Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX28 (card thứ 20: `TC-secret-settings-service`, khoảng trống `G-6`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX28` · lease `LEASE-PC10-e29` (fencing 29) · worker `worker-WP` |
+| status | `DONE_WITH_CONCERNS` (một CR mới — xem §AB.6) · ceiling `DRAFT_FOR_REVIEW` |
+| lease_released_at | 2026-09-08T03:40Z · next actor `Coordinator` → implementer `WAI` |
+| pin epoch | **`PC10-PIN-P4b-20260908` — không đổi.** Không file đã pin nào chuyển byte, nên 19 card cũ **không** được sinh lại |
+| ghi chú phiên | Gói bị ngắt giữa chừng do rate limit và được resume; mọi thứ dưới đây đã chạy lại sau khi resume |
+
+## AB.1 Card mới
+
+| | Giá trị |
+| --- | --- |
+| path | `agent-tasks/TC-secret-settings-service.md` |
+| sha256 / bytes | `3409970e251da905bb67c600e0e588ea0fa071f3625d8e1508f01223270569ec` / 30 247 |
+| milestone / gate | M3 / G5 · module `MOD-secret-service`, `MOD-settings-service` |
+| produces | `secret.store_provider_key`, `secret.issue_task_credential`, `secret.revoke_task_credential`, `settings.get_config`, `settings.update_config`, `settings.test_provider` — **sáu**, liệt kê từ `contracts/ports.yaml`, không phải ba như mô tả ban đầu của khoảng trống |
+| consumes | `embedding.start_generation_rebuild` (đúng `outbound_operations` của `MOD-settings-service`) |
+| scenario | `SC16`, `SC17`, `SC20`, `SC24`, `SC28`, `SC41`, `SC49` |
+| invariant | `I01`, `I11`, `I14` |
+| trần | `IMPLEMENTATION_VERIFIED` (E1+E2 trên fixture; **không** provider nào được bật, không live claim) |
+
+**Khoảng trống `G-6` nói gì.** Sáu operation có trong hợp đồng, **không module nào hiện thực**. Hệ quả cụ
+thể, không trừu tượng: không có chỗ hợp lệ cho một API key hay webhook secret Telegram
+(`docs/owner-runbook.md` §7 chặn ở đúng đây), và **ca âm `ISO-05`** mà `contracts/ai/providers.yaml` §4 nêu
+đích danh — *gọi `secret.issue_task_credential` cho một worker **không** giữ lease và thấy nó bị từ chối* —
+**không chạy được**, vì operation đó chưa có mã. Card biến ba thứ đó thành nghĩa vụ kiểm được.
+
+**Bốn oracle không thương lượng** ở §8: (1) canary **không** xuất hiện trong log/response/audit — đếm bằng
+0, không phải "không thấy"; (2) ISO-05 phải **chạy thật** và bị từ chối bằng `STALE_LEASE` với **0** hàng
+`task_credential`; (3) không cấu hình key ⇒ **0** lời gọi tới secret store cho đường `cli_acp`
+(`secret_ref = NULL`, REQ-D51); (4) bật `enabled` khi `terms_check_at IS NULL` phải bị **DB** từ chối qua
+`ck_provider_config_terms_before_enable` — kiểm bằng một lần ghi thật, không bằng validation ở tầng ứng dụng.
+
+**Tên gói: `server/app/settings_service/`, không phải `server/app/settings/`.** Bộ khung Giai đoạn 0 mang
+một module cấu hình `server/app/settings.py`; một package cùng tên trong cùng package cha sẽ **va nhau khi
+import** — đúng lớp lỗi `import file mismatch` mà `PROV-P0-01` đã gặp một lần. `SG-NAME` ghi điều này thành
+điểm dừng: muốn đổi tên thì raise CR, không tự đổi.
+
+**Điểm dừng khác:** `SG-TERMS` (không đọc điều khoản thay Owner — card dựng **cửa**, không điền dữ kiện),
+`SG-MASTER-KEY` (nơi vận hành thật của master key là cấu hình triển khai; chưa có ⇒ DỪNG, **không** sinh key
+mặc định, không commit key), `SG-ISO05` (một test khẳng định "đường này không tồn tại" **không** phải bằng
+chứng cho ISO-05).
+
+## AB.2 README
+
+Bốn thay đổi: hàng **19** trong bảng thứ tự (M3/G5); cạnh mới trong đồ thị phụ thuộc
+(`TC-owner-auth-session` → card này → `TC-analysis-adapter-validation`, và lease của
+`TC-analysis-once-per-generation` là thứ ISO-05 kiểm); đếm card **19 → 20** ở §5.4; một đoạn mới giải thích
+`G-6` và ghi rõ card **chưa được thi công**.
+
+`agent-tasks/README.md` **không** được card nào pin — tôi kiểm trực tiếp: **0** hàng hash trỏ tới nó trên cả
+20 card. Nên câu "19 card" của nó không phải một khẳng định có pin, và sửa nó không làm card nào `STALE`.
+
+## AB.3 Cùng epoch, và vì sao điều đó đúng chứ không phải một ngoại lệ
+
+Card thứ 20 pin ở **cùng** `PC10-PIN-P4b-20260908` với 19 card kia. Tôi xác minh điều kiện cho phép: sinh
+lại **cả 20** card vào thư mục scratch rồi so byte với repo — **19 card cũ giống hệt**, nghĩa là không file
+đã pin nào đổi giữa hai lần. Cùng epoch ở đây nghĩa là **cùng tập byte nguồn**, đúng nghĩa mà tên epoch
+mang. Chỉ card mới được chép vào repo; 19 card kia không bị ghi lại.
+
+## AB.4 Hai lỗi của chính tôi mà verifier bắt được
+
+1. **Token giả dạng operation ID (lần thứ ba).** Prose của tôi viết `` `provider_config.enabled` `` trong
+   backtick; phép kiểm (c) của generator verifier đọc nó như một operation ID và FAIL. Bản port trong repo
+   **PASS** cùng lúc — nó chỉ quét §4. Tôi sửa **câu văn** ("cột `enabled` của `provider_config`"), không nới
+   phép kiểm và không thêm token vào danh sách bỏ qua. Đây là ví dụ **thứ ba** cho `CR-PC10-13`.
+2. **Self-test tụt xuống 13/14 vì chính đoạn README tôi vừa viết.** Đoạn mới của tôi chép tay tên epoch
+   `PC10-PIN-P4b-20260908` lần thứ hai trong cùng file. Đột biến `epoch` của self-test thay **token đầu
+   tiên** bằng một epoch cũ; với hai bản sao, file vẫn còn nêu epoch hiện hành ở chỗ kia, nên vi phạm không
+   phát sinh và đột biến **không bị bắt**.
+
+   Cách sửa **không** phải là nới đột biến cho dễ đậu. Việc chép tay tên epoch lần thứ hai chính là thứ
+   `F-A2R1-03` đã phạt: mỗi bản sao là một chỗ nữa để đi lạc. Tôi bỏ tên epoch khỏi đoạn mới và để nó trỏ về
+   §4 ("tên epoch đọc ở §4"). Self-test trở lại **14/14**, và README có ít hơn một bản sao để bảo trì.
+
+   Nhưng đột biến đó **vẫn mong manh**: nó giả định tên epoch hiện hành xuất hiện đúng một lần. Đó là
+   `CR-PC10-16`.
+
+## AB.5 Changes
+
+**3 file**: `agent-tasks/TC-secret-settings-service.md` (**CREATE**, before `ABSENT`),
+`agent-tasks/README.md` (MODIFY, `49244f56de7e56d7e93839e71c7d80c4351b7e866f3176ef201fa0274bf91dda` / 31 483),
+và addendum này. Đúng lease. Không card nào khác bị ghi, không `contracts/`, `precode/`, `acceptance/`, hay
+cây code nào.
+
+## AB.6 Evidence và CR
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 927 assertion, 0 violation** trên **20 card**.
+**Generator verifier (a…m):** `PASS: no failures`. **`--self-test`:** **14/14 đột biến bị bắt**.
+Card mới đủ `## §0.`…`## §13.` và front-matter 17 khóa; **toàn bộ 20 card khớp byte với đầu ra của
+generator** — không có phần nào viết tay dở dang. Tất cả `SELF_VALIDATION`.
+
+**`CR-PC10-16` (mới) — đột biến `epoch` của self-test giả định tên epoch xuất hiện đúng một lần.**
+Nên thay **mọi** occurrence của epoch hiện hành trong file bị đột biến, không chỉ token đầu. Hiện tại, một
+file khẳng định pin **hai** lần chỉ cần một chỗ đúng là qua được đột biến, dù drift thật vẫn bị bắt (khi
+file không còn nêu epoch hiện hành ở đâu cả). Chủ sở hữu: gói sở hữu `evidence/tools/`. Kèm `CR-PC10-13`,
+nay có ví dụ thứ ba.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`, `-16`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`PC00-handoff.md` thiếu addendum FIX24–FIX30.
+
+---
+
+*PKT-PC10-FIX28 · worker-WP · `lease_released_at` 2026-09-08T03:40Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX29 (re-pin `P5b`; `P5` bị thay **trước khi phát hành**)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX29` · lease `LEASE-PC10-e30` (fencing 30) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-09T02:20Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P5b-20260908`** (thay `PC10-PIN-P4b-20260908`) · 20 card |
+
+## AC.1 `PC10-PIN-P5-20260908` — pin vào một baseline đang chuyển, và **không bao giờ được phát hành**
+
+Cần ghi rõ vì đây là lần đầu một tên epoch bị bỏ giữa chừng.
+
+Cổng của vòng đầu (do Coordinator đặt, tôi thi hành) là: `contracts/data/entities.yaml` khác hash đã pin,
+`E0-18` sạch, và **10** file đã pin đứng yên **hai** phút. Cả ba **đều đúng** lúc tôi pin. Nhưng đợt
+propagate của `PKT-PC02-FIX17` lúc đó **đang chạy**, và nó chạm nhiều hơn 10 file: trong khoảng một phút sau
+khi tôi ghi, `contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/http/openapi.yaml`,
+`contracts/ops/secrets.md`, `contracts/ui/screens.yaml`, `contracts/ops/backup-restore.md`,
+`acceptance/scenarios.yaml`, hai fixture `recovery/` và `precode/decision-register.md` đều đổi byte.
+`verify_cards.py` đi từ 20 vi phạm lên **52** trong lúc tôi còn đang sửa bốn file khẳng định pin.
+
+**Bài học, và nó không phải "chờ lâu hơn":** cổng đo **10 file** trong khi tập pin có **142**. Một cổng chỉ
+chứng minh điều nó đo. Vòng này tôi rút danh sách file **từ chính bảng §0 của 20 card** (142 file) và đòi cả
+tập đứng yên **ba** phút liên tiếp, cộng `E0-18` sạch, cộng cả `PKT-PC02-FIX17` **và** `PKT-PC02-FIX18` đã
+nhả lease. Kết quả cổng: `E0-18_clean=1`, `files=142`, `h=42a17bb2a0028403`, `stable=3`.
+
+Tên `P5` **không được tái sử dụng**. Nó nằm trên đĩa chưa đầy một ngày, chưa gói nào đọc nó, và §0 của mọi
+card nay ghi một câu nói thẳng rằng nó bị thay trước khi phát hành — để không ai đi tìm một epoch `P5` hợp lệ.
+
+## AC.2 File đã pin nào đổi
+
+So từng hàng hash giữa bản `P5` (sai) và bản `P5b`: **`contracts/http/openapi.yaml`,
+`contracts/modules.yaml`, `contracts/ports.yaml`, `contracts/ui/screens.yaml`**. So với `P4b` — bản hợp lệ
+gần nhất — tập đổi còn gồm `contracts/data/entities.yaml`, `contracts/ops/secrets.md`,
+`contracts/ops/backup-restore.md`, `acceptance/scenarios.yaml`, hai fixture `recovery/`,
+`precode/change-control.md` và `precode/decision-register.md`.
+
+Phép kiểm hai vùng: **20/20 card giống hệt ngoài §0**. Tập pin **554 dòng hash**.
+
+**Gói của WS không chạm gì có pin:** `shared/rr_contracts`, `web/src/generated`, `server/app/wiring.py` —
+**0 hàng pin và 0 lần được trích dẫn** trên cả 20 card, kiểm bằng cách parse bảng §0 chứ không bằng phỏng đoán.
+
+## AC.3 Một cảnh báo giả mà tôi tự dựng rồi tự gỡ
+
+Sau khi pin, tôi băm lại tập 142 file và ra `78d5aeb4…`, khác giá trị `42a17bb2…` của cổng — trông y hệt một
+lần drift nữa. Không phải: lần sau tôi truyền **đường dẫn tuyệt đối**, và `sha256sum` in **cả đường dẫn**
+trong output, nên md5 của output đổi dù nội dung file không đổi. Chạy lại đúng cách cổng đã chạy (đường dẫn
+tương đối, cwd là gốc repo): **`42a17bb2a0028403`**, khớp chính xác. Ghi lại vì một "drift" giả đọc giống hệt
+một drift thật, và cách phân biệt là **lặp lại đúng phép đo**, không phải đoán.
+
+## AC.4 Changes
+
+**25 file**: 20 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`, `TEMPLATE.md`, `WALKTHROUGH.md`,
+`precode/README.md` (chỉ dòng epoch), và addendum này. Không file nào khác — không `contracts/`,
+`acceptance/`, `precode/` ngoài `README.md`, không cây code nào, không handoff khác. Không lệnh git,
+không mạng, `PYTHONDONTWRITEBYTECODE=1`.
+
+## AC.5 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 941 assertion, 0 violation** trên 20 card; epoch
+`PC10-PIN-P5b-20260908`. exit 0. **Generator verifier (a…m):** `PASS: no failures`. **`--self-test`:**
+**14/14 đột biến bị bắt** (gồm đột biến `epoch` đã được W6n sửa). **`E0-18`:** sạch tại thời điểm pin.
+Tất cả `SELF_VALIDATION`.
+
+## AC.6 CR
+
+Không CR mới. `CR-PC10-15` (cửa sổ đóng băng quanh mỗi lần pin) nay có một dạng cụ thể hơn đáng ghi:
+**phạm vi cổng phải bằng phạm vi tập pin.** Một cổng đo 10 file không bảo vệ một tập 142 file, dù nó chờ
+bao lâu. Danh sách file nên luôn rút từ bảng §0 của card, không viết tay.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`, `-16`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`PC00-handoff.md` thiếu addendum FIX24–FIX30.
+
+---
+
+*PKT-PC10-FIX29 · worker-WP · `lease_released_at` 2026-09-09T02:20Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX30 (re-pin `P5c`)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX30` · lease `LEASE-PC10-e31` (fencing 31) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-09T03:05Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P5c-20260909`** (thay `PC10-PIN-P5b-20260908`) · 20 card |
+
+## AD.1 Cổng
+
+Bốn điều kiện, đo lại mỗi vòng: `PKT-PC02-FIX19` đã nhả lease trong `PC02-handoff.md`; `E0-18` ở **0**
+vi phạm; **142** file đã pin — danh sách rút lại **từ bảng §0 của 20 card**, không dùng lại danh sách hôm
+qua — đứng yên **ba** phút liên tiếp. Mở ở phút thứ 6: `h=ee4d8d7213c7b842`.
+
+Danh sách vẫn là **142**, không phải 143: hai fixture mà `E0-18` bản siết của W6n bắt được
+(`acceptance/fixtures/recovery/README.md` và `l-purge-all-two-phase-and-negatives.json`) **đã** nằm trong
+tập pin từ trước. Điều đổi là nội dung của chúng, không phải phạm vi tập pin.
+
+## AD.2 File đã pin nào đổi — đúng hai, và đó là điểm đáng chú ý
+
+`verify_cards.py` trước khi pin: **5 vi phạm** trên đúng hai file. So từng hàng hash giữa `P5b` và `P5c`
+cho cùng kết quả: **`acceptance/fixtures/recovery/README.md`** và
+**`acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json`**.
+
+Hai file này vẫn ghi tập purge **20/21** trong khi `contracts/data/entities.yaml` đã sang **37/22/2** từ
+`AMD-ENT-maintenance-01`. Không phép kiểm nào của **tôi** bắt được điều đó: `pins` chỉ so byte với byte đã
+pin, và cả hai file khớp pin của chúng — chúng **nhất quán mà sai**. Thứ bắt được là `E0-18` bản siết của
+W6n, một phép kiểm **ngữ nghĩa** đọc tập purge ở mọi nơi nó xuất hiện và đòi chúng khớp nhau. Đáng ghi lại:
+một baseline có thể pin sạch tuyệt đối và vẫn mang một mâu thuẫn nội dung; pin bảo vệ *baseline không trôi*,
+không bảo vệ *baseline đúng*.
+
+Phép kiểm hai vùng: **20/20 card giống hệt ngoài §0**. Tập pin **554 dòng hash**. Sau khi ghi, tôi băm lại
+tập 142 file **đúng cách cổng đã băm** (đường dẫn tương đối, cwd là gốc repo): `ee4d8d7213c7b842` — khớp
+chính xác giá trị lúc cổng mở, nên không có drift trong cửa sổ ghi.
+
+*(Lần đầu chạy lại phép băm đó tôi đứng ở thư mục scratch nên đường dẫn tương đối không giải được và kết quả
+là md5 của chuỗi rỗng — `d41d8cd9…`. Guard chống rỗng của chính tôi làm nó lộ ra ngay; chạy lại từ gốc repo
+mới là phép đo thật. Ghi lại vì đây là lần thứ ba cùng một lớp lỗi shell, và mỗi lần nó đều đọc giống một
+kết quả hợp lệ.)*
+
+## AD.3 Changes
+
+**25 file**: 20 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`, `TEMPLATE.md`,
+`WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum này. Không file nào khác. Không lệnh
+git, không mạng, `PYTHONDONTWRITEBYTECODE=1`.
+
+Tên epoch mang **ngày pin** (`20260909`), không phải ngày của thay đổi mà nó theo sau — cùng quy ước với
+mọi epoch trước.
+
+## AD.4 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 961 assertion, 0 violation**; epoch
+`PC10-PIN-P5c-20260909`. exit 0. **Generator verifier (a…m):** `PASS: no failures`. **`--self-test`:**
+**14/14 đột biến bị bắt**. **`E0-18`:** 0 vi phạm tại thời điểm pin. Tất cả `SELF_VALIDATION`.
+
+## AD.5 CR
+
+Không CR mới. Ghi nhận: `E0-18` bản siết của W6n vừa chứng minh giá trị của nó bằng một lỗi thật mà cơ chế
+pin **không thể** bắt. Nếu có ai đó cân nhắc nới nó, đây là bằng chứng ngược.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`, `-16`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`PC00-handoff.md` thiếu addendum FIX24–FIX30.
+
+---
+
+*PKT-PC10-FIX30 · worker-WP · `lease_released_at` 2026-09-09T03:05Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

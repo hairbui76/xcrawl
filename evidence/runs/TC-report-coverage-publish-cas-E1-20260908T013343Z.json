@@ -5,7 +5,6 @@
   "producer_principal": "worker-W4A",
   "producer_role": "Worker",
   "review_type": "SELF_VALIDATION",
-  "evidence_level": "E2",
   "baseline": {
     "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
     "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
@@ -167,41 +166,7 @@
     "exit_code": 0,
     "attempts": 1
   },
-  "oracle": {
-    "statement_vi": "Coverage nửa mở [from,to) nối liền trên CẢ HAI trục (thời gian và ingest_sequence), kể cả qua kỳ rỗng và sau một lần ghi bị từ chối; hai publisher đồng thời trên cùng predecessor ⇒ đúng MỘT coverage_window và đúng MỘT report published, bên thua nhận CONFLICT với 0 report_item và 0 backfill tiêu thụ; read model publish validate theo contracts/schemas/report.schema.json và content_hash tính lại từ hàng đã lưu bằng giá trị đã lưu (I05). PKT-TC-REPORT-FIX1 thêm: một mục thuộc phần NỚI của §6.3 xuất hiện trong report ĐÚNG MỘT lần, mang selected_via_backfill + backfill_ledger_id, và entitlement chỉ chuyển 'consumed' tại COMMIT của TXN-report-publish (§6.4 điều kiện 1); phần nới KHÔNG tìm thấy gì thì entitlement KHÔNG bị tiêu thụ (điều kiện 3). PKT-TC-REPORT-FIX2 thêm (F-A3-P4-01 / CR-TC-BACKFILL-09): first_announced_ledger CHỈ được ghi cho item new_discovery có summary_state='present'; một mục còn pending KHÔNG được công bố, và được công bố ĐÚNG MỘT lần khi summary về và kỳ sau publish — điều khoản chi phối là contracts/reporting/time-and-tags.md §5.3 gạch đầu dòng 3 đọc cùng §8.2 quy tắc 2, oracle là row_oracles[0] của fixture e.",
-    "expected": {
-      "coverage_window[predecessor=P]": 1,
-      "report[status='published'] sau hai publisher": 1,
-      "report[status='aborted' AND abort_reason='cas_conflict']": 1,
-      "report_item của bản dựng thua": 0,
-      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau CAS thua hoặc sau crash": 0,
-      "coverage_window[report_id IS NULL] cho kỳ rỗng": 1,
-      "outbox_intent cho kỳ rỗng": 0,
-      "contiguity_violations(mọi cửa sổ)": [],
-      "sha256(JCS(read model rebuilt)) == report.content_hash": true,
-      "pytest exit_code": 0,
-      "report_item[report_id=R AND target_key=mục backfill]": 1,
-      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau build, trước publish": 0,
-      "backfill_ledger[consumed_in_report_id IS NOT NULL] sau publish": 1,
-      "backfill_ledger[consumed_in_report_id IS NOT NULL] khi phần nới rỗng": 0,
-      "first_announced_ledger[canonical_work_id=mục pending] sau kỳ 1": 0,
-      "first_announced_ledger[canonical_work_id=mục pending] sau kỳ 2 (summary đã về)": 1,
-      "first_announced_ledger sau hai kỳ mà summary KHÔNG về": 0,
-      "report_item[kỳ 2].item_type của mục phát hiện muộn": "new_discovery"
-    },
-    "observed": {
-      "tests/contract/test_report_schema.py": "18 passed",
-      "tests/integration/test_publish_cas.py": "13 passed (2 mới: pending không được công bố; chờ lâu vẫn không công bố)",
-      "tests/integration/test_coverage_contiguous.py": "11 passed",
-      "mutation check": "bỏ đúng một dòng `if item.summary_state != SUMMARY_FINAL: continue` ⇒ CẢ HAI test mới FAIL; khôi phục ⇒ pass. Test bắt đúng khiếm khuyết, không tự xác nhận.",
-      "ruff check / ruff format --check / mypy --strict": "clean (8 file của thẻ; 6 source file)",
-      "alembic heads": [
-        "0013_tc_backfill_pending_ledger"
-      ],
-      "full suite": "Hai lần quan sát, ghi cả hai vì chúng nói hai điều khác nhau. (1) 01:33Z, ngay sau khi sửa: 1030 passed / 5 xfailed / 1 failed — failure duy nhất là XPASS(strict) của W4B (tests/integration/test_pending_survives_cursor.py::test_fixture_e_the_late_discovery_is_still_a_new_discovery), tức marker xfail(strict=True) của CR-TC-BACKFILL-09 bắn vì khiếm khuyết ĐÃ được sửa — xác nhận ĐỘC LẬP, không do tác giả bản sửa khẳng định. (2) 01:50Z, sau khi W4B lật marker (file của họ): 1042 passed / 3 xfailed / 0 failed / 0 errors."
-    }
-  },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [],
   "limitations": {
     "mock_or_live": "mock",
@@ -242,5 +207,6 @@
       "KHÔNG chứng minh ngưỡng 0.8000 tách được tín hiệu khỏi nhiễu (REQ-A2) hay tham số mật độ đúng (REQ-A4).",
       "KHÔNG phải independent audit: review_type = SELF_VALIDATION."
     ]
-  }
+  },
+  "stale_reason": "Superseded by EV-E1-04-tc-report-coverage-publish-cas (evidence/runs/TC-report-coverage-publish-cas-E1-20260909T081653Z.json). PKT-TC-REPORT-FIX3 changed server/app/report/router.py (F-A3-P5-03 / CR-P0-07: an unwired deployment answered a generic 'unexpected error' body carrying the wrong operation_id) and added six tests, so the router hash, the test-file hash and the counts this record pins have all moved. Its baseline also pins epoch PC10-PIN-P3b-20260908, which has since been re-pinned twice to PC10-PIN-P5c-20260909."
 }

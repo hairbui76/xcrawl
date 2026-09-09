@@ -4,8 +4,8 @@
   "sources": [
     {
       "path": "contracts/http/openapi.yaml",
-      "sha256": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
-      "bytes": 231705
+      "sha256": "a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d",
+      "bytes": 231727
     }
   ],
   "outputs": [

@@ -2282,3 +2282,142 @@ Tất cả `SELF_VALIDATION`, chạy bằng công cụ tôi vừa sửa.
 - **lease_released_at (UTC):** 2026-09-08T02:20Z.
 - **Claim:** `DRAFT_FOR_REVIEW`. Sáu nhãn `IMPLEMENTATION_VERIFIED` thuộc `A3-P4-R2` §6, có
   phạm vi từng card; tôi chỉ chép, kèm hash của bản gốc.
+
+---
+
+## W1. Định danh
+
+- **Gói:** `PKT-PC09-P5` · lease `LEASE-PC09-e6` (+ sub-lease `LEASE-PC09-e6-tool` cho `CR-PC02-25`
+  và `CR-PC10-16`) · authority `AUTH-COORD-PC09` dưới `AUTH-OWNER-20260908-11`.
+- **Candidate:** `FC-P5` **epoch 3** — 705 entry, `manifest_sha256 = ed0bbf6c74d02c7e4dd92c6266bd84f075afbe00d8e0529b17552e37a7bc515e`, epoch pin `PC10-PIN-P5c-20260909`.
+- **Cổng chờ:** mở ba lần. Gói được đóng băng ở `A3-P5-R1`, rồi Coordinator dời sang `R2`, rồi
+  sang `R3`. **Không một byte nào trong write set của PC09 được ghi trước lượt cuối** — khác với
+  đợt Giai đoạn 4/6, nơi tôi đã áp 27 dòng dưới cổng R1 rồi phải xét lại trên epoch 2. Lần này
+  không có nợ xét lại, và đó là lý do duy nhất tôi nêu chuyện này ra.
+- **Claim của addendum này:** `DRAFT_FOR_REVIEW`. `SELF_VALIDATION`, mức `E0`.
+
+## W2. Cái gì được đăng ký
+
+| Hạng mục | Số |
+| --- | --- |
+| Manifest card mới nhất, đăng ký NGUYÊN VĂN | **20 / 20** (thêm `TC-secret-settings-service`) |
+| Bản ghi `INDEPENDENT_AUDIT` mới | **4** — `EV-A3-28` (verdict card thứ 20), `EV-A3-29/30/31` (ba lượt P5) |
+| Tổng bản ghi trong `evidence/index.json` | **114** (từ 109), 114/114 hợp schema |
+| Manifest bị thay, giữ làm lịch sử | **49** ở `superseded_card_runs` |
+| Báo cáo audit trong repo | **22** (thêm `A3-P5-R1/R2/R3`, `cmp`-verified từng byte) |
+
+**Cửa `F-A3R2-03` chạy lại trên cả 20 bản mới nhất: 0 pin BYTES-ĐÃ-SẢN-XUẤT lệch, 0 vắng mặt.**
+126 pin **BYTES-ĐÃ-ĐỌC** lệch và được ghi ra từng cái — corpus đổi SAU lần chạy (INV-06/INV-08),
+một hạng khác hẳn và không phải một chứng thư sai.
+
+Hai việc đáng nêu vì tôi suýt đăng ký sai:
+
+1. **`TC-saved-snapshot` từng ghim `server/app/main.py`** — đúng thứ mà phán quyết thường trực
+   cấm — và pin đó đã mòn khi đợt nối dây viết lại factory. Tôi báo cáo thay vì đăng ký; W5B phát
+   lại (`…20260909T091000Z`, 7 pin, 0 lệch, không còn ghim factory) trước khi freeze.
+2. **`F-A3-P5R3-01`** (A3 tìm ra): manifest backup mới nhất mang 2 pin ĐỌC cũ. W6B phát lại
+   (`PKT-TC-BACKUP-FIX6`, manifest-only, `…20260909T104000Z`); tôi băm lại: **0 pin lệch cả hai
+   hạng**. Bản được đăng ký là bản phát lại.
+
+## W3. Scenario — **bảy dòng được xét, 0 chuyển nhãn**
+
+`NOT_RUN 35 · PASS (E1) 4 · PASS (E2) 17` — **y hệt** sau Giai đoạn 4/6. Bảy dòng đợt này chạm
+(`SC04`, `SC16`, `SC17`, `SC36`, `SC41`, `SC44`, `SC49`) được xét theo §14.5 và **không dòng nào**
+đủ ba điều kiện; `partial_evidence_vi` của cả bảy được viết lại để nói **chính xác** cái đợt này
+thêm vào và cái vẫn thiếu. Diff được kiểm bằng máy: đúng 7 hàng đổi, **chỉ** trường
+`partial_evidence_vi`, 0 thay đổi `status`.
+
+`SC36` là dòng đáng đọc: `AMD-ENT-maintenance-01` + bản sửa của WR đóng `G-3` của runbook và A3
+chứng minh cửa sổ maintenance sống qua **hai tiến trình OS riêng biệt** — nhưng oracle đòi nhánh
+`write_blocked → healthy` qua **một lần ghi thật**, và nhánh đó vẫn là probe **tiêm**
+(`CR-TC-storage-04`). Nửa khác của cùng vấn đề đã đóng; nửa oracle hỏi thì chưa.
+
+## W4. Cổng — không cổng nào chuyển, và nói chính xác cái đã đổi
+
+**`G6` giữ `NOT_MET` với đúng con số cũ: 21/48 · 0/5 · 0/2.** Cái đã đổi nằm ngoài mọi điều kiện
+ra: hệ thống **khởi động được**, và `A3-P5-R1` §2 chạy nó như một **tiến trình** — `uvicorn` +
+`curl` qua TCP, migrate/bootstrap/login/readiness/runs/settings/saved, cờ cookie của
+`secrets.md` §2.3 lần đầu được nhìn thấy **trên dây**. Điều kiện **cần** cho mọi E3/E4 về sau,
+nhưng không phải một điều kiện ra, và gói này không giả vờ ngược lại.
+
+Ba sửa đổi khác trong `gates.yaml`, tất cả là **sửa lời khai đã sai**, không phải nâng cổng:
+
+- `G6.allows_next_vi` nói phạm vi đã đo là "**bốn** scenario" — con số của Giai đoạn 1, sai suốt
+  bốn gói. Nay là **21/48**.
+- `G4-X7` chỉ nói về A1/A2. Nay nêu cả các lượt A3: ba lượt P5 khép kín trong đợt, nhưng điều kiện
+  **vẫn `met: false`** vì `F-A3R4-01`, `F-A3-P2-01/-02`, `F-A3-P4R2-01/-02` còn mở **và** vì bản
+  sửa `E0-21` bằng `ast` do chính tôi viết chưa ai độc lập kiểm.
+- `G6.evidence_refs` được sinh lại từ đĩa: 32 mục, mọi mục phân giải được.
+
+## W5. Ba lỗ trong chính bộ công cụ của tôi, tìm ra trong gói này
+
+1. **`E0-18` không đọc con số** (`CR-PC02-25`). Ba tập purge đổi thành **37/22/2**; chín artefact
+   giữ con số cũ; `E0-18` **PASS suốt** vì nó đọc marker và danh sách **có cấu trúc**, không đọc
+   một chữ số nào. Nhánh mới đọc bốn dạng khẳng định theo nghĩa đen trên mười artefact được gọi
+   tên: `items_checked` **17 → 91**, mutation **11/11** (8 đột biến bị bắt; 2 đối chứng âm giữ
+   sạch, một trong đó là **liệt kê văn xuôi 21 tên bảng sai** — cố ý không bắt, vì đó là giới hạn
+   đã ghi ở §5g/§5h). Trên bytes lúc viết, nhánh mới **FAIL với 6 vi phạm thật**; W3n sửa chúng
+   trong lúc self-test đang được viết, nên mọi bước "vá bóng" của self-test là **soft**.
+   Yêu cầu của W3n cũng đã làm: `E0-18` nay **tự in ra** rằng liệt kê văn xuôi KHÔNG được so.
+2. **Bảng finding của tôi không nhìn thấy bốn finding đang sống.** Mẫu `F-A3…` không khớp dạng
+   `F-A3-P4R2-01` / `F-A3-P5R3-01`. `F-A3-P4R2-01` và `-02` **chưa từng xuất hiện** trong §8.2 kể
+   từ khi ra đời. Lần thứ **ba** mẫu này phải nới; lý do nay nằm trong mã nguồn `crtable.py`.
+3. **`gen_trace.py` là bộ sinh MẤT DỮ LIỆU.** Chạy nó sẽ **xóa cột `executed_evidence`** (thêm ở
+   `PKT-PC09-P1`) và **xóa năm ô `notes` viết tay** ở `REQ-D34`, `REQ-A6`, `REQ-OQ03`,
+   `REQ-S5.3-02`, `REQ-S13.2-01`. Tôi phát hiện bằng cách diff trước khi chấp nhận, và đã hoàn
+   nguyên. `traceability.csv` vì thế chỉ nhận **phần dẫn xuất được**: `req_status` đồng bộ từ
+   `precode/requirements.csv` (3 hàng: `REQ-OQ01/02/03` ĐX → XN) và `contract_refs` làm mới (12
+   hàng). `executed_evidence` **không đổi** — đúng, vì không scenario nào chuyển nhãn.
+
+## W6. Bằng chứng
+
+| ID | Lệnh | Kết quả |
+| --- | --- | --- |
+| `EV-PC09-P5-01` | `e0_check.py --json-out evidence/runs/E0-20260909T092000Z.json` (lượt đóng gói; lượt trước ở `…091513Z` giống hệt về kết quả) | **27 check · 27 PASS · 0 FAIL · 0 vi phạm**, exit 0 |
+| `EV-PC09-P5-02` | `verify_cards.py` | **13/13 over 20 cards · 3 963 assertion · 0 vi phạm** @ `PC10-PIN-P5c-20260909` — khớp đúng số của `A3-P5-R3` §2 |
+| `EV-PC09-P5-03` | `selftest_e018.py` (`E0-18`, nhánh đếm mới) | **11/11** |
+| `EV-PC09-P5-04` | `selftest_p1/p2/p3/p4/fix1/vc` chạy lại | xem bảng self-test |
+| `EV-PC09-P5-05` | `validate_index.py` | **114 record, 0 invalid** |
+| `EV-PC09-P5-06` | băm lại từng pin của 69 manifest trên đĩa | **20/20 bản mới nhất: 0 pin sản-xuất lệch**; 126 pin ĐỌC lệch, liệt kê từng cái |
+| `EV-PC09-P5-07` | parse `scenarios.yaml` trước/sau | **đúng 7 hàng đổi**, chỉ `partial_evidence_vi`, **0 chuyển nhãn** |
+| `EV-PC09-P5-08` | `gate.py` (cổng tự kiểm của `review.md`) | **CONSISTENT** — sau khi sửa một câu epoch đã mòn (`P4b` → `P5c`, 19/19 → 20/20) mà chính nó bắt được |
+| `EV-PC09-P5-09` | `cmp` ba báo cáo A3-P5 với bản gốc trong scratchpad | **identical** cả ba |
+
+Hash sau khi ghi: `precode/gates.yaml` `3e263fb2…`, `precode/review.md` `4d263652…`,
+`acceptance/scenarios.yaml` `c03d7167…`, `acceptance/traceability.csv` `c3cd9630…`,
+`evidence/tools/e0_check.py` `f69436b1…`, `evidence/tools/README.md` `8dce6e21…`.
+Hash của `evidence/index.json` **không** được ghi ở đây: file này nằm trong corpus mà chỉ mục đó
+băm, nên một hash tự trỏ sẽ mòn ngay khi mực chưa khô — dùng `index_id` + `generated_at` +
+`e0_run_ref` của chính chỉ mục để đối chiếu.
+
+Tất cả là `SELF_VALIDATION`, chạy bằng công cụ do chính tôi viết và vừa sửa.
+
+## W7. Mối lo còn lại
+
+1. **Không cửa kiểm nào của tôi từng hỏi "khởi động nó lên xem".** Sáu giai đoạn, 22 báo cáo
+   audit, 3 963 assertion và 27 check `E0` đều không phát hiện rằng không tồn tại một ứng dụng
+   chạy được. Một người làm theo runbook của chính dự án đã tìm ra trong một buổi. Đây là mối lo
+   lớn nhất của tôi và nó không đóng bằng gói này.
+2. **Ba dòng `NOT_RUN` không có `partial_evidence_vi`** — `SC54`, `SC55`, `SC56`. Chưa gói PC09
+   nào xét từng dòng cho chúng. Lỗ tài liệu của PC09.
+3. **`E0-18` nhánh mới, `E0-20`, `E0-21`, và bản thu hẹp `E0-12` đều do tôi viết và tự kiểm.**
+   `F-A3-P4R2-01` là bằng chứng rằng một cửa kiểm mới có thể có lỗ ngay khi ra đời.
+4. **`AMD-ENT-maintenance-01` chưa được Owner phê chuẩn.** Nó đổi `entities.yaml`, thêm migration
+   `0015`, và đổi tập purge sang 37/22/2. `A3-P5-R3` §4 nói đúng: **không nên chốt bằng im lặng**.
+   Đây là mục 11 của danh sách Owner ở `review.md` §18.9.
+5. **`docs/owner-runbook.md` §9.4 vẫn mang câu lệnh đã hỏng** cho tới khi WS2 kiểm lại sau commit.
+6. **`F-A3R4-01`, `F-A3-P2-01/-02`, `F-A3-P4R2-01/-02`** vẫn mở.
+7. **E3 và E4 bằng 0 ở mọi nhóm scenario, qua cả bảy đợt.** Hệ thống nay khởi động được và vẫn
+   **chưa làm được việc gì đầu-cuối**: `/v1/reports` không dựng được report (`CR-P0-07`), `tag`
+   chưa có card, connector chưa nối, mọi đường live vẫn đóng. Đây là dòng quan trọng nhất của
+   addendum này.
+
+## W8. Bàn giao
+
+- **lease_released_at (UTC):** 2026-09-09T09:20Z.
+- **Claim:** `DRAFT_FOR_REVIEW`. Bốn nhãn `IMPLEMENTATION_VERIFIED` mới thuộc `A3-P5-R1..R3`, có
+  phạm vi từng lượt; tôi chỉ chép, kèm hash của bản gốc, và mỗi bản ghi tự khai rằng **nếu bản
+  chép lệch với báo cáo thì BÁO CÁO THẮNG**.
+- **Trạng thái sản phẩm: `NOT_READY_FOR_PRODUCT_CODE`, không đổi.** Lý do đổi: từ *"có code, chưa
+  từng chạy"* thành *"chạy được, đã được một auditor độc lập chạy như một tiến trình, và vẫn chưa
+  làm được việc gì đầu-cuối"*.

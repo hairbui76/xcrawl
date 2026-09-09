@@ -318,8 +318,8 @@ Phần thuộc file này:
 - Cụm từ xác nhận được lưu dưới dạng **hash** (`purge_challenge.phrase_hash`), không lưu bản rõ; tối đa một
   challenge hiệu lực tại một thời điểm (PC02 `ux_purge_challenge_active`).
 - Phạm vi **đã chốt** (OD-20260907-01 mục 24). Ba tập bảng theo ruling CR-PC05-06 + CR-PC05-07 (`PURGE-LIST-ruling.md`),
-  phủ đúng 60 entity và không chồng lấn: **xóa 37** bảng dữ liệu nghiên cứu và vận hành;
-  **giữ 21**: `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`; **không bao giờ xóa 2**: `schema_migration`, `data_deletion_audit`.
+  phủ đúng 61 entity và không chồng lấn: **xóa 37** bảng dữ liệu nghiên cứu và vận hành;
+  **giữ 22**: `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`, `maintenance_window`; **không bao giờ xóa 2**: `schema_migration`, `data_deletion_audit`.
   Nhóm secret nằm trong nhóm giữ: `secret_ref`, `task_credential`, `secret_audit` **được giữ** — purge **không**
   làm mất API key, và `owner` + `session` cũng được giữ nên chủ nhà **không** tự khóa mình ra ngoài app. Đây chính
   là rủi ro mà bản trước của mục này nêu ra; Owner đã chọn phương án loại bỏ nó.

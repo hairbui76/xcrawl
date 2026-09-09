@@ -31,18 +31,65 @@ embedding cụ thể còn là `REQ-OQ09`/`REQ-A3` chưa chốt.
 
 ## 2. Chạy
 
+### 2.1 Khởi động thật (theo thứ tự — `docs/owner-runbook.md` §§2–4)
+
+Ba lệnh, đúng thứ tự này. Bỏ lệnh nào cũng hỏng theo cách nói rõ nó thiếu gì.
+
+```bash
+make migrate      # tạo/nâng cấp database (alembic upgrade head, chạy từ thư mục nào cũng được)
+make bootstrap    # tạo tài khoản Owner duy nhất — hỏi mật khẩu, KHÔNG hiện lại, KHÔNG nhận qua tham số
+make serve        # uvicorn server.app.main:app trên 127.0.0.1:8080
+```
+
+Năm **console script** làm đúng việc đó mà **không cần đứng ở gốc repo** — đây là đường được
+hỗ trợ khi bạn chạy từ thư mục khác:
+
+| Lệnh | Là gì |
+| --- | --- |
+| `uv run rr-admin {migrate,bootstrap-owner,status}` | ba lệnh vận hành ở trên |
+| `uv run rr-backup …` | CLI backup/restore (`tools/backup_cli.py`) |
+| `uv run rr-collector --print-registration` | collector trên máy cá nhân |
+| `uv run rr-worker --print-capabilities` | analysis worker trên máy cá nhân |
+| `uv run rr-probe --config … [--dry-run]` | probe khả thi SP1 |
+
+Từ một thư mục bất kỳ, thêm `--project <đường-dẫn-repo>`:
+`uv run --project /path/to/xcrawl rr-admin status`. Gọi thẳng file
+(`uv run python tools/rr_admin.py …`) vẫn chạy, nhưng chỉ từ gốc repo.
+
+`make status` cho biết đang ở bước nào (`absent` → `unmigrated` → `no owner row` → `ready`) và
+**liệt kê chính xác** những gì một tiến trình server sẽ nối và những gì **không**, kèm lý do.
+
+Cấu hình lấy từ biến môi trường (`server/app/settings.py`), tất cả đều có mặc định an toàn trừ
+secret:
+
+| Biến | Mặc định | Ghi chú |
+| --- | --- | --- |
+| `RR_DATABASE_URL` | `<RR_DATA_DIR>/research-radar.db` | nhận cả đường dẫn trần lẫn URL `sqlite+pysqlite:///` |
+| `RR_DATA_DIR` | `./var` | đã nằm trong `.gitignore` |
+| `RR_TIMEZONE` | `Asia/Ho_Chi_Minh` | giá trị Owner đã chấp nhận (`OD-20260907-01` mục 4) |
+| `RR_SCHEDULE_SLOTS` | `08:00,20:00` | giá trị Owner đã chấp nhận (mục 20); `REQ-OQ05` sẽ đo lại |
+| `RR_TELEGRAM_WEBHOOK_SECRET` | **không có** | thiếu ⇒ mọi update Telegram bị từ chối |
+| `RR_{COLLECTOR,ANALYSIS_WORKER,BACKUP_OPERATOR}_TOKEN_SHA256` | **không có** | cấu hình bằng **hash**, không bao giờ bằng token |
+
+Server đọc database qua **lifespan lúc khởi động**: `create_app()` gọi trần vẫn là app rỗng
+không cấu hình (mọi test của card dựa vào điều đó), còn `server.app.main:app` — chuỗi import mà
+`make serve` và runbook dùng — tự nối khi tiến trình bắt đầu phục vụ. Import module **không**
+tạo file database.
+
+Web dev: `cd web && npm run dev`. Server dev có reload: `uv run uvicorn server.app.main:app --reload`.
+
+### 2.2 Kiểm tra và cửa
+
 | Lệnh | Làm gì |
 | --- | --- |
 | `make test` | `pytest` toàn cây Python, rồi `vitest` |
-| `make lint` | `ruff` + `ruff format --check` + `mypy --strict` (lõi server) + `eslint` + `prettier` + `tsc` |
+| `make lint` | `ruff` + `ruff format --check` + `mypy --strict` (`server/app`, `worker/app`, `collector/app`, `probe`) + `eslint` + `prettier` + `tsc` |
 | `make gen` | sinh lại **toàn bộ** code sinh từ `contracts/` |
 | `make gen-check` | fail nếu sinh lại tạo ra khác biệt — đây là cửa "không sửa tay" |
 | `make e0` | 24 phép kiểm tĩnh E0 trên baseline hợp đồng (chỉ đọc) |
 | `make cards` | kiểm hash đã pin của 18 card + quy tắc hai ngôn ngữ |
 | `make openapi` | validate `contracts/http/openapi.yaml` bằng validator OpenAPI 3.1 thật |
 | `make ci` | đúng những gì CI chạy, theo thứ tự của CI |
-
-Server dev: `uv run uvicorn server.app.main:app --reload`. Web dev: `cd web && npm run dev`.
 
 ## 3. Hai quy tắc không thương lượng
 

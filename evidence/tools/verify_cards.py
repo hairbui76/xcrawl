@@ -733,18 +733,43 @@ def _build_shadow(root: str, dest: str) -> None:
             os.symlink(source, target)
 
 
-def _mutate(path: str, old: str, new: str) -> None:
-    """Replace `old` once, and fail loudly when the target string is not there.
+def _mutate(path: str, old: str, new: str, *, count: int = 1) -> None:
+    """Replace `old`, and fail loudly when the target is absent or nothing changed.
 
     evidence/tools/README.md §5b: a mutation that silently does not apply makes the check
     report PASS and the self-test prove nothing, in the shape of a success.
+
+    `count=0` replaces EVERY occurrence. CR-PC10-16: replacing only the first occurrence is
+    wrong wherever the defect is "this name must not appear as the current one" — leave a
+    second copy behind and the check still finds a correct value, so the mutation proves
+    nothing while reporting a pass. It happened to work only because the target string
+    appeared exactly once today; that is luck, not a test.
     """
     with open(path, encoding="utf-8") as handle:
         body = handle.read()
     if old not in body:
         raise SystemExit(f"self-test: mutation target absent in {path}: {old[:60]!r}")
+    mutated = body.replace(old, new) if count == 0 else body.replace(old, new, count)
+    if mutated == body:
+        raise SystemExit(f"self-test: mutation changed nothing in {path}: {old[:60]!r}")
     with open(path, "w", encoding="utf-8") as handle:
-        handle.write(body.replace(old, new, 1))
+        handle.write(mutated)
+
+
+def _cards_current_epoch(shadow: str) -> str:
+    """The epoch the cards themselves declare — the card is the source of the name (§0)."""
+    counts: "dict[str, int]" = {}
+    cards_dir = os.path.join(shadow, CARDS_DIR)
+    for name in sorted(os.listdir(cards_dir)):
+        if not CARD_RE.match(name):
+            continue
+        with open(os.path.join(cards_dir, name), encoding="utf-8") as handle:
+            match = EPOCH_RE.search(handle.read())
+        if match:
+            counts[match.group("epoch")] = counts.get(match.group("epoch"), 0) + 1
+    if not counts:
+        raise SystemExit("self-test: no card declares a pin epoch")
+    return max(counts, key=lambda k: counts[k])
 
 
 def _first_card(shadow: str) -> str:
@@ -765,12 +790,23 @@ def _m_epoch_cards(shadow: str) -> None:
 
 
 def _m_epoch_asserting(shadow: str) -> None:
+    """Leave an entry-point file asserting a superseded epoch.
+
+    CR-PC10-16, two corrections. (1) The target is the epoch the CARDS declare, not
+    `EPOCH_TOKEN_RE.findall(...)[0]` — that file lists the whole epoch history, so the first
+    token is whichever the prose happens to mention first, and mutating a superseded name
+    creates a different defect (or none) while the row still prints CAUGHT. (2) EVERY
+    occurrence is replaced: check (k) asks whether the file names the current epoch **at all**,
+    so one surviving mention makes the mutation invisible.
+    """
     path = os.path.join(shadow, "agent-tasks", "README.md")
+    current = _cards_current_epoch(shadow)
     with open(path, encoding="utf-8") as handle:
-        tokens = EPOCH_TOKEN_RE.findall(handle.read())
-    if not tokens:
-        raise SystemExit("self-test: agent-tasks/README.md names no epoch to mutate")
-    _mutate(path, tokens[0], "PC10-PIN-STALE0-20260101")
+        if current not in handle.read():
+            raise SystemExit(
+                f"self-test: agent-tasks/README.md does not name the current epoch {current}; "
+                "the mutation would prove nothing")
+    _mutate(path, current, "PC10-PIN-STALE0-20260101", count=0)
 
 
 def _m_paths(shadow: str) -> None:

@@ -163,7 +163,7 @@
       "reconciliation_gate_open_without_check": false
     }
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [
     {
       "path": "server/app/storage/health.py",
@@ -287,5 +287,6 @@
       "tests/integration/test_disk_full_no_ack.py",
       "tests/integration/test_readiness_independent_channel.py"
     ]
-  }
+  },
+  "stale_reason": "SUPERSEDED BY evidence/runs/TC-storage-write-blocked-readiness-E1-20260908T063909Z.json (EV-E1-05-tc-storage-write-blocked-readiness). Năm file hợp đồng được ghim ở đây đã đổi byte sau khi bản ghi này được phát hành — contracts/retry-policy.yaml, contracts/data/entities.yaml (amendment AMD-ENT-owner-01), precode/adr/ADR-0011-frameworks-and-toolchain.md, precode/baseline.json, precode/decision-register.md — và cả năm đều nằm trong invalidation.invalidated_by_paths của chính bản ghi này, nên nó tự tuyên STALE theo đúng quy tắc nó đã khai (SRC-PLAN §16). Không artifact nào của card đổi; ba hằng số của card trong retry-policy.yaml (30 s, 3 probe, grace 0 s) và toàn bộ contracts/state/storage.yaml vẫn nguyên byte, nên kết luận PASS 55/55 vẫn đúng — chỉ là nó ghim một nền hợp đồng đã cũ. Giữ lại, không xóa."
 }

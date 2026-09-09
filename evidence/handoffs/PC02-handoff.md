@@ -1950,3 +1950,254 @@ Còn mở, không đổi bởi gói này: `CR-PC10-13` (khoảng trống §2) v�
 
 Lease `LEASE-PC02-e15` (fencing 15) nhả lúc **2026-09-07T13:27Z**. Không lệnh git mutation, không
 network, không file ngoài grant, không `__pycache__` ngoài `.venv/`. Sau dòng này tôi không ghi thêm.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX16 + FIX17 (`AMD-ENT-maintenance-01` và lan truyền tập purge)
+
+## O1. Định danh
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX16` (`AUTH-COORD-PC02-FIX16`, lease `LEASE-PC02-e20`) → `PKT-PC02-FIX17` (lease `LEASE-PC02-e21`) |
+| worker principal | `worker-W3n` — chủ ghi duy nhất của `precode/` và `contracts/` ở đợt này |
+| status | **DONE_WITH_CONCERNS** — hai gate FAIL có chủ đích, nêu ở §O6; không gate nào bị nới |
+| trigger | `WIRING-wave-1.md` mục cuối (ruling G-3) + `CR-TC-storage-06` của WR |
+| next actor | WR (migration tạo bảng) · PC01 (`CR-PC02-24`) · WS (sinh lại `shared/rr_contracts` + `web/src/generated`) · `lease_released_at` 2026-09-08T06:53Z |
+
+## O2. FIX16 — entity `maintenance_window`
+
+`contracts/state/storage.yaml` T-ST-03/-04/-09 nói ba lần rằng một hàng maintenance window ĐƯỢC
+GHI; `entities.yaml` không khai bảng nào để ghi. WR dừng đúng ở `SG-EDGE` thay vì bịa bảng. Thêm
+đúng một entity, `status: specified`, `owner_module: MOD-data-store`, 10 trường.
+
+**Mỗi trường có một transition đứng sau — không trường nào "cho đủ":** `opened_at`/`opened_by` từ
+T-ST-03 guard (hành động explicit của `backup_operator`); `reason` từ bốn mục đích của
+T-ST-03/-04/-05 **cộng** `disk_cleanup` mà T-ST-09 guard nói đích danh ("dọn ổ, migrate,
+restore"); `storage_health_at_open` từ chỗ T-ST-09 CẤM lách sang `healthy`; `closed_at`/`closed_by`
+từ T-ST-04; `snapshot_verified_at` từ điều cấm "đóng cửa sổ khi verify chưa pass" — không có cột
+đó, điều cấm chỉ ép được TRONG một tiến trình; `restore_record_id` từ T-ST-05.
+
+**Danh sách trường là HỢP của hai đề xuất, và tôi nói rõ vì sao.** Ruling nêu bảy tên
+(`closed_by`, `storage_health_at_open`, `restore_record_id` …); `CR-TC-storage-06` của WR nêu bảy
+tên khác, trong đó có `snapshot_verified_at` mà ruling không nhắc. Tôi lấy HỢP chứ không lấy một
+bên: mỗi trường của cả hai danh sách đều có một transition đòi nó, và bỏ `snapshot_verified_at`
+sẽ để lại đúng lỗ hổng mà WR đã chỉ ra. Đây là chỗ tôi đi RỘNG hơn văn bản packet, nên ghi ra
+thành một dòng thay vì để người đọc tự phát hiện.
+
+Kèm theo: partial unique `ux_maintenance_window_open` trên `(owner_id) WHERE closed_at IS NULL`
+("nhiều nhất một cửa sổ mở" — giả định mà T-ST-03/-09 dùng khi nói về *the* window) và ba CHECK,
+trong đó `ck_maintenance_window_verify_before_close` ép điều cấm của T-ST-04 xuống tầng kho, chỉ
+áp cho `reason = 'snapshot'` vì T-ST-04 guard nói rõ nhánh kia là "hoặc migration hoàn tất".
+
+**Ba thứ entity này cố ý KHÔNG làm** (ghi trong `what_it_is_not_vi` và `non_goals`): không lưu
+trạng thái storage health nói chung; không persist `write_blocked` (T-ST-01 và
+`forbidden_transitions` hàng 4 cấm — nó phải suy ra từ một lần ghi hỏng thật, không đọc từ hàng
+cũ); không thay `restore_record` cho `recovery_required` (một `restore_record` có
+`dispatcher_unlocked_at IS NULL` ĐÃ là trạng thái đó trên đĩa).
+
+Version `0.2.0 → 0.3.0`, `AMD-ENT-maintenance-01` `PROVISIONAL`, `deviation_from` §2 (khoảng
+trống "thêm bảng mới" — **tái dùng `CR-PC10-13`**, cố ý không mở CR mới cho cùng một lỗ hổng).
+
+## O3. FIX17 — lan truyền 21 → 22 và 60 → 61
+
+Chín artefact, chỉ các dòng đếm / liệt kê tập, không một chữ nào khác:
+
+| File | Sửa gì |
+| --- | --- |
+| `contracts/ports.yaml` | "60 entity" → 61; "giữ lại — 21 bảng" → 22 + thêm tên; "(37 xóa / 21 giữ / 2)" → 22 |
+| `contracts/modules.yaml` | như trên (ba chỗ) |
+| `contracts/http/openapi.yaml` | "GIỮ LẠI (21 bảng)" → 22 + thêm tên; "(37 xóa / 21 giữ / 2)" → 22 |
+| `contracts/ops/secrets.md` | "60 entity" → 61; "giữ 21" → 22 + thêm tên |
+| `contracts/ops/backup-restore.md` | như trên |
+| `contracts/ui/screens.yaml` | "21 bảng giữ lại" → 22 (hai chỗ), "tổng 60" → 61 |
+| `acceptance/scenarios.yaml` | năm chỗ đếm + danh sách liệt kê retained |
+| `acceptance/fixtures/recovery/README.md` | "60 entity" → 61; "21 bảng retained" → 22 |
+| `acceptance/fixtures/recovery/l-…json` | sáu chuỗi đếm **và** mảng `_retained_tables` (21 → 22 phần tử) |
+
+**Một defect có sẵn, sửa nhân thể vì nó là đúng loại dòng:** `confirmation_dialog_must_state_vi`
+của fixture `l` viết "**20** bảng cấu hình… được giữ" trong khi tập retained lúc đó là 21 — sai
+từ trước đợt này, không phải do tôi. Nay là 22. Ghi ra để không ai đọc diff thành "W3n đổi 20
+thành 22 cho khớp".
+
+**Tôi KHÔNG bump version của chín file này.** Packet nói "change only the counts/set membership
+lines and the sentence that enumerates retained tables — no other wording", và `openapi.yaml`
+`info.version` là **phiên bản API mà consumer pin**, không phải một con số hành chính. §2 của
+`change-control.md` đòi bump khi hợp đồng đổi; hai điều đó căng nhau ở đây. Tôi chọn theo packet
+và báo cáo, thay vì tự quyết định bậc version cho sáu gói khác trong một packet chỉ để đồng bộ
+con số. Coordinator ra phán quyết.
+
+## O4. Hash sau (trước = bản tại `HEAD`; cả chín file FIX17 đều SẠCH tại `HEAD` trước khi tôi sửa, kiểm bằng `git diff --numstat` khớp đúng số dòng tôi đổi)
+
+| Path | Trước | Sau | Bytes |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `ebcf460f…` | `7cd85e09431fa52555ee13bb5fb8f5a00932e38801677212e8baa18c14c27827` | 255475 |
+| `precode/change-control.md` | `1203de29…` | `996471a02eda87c24a14069a7a5318f2d3fa672598359d8547a7d8a671261eb5` | 82441 |
+| `precode/decision-register.md` | `a38e2ce1…` | `ab47a9adf997041655a0a571d62987d0f36e45cc04b2639d9f0d0c755e7fc7ed` | 188780 |
+| `contracts/ports.yaml` | `c15b676b…` | `c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412` | 128872 |
+| `contracts/modules.yaml` | `cf536acb…` | `d4434aaf632388457aacae512de3cf800af20ee1a015dcb290fcb04b857d9b02` | 108743 |
+| `contracts/http/openapi.yaml` | `28b3820e…` | `a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d` | 231727 |
+| `contracts/ops/secrets.md` | `14b3d898…` | `22f7a0075ada77c69dfce6b8b7d6e6b0af625317f2fc4c1be726abf5c3c391a5` | 25323 |
+| `contracts/ops/backup-restore.md` | `826655da…` | `0e5f726fb4f5d381093763ccce9627849534a6009c2510ef43905f579d271c28` | 25880 |
+| `contracts/ui/screens.yaml` | `e1a57407…` | `464579a807e00e44c3215cf9fbf243df4a2bef8db6e137d71a2409fe6bc6b854` | 51212 |
+| `acceptance/scenarios.yaml` | `2eec5567…` | `cdef72be2a4fe38b2d989f4f3e8628e80d6d19b0547143a8a2a300ef9d6ae442` | 216794 |
+| `acceptance/fixtures/recovery/README.md` | `982311e7…` | `f1de7368db67e6380b3c75d981edfeaddb4045f95b4d696c5a3b90f86e6298da` | 12235 |
+| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | `9cd382e2…` | `321e56af0bea131276d193dc718b72f46fc118af8f3ff8406f3e08efb8aa0271` | 20814 |
+
+## O5. Evidence — `EV-PC02-12` (SELF_VALIDATION)
+
+| Gate | Kết quả |
+| --- | --- |
+| `verify_pc02.py` (EV-PC02-01…08) | **PASS (0 fail)** sau khi sửa token; EV-PC02-08 đọc ba tập mới: 37 / 22 / 2, phủ kín 61 |
+| `prose_token_gate.py` | **PASS** — 0 token chưa giải |
+| `check_actor_edges.py` (EV-PC02-06) | **FAIL (1)** — có chủ đích, xem §O6 |
+| `evidence/tools/e0_check.py` | **26/27 PASS · FAIL 1 · violations 3** — `E0-19` có chủ đích, xem §O6. `E0-18-purge-set-agreement` **PASS**, ghi "purged 37 · retained 22 · never_purged 2 · union 61 of 61" |
+
+**Một lỗi thật do gate bắt, đã sửa chứ không nới gate.** Bản nháp đầu viết token `storage.health`
+sáu lần trong văn xuôi; gate đọc nó như `<entity>.<column>` hoặc một operation và không giải
+được (`storage.get_health` mới là operation có thật). Tôi viết lại thành "trạng thái storage
+health" ở cả sáu chỗ. Gate xanh lại vì văn bản đúng, không vì oracle bị hạ.
+
+## O6. Hai FAIL có chủ đích — và một kỳ vọng của packet KHÔNG đúng
+
+**(a) `E0-19-generated-matches`, 3 vi phạm.** `contracts/ports.yaml` và `contracts/http/openapi.yaml`
+**là** nguồn của bộ sinh, nên sửa chúng làm `shared/rr_contracts/…/GENERATED_FROM.json` và
+`web/src/generated/GENERATED_FROM.json` lệch hash. Sinh lại là việc của WS; `shared/` và `web/`
+không nằm trong lease của tôi và tôi KHÔNG tự sinh. Đây là gate làm đúng việc của nó. (Khác với
+`entities.yaml`, vốn cố ý không phải nguồn của bộ sinh — `CR-P0-06`.)
+
+**(b) `check_actor_edges.py`: `['maintenance_window']` không có owner token trong `modules.yaml`.**
+Ruling R-03 chia đôi việc này: PC02 đặt `owner_module` (đã làm, cộng một dòng ở mục 4b
+`newly_owned_entities`), PC01 thêm token vào `data_owner_of`. `contracts/modules.yaml` **có**
+trong lease FIX17 — nhưng chỉ cho "counts/set membership lines" của tập purge; `data_owner_of`
+là một tập KHÁC. Tôi không lấn. `CR-PC02-24` ghi đầy đủ trong `change-control.md` §10.
+
+**(c) Kỳ vọng "E0-18 sẽ flag các artefact" là SAI, và điều đó quan trọng.** `E0-18` **cố ý không**
+so sánh liệt kê trong văn xuôi: comment trong `e0_check.py` ngay tại chỗ nói tác giả đã viết bản
+đó trước, nó cho 24 vi phạm mà ~20 là dương tính giả, và "a noisy check is worse than no check";
+giới hạn ấy được ghi ở `evidence/tools/README.md` §5g. `E0-18` chỉ kiểm (a) ba tập phân hoạch
+đúng tập entity, và (b) không artefact nào còn đánh dấu phạm vi purge là chưa quyết. Nghĩa là
+**`E0-18` sẽ PASS dù chín artefact kia còn ghi 21** — nó đã PASS như thế trước khi tôi sửa chúng.
+Tôi tìm chín artefact bằng `grep` các chuỗi đếm ("21 bảng", "giữ 21", "60 entity", "(37 xóa / 21
+giữ / 2)"), không bằng đầu ra của gate. Ai dựa vào `E0-18` để biết đã đồng bộ xong sẽ tin nhầm.
+
+## O7. Chưa giải quyết
+
+- `AMD-ENT-maintenance-01` là **PROVISIONAL**; Owner có thể phản đối.
+- **`tests/contract/test_schema_matches_entities.py` sẽ ĐỎ** cho tới khi WR tạo bảng: entity đã
+  khai, migration chưa có. Gate so hai chiều nên chiều này đỏ **đúng như mong muốn** — đó là thứ
+  ép bảng được tạo thật thay vì để hợp đồng và kho nói hai chuyện khác nhau.
+- `CR-TC-storage-04` (thiếu entity `storage_probe` cho `write_blocked → healthy`) **vẫn mở** —
+  gói này không chạm.
+- `CR-PC10-13` (khoảng trống §2) vẫn `OPEN`, nay đỡ hai amendment thay vì một.
+- Bump version của chín artefact FIX17: **chưa làm**, chờ phán quyết (§O3).
+- Mọi card pin `entities.yaml`, `ports.yaml`, `openapi.yaml`, `modules.yaml`, `screens.yaml`,
+  `scenarios.yaml` hoặc fixture `l` nay `STALE`; WP re-pin sau khi WS sinh lại.
+
+## O8. Kết thúc
+
+Lease `LEASE-PC02-e20` và `LEASE-PC02-e21` nhả lúc **2026-09-08T06:53Z**. Không lệnh git
+mutation, không network, không file ngoài grant, không `__pycache__` ngoài `.venv/`.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX18 (ba ruling của Coordinator + `CR-PC02-24` đóng)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX18` · authority `AUTH-COORD-PC02-FIX18` · lease `LEASE-PC02-e22` |
+| worker | `worker-W3n` · status **DONE_WITH_CONCERNS** (một FAIL còn lại, có chủ đích) |
+| next actor | WS (sinh lại bộ model) → WP (re-pin) · `lease_released_at` 2026-09-08T07:05Z |
+
+**Ruling 1 — tập trường rộng hơn: CHẤP NHẬN, và không phải deviation.** `snapshot_verified_at`
+truy về `T-ST-04` `forbidden_vi`, `disk_cleanup` truy về `T-ST-09` guard; cả hai là phái sinh
+đúng của state contract. Ghi ở `change-control.md` §10 ngay trong khối `CR-TC-storage-06`.
+`entities.yaml` KHÔNG cần sửa: nó đã ghi việc này ở `fields_derivation_vi` và chưa từng gọi nó là
+deviation — nên không có nhãn nào phải gỡ, và tôi không mở file đó ở lease này.
+
+**Ruling 2 — không bump version chín artefact FIX17: CHẤP NHẬN, ghi thành deviation.**
+`DEV-PC02-FIX17-01` trong `change-control.md`: chín file SAO CHÉP một tập đã có thẩm quyền ở
+`entities.yaml`, và chính file đó đã mang bậc version của amendment; `openapi.yaml` `info.version`
+là phiên bản wire mà consumer pin, và hình dạng wire không đổi. Deviation ghi rõ **giới hạn**: nó
+chỉ áp cho lan truyền con số của một amendment đã version ở nguồn, KHÔNG phải tiền lệ cho việc
+sửa nội dung hợp đồng mà giữ version; và hash chín file vẫn đổi nên §4 vẫn chạy — card vẫn STALE,
+WP vẫn re-pin.
+
+**Ruling 3 — `E0-18` không so sánh con số trong văn xuôi.** Ghi lại ở đây vì nó là bài học về
+CÁCH ĐỌC một PASS, không chỉ một CR: `E0-18-purge-set-agreement` kiểm (a) ba tập phân hoạch đúng
+tập entity và (b) không artefact nào còn đánh dấu phạm vi purge là chưa quyết. Nó **cố ý** không
+so liệt kê trong văn xuôi — comment trong `e0_check.py` ghi rằng bản làm việc đó cho 24 vi phạm,
+~20 dương tính giả, "a noisy check is worse than no check", và giới hạn nằm ở
+`evidence/tools/README.md` §5g. Hệ quả thực tế ở FIX17: **E0-18 PASS trong suốt thời gian chín
+artefact còn ghi "21 bảng giữ lại" và "60 entity"**. Chín file đó được tìm bằng `grep` các chuỗi
+đếm ("21 bảng", "giữ 21", "60 entity", "(37 xóa / 21 giữ / 2)"), **không** bằng đầu ra của gate.
+`CR-PC02-25` (mới, `OPEN`, gửi W6n/PC09) đề nghị mở rộng E0-18 sang chuỗi đếm — bài toán hẹp hơn
+so-khớp-danh-sách nên không mang theo lớp dương tính giả cũ — và, rẻ hơn nhiều, in một dòng note
+"prose counts NOT compared" ngay trong output của check để một PASS không bị đọc quá nghĩa.
+
+**`CR-PC02-24` — ĐÓNG.** `contracts/modules.yaml` `MOD-data-store.data_owner_of` nay có
+`maintenance_window`. `check_actor_edges.py` (EV-PC02-06): **PASS (0 fail)** — "owner_module khớp
+trên mọi entity chung", "3 artifact token bị loại đúng". `verify_pc02.py`: **PASS (0 fail)** cả
+bốn phần.
+
+**Hash sau.** `contracts/modules.yaml` `d4434aaf…9b02` → `7a4e19bdbb43e1339f305cd4715f1e7ac704b09720408ccf1db48a01b23c1e25` (108912 B).
+`precode/change-control.md` `996471a0…1eb5` → `7f755960cd3021a8675b7f645bfa7542fc1c931fd965589badad674f6bd915b2` (87870 B, 0.1.6 → 0.1.7).
+`contracts/data/entities.yaml` **không đổi** (`7cd85e09…7827`) — ngoài lease này.
+
+**Còn lại một FAIL, có chủ đích: `E0-19-generated-matches`, 3 vi phạm.** `contracts/ports.yaml`
+và `contracts/http/openapi.yaml` là nguồn của bộ sinh; sửa chúng ở FIX17 làm hai
+`GENERATED_FROM.json` lệch hash. Sinh lại là việc của WS — `shared/` và `web/` chưa bao giờ nằm
+trong lease của tôi và tôi KHÔNG tự sinh. Gate đang làm đúng việc của nó, và nó sẽ còn đỏ cho tới
+khi WS chạy. `modules.yaml` (sửa ở packet này) **không** phải nguồn của bộ sinh nên không thêm vi
+phạm nào.
+
+Lease `LEASE-PC02-e22` nhả 2026-09-08T07:05Z. Không git mutation, không network, không file ngoài
+grant.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX19 (`E0-18` leg đếm mới bắt sáu con số cũ)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX19` · lease `LEASE-PC02-e23` · worker `worker-W3n` |
+| status | **DONE** — `E0-18` từ 6 vi phạm về **0**; không vi phạm nào là dương tính giả |
+| next actor | WP (re-pin) · `lease_released_at` 2026-09-09T07:26Z |
+
+**Sáu vi phạm, sáu lỗi thật.** Không cái nào cần route sang W6n:
+
+| # | Chỗ | Trước | Sau | Vì sao nó thoát khỏi FIX17 |
+| --- | --- | --- | --- | --- |
+| 1–2 | `l-…json` `expected._retained_source_vi` | "Danh sách **20** bảng giữ lại" | 22 | Con số này đã sai **từ trước** đợt PURGE-LIST (retained lúc đó là 21). FIX17 grep chuỗi "21"/"60"; một dòng ghi "20" thì không khớp mẫu nào. |
+| 3 | `l-…json` `expected.retained_table_count` | `21` | `22` | Trường **có cấu trúc**, anh em của mảng `_retained_tables` mà tôi ĐÃ sửa ở FIX17 (21 → 22 phần tử). Sửa mảng mà quên con số cạnh nó — đúng loại lệch mà leg mới sinh ra để bắt. |
+| 4–6 | `recovery/README.md` bảng fixture, hàng `l-…` | "khẳng định cả **20** bảng retained còn nguyên và **39** bảng dữ liệu nghiên cứu về 0" | 22 và **37** | Cùng lý do: cả hai số đều không phải "21"/"60". Số **39** không khớp bất kỳ giá trị lịch sử nào của tập purged (36 rồi 37) — nó là một lần đếm sai từ đầu, và không gate nào từng đọc nó. |
+
+Đối chiếu sau khi sửa, đọc bằng `json.load` chứ không bằng mắt: `retained_table_count = 22` khớp
+`len(_retained_tables) = 22`; `purged_table_count = 37` khớp `len(purged_table_counts_after) = 37`;
+`never_purged_table_count = 2` khớp `len(_never_purged_tables) = 2`.
+
+**`CR-PC02-25` đã trả đúng thứ nó hứa.** Leg đếm của W6n đọc **74 khẳng định số** trên **10
+artefact** và so với 37 / 22 / 2 / 61. Ở FIX17 tôi tìm chín artefact bằng `grep` các chuỗi tôi
+đoán trước ("21 bảng", "giữ 21", "60 entity") — và đúng như một phương pháp dựa trên phỏng đoán
+sẽ hỏng, nó bỏ sót mọi chỗ ghi **20**, **39** hoặc một khóa JSON có cấu trúc. Máy tìm được cái
+người đoán trượt. Đây là lý do tôi báo cáo giới hạn của `E0-18` ở FIX17 thay vì để nó im lặng.
+
+**Giới hạn CÒN LẠI, do chính check tự khai và đáng nhắc lại:** `E0-18` vẫn **không** đọc liệt kê
+tên trong văn xuôi. Một artefact kể ra sai 21 cái TÊN mà không viết một con số nào thì vẫn vô
+hình. Chỉ danh sách có cấu trúc (leg c) và số học (leg d/e) được kiểm.
+
+**Hash sau.** `acceptance/fixtures/recovery/README.md` `f1de7368…98da` →
+`fa733add0f408dee3f1d870b1ca6f6da977337f2d940e0e13afe74ec4efccc79` (12235 B).
+`acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` `321e56af…0271` →
+`1027d03e10f8c1cefdfe0b0d629d9e0a87f16336d3759221a779db4d55f54a22` (20814 B). Byte count không
+đổi ở cả hai file vì mọi thay đổi là một chữ số đổi một chữ số.
+
+**e0: 26/27 PASS, 1 FAIL, 1 vi phạm — FAIL còn lại KHÔNG phải của tôi.**
+`E0-20-card-fixture-accounting`: `agent-tasks/TC-secret-settings-service.md` đã implemented nhưng
+`evidence/handoffs/TC-secret-settings-service-handoff.md` **không tồn tại trên đĩa** (kiểm bằng
+`ls`), nên không fixture nào của card đó hạch toán được. Card của WAI, đang bay; ngoài lease của
+tôi và tôi không chạm. Hai FAIL của lượt trước đã tự hết trong lúc tôi làm: `E0-12` (run record
+của cùng card đó) và **`E0-19-generated-matches` — WS đã sinh lại**, nên ba vi phạm
+`GENERATED_FROM.json` từ FIX17 nay sạch.
+
+Lease `LEASE-PC02-e23` nhả 2026-09-09T07:26Z. Không git mutation, không network, không file ngoài grant.

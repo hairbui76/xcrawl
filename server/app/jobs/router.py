@@ -69,7 +69,7 @@ from server.app.auth.middleware import (
 )
 from server.app.jobs import service
 from server.app.jobs.lease import JobError
-from server.app.jobs.service import JobContext
+from server.app.jobs.service import JobContext, StopEcho
 
 router = APIRouter(tags=["jobs"])
 
@@ -91,9 +91,23 @@ def _correlation_id() -> str:
 
 
 def _error_response(error: JobError) -> JSONResponse:
+    """The envelope — or, for a :class:`StopEcho`, the envelope **plus** its siblings.
+
+    ``collection/a-feed-layout-changed.json`` answers a *successful* ``worker.report_stop``
+    with 409 and ``{error, run, alert_intent_created, alert_intent_id}``. The extra keys are
+    siblings of ``error`` rather than entries in ``details_safe``, because
+    ``contracts/errors.yaml`` closes that key set and ``JobError`` drops anything outside it.
+    Every other refusal is the bare envelope, unchanged.
+    """
+    correlation_id = _correlation_id()
+    content = (
+        error.envelope_body(correlation_id)
+        if isinstance(error, StopEcho)
+        else error.envelope(correlation_id)
+    )
     return JSONResponse(
         status_code=error.http_status,
-        content=error.envelope(_correlation_id()),
+        content=content,
         headers={SCHEMA_VERSION_HEADER: CONTRACT_SCHEMA_VERSION},
     )
 
@@ -255,7 +269,15 @@ async def post_heartbeat(request: Request, assignment_id: str) -> Response:
     dependencies=[Depends(require_collector_token)],
 )
 async def post_stop(request: Request, assignment_id: str) -> Response:
-    """``worker.report_stop`` — report and halt; never a retry, never an account rotation."""
+    """``worker.report_stop`` — report and halt; never a retry, never an account rotation.
+
+    Two success shapes, both pinned by fixtures: 200 with
+    ``{run, alert_intent_created[, alert_intent_id]}``, or — for ``source_layout_changed`` —
+    409 with that object beside a ``SOURCE_LAYOUT_CHANGED`` envelope. The 409 is an
+    *acknowledgement*: the run moved and the alert was created, and the transaction committed
+    before :class:`~server.app.jobs.service.StopEcho` was raised. The collector knows not to
+    retry it (``client._STOP_ECHO_CODES``).
+    """
     try:
         _require_wire_headers(request, OperationId.WORKER_REPORT_STOP)
         body = await _body(request)

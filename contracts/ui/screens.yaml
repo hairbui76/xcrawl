@@ -557,7 +557,7 @@ screens:
         requirement_refs: [REQ-S7.3-05]
         status: ACCEPTED
         ratification_ref: OD-20260907-01
-        scope_authority: "contracts/data/entities.yaml → transactions[TXN-purge-all] → mục `tables` là nguồn liệt kê CÓ THẨM QUYỀN: **37 bảng bị xóa**, **21 bảng giữ lại**, **2 bảng không bao giờ xóa** (tổng 60 = toàn bộ entity; ba tập rời nhau đôi một, kiểm bởi EV-PC02-08). Màn hình KHÔNG được giữ một bản sao khác của danh sách đó (ruling PURGE-LIST 2026-09-07)."
+        scope_authority: "contracts/data/entities.yaml → transactions[TXN-purge-all] → mục `tables` là nguồn liệt kê CÓ THẨM QUYỀN: **37 bảng bị xóa**, **22 bảng giữ lại**, **2 bảng không bao giờ xóa** (tổng 61 = toàn bộ entity; ba tập rời nhau đôi một, kiểm bởi EV-PC02-08). Màn hình KHÔNG được giữ một bản sao khác của danh sách đó (ruling PURGE-LIST 2026-09-07)."
         rule_vi: >-
           Thao tác thứ ba của SRC-SPEC §7.3, đòi **xác nhận gõ tay**: người dùng phải gõ đúng
           cụm từ do SERVER phát (`purge_challenge`); client không tự sinh cụm từ. Chỉ khả dụng
@@ -573,7 +573,7 @@ screens:
             snapshot**, mọi bản gửi và outbox, run/checkpoint/receipt/assignment, nhật ký
             update Telegram, nhật ký thử mã liên kết, sổ quét lại kho và nhật ký gọi nguồn.
           retained_vi: >-
-            **Được giữ lại (21 bảng) — bạn KHÔNG bị đá ra khỏi hệ thống:** tài khoản đăng nhập
+            **Được giữ lại (22 bảng) — bạn KHÔNG bị đá ra khỏi hệ thống:** tài khoản đăng nhập
             và phiên hiện tại; API key, credential theo task và nhật ký truy cập secret; liên
             kết Telegram và mã liên kết; cấu hình provider/model và kết quả test; cấu hình
             chung và **lịch chạy** (`schedule_occurrence`); tag cùng từ đồng nghĩa, tag loại

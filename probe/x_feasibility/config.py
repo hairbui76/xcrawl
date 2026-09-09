@@ -24,6 +24,7 @@ must not have.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,16 @@ PROBE_MIN_GAP_MINUTES = 60
 PROBE_MAX_POSTS_PER_RUN = 200
 PROBE_MAX_DURATION_S = 1800
 PROBE_REQUEST_MIN_INTERVAL_MS = 2000
+
+#: How ``output_dir`` is interpreted, stated once so the README and the error messages can
+#: quote it instead of paraphrasing. ``collector-probe.md`` §5 says the record goes to "thư
+#: mục do Owner chỉ định trên máy cá nhân" -- a directory the Owner *designates*. A relative
+#: path designates nothing on its own, so the rule has to say what it is relative to.
+OUTPUT_DIR_RULE_VI = (
+    "output_dir tuyệt đối được dùng nguyên văn. output_dir tương đối được hiểu là tương đối "
+    "với THƯ MỤC ĐANG ĐỨNG khi chạy lệnh (cwd), KHÔNG phải thư mục chứa file config — nên "
+    "chạy từ gốc repo, hoặc ghi hẳn đường dẫn tuyệt đối."
+)
 
 #: The four confirmations of ``collector-probe.md`` §6, in the contract's order.
 OWNER_CONFIRMATION_KEYS: tuple[str, ...] = (
@@ -244,8 +255,12 @@ def _check_budgets(data: dict[str, Any]) -> tuple[int, int, int]:
     return max_posts, max_duration, interval
 
 
-def parse_config(data: dict[str, Any], *, base_dir: Path | None = None) -> ProbeConfig:
-    """Validate an already-parsed config mapping. Raises :class:`ConfigError`."""
+def parse_config(data: dict[str, Any]) -> ProbeConfig:
+    """Validate an already-parsed config mapping. Raises :class:`ConfigError`.
+
+    A relative ``output_dir`` resolves against the **current working directory**, never
+    against the config file's own directory -- see :data:`OUTPUT_DIR_RULE_VI`.
+    """
     forbidden = sorted(FORBIDDEN_CONFIG_KEYS.intersection(data))
     if forbidden:
         raise ConfigError(
@@ -288,7 +303,15 @@ def parse_config(data: dict[str, Any], *, base_dir: Path | None = None) -> Probe
     out_raw = str(data.get("output_dir", "evidence/runs/SP1-x-feasibility"))
     out_path = Path(out_raw).expanduser()
     if not out_path.is_absolute():
-        out_path = (base_dir or Path.cwd()) / out_path
+        # Against the CWD. The earlier version resolved this against the config file's
+        # directory, which put the evidence somewhere the Owner never named: shipping the
+        # example config inside `probe/` made the default land in
+        # `probe/evidence/runs/SP1-x-feasibility/` instead of the repo's own evidence tree
+        # (wiring gap G-5). CWD is also what `probe/go_no_go.py` already assumes for its
+        # default argument, and the two commands must agree on one directory -- the Owner
+        # runs the probe and then reads the same path back.
+        out_path = Path.cwd() / out_path
+    out_path = Path(os.path.normpath(out_path))
 
     confirmations: dict[str, OwnerConfirmation] = {}
     raw_conf = data.get("owner_confirmations", {})
@@ -346,4 +369,4 @@ def load_config(path: str | Path) -> ProbeConfig:
         raise ConfigError(f"Config không phải JSON hợp lệ: {exc}") from exc
     if not isinstance(data, dict):
         raise ConfigError("Config phải là một object JSON ở cấp cao nhất.")
-    return parse_config(data, base_dir=config_path.parent)
+    return parse_config(data)

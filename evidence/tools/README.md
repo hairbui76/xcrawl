@@ -1,6 +1,6 @@
 ---
 contract_id: CT-evidence-tools
-version: 0.5.0
+version: 0.5.1
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -105,7 +105,7 @@ truy cập mạng.
 | `E0-14-fixture-actor-edge` | `events[]` của mọi fixture | `actor` ∈ `caller_modules` VÀ `(actor, owner, operation)` ∈ `allowed_edges`; `performed_by` là service thực thi, **không** phải khẳng định caller; `edge_assertion: forbidden` đảo ngược kỳ vọng (R4-02); một sự kiện `operation: null` **phải** khai `event_type` ∈ {`local_observation`, `in_process_call`} |
 | `E0-15-fixture-field-existence` | `given.rows` / `expected.rows` | mọi key là một cột của entity đó, HOẶC bắt đầu bằng `_`, HOẶC mang `pending_cr` (R4-01) |
 | `E0-16-scenario-catalogue` | `acceptance/scenarios.yaml` | mỗi AC-01..18 có SC; mỗi mã lỗi có SC; id duy nhất và liên tục; mọi `fixture_refs`/`contract_refs` tồn tại trên đĩa; và mọi `status` hoặc là `NOT_RUN` hoặc là `PASS (E1)`/`PASS (E2)` **kèm bằng chứng**: `status_evidence_refs` không rỗng và mọi đường dẫn trong đó tồn tại trên đĩa, `status_scope_vi` không rỗng, và `evidence_level_required` không cao hơn cấp được khai. `PASS (E3)`/`PASS (E4)` bị từ chối thẳng — chưa lời gọi live nào và chưa kỳ review nội dung nào chạy. Đổi ở `PKT-PC09-P1`: vế cũ là lệnh cấm phẳng ("mọi status là NOT_RUN"), vế mới là **yêu cầu có bằng chứng**, vì bốn scenario thật sự đã chạy và được một auditor độc lập chạy lại |
-| `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: 37 + 21 + 2 = 60. (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
+| `E0-18-purge-set-agreement` | Ba tập bảng của `data.purge_all` trên tám artefact | `contracts/data/entities.yaml` `TXN-purge-all.tables` là **nguồn có thẩm quyền** (OD-20260907-01 mục 24). (a) Ba tập phải **rời nhau đôi một** và **phủ kín** `entities`: **37 + 22 + 2 = 61** sau `AMD-ENT-maintenance-01` (bản trước ghi 37 + 21 + 2 = 60; dòng này chính là một trong những artefact đã mòn theo, xem §5p). (b) Không artefact nào trong cuộc hội thoại purge được còn gọi phạm vi là chưa quyết (`OWNER_DECISION_REQUIRED` / `PROV-PC00-01` / `PROV-PC01-03`) trừ khi dòng đó — hoặc dòng liền kề, vì YAML gấp dòng — đánh dấu **lịch sử** hoặc gọi tên phê chuẩn. (c) Một danh sách purge **có cấu trúc** ở artefact khác phải **bằng đúng** tập có thẩm quyền. (d)/(e) `CR-PC02-25`: mọi **con số đếm viết bằng chữ số** ("N bảng", bộ ba `xóa A, giữ B, không bao giờ xóa C`, "N entity", và các khoá `*_table_count` / `_*_tables` trong fixture) trên **mười artefact được gọi tên** phải bằng kích thước của tập nó nói tới. Thêm ở FIX8 vì `F-A2R5-01`: sự vắng mặt của đúng check này là lý do quyết định có hậu quả lớn nhất của Owner được ghi vừa "đã chốt" vừa "còn treo" |
 | `E0-17-declared-deviations` | `x-contract.deviations` và các ngoại lệ header | mỗi deviation có `rule`/`deviation`/`reason`/`evidence_refs`; ngoại lệ ADR (R-05) và ngoại lệ CSV được ghi ở nơi đọc được |
 | `E0-19-generated-matches` | Hai manifest `GENERATED_FROM.json` (`shared/rr_contracts/rr_contracts/generated/`, `web/src/generated/`) | Mỗi manifest parse được, khai `generator` và một `sources` **không rỗng**, và mọi `sources[].path` tồn tại với `sha256` **bằng** hash của file trên đĩa hôm nay (và `bytes` khớp khi được khai). Đây là quy tắc "sinh, đừng sửa tay" của ADR-0011 ở dạng check tĩnh. Nó **KHÔNG** chứng minh đầu ra của bộ sinh đúng, và **KHÔNG** bắt được một file sinh bị sửa tay — chỉ chạy lại bộ sinh mới bắt được, và hai cửa đó (`pytest shared/rr_contracts/tests/test_generated_matches_contracts.py`, `node web/scripts/generate.mjs --check`) **vẫn ở nguyên**. `contracts/data/entities.yaml` **cố ý** không phải nguồn của bộ sinh nào (`CR-P0-06`, `F-A3R2-04`): hình dạng bảng đi vào code bằng tay qua Alembic và được canh bởi **pytest** `tests/contract/test_schema_matches_entities.py` — cổng schema sống trong pytest, không trong E0. Check in ra sự vắng mặt đó thành một note thay vì để người đọc suy ra |
 | `E0-20-card-fixture-accounting` | Fixture `§2. Read set` của mọi card **đã hiện thực** (có `evidence/runs/<card>-E1-*.json`) | Mỗi `acceptance/fixtures/**.json` mà §2 nêu tên phải **hoặc** được một file dưới **bất kỳ cây test nào** tham chiếu — `tests/`, `web/tests/`, hoặc một file `*.test.*`/`*.spec.*` nằm cạnh mã dưới `web/src/` — **hoặc** được nêu trong `evidence/handoffs/<card>-handoff.md` **trong một đoạn cũng chứa `NOT_RUN`**. Card chưa ai xây thì ngoài phạm vi và được đếm riêng trong note. Thêm ở `PKT-PC09-P3` vì đây là **lần thứ ba** một auditor tìm ra cùng hình dạng bằng tay (`F-A3R1-09` → `F-A3-P2-01` → `F-A3-P3-03`); ba lần là tín hiệu rằng nó nên thôi làm finding từng vòng. Điều nó **KHÔNG** chứng minh, và oracle nói ra: một tham chiếu là **sự có mặt**, không phải độ phủ — check không biết test nhắc tên một fixture có khẳng định gì với nó hay không, nên một kết quả sạch không được đọc là "mọi fixture đã được phủ" |
@@ -233,6 +233,58 @@ Nên: **liệt kê purge trong văn xuôi chưa được đối chiếu tự đ�
 hoạch, sự vắng mặt của marker "chưa quyết", và các danh sách **có cấu trúc**. Một artefact viết
 sai một tên bảng giữa một câu văn vẫn lọt. Đó là một CR mở, không phải một điều bản này ngụ ý đã
 xong.
+
+## 5p. `CR-PC02-25` — `E0-18` đọc **số**, và vì sao nó vẫn không đọc văn xuôi
+
+`AMD-ENT-maintenance-01` của worker-W3n đổi ba tập purge thành **37 / 22 / 2 (61 entity)**. Chín
+artefact vẫn khẳng định con số cũ (21 bảng retained). `E0-18` **PASS suốt thời gian đó**: nhánh
+(b) đọc marker, nhánh (c) đọc **danh sách có cấu trúc**, và không nhánh nào đọc một con số. Chúng
+được tìm thấy bằng `grep`, tức là bằng may mắn của một người nhớ ra phải grep.
+
+Lỗ hổng **không phải** là liệt kê văn xuôi (§5h đã ghi và vẫn đúng). Lỗ hổng là **con số**. Một
+con số đọc rẻ, không mơ hồ, và không thể bị đọc sai theo cách một đoạn văn có thể. Nên nhánh mới
+đọc đúng con số, trên một **danh sách artefact được gọi tên** chứ không phải cả corpus:
+
+`contracts/ports.yaml`, `contracts/modules.yaml`, `contracts/http/openapi.yaml`,
+`contracts/ops/secrets.md`, `contracts/ops/backup-restore.md`, `contracts/ops/deployment.md`,
+`contracts/ui/screens.yaml`, `acceptance/scenarios.yaml`,
+`acceptance/fixtures/recovery/README.md` và fixture `l-purge-all-two-phase-and-negatives.json`.
+
+Bốn dạng khẳng định được đọc, tất cả đều **theo nghĩa đen**:
+
+| dạng | ví dụ | quy tắc |
+|---|---|---|
+| `role` | `22 bảng giữ lại`, `không bao giờ xóa 2` | phải bằng kích thước **tập đó** |
+| `triple` | `xóa 37, giữ 22, không bao giờ xóa 2` | phải bằng cả ba |
+| `magnitude` | bất kỳ `N bảng` nào gần một **cue** purge | phải là một trong `{37, 22, 2, 61}` |
+| `entity_total` | `61 entity` gần một cue purge | phải bằng hợp của ba tập |
+| có cấu trúc | `retained_table_count`, `_purged_tables`, `purged_table_counts_after` | giá trị (int) hoặc **độ dài** (list/dict) phải bằng kích thước tập |
+
+`magnitude` là quy tắc **lỏng** một cách cố ý: nó không phân biệt được một cặp bị hoán vị
+(`37 bảng giữ lại`), nhưng nó bắt **mọi số học đơn giản đã lỗi thời** mà không phải đoán cửa sổ
+ngữ nghĩa. Quy tắc `role` mới là quy tắc chặt, và nó đọc `never` **trước** để `không bao giờ xóa
+2` được tính là một khẳng định `never`, không phải thêm một khẳng định `purged` bằng 2 — bản nháp
+đầu tính hai lần và tạo ra đúng một false positive.
+
+**Điều nhánh này KHÔNG làm, và §5h vẫn nguyên vẹn:** nó **không** so liệt kê văn xuôi. Một
+artefact viết ra 21 **cái tên** sai mà không viết một con số nào thì vẫn vô hình. Câu đó nay được
+in ra trong chính đầu ra của `E0-18` (một `note` cố định), theo yêu cầu của worker-W3n, để một
+PASS của check này không bị đọc là "mọi artefact đều đúng".
+
+Trước: `E0-18` `items_checked = 17`, 0 vi phạm. Sau: `items_checked = 91`, và trên bản đĩa lúc
+viết nhánh này nó **FAIL với 6 vi phạm** trên hai file thật —
+`acceptance/fixtures/recovery/README.md` (`20 bảng retained`, `39 bảng`) và fixture `l`
+(`_retained_source_vi` "20 bảng", `retained_table_count: 21` trong khi `_retained_tables` có 22
+phần tử). Cả hai nằm **ngoài** write set của worker-W6n; chúng được báo cáo chứ không được sửa ở
+đây, và worker-W3n đã sửa chúng trên đĩa trong lúc self-test đang được viết — vì thế mỗi bước
+"vá bóng" trong `selftest_e018.py` là **soft**: một self-test đòi hỏi sự cũ kỹ của người khác sẽ
+hỏng đúng vào lúc người ta sửa nó.
+
+Self-test: `scratchpad/w6p3/selftest_e018.py`, **11/11 hàng** đúng như đặc tả — một hàng nền
+(sạch), tám đột biến (mỗi dạng ít nhất một, gồm cả `_retained_tables` mất/thêm một phần tử), và
+**hai đối chứng âm**: một con số `45 bảng` không có cue purge gần đó (không được bắt), và một
+**liệt kê văn xuôi** 21 tên bảng sai (không được bắt — đó là §5h, được khẳng định bằng test chứ
+không chỉ bằng lời).
 
 ## 5f. Phạm vi của `E0-12` — điều nó **không** với tới, đo và in ra
 
@@ -649,6 +701,35 @@ Hai điều kiện làm self-test này khác một self-test trang trí:
 
 Thoát 0 chỉ khi **mọi** đột biến bị bắt. Cái bóng bị xóa sau khi chạy; không byte nào được ghi
 vào repo.
+
+### 8.4 `CR-PC10-16` — một đột biến đúng vì may, không vì thiết kế
+
+`_m_epoch_asserting` để lại một file đầu-vào khai một epoch đã bị thay, rồi kiểm rằng check (k)
+bắt được. Hai chỗ sai, cả hai vô hình trên bytes hôm nay:
+
+1. **Nó nhắm `EPOCH_TOKEN_RE.findall(...)[0]`** — token epoch **đầu tiên** xuất hiện trong
+   `agent-tasks/README.md`. File đó liệt kê **toàn bộ lịch sử epoch** (24 token), nên "token đầu
+   tiên" là bất kỳ cái nào văn xuôi tình cờ nhắc trước. Nếu nó là một epoch **đã bị thay**, đột
+   biến tạo ra một khuyết tật **khác** — hoặc không tạo ra khuyết tật nào — trong khi dòng kết
+   quả vẫn in `CAUGHT`. Nay nó nhắm epoch mà **chính các card khai** (§0: card là nguồn chuẩn
+   của tên epoch), và **dừng lại** nếu file không nhắc epoch đó.
+2. **Nó thay đúng MỘT lần.** Check (k) hỏi *"file này có nhắc epoch hiện tại **chút nào** không"*.
+   Để sót một lần nhắc thứ hai là để check tìm thấy giá trị đúng ⇒ **không vi phạm** ⇒ đột biến
+   chứng minh **không gì cả**, mà vẫn báo pass. Nay `count=0` thay **mọi** lần xuất hiện, và
+   `_mutate` còn dừng nếu nội dung file **không đổi** sau khi thay.
+
+**Vì sao nó vẫn 14/14 trước khi sửa:** `agent-tasks/README.md` hiện nhắc epoch hiện tại **đúng
+một lần**, và tình cờ nó cũng là token đầu tiên. Đó là **may**, không phải một phép kiểm.
+
+Chứng minh bằng đột biến, không bằng lập luận (`selftest_vc.py`, chạy trên bản sao):
+
+| Bytes | `count=1` (trước) | `count=0` (sau) |
+| --- | --- | --- |
+| README nhắc epoch hiện tại **1 lần** (hôm nay) | CAUGHT | CAUGHT |
+| README nhắc epoch hiện tại **2 lần** (trạng thái file sẽ tới khi lịch sử dài ra) | **MISSED** | **CAUGHT** |
+
+Hàng thứ hai là toàn bộ nội dung của `CR-PC10-16`: một self-test sẽ **âm thầm ngừng kiểm** ngay
+lần tiếp theo ai đó nhắc tên epoch thêm một chỗ nữa trong cùng file.
 
 ### 8.3 Điều công cụ này KHÔNG chứng minh
 

@@ -1,5 +1,5 @@
 contract_id: CT-precode-gates
-version: 0.5.0
+version: 0.6.0
 status: draft
 owner_role: verification owner (PC09)
 source_refs:
@@ -437,6 +437,15 @@ gates:
           được ai độc lập kiểm**; `PKT-A2-R2` trên epoch 5 là lượt tiếp theo. Người viết bản sửa
           KHÔNG được là người xác minh chính bản sửa đó (protocol §8). F-A1R3-01..05 vẫn
           `FIX_PROPOSED`.
+
+          **Cập nhật ở `PKT-PC09-P5`:** điều kiện này phải đọc cả các lượt **A3** (audit code),
+          không chỉ A1/A2. Ba lượt của đợt nối dây khép kín ngay trong đợt: `F-A3-P5-01..04`
+          (3 MEDIUM, 1 LOW) → sửa → `A3-P5-R2` **VERIFIED cả bốn**; `F-A3-P5R2-01` → sửa →
+          `A3-P5-R3` **VERIFIED cả hai chiều**; `F-A3-P5R3-01` (pin ĐỌC đã cũ trong manifest
+          backup) → `W6B` phát lại manifest và PC09 băm lại từng cặp `{path, sha256}`: **0 pin
+          lệch**. Điều kiện **vẫn `met: false`**, vì các finding cũ hơn còn mở — `F-A3R4-01`,
+          `F-A3-P2-01/-02`, `F-A3-P4R2-01/-02` — và vì bản sửa `E0-21` bằng `ast` do chính PC09
+          viết **vẫn chưa được ai độc lập kiểm**.
     current_status: PARTIALLY_MET
     evidence_refs: ["EV-PC09-01", "EV-PC09-02", "EV-PC09-03", "EV-PC09-04"]
     note_vi: >
@@ -659,6 +668,24 @@ gates:
           **`SC49` sẽ không chuyển được bằng thêm test ở tầng này.** Oracle đòi cả ba cơ chế ép
           buộc; cơ chế thứ ba — network/process capability cho worker trên máy cá nhân — là 14
           cạnh `CAPABILITY_DENIED` chỉ đo được trên máy có Chrome thật (`CR-PC09-24`).
+
+          **Đợt nối dây (FC-P5, epoch 3) chuyển 0 dòng, và đó là con số đúng.** Đợt này làm cho
+          stack **khởi động được** — composition root, `rr-admin migrate|bootstrap-owner|status`,
+          `storage.health` xuống đĩa, probe giải đường theo cwd, vòng lặp collector/worker, và
+          card thứ 20 `TC-secret-settings-service` — và `A3-P5-R1..R3` xác minh phần lớn việc đó
+          **như những tiến trình thật** (uvicorn + curl qua TCP), lần đầu tiên trong dự án. Không
+          điều nào trong đó là một oracle chấp nhận: bảy dòng mà đợt này chạm (`SC04`, `SC16`,
+          `SC17`, `SC36`, `SC41`, `SC44`, `SC49`) đều được xét lại từng dòng và **không dòng nào**
+          đủ ba điều kiện của `precode/review.md` §14.5. `SC36` là ví dụ rõ nhất:
+          `AMD-ENT-maintenance-01` cộng bản sửa của WR đóng `G-3` của runbook, và A3 chứng minh
+          cửa sổ maintenance sống qua **hai tiến trình OS riêng biệt** — nhưng nhánh
+          `write_blocked → healthy` vẫn là một probe TIÊM (`CR-TC-storage-04`). "Chạy được" không
+          phải "đã đo".
+
+          **Một thiếu sót của chính tôi, khai ra thay vì để im:** trong 35 dòng `NOT_RUN` có
+          **32** dòng mang `partial_evidence_vi`; ba dòng **không** mang — `SC54`, `SC55`, `SC56`.
+          Chưa gói PC09 nào xét từng dòng cho chúng, nên hôm nay không ai đọc được từ danh mục là
+          chúng thiếu gì. Đó là một lỗ tài liệu của PC09, không phải của một card.
         evidence_refs:
           - "acceptance/scenarios.yaml (status + status_evidence_refs của SC21, SC26, SC29, SC31)"
           - "evidence/index.json"
@@ -689,31 +716,38 @@ gates:
           backup **không** chứng minh khôi phục được, và gói này không phản bác điều đó.
     current_status: NOT_MET
     evidence_refs:
-      - "evidence/audits/A3-R1-report.md"
-      - "evidence/audits/A3-R2-report.md"
-      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
-      - "evidence/runs/TC-canonical-identity-merge-E1-20260907T111124Z.json"
-      - "evidence/runs/TC-owner-auth-session-E1-20260907T114030Z.json"
-      - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json"
-      - "evidence/runs/TC-collector-checkpoint-resume-E1-20260907T135609Z.json"
-      - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
-      - "evidence/runs/TC-x-feasibility-probe-E1-20260907T140211Z.json (result NOT_RUN)"
-      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260908T013343Z.json"
+      - "evidence/runs/TC-analysis-adapter-validation-E1-20260909T072030Z.json"
+      - "evidence/runs/TC-analysis-once-per-generation-E1-20260908T064438Z.json"
       - "evidence/runs/TC-backfill-pending-ledger-E1-20260908T013901Z.json"
-      - "evidence/runs/TC-ui-runs-three-states-E1-20260908T005139Z.json"
+      - "evidence/runs/TC-backup-restore-drill-E1-20260909T104000Z.json"
+      - "evidence/runs/TC-canonical-identity-merge-E1-20260908T012916Z.json"
+      - "evidence/runs/TC-collector-checkpoint-resume-E1-20260909T074631Z.json"
+      - "evidence/runs/TC-embedding-generation-switch-E1-20260908T004611Z.json"
+      - "evidence/runs/TC-ingest-idempotent-ack-lost-E1-20260907T113827Z.json"
+      - "evidence/runs/TC-owner-auth-session-E1-20260908T014455Z.json"
+      - "evidence/runs/TC-report-coverage-publish-cas-E1-20260909T081653Z.json"
+      - "evidence/runs/TC-research-connector-metadata-E1-20260907T164354Z.json"
+      - "evidence/runs/TC-saved-snapshot-E1-20260909T091000Z.json"
+      - "evidence/runs/TC-scheduler-lease-claim-E1-20260909T073930Z.json"
+      - "evidence/runs/TC-secret-settings-service-E1-20260909T075131Z.json"
+      - "evidence/runs/TC-storage-write-blocked-readiness-E1-20260909T072209Z.json"
+      - "evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json"
+      - "evidence/runs/TC-telegram-unknown-delivery-E1-20260908T004909Z.json"
       - "evidence/runs/TC-ui-reports-detail-E1-20260907T220500Z.json"
-      - "evidence/runs/TC-scheduler-lease-claim-E1-20260907T212330Z.json"
-      - "evidence/runs/TC-backup-restore-drill-E1-20260908T064000Z.json"
-      - "evidence/audits/A3-P4-R1-report.md"
-      - "evidence/audits/A3-P4-R2-report.md"
-      - "evidence/runs/TC-analysis-adapter-validation-E1-20260907T201840Z.json"
-      - "evidence/runs/TC-analysis-once-per-generation-E1-20260907T202638Z.json"
-      - "evidence/runs/TC-embedding-generation-switch-E1-20260907T201528Z.json"
-      - "evidence/runs/TC-telegram-linking-auth-E1-20260907T202140Z.json"
-      - "evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json"
-      - "evidence/runs/TC-telegram-unknown-delivery-E1-20260907T202901Z.json"
+      - "evidence/runs/TC-ui-runs-three-states-E1-20260908T005139Z.json"
+      - "evidence/runs/TC-x-feasibility-probe-E1-20260908T035712Z.json (result NOT_RUN)"
+      - "evidence/audits/A3-P2-R1-report.md"
       - "evidence/audits/A3-P3-R1-report.md"
       - "evidence/audits/A3-P3-R2-report.md"
+      - "evidence/audits/A3-P4-R1-report.md"
+      - "evidence/audits/A3-P4-R2-report.md"
+      - "evidence/audits/A3-P5-R1-report.md"
+      - "evidence/audits/A3-P5-R2-report.md"
+      - "evidence/audits/A3-P5-R3-report.md"
+      - "evidence/audits/A3-R1-report.md"
+      - "evidence/audits/A3-R2-report.md"
+      - "evidence/audits/A3-R3-report.md"
+      - "evidence/audits/A3-R4-report.md"
     note_vi: >
       Cổng chuyển từ `NOT_APPLICABLE_YET` sang **`NOT_MET`**: lý do cũ ("chưa có code") không
       còn đúng, nên giữ nhãn "chưa áp dụng được" sẽ là che một phép đo nay làm được. Code Giai
@@ -722,6 +756,15 @@ gates:
       tử số 4 → 10 ở `PKT-PC09-P3`, → 21 ở `PKT-PC09-P4`). **G6-X2 và G6-X3 không chờ code:**
       cả hai chờ một lần chạy trong thế giới thật mà chỉ Owner được thực hiện.
       Không điều kiện ra nào đạt.
+
+      **PKT-PC09-P5 (đợt nối dây): phép đo KHÔNG đổi — vẫn 21/48 · 0/5 · 0/2.** Nói chính xác
+      cái đã đổi: hệ thống nay **khởi động được**, và một auditor độc lập đã chạy nó như một
+      tiến trình (migrate → bootstrap-owner → uvicorn → login 200 với đúng cờ cookie → readiness
+      → runs → settings → saved), một cửa sổ maintenance sống qua hai lần gọi tiến trình, và
+      card thứ 20 tồn tại. Cái KHÔNG đổi: **không scenario nào chuyển nhãn**, E3 vẫn 0/5 và E4
+      vẫn 0/3, và `A3-P5-R1` §5 trả lời câu hỏi "Owner chạy được đầu-cuối chưa?" bằng **KHÔNG**
+      — report không dựng được (`CR-P0-07`), `MOD-tag-service` chưa có card, connector chưa nối,
+      và mọi đường live vẫn đóng.
     blocked_by_open_items:
       - "G6-X1: **27/48** scenario cấp ≤ E2 vẫn `NOT_RUN`. Giai đoạn 4/6 chuyển **11** dòng — nhiều nhất của một giai đoạn. Hai dòng (`SC09`, `SC22`) bị chặn bởi **khuyết tật oracle**, không phải thiếu code."
       - "G6-X2: chưa có lời gọi live nào. Cổng SP1 nay mở về mặt **hành chính** (OD-20260907-04) nhưng `SP1-X2` vẫn 0/5–10 đợt: **cổng mở không phải là đợt chạy**."
@@ -730,8 +773,8 @@ gates:
       - "`REQ-AC16` là **BLOCKED**, không phải FAIL, và Giai đoạn 3/5 **không** đổi điều đó: nó chờ một probe với binary thật, không chờ một bản sửa. Cùng lý do, `MOD-ai-adapter` có code mà không có cổng nào chuyển."
       - "`MOD-research-connector` có code nhưng **KHÔNG** `CONTRACT_READY`: không hợp đồng nào nêu tên host/endpoint của arXiv/OpenAlex (`SG-DOC`) và E3 chưa chạy (`SG-LIVE`) — `A3-P2-R1` §4/§7."
     allows_next_vi: >
-      Gọi integration/live verified TRONG PHẠM VI đã đo. Ở thời điểm này phạm vi đó là **bốn
-      scenario**, không phải hệ thống. KHÔNG suy ra product accepted.
+      Gọi integration/live verified TRONG PHẠM VI đã đo. Ở thời điểm này phạm vi đó là **21
+      scenario cấp ≤ E2 trong tổng số 48**, không phải hệ thống. KHÔNG suy ra product accepted.
 
   - id: G7
     name_vi: "Product acceptance — đủ kỳ/tuần theo rubric đã chốt, Owner đánh giá"

@@ -1,4 +1,4 @@
-# GENERATED — do not edit; source sha256 contracts/schemas/analysis-result.schema.json=f26720ee04852161…, contracts/schemas/ingest-batch.schema.json=8ab444f557645ee8…, contracts/schemas/ingest-receipt.schema.json=ff5232f46bb08369…, contracts/schemas/report.schema.json=8bf6bc9ccd6040c0…, contracts/schemas/saved-snapshot.schema.json=1178d314deb8dfdf…, contracts/schemas/target.schema.json=d1ce487d2e4ba24b…, contracts/schemas/worker-assignment.schema.json=14efde6fdbff8a19…, contracts/state/analysis.yaml=06b18de42c3bbfff…, contracts/state/delivery.yaml=318789179ec79a4e…, contracts/state/report.yaml=77969cb473c84a7d…, contracts/state/run.yaml=479125cb0d927c69…, contracts/state/storage.yaml=a77803f1690ee774…, contracts/errors.yaml=640991c91ad046eb…, contracts/ports.yaml=c15b676b5619df7a…, contracts/http/openapi.yaml=28b3820e983736f8…
+# GENERATED — do not edit; source sha256 contracts/schemas/analysis-result.schema.json=f26720ee04852161…, contracts/schemas/ingest-batch.schema.json=8ab444f557645ee8…, contracts/schemas/ingest-receipt.schema.json=ff5232f46bb08369…, contracts/schemas/report.schema.json=8bf6bc9ccd6040c0…, contracts/schemas/saved-snapshot.schema.json=1178d314deb8dfdf…, contracts/schemas/target.schema.json=d1ce487d2e4ba24b…, contracts/schemas/worker-assignment.schema.json=14efde6fdbff8a19…, contracts/state/analysis.yaml=06b18de42c3bbfff…, contracts/state/delivery.yaml=318789179ec79a4e…, contracts/state/report.yaml=77969cb473c84a7d…, contracts/state/run.yaml=479125cb0d927c69…, contracts/state/storage.yaml=a77803f1690ee774…, contracts/errors.yaml=640991c91ad046eb…, contracts/ports.yaml=c7c7734001b98f25…, contracts/http/openapi.yaml=a3e7e42203bdb2c2…
 # Produced by shared/rr_contracts/generate.py from the contract file(s) named above.
 # Editing this file by hand makes code and contract drift apart silently; the rule is
 # ADR-0011 (Hệ quả) and agent-tasks/README.md §5.3. To change behaviour: change the
@@ -16,8 +16,8 @@
 #   contracts/state/run.yaml  sha256:479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27
 #   contracts/state/storage.yaml  sha256:a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849
 #   contracts/errors.yaml  sha256:640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f
-#   contracts/ports.yaml  sha256:c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684
-#   contracts/http/openapi.yaml  sha256:28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92
+#   contracts/ports.yaml  sha256:c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412
+#   contracts/http/openapi.yaml  sha256:a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d
 
 """Generated contract bindings.
 

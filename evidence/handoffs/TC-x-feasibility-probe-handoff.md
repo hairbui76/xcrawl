@@ -4,7 +4,7 @@ packet_id: TC-x-feasibility-probe
 worker_principal: worker-WX
 authority_id: AUTH-COORD-TC-PROBE
 parent_authority: AUTH-OWNER-20260907-04
-lease_id: LEASE-TC-PROBE-e1
+lease_id: LEASE-TC-PROBE-e3
 pin_epoch: PC10-PIN-P2-20260907
 decision_refs: [OD-20260907-01, OD-20260907-02, OD-20260907-03, B05, B12, AMD-B02, AMD-B05, AMD-B08, ADR-0001, ADR-0006, ADR-0011, CR-PC05-01, CR-PC10-02]
 invariant_refs: [I03, I10]
@@ -12,7 +12,7 @@ scenario_refs: [SC01, SC03, SC04, SC49]
 requirement_refs: [REQ-A1, REQ-A7, REQ-D09, REQ-D24, REQ-D31, REQ-D32, REQ-D33, REQ-OQ05, REQ-AC01, REQ-AC03, REQ-AC04, REQ-S9.3-01, REQ-S9.3-02, REQ-S13.2-04]
 evidence_manifest_id: EVM-TC-x-feasibility-probe
 next_actor: Coordinator
-lease_released_at: 2026-09-07T14:15Z
+lease_released_at: 2026-09-08T04:00Z
 ---
 
 # HANDOFF — TC-x-feasibility-probe (M0, SP1): công cụ probe và runbook. Probe **chưa chạy**.
@@ -24,11 +24,11 @@ lease_released_at: 2026-09-07T14:15Z
 | `card_id` | `TC-x-feasibility-probe` · pin epoch `PC10-PIN-P2-20260907` |
 | `worker_principal` | `worker-WX` |
 | `authority_id` | `AUTH-COORD-TC-PROBE` (parent `AUTH-OWNER-20260907-04`, bản ghi `OD-20260907-03`) |
-| `lease_id` | `LEASE-TC-PROBE-e1` (exclusive; message-tracked, không guard mức OS) |
+| `lease_id` | `LEASE-TC-PROBE-e1`, rồi `LEASE-TC-PROBE-e3` cho `PKT-TC-PROBE-FIX2` (exclusive; message-tracked, không guard mức OS) |
 | **`status`** | **`DONE_WITH_CONCERNS`** |
 | `completion_claim` | `DRAFT_FOR_REVIEW`. **Không** `LIVE_FEASIBILITY_VERIFIED` và không gì gần nó |
 | `next_actor` | `Coordinator` |
-| `lease_released_at` | 2026-09-07T14:15Z |
+| `lease_released_at` | 2026-09-08T04:00Z (sau `PKT-TC-PROBE-FIX2`) |
 
 **Trần thi hành của packet này là công cụ + runbook, và đó đúng là những gì tồn tại.** Không
 một đợt probe nào đã chạy. Bằng chứng khả thi nguồn X: **`NOT_RUN`**.
@@ -42,6 +42,91 @@ một đợt probe nào đã chạy. Bằng chứng khả thi nguồn X: **`NOT_
 cụ và runbook; packet điều phối nói rõ trần của packet này là tooling. Tôi dừng đúng ở ranh
 giới đó: `run_probe.py` **từ chối mở trình duyệt** khi cổng §6 chưa đủ bốn xác nhận, và
 `evidence/runs/SP1-x-feasibility/runs.jsonl` **không tồn tại**.
+
+## 1b. `PKT-TC-PROBE-FIX2` — sửa lỗi wiring G-5 (2026-09-08)
+
+Coordinator báo qua `…/scratchpad/packets/WIRING-wave-1.md` hàng **G-5**: một lần `--dry-run` chạy từ gốc
+repo đã ghi `probe/evidence/runs/SP1-x-feasibility/probe.log`. Coordinator đã xoá file đó (artefact sinh ra);
+thư mục rỗng còn lại cũng không còn khi tôi bắt đầu. **Đây là lỗi của tôi**, hai lỗi chồng lên nhau:
+
+1. **`output_dir` tương đối giải sai gốc.** `parse_config` nhận `base_dir=config_path.parent`, nên một
+   `output_dir` tương đối bám theo **thư mục chứa file config**. File config mẫu nằm trong `probe/`, nên mặc
+   định `evidence/runs/SP1-x-feasibility` trỏ vào `probe/evidence/runs/SP1-x-feasibility` — một thư mục
+   **không ai chỉ định**, trong khi card §3 và `probe/go_no_go.py` đều nói về cây evidence của repo.
+2. **`--dry-run` vẫn ghi đĩa.** `setup_logging()` chạy **trước** mọi cổng và luôn `mkdir` + mở
+   `FileHandler`, nên một lệnh chỉ để *kiểm xem có được phép chạy không* vẫn tạo thư mục và file log.
+
+**Luật đã chọn: đường dẫn tương đối giải theo `cwd`.** Lý do chọn cwd chứ không phải bắt buộc tuyệt đối:
+`probe/go_no_go.py` **đã** mặc định `evidence/runs/SP1-x-feasibility/runs.jsonl` theo cwd, và Owner chạy hai
+lệnh nối tiếp nhau trên **cùng một thư mục** — hai lệnh giải cùng một chuỗi theo hai gốc khác nhau chính là
+hình dạng của lỗi này. `collector-probe.md` §5 chỉ nói "thư mục do Owner chỉ định trên máy cá nhân"; nó không
+chọn hộ, nên luật phải được nêu rõ ở đâu đó — nay là hằng số `config.OUTPUT_DIR_RULE_VI`, được `--dry-run` in
+ra nguyên văn và README §4 trích lại. Đường dẫn tuyệt đối vẫn dùng nguyên văn và vẫn là lựa chọn an toàn nhất.
+
+**Và mạnh hơn yêu cầu của packet:** không chỉ `--dry-run`, mà **mọi** lần bị cổng từ chối cũng không ghi gì.
+Log đi ra stderr cho tới khi mọi cổng đã qua; `attach_file_logging()` chỉ được gọi ngay trước đợt đầu tiên.
+Một lệnh không được phép chạy thì không để lại dấu vết nào trên đĩa.
+
+| Thay đổi | File |
+| --- | --- |
+| `output_dir` tương đối → cwd; thêm `OUTPUT_DIR_RULE_VI`; bỏ tham số `base_dir` của `parse_config`; chuẩn hoá đường dẫn | `probe/x_feasibility/config.py` |
+| tách `setup_logging` → `setup_console_logging` (stderr, không chạm đĩa) + `attach_file_logging` (chỉ khi đợt bắt đầu); in `output_dir` đã giải ở dòng log đầu; `--dry-run` thêm `output_dir_rule_vi` và `wrote_nothing` | `probe/x_feasibility/run_probe.py` |
+| 6 test hồi quy (xem dưới) | `tests/contract/test_x_probe_boundaries.py` |
+| §4 thêm khối "output_dir tương đối tính từ ĐÂU" + ghi rõ dry-run không ghi gì; §6 nói rõ đợt thật là lúc đầu tiên có gì được ghi | `probe/README.md` |
+
+Sáu test mới, mỗi cái khoá một nửa của lỗi:
+
+| Test | Khoá điều gì |
+| --- | --- |
+| `test_relative_output_dir_resolves_against_cwd_not_the_config_file` | config nằm một nơi, cwd nơi khác ⇒ output theo **cwd**; và `config_dir` không nằm trong `parents` của kết quả |
+| `test_absolute_output_dir_is_used_verbatim` | đường dẫn tuyệt đối không bị ghép thêm gì |
+| `test_dry_run_creates_nothing_anywhere` | chụp **toàn bộ cây** `tmp_path` trước/sau ⇒ bằng nhau tuyệt đối, không phải "không ghi ngoài output_dir" |
+| `test_a_refused_run_creates_nothing_either` | đường bị cổng từ chối cũng không tạo thư mục |
+| `test_console_logging_opens_no_file` | `setup_console_logging` không gắn `FileHandler` nào |
+| `test_the_example_config_default_lands_in_the_repo_evidence_tree` | chạy từ gốc repo, config mẫu rơi đúng chỗ card §3 nói |
+
+Kiểm tay, ngoài test (cwd tạm trong scratch, config ở thư mục khác): `--dry-run` in
+`runs_file` = `<cwd>/evidence/runs/SP1-x-feasibility/runs.jsonl` và `wrote_nothing: true`; `find` trên cây
+scratch trước/sau **không đổi**; `probe/evidence/` không được tạo lại.
+
+**Kết luận không đổi.** Đây là lỗi về *nơi ghi file*, không phải về hành vi probe hay về ranh giới §2. Bằng
+chứng khả thi nguồn X vẫn **`NOT_RUN`**, và hai điều chặn ở mục 2 vẫn nguyên.
+
+**Bản phát lại evidence manifest:** `evidence/runs/TC-x-feasibility-probe-E1-20260908T035712Z.json`
+(`EV-E1-02-tc-x-feasibility-probe`, sha256 `468756f5207bcd12793b4cba333acee86dfac1e44ff6ec954f19142e1c3ebe07`,
+12 898 B) — validate sạch với `evidence/manifest.schema.json`, `result` vẫn `NOT_RUN`, mọi hash hợp đồng tính
+lại tươi. Nó **thay** `…-E1-20260907T140211Z.json` (`EV-E1-01`, sha256
+`0a3e67c3a6cdb9ef354d332ab9355b6c058d39ffb6d217a01e85775511e5deb3`), và bản cũ nay được đánh dấu
+`result: STALE` **tại chỗ** kèm `stale_reason` — đó là quy ước của chính repo này (mọi cặp manifest bị thay ở
+`evidence/runs/` đều làm vậy), không phải tôi tự nghĩ ra. Sau khi đánh dấu, bản cũ có sha256
+`632e05a5e9cfa8fb3b711fd8214b972d1987e4fddfb83bab9b1d442cf32154ea` (12 987 B) và vẫn validate sạch với schema.
+
+Đánh dấu `STALE` **không** phải viết lại một quan sát: bản ghi cũ không quan sát gì cả (`NOT_RUN`), và
+`stale_reason` nêu đúng hai điều làm nó hết hiệu lực — `implementation_revision` trỏ tới phiên bản mang lỗi
+G-5, và mọi hash hợp đồng trong `baseline` đã đổi từ đó. Kết luận thì không đổi, và bản mới ghi lại đúng như
+vậy: probe live vẫn `NOT_RUN`.
+
+`evidence/index.json` do PC09 sinh, **ngoài** write set của tôi: Coordinator cần sinh lại để
+`superseded_card_runs` ghi cặp này (vẫn là `CR-TC-PROBE-04`).
+
+**Hash sau `PKT-TC-PROBE-FIX2`** (thay các dòng tương ứng ở mục 6):
+
+| Path | Trước | Sau | Bytes |
+| --- | --- | --- | --- |
+| `probe/x_feasibility/config.py` | `4b60124eda876151daae0d744aed1faaa8a61fb776712d338fa4d641093d1da1` | `36fd72009e897d1ff642ccb22a0f137186c858f2e78f66158c699eefeea4b476` | 16632 |
+| `probe/x_feasibility/run_probe.py` | `5476c862ab348e7fd89ff207c177d9c93652ebb8b443eda02ca44753b0e11107` | `325ebd7511f01bf497a1fb3628958f8f5284d355961e80c4d3a2d897fac3b9fb` | 26022 |
+| `tests/contract/test_x_probe_boundaries.py` | `2e7fc0ac167e0d32f40d364e610b2f05f0637627e5b84b2b990bfd92c850022c` | `e915b45c9834811d1d152229883262c72b0938119f1268030e6e7c6bb506b1c0` | 26493 |
+| `probe/README.md` | `5b97af5c05c8603bddb2938e4d6526db7f600b5f93c6100ae5632f294eb70167` | `c3677e354309c8fdc8cc46e46d1bf74e98ec4464a266cc0b7a5b38bf65a3f573` | 19123 |
+
+Ngoài ra `probe/x_feasibility/__init__.py` đã đổi ở một packet riêng (`LEASE-TC-PROBE-e2`):
+`PROTOCOL_VERSION` `@0.3.0` → `@0.4.0` theo `collector-probe.md` v0.4.0. Hợp đồng nay ở **v0.5.0** (§9.2
+REQ-A6 RESOLVED) — hằng số đang chậm một minor; cần một packet nhỏ nữa hoặc một ruling rằng nó chỉ theo
+minor có ý nghĩa với probe.
+
+**Test sau FIX2:** card 162 passed (156 + 6), 0 failed. Toàn cây repo: **1048 passed, 3 xfailed, 0 failed** —
+hai fail tôi báo ở mục 5 (`test_migration_chain_resolves_to_a_single_head`,
+`test_collector_resume_after_challenge`) nay đã được chính các gói sở hữu chúng sửa. `ruff` + `ruff format
+--check` + `mypy --strict` sạch trên `probe/`.
 
 ## 2. Hai điều chặn probe live — nêu tên, không diễn giải
 

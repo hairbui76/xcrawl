@@ -1119,3 +1119,903 @@ Không lệnh git mutation, không secret, không `__pycache__` lạc.
 
 Việc còn mở thuộc người khác: nhãn `.pre-commit-config.yaml` (ngoài lease), `F-A3-P4-01`
 (W4A/W4B), `E0-21` trên `test_denied_edges.py`, và re-pin P4b (WP, sau khi W1n xong ADR-0011).
+
+---
+
+# Addendum — `PKT-P0-FIX5` (composition root)
+
+- `packet_id`: `PKT-P0-FIX5` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e6` ·
+  `next_actor`: `Coordinator`. Nguồn: `WIRING-wave-1.md` hàng `G-2`/`G-1`/`G-4`;
+  `docs/owner-runbook.md` §§3–4 và bảng khoảng trống §11.
+- Gói này bị **giết giữa chừng** bởi giới hạn phiên và được **nối lại**: bốn file mới đã có
+  trên đĩa lúc nối lại, tôi đọc lại từng file, xác nhận trọn vẹn và trong lease, rồi làm tiếp.
+
+## E.1 Khiếm khuyết, nói bằng một câu
+
+`create_app()` gắn router của mọi card nhưng **không dựng service nào và không đọc database URL
+nào**. `RR_DATABASE_URL` chỉ Alembic đọc. Nên trên một tiến trình thật, `POST /v1/auth/login`
+trả **500** kèm `AttributeError: 'State' object has no attribute 'auth_service'`, và Owner
+không kiểm được gì đầu-cuối.
+
+Điều đó **đúng** cho Giai đoạn 0 — một factory trần không cấu hình thì không được bịa ra chỗ
+lưu trữ — nhưng không ai lấp chỗ trống ấy sau đó.
+
+## E.2 Đã làm gì
+
+| File | Op | sha256 | Bytes |
+| --- | --- | --- | --- |
+| `server/app/settings.py` | CREATE | `89f943fdd5f9655d3317b82f4eb4499f63af493bfd84576ebe4dc209d309d3fc` | — |
+| `server/app/wiring.py` | CREATE | `7e0e1336a58a2c3b1a834fb42e6068b6362a0b3fcf4ae7ac65c9b46b14ddf053` | — |
+| `tools/rr_admin.py` | CREATE | `78ad67d8831183ba9fab4785658d2c9a91113f85f183cd28c6bd855e7f45a5f0` | 8 863 |
+| `server/tests/test_wiring.py` | CREATE | `3c9983bfdf4382c8db6c05e5133c499e0652c17aad93f177b9ce4d42cdd86fc4` | 11 199 |
+| `server/app/main.py` | MODIFY (factory only) | `7bafc3ffff0ad8952ab9bfa6cf1078c5f652639d845a4f6f0ba51cce99ed0a1b` | — |
+| `Makefile` | MODIFY | `3a5a6c6eadcb077ba81139a81131665767424ed1571f46cb218382937825568b` | — |
+| `README.md` | MODIFY (§2) | `13049437f7373ca355dd3306b2848911fea827461c9a930f167fb2b07192789a` | — |
+| `docs/owner-runbook.md` | MODIFY (§2.2, §3, §4, §11) | `f90a82604429b6086944316fc0e7dfd687a2ff13b2b02bbd46352e74be38381c` | — |
+
+### `settings.py` — một chỗ duy nhất biến môi trường thành giá trị có kiểu
+
+`RR_DATABASE_URL` (nhận cả đường dẫn trần lẫn URL `sqlite+pysqlite:///`), `RR_DATA_DIR`,
+`RR_TIMEZONE`, `RR_SCHEDULE_SLOTS`, `RR_PROVIDER_CONFIG`, và bốn secret. Ba nguyên tắc:
+
+* **Không secret nào có mặc định.** Thiếu `RR_TELEGRAM_WEBHOOK_SECRET` ⇒ `None` ⇒ adapter từ
+  chối mọi update. Bịa một giá trị sẽ biến "chưa cấu hình" thành "đã cấu hình bằng thứ đoán
+  được".
+* **Token cấu hình bằng hash** (`RR_*_TOKEN_SHA256`), qua `TokenRegistry.from_hashes` — server
+  không bao giờ phải giữ token để nhận ra token.
+* **Số của Owner không bị bịa ở đây.** Timezone và slot có mặc định, nhưng đúng là hai giá trị
+  Owner đã chấp nhận (`OD-20260907-01` mục 4 và 20) và được ghi rõ như vậy; `REQ-OQ05` vẫn phải
+  đo lại slot sau M0. Timezone và slot được **parse ngay lúc khởi động**, nên cấu hình sai fail
+  ở chỗ rẻ nhất thay vì thành một đợt chạy bị lỡ vài giờ sau.
+
+### `wiring.py` — composition root, dựng **đúng như test của từng card dựng**
+
+Tôi đọc fixture của từng card rồi mirror: `IngestContext(engine, owner_id, identity, storage_guard)`,
+`DeliveryContext(engine, storage)`, `AnalysisContext(engine, owner_id, storage_guard)`,
+`TelegramContext(engine, owner_id, webhook_secret, storage_guard)`,
+`JobContext(engine, owner_id, ScheduleSettings(...), storage_guard, checkpoint_port, alert_port)`,
+cộng `engine`, `auth_service`, `token_registry`, `owner_session_authenticator`.
+
+**Không chữ ký service nào bị đổi.** Hai adapter nhỏ (`_CheckpointAdapter`,
+`_AlertIntentAdapter`) chỉ nối *hình dạng* — port là object-có-method, service là hàm nhận
+context trước — và cả hai **gọi thẳng hàm thật đã ship**, không phải fake. Port identity thì
+thậm chí không cần adapter: **module** `server.app.identity.service` thoả `IdentityPort` theo
+cấu trúc, nên hiện thực thật nằm thẳng trong đường đi.
+
+`owner_id` đọc từ hàng `owner` lúc nối. Chưa bootstrap ⇒ trả `None`, các context owner-scoped
+**không được đặt**, và lý do ghi rõ *"chạy `bootstrap-owner`, rồi khởi động lại"*. Server vẫn
+boot được — thà nói thật còn hơn từ chối khởi động.
+
+### `main.py` — chỉ sửa factory, mọi khối card giữ nguyên từng byte
+
+Thêm **một** tham số `lifespan` (mặc định `None`) và đổi dòng cuối thành
+`app = create_app(lifespan=_wire_on_startup)`. Hai mươi dấu phân định khối của các card **không
+đổi**.
+
+Vì sao là lifespan chứ không phải nối lúc import: **import `server.app.main` không được tạo file
+database.** Việc thu thập test import module này hàng chục lần, và `rr_admin status` cũng import
+nó để hỏi "một server *sẽ* nối những gì". `create_app()` gọi trần **vẫn trần** — điều mà
+`test_the_bare_app_answers_401_not_500_on_a_protected_route` khẳng định đích danh, và mọi
+harness của card dựa vào.
+
+### `tools/rr_admin.py` — ba lệnh
+
+* `migrate` — `alembic upgrade head` **từ thư mục nào cũng được** (`G-4`). Nó **không** sửa
+  `server/alembic.ini` hay `server/migrations/env.py`: `env.py` từ chối đoán vị trí database và
+  chỉ đọc `RR_DATABASE_URL`, nên `migrate` đặt biến đó quanh lần upgrade rồi trả lại — **đúng
+  cách fixture của card đã làm** (`tests/integration/test_denied_edges.py::_migrate`).
+* `bootstrap-owner` — `getpass` hỏi hai lần, đọc được từ stdin để pipe từ file `0600`, và **không
+  có `--password`**. In **đúng một dòng: ULID**. Mật khẩu < 8 ký tự bị chặn tại console và
+  **không ghi gì**.
+* `status` — phân biệt bốn trạng thái (`absent` / `unmigrated` / `no owner row` / `ready`) và
+  liệt kê những gì sẽ được nối cùng những gì **không**, kèm lý do. Nó dựng một app thật rồi hỏi
+  chính app đó, thay vì in ý kiến riêng về wiring.
+
+## E.3 Cái **không** nối — và vì sao đó là câu trả lời đúng
+
+Packet dặn: *"nếu một service cần thứ mà chỉ test của nó cung cấp, hãy nối thứ đó, đừng stub"*.
+Có bốn chỗ **không nối được mà không stub**, nên tôi để trống và ghi lý do vào chính đầu ra của
+`status`:
+
+| Không nối | Lý do |
+| --- | --- |
+| `report_context` | `PublishContext` **bắt buộc** `tag_port` và `embedding_port`. `TagConfigVersionPort` không có hiện thực nào (`CR-TC-REPORT-01`), `LocalEncoder` chỉ có hiện thực trong test vì model còn là `REQ-OQ09`/`REQ-A3`. Cắm encoder băm của test vào deployment thật sẽ **ghi vector mà không model nào sinh ra** — im lặng và sai. → `CR-P0-07` |
+| `delivery.transport`, `analysis.provider_config`/`secrets` | cần credential; `MOD-secret-service` chưa tồn tại (`G-6`, wave 2). Cả hai class **được thiết kế để suy giảm** (`require_transport()` ném `DeliveryDependencyUnavailable`), nên route tồn tại và từ chối trung thực |
+| `telegram_ingress_secret` | chưa đặt env ⇒ mọi update bị từ chối — default-deny |
+| `research_connector` | bốn dữ kiện `REQ-A6` còn `PLACEHOLDER_KC` |
+
+Mọi router trong repo được viết để **fail closed**: thiếu context ⇒ 500 INTERNAL, thiếu
+credential ⇒ 401, thiếu secret Telegram ⇒ từ chối. Nên để trống là **ồn ào và an toàn**, còn cắm
+placeholder là **im lặng và sai**. Đó là toàn bộ lý do của mục này.
+
+## E.4 Ba khiếm khuyết WC tìm ra trong `wiring.py` — đã sửa
+
+WC nối vòng lặp collector qua `wiring.py` và tìm ra ba lỗi **của tôi**. Tôi ghi chúng ở đây
+đầy đủ vì chúng là bằng chứng tốt nhất rằng một composition root chỉ được kiểm thật khi có
+người thật đi qua nó.
+
+### `CR-TC-COLLECTOR-11` (chặn) — adapter mở writer SQLite **thứ hai**
+
+`jobs.report_stop` gọi `AlertIntentPort` **bên trong** `engine.begin()` của chính nó. Bản đầu
+của `_AlertIntentAdapter` bỏ qua điều đó và để `create_intent` mở transaction riêng, nên SQLite
+thấy writer thứ hai trên database mà caller đang giữ và ném `database is locked`. Hệ quả:
+đường "alert khi run cần người" **không thể thành công trong bất kỳ wiring nào** — không phải
+lỗi cấu hình mà là một deadlock xây sẵn trong composition root.
+
+Sửa: adapter nhận `connection` như **keyword tuỳ chọn** và truyền thẳng cho
+`delivery.create_intent(connection=...)` — hàm đó vốn đã có tham số ấy, đúng theo outbox
+pattern (intent phải rơi vào **cùng commit** với thay đổi trạng thái sinh ra nó). Để tuỳ chọn
+là cách phối hợp với `W6A`, người đang mở rộng `AlertIntentPort` để truyền connection: caller
+hôm nay bỏ trống, caller ngày mai truyền vào, và **không cần hai phiên bản adapter**. Tôi
+**không** sửa `server/app/jobs/` — ngoài lease, và signature là việc của W6A.
+
+**Kết quả đo:** `tests/integration/test_collector_loop.py::test_the_wired_alert_adapter_cannot_create_an_alert_today`
+nay báo **`[XPASS(strict)]`** — tức lỗi đã hết và strict xfail của WC cần được lật. Việc lật là
+của WC (file của họ).
+
+### `CR-TC-COLLECTOR-09` — `IngestContext` không có `assignment` port
+
+Thiếu port này thì `ingest.submit_batch` không kiểm được lease mà batch khai — đúng cái kiểm
+làm batch của một collector cũ **bật ra** thay vì rơi vào. Thêm `_AssignmentAdapter` đọc
+`assignment_lease` theo `owner_id` + `job_id` + `lease_id`, trả `LeaseSnapshot(run_id,
+lease_epoch, revoked)`; không có hàng ⇒ `None`, thứ mà ingest đã coi là "không có lease" —
+hướng an toàn. Đọc bảng trực tiếp vì `server/app/jobs/` không xuất hàm nào có hình dạng của
+port, và tôi không được sửa cây đó.
+
+### `CR-TC-COLLECTOR-10` — `app.state.collector_token` không bao giờ được đặt
+
+`ingest.submit_batch` và `ingest.commit_checkpoint` so token bearer với
+`app.state.collector_token` bằng `hmac.compare_digest`. `TokenRegistry` chứa **hash**, nên
+không phục vụ được hai route đó: một deployment nối đầy đủ vẫn **401 mọi lời gọi của
+collector**. Thêm `RR_COLLECTOR_TOKEN` (dạng rõ) vào settings, đặt vào `app.state`, và **băm
+chính nó** để nạp vào registry khi không có `RR_COLLECTOR_TOKEN_SHA256` — hai đường xác thực
+nay đồng ý với nhau thay vì cho qua ở route này và từ chối ở route kia. Không đặt ⇒ vẫn không
+đặt: router đọc "chưa cấu hình" là `UNAUTHORIZED`, không bao giờ là "cho qua".
+
+**Một bài học về tương thích.** Lần sửa đầu tôi thêm `collector_token` như **trường bắt buộc**
+của `Settings` và lập tức làm hỏng `tests/integration/test_collector_loop.py`, nơi WC đã dựng
+`Settings(...)` từ trước. Trường nay ở **cuối danh sách và có mặc định `None`** — nó là cấu
+hình tuỳ chọn về bản chất, và một trường bắt buộc sẽ bắt mọi consumer sửa theo vì một giá trị
+mà phần lớn deployment không đặt.
+
+## E.5 Bằng chứng — `EV-P0-14`, `SELF_VALIDATION`
+
+### Đường Owner đi, đo trên **tiến trình uvicorn thật** (không phải TestClient)
+
+Database trắng ở một thư mục tạm, `make migrate`, `make bootstrap`, rồi
+`uv run uvicorn server.app.main:app --port 8099`, và `curl` từ terminal khác:
+
+| Bước | Quan sát |
+| --- | --- |
+| `rr_admin migrate` (từ **gốc repo**) | chuỗi `Running upgrade …` tới `0013_tc_backfill_pending_ledger`, `done` |
+| `rr_admin bootstrap-owner` (stdin) | **một dòng**: `01M1ZTTS00K2GTRJBFYJBRKFM6` |
+| uvicorn khởi động | `Application startup complete.` — lifespan nối xong |
+| `GET /healthz` | **200** |
+| `GET /v1/health/readiness` chưa đăng nhập | **401** `UNAUTHORIZED`, `details_safe.required_auth_scope=owner_session` |
+| **`POST /v1/auth/login`** | **200** — `{"authenticated":true,"csrf_token":"…","expires_at":"…","schema_version":"0.3.0"}`, cookie `rr_session` + `rr_csrf`. **Đây chính là lời gọi runbook ghi là 500.** |
+| `GET /v1/health/readiness` có phiên | **200** — `{"modules":{...},"storage_health":"healthy",…}` |
+| `GET /v1/runs` có phiên | **200** — `{"runs":[]}` |
+
+### `server/tests/test_wiring.py` — 9 test, **không monkeypatch gì**
+
+Chạy `rr_admin` như **subprocess** với `cwd` là một thư mục tạm (không phải gốc repo), nên nó
+kiểm đúng hai điều `G-4` nói tới: lệnh chạy được như một lệnh, và chạy được từ thư mục bất kỳ.
+Không test nào gán `app.state.*` bằng tay.
+
+| Nhóm | Khẳng định |
+| --- | --- |
+| migrate | file database xuất hiện; `alembic_version` không rỗng |
+| bootstrap | in ULID 26 ký tự; **không** in mật khẩu, **không** chuỗi `argon2`, **không** ký tự `$` (một chuỗi PHC sẽ có) |
+| bootstrap ngắn | exit ≠ 0, `at least 8 characters`, và **không ghi gì** (`resolve_owner_id` vẫn `None`) |
+| login | 200 + hai cookie |
+| readiness | **401 trước** khi đăng nhập, **200 sau** |
+| `/v1/runs` | 200 và **rỗng** — route đọc `job_context`, nên nó chứng minh một context owner-scoped đã thật sự được dựng |
+| báo cáo wiring | `runtime.owner_id` khớp; mỗi mục `unwired` **có lý do** |
+| chưa bootstrap | `job_context` **không** được đặt; lý do nêu đúng lệnh cần chạy |
+
+### Các cửa
+
+| Cửa | Kết quả |
+| --- | --- |
+| `uv run mypy` | **`Success: no issues found in 100 source files`** (phạm vi đã mở rộng ở `PKT-P0-FIX4`) |
+| `uv run ruff check .` | sạch trên **mọi file trong lease của tôi**; xem E.6 |
+| `uv run ruff format --check .` | sạch trên mọi file của tôi; xem E.6 |
+| `evidence/tools/e0_check.py` | **27 checks — PASS 27 · FAIL 0 · violations 0** |
+| `evidence/tools/verify_cards.py` | **13 PASS / 0 FAIL trên 20 card, 3 928 assertion, 0 violation** |
+| `test_collector_loop.py::test_the_wired_alert_adapter_cannot_create_an_alert_today` | **`XPASS(strict)`** — `CR-TC-COLLECTOR-11` hết; WC lật xfail |
+
+### Toàn bộ suite
+
+**1 133 test: 1 119 passed · 11 failed · 3 xfailed.** Không lỗi nào nằm trong file của gói này.
+
+| File | Số | Của ai |
+| --- | --- | --- |
+| `test_worker_loop.py` | 7 | `W3B`. Lỗi nằm trong **setup của chính test**: `enqueue_one` → `analysis.enqueue_tasks` ném `VALIDATION_ERROR: source_fingerprint của caller khác với fingerprint tính từ nguồn đã commit`. Không chạm `wiring.py` |
+| `test_task_credential_lease.py` | 2 | card credential/secret, không phải gói này |
+| `test_collector_loop.py::test_the_claim_response_validates_against_its_own_schema` | 1 | `WC` |
+| `test_collector_loop.py::test_the_wired_alert_adapter_cannot_create_an_alert_today` | 1 | **`XPASS(strict)` — tin tốt**: `CR-TC-COLLECTOR-11` đã hết, xfail của WC cần lật |
+
+Hai test `tests/contract/test_x_probe_*` báo lỗi khi chạy **sau** module khác import
+playwright, nhưng **pass khi chạy riêng** (exit 0). Đó là hiện tượng thứ tự test thuộc
+`PKT-TC-PROBE-FIX2`/card collector, không phải gói này.
+
+> **Ghi trung thực về phép đo.** Ba lần chạy suite đầy đủ bị **giết ở khoảng 98–100 %** trước
+> khi pytest kịp in dòng tổng kết — máy đang chạy 5 agent song song. Con số trên được **đếm
+> lại từ chuỗi ký tự tiến độ** của lượt chạy cuối (`.` `F` `x`) cộng danh sách `FAILED` mà
+> pytest đã in xong. Nó là phép đếm chính xác của lượt chạy ấy, nhưng nó **không** phải dòng
+> tổng kết do pytest tự in, và tôi nói rõ điều đó thay vì trích một dòng mình không có.
+
+## E.6 Cửa đỏ **không** thuộc gói này
+
+| Cửa | Trạng thái | Của ai |
+| --- | --- | --- |
+| `ruff check .` | 1 lỗi — `SIM300` trong `tests/integration/test_worker_loop.py` | `W3B` |
+| `ruff format --check .` | 3 file — `worker/app/{loop,main}.py`, `tests/integration/test_worker_loop.py` | `W3B` |
+
+Mọi file trong lease của tôi sạch cả hai cửa. Tôi **không** sửa file của họ.
+
+## E.7 Điều gói này **không** chứng minh
+
+- Composition root **nối đúng thứ nó nối**; nó **không** chứng minh mỗi service đúng. Đó là
+  việc của test từng card.
+- Đường Owner được chứng minh tới `/v1/runs`. **Chưa** chứng minh: publish một report (thiếu
+  `report_context`), gửi Telegram (thiếu transport), chạy AI (thiếu provider) — cả ba đều
+  thiếu **credential hoặc một quyết định**, không thiếu wiring.
+- `_AssignmentAdapter` đọc bảng lease trực tiếp. Nó đúng theo hình dạng port, nhưng nó là một
+  **người đọc thứ hai** của một bảng mà `MOD-job-service` sở hữu. Nếu jobs đổi ngữ nghĩa cột
+  `state`, adapter này lệch **âm thầm**. Đường sạch hơn là jobs xuất một hàm đọc hình dạng
+  port — ghi lại thành `CR-P0-08`.
+- Đây là `SELF_VALIDATION`. Ba lỗi WC tìm ra là bằng chứng đúng cho việc self-validation của
+  người viết composition root không thay được một người thật đi qua nó.
+
+## E.8 Kết thúc
+
+`lease_released_at`: **2026-09-08T04:05Z** (`LEASE-P0-e6`). Tám file trong lease được ghi, cộng
+addendum này. Không lệnh git mutation, không secret, không `__pycache__` lạc; database dùng để
+đo nằm trong thư mục scratch, không trong repo.
+
+CR mở từ gói này: **`CR-P0-07`** (`report_context` không nối được: `MOD-tag-service` chưa có
+hiện thực, model embedding chưa chọn) và **`CR-P0-08`** (`MOD-job-service` nên xuất một hàm đọc
+lease hình dạng `AssignmentPort`, thay cho người đọc thứ hai trong `wiring.py`). Việc của người
+khác: WC lật hai strict xfail; W6A truyền `connection` qua `AlertIntentPort`; W3B sửa fixture
+`source_fingerprint` và hai cửa lint.
+
+---
+
+# Addendum — `PKT-P0-FIX6` (sinh lại sau `AMD-ENT-maintenance-01`)
+
+- `packet_id`: `PKT-P0-FIX6` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e7` ·
+  **`status`: `DONE_WITH_CONCERNS`** · `next_actor`: `Coordinator` ·
+  `lease_released_at`: 2026-09-09T02:40Z.
+- Lease: `shared/rr_contracts/**` (file sinh ra), `web/src/generated/**` (file sinh ra),
+  `server/app/wiring.py` (một sửa mypy), addendum này.
+
+## F.1 Cổng
+
+Gói này chờ `W3n`. Kiểm trực tiếp trước khi chạy: `evidence/handoffs/PC02-handoff.md` dòng
+2104 mang `# ADDENDUM — PKT-PC02-FIX18`, lease `LEASE-PC02-e22`, và
+`lease_released_at 2026-09-08T07:05Z` với `next actor | WS (sinh lại bộ model) → WP (re-pin)`.
+Cổng mở, và thứ tự vẫn là **WS sinh lại trước, WP re-pin sau** — điều đó giải thích mục F.5.
+
+Trước khi sinh lại, hai nguồn của bộ sinh đã trôi:
+
+| Nguồn | Trong manifest | Trên đĩa |
+| --- | --- | --- |
+| `contracts/ports.yaml` | `c15b676b5619…` | `c7c7734001b9…` |
+| `contracts/http/openapi.yaml` | `28b3820e9837…` | `a3e7e42203bd…` |
+
+`E0-19` vì vậy đỏ với **3 violation** (`ports.yaml` trong manifest Python; `openapi.yaml`
+trong **cả hai** manifest).
+
+## F.2 Sinh lại — `make gen`, rồi `make gen-check`
+
+Cả hai **exit 0**. Không sửa tay một ký tự nào trong hai cây sinh ra.
+
+**16 file trước, 16 file sau — không thêm, không bớt. Sáu file đổi, 16 dòng.**
+
+| File | sha256 sau |
+| --- | --- |
+| `shared/…/generated/GENERATED_FROM.json` | `8e4c5a3744461fb3fe89a6378a1a6a0fc5b55a58e3588ebaa8772c0b899e665e` |
+| `shared/…/generated/operations.py` | `8b5b195e3cdc2c298343133653fc3fb82a72ff297516fcb05bdda4348af4f56b` |
+| `shared/…/generated/constants.py` | `85261856b33b4e3e64ad1e70e84ccd40787721b476fd225cec9b4925a7a3bb54` |
+| `shared/…/generated/__init__.py` | `85e8e608f835a7b7bcc63803f0c3c1b02ca7193f7eb35a9bb076018413bbf633` |
+| `web/src/generated/GENERATED_FROM.json` | `8db451f82f00bac269860a4a62e512ed779701d1c1ef119610b54609a401b01c` |
+| `web/src/generated/openapi.d.ts` | `819fba791d994c9ca6ad27de0c830bc2b166ff6f9dcf9e05219e09a9787c52e7` |
+
+Nguồn mới được ghi vào manifest: `contracts/ports.yaml`
+`c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412` (128 872 B),
+`contracts/http/openapi.yaml`
+`a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d` (231 727 B).
+
+### Cái gì thực sự đổi trong **nội dung** sinh ra
+
+`git diff -U0` trên cả sáu file, bỏ dòng header và dòng hash: còn **đúng bốn dòng**, và cả
+bốn là **văn xuôi tài liệu** kéo theo từ `description` của `openapi.yaml`:
+
+```
+- Ba tập bảng (37 xóa / 21 giữ / 2 không bao giờ xóa) …
++ Ba tập bảng (37 xóa / 22 giữ / 2 không bao giờ xóa) …
+- GIỮ LẠI (21 bảng): … `purge_challenge`, `worker_registration` …
++ GIỮ LẠI (22 bảng): … `purge_challenge`, `worker_registration`, `maintenance_window` …
+```
+
+**Không một operation id, mã lỗi, thành viên enum hay chữ ký kiểu nào đổi.** `operations.py`
+vẫn 85 operation, `errors.py` vẫn 28 mã, `states.py` vẫn 16 enum; diff của
+`operations.py`/`constants.py` ngoài header là **rỗng**. Đó đúng là hình dạng mà
+`AMD-ENT-maintenance-01` phải để lại ở hạ nguồn: nó thêm một **bảng**, và bảng không đi qua
+dây — thứ duy nhất lan tới code sinh là câu văn mô tả tập giữ lại của `data.purge_all`.
+
+## F.3 `server/app/wiring.py:153` — lỗi mypy WR báo **không tái hiện**
+
+`uv run mypy` → **`Success: no issues found in 100 source files`**, trước và sau gói này.
+
+Lỗi WR báo là `Module "server.app.delivery.service" does not explicitly export attribute
+"DeliveryIntentKind"`, và tôi **đã sửa nó ở `PKT-P0-FIX5`**: enum ấy được định nghĩa ở
+`rr_contracts.generated.states`, nên `_AlertIntentAdapter` nay import thẳng từ đó thay vì từ
+`delivery.service` (nơi nó không nằm trong `__all__`). Báo cáo của WR có trước bản sửa đó.
+
+**Tôi không sửa gì thêm ở dòng 153.** Bịa ra một thay đổi cho một file đã type-check sạch chỉ
+để "hoàn thành mục 2 của packet" là làm hỏng bản ghi, không phải làm xong việc.
+
+## F.4 Bằng chứng — `EV-P0-15`, `SELF_VALIDATION`
+
+| Cửa | Exit | Kết quả |
+| --- | --- | --- |
+| `make gen` | **0** | 7 model · 28 mã lỗi · 85 operation · 16 state enum; `openapi.d.ts` 403 418 B |
+| `make gen-check` | **0** | `generated tree matches a fresh run of the generator` **và** `generated client matches a fresh run of the generator` |
+| `shared/rr_contracts/tests/test_generated_matches_contracts.py` | **0** | **4 passed** |
+| `web/tests/contract/generatedClient.test.ts` | **0** | **4 passed** (1 file) |
+| **`e0_check.py --only E0-19`** | **0** | **PASS 1 · FAIL 0 · violations 0** (từ 3) |
+| `e0_check.py` (đầy đủ), 07:16:24Z | **0** | **27 checks — PASS 27 · FAIL 0 · violations 0** |
+| `e0_check.py` (đầy đủ), 07:21:23Z — **sau khi công cụ bị sửa** | 1 | **PASS 26 · FAIL 1 · 6 violation** ở `E0-18-purge-set-agreement`; xem F.4.1 |
+| `uv run mypy` | **0** | `Success: no issues found in 100 source files` |
+| Toàn bộ suite | — | **1 134 test: 1 128 passed · 2 failed · 4 xfailed** |
+
+### F.4.1 `E0-18` chuyển đỏ **giữa hai lượt chạy của tôi** — vì công cụ đổi, không vì tôi
+
+Tôi chạy E0 đầy đủ hai lần, cách nhau năm phút, trên cùng một cây file sinh ra:
+
+| Lượt | Giờ | Kết quả |
+| --- | --- | --- |
+| 1 | 2026-09-09T07:16:24Z | **27/27 PASS**, 0 violation |
+| 2 | 2026-09-09T07:21:23Z | **26 PASS / 1 FAIL**, 6 violation |
+
+Nguyên nhân **không phải** addendum này và **không phải** việc sinh lại: `mtime` của
+`evidence/tools/e0_check.py` là **2026-09-09T07:21:37Z** — một gói khác (PC09/`W6n`) siết
+`E0-18-purge-set-agreement` **trong lúc tôi đang chạy**. Check mới bắt đúng thứ nó sinh ra để
+bắt:
+
+| File | Vi phạm |
+| --- | --- |
+| `acceptance/fixtures/recovery/README.md` | còn ghi tập giữ lại là **20** bảng (và "39 bảng dữ liệu"), trong khi `entities.yaml` `TXN-purge-all` nay nói **22** |
+| `acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json` | còn ghi **20**; `$.expected.retained_table_count` là **21**, tập thật có **22** |
+
+`mtime` của cả hai file là **2026-09-08 13:49** — chúng không đổi trong gói này. Đây là phần
+lan truyền `AMD-ENT-maintenance-01` còn sót ở `acceptance/`, thuộc `W3n`; `acceptance/` là
+read-only với tôi và tôi **không** chạm vào.
+
+**Tôi giữ cả hai con số ở bảng trên thay vì chỉ ghi con số đẹp.** Lượt 07:16 là phép đo thật
+tại thời điểm đó; lượt 07:21 cũng vậy. Xoá lượt sau sẽ để lại trong handoff một khẳng định mà
+người đọc tiếp theo chạy lại sẽ thấy sai.
+
+### Hai fail — không phải của gói này, và **không tất định**
+
+Cả hai ở `tests/integration/test_worker_loop.py`
+(`test_a_full_cycle_commits_one_analysis_row_through_the_real_routes`,
+`test_a_long_inference_is_heartbeated_and_never_outlives_its_lease`). Chạy **riêng file/test
+đó thì PASS (exit 0)** — nên chúng phụ thuộc thứ tự chạy, không phải hồi quy do sinh lại. Ở
+`PKT-P0-FIX5` tôi đã chẩn đoán nguyên nhân cùng họ: setup của chính test gọi
+`analysis.enqueue_tasks` với `source_fingerprint` lệch. Thuộc `W3B`.
+
+> **`tests/contract/test_schema_matches_entities.py` nay XANH** (exit 0). Packet dặn nó "đỏ
+> theo thiết kế cho tới khi WR tạo `maintenance_window`" — migration của WR **đã landing**,
+> nên kỳ vọng đó đã hết hạn. Tôi không chạm vào nó.
+
+## F.5 `verify_cards` đỏ — đúng lịch, không phải hỏng
+
+`verify_cards.py`: **12 PASS / 1 FAIL, 3 941 assertion, 73 violation**, tất cả ở check `pins`,
+trải trên sáu file hợp đồng mà `W3n` vừa sửa (`modules.yaml` 15, `ports.yaml` 14,
+`openapi.yaml` 10, `ops/secrets.md` 4, `ui/screens.yaml` 2, `ops/backup-restore.md` 1).
+
+Đây **đúng là thứ tự đã định**: `PKT-PC02-FIX18` ghi `next actor | WS (sinh lại) → WP
+(re-pin)`. Card sẽ xanh lại khi **WP** re-pin. Tôi không sửa card — ngoài lease, và một pin
+lệch đang làm đúng việc của nó là báo `STALE`.
+
+`ruff check .` còn 4 lỗi, tất cả ở card secret/credential
+(`tests/contract/test_secret_scope_matrix.py` F401; `tests/integration/test_task_credential_lease.py`
+SIM117 ×2, E501). Không file nào trong lease của tôi. Không sửa.
+
+## F.6 Điều gói này **không** chứng minh
+
+Nó chứng minh **cây sinh ra khớp hợp đồng hôm nay** — không hơn. Nó không nói gì về việc
+`maintenance_window` được hiện thực đúng (WR), cũng không nói gì về việc bốn dòng văn xuôi mới
+mô tả đúng tập bảng thật; `E0-18-purge-set-agreement` là cửa cho vế đó và nó xanh, nhưng nó
+đọc lời khai chứ không đọc database. `SELF_VALIDATION`, không phải audit độc lập.
+
+## F.7 Kết thúc
+
+`lease_released_at`: **2026-09-09T02:40Z** (`LEASE-P0-e7`). Sáu file sinh ra được **sinh lại**
+(không sửa tay), `server/app/wiring.py` **không đổi** (lỗi đã hết từ trước), cộng addendum
+này. Không lệnh git mutation, không mạng, không secret, không `__pycache__` lạc.
+
+Việc của người khác: **WP** re-pin 20 card; **W3n** hai file `acceptance/fixtures/recovery/`
+còn ghi 20/21 bảng giữ lại thay vì 22 (`E0-18` mới bắt được — F.4.1); **W3B** hai test không
+tất định ở `test_worker_loop.py` và 4 lỗi `ruff`; kỳ vọng "`test_schema_matches_entities` đỏ
+theo thiết kế" nay **hết hạn** và nên được gỡ khỏi packet kế tiếp.
+
+---
+
+# Addendum — `PKT-P0-FIX7` (`_AlertIntentAdapter` đọc sai khóa)
+
+- `packet_id`: `PKT-P0-FIX7` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e8` ·
+  `next_actor`: `Coordinator` · `lease_released_at`: 2026-09-09T08:05Z.
+- Lease: `server/app/wiring.py` + addendum này. Không file nào khác.
+
+## G.1 Lỗi — một dòng, và nó **im lặng**
+
+`delivery.create_intent` trả `{"intent_id": …, "delivery_id": …}` trên **cả ba** nhánh return
+(`server/app/delivery/service.py:623, 645, 670`). `_AlertIntentAdapter` của tôi đọc
+`result.get("delivery_intent_id") or result.get("id")` — **không khóa nào trong hai khóa đó tồn
+tại**. Giao của hai tập khóa là rỗng, nên hàm **luôn** trả `None`.
+
+`jobs.report_stop` đọc `None` là "không có intent nào được tạo": nó bỏ qua
+`UPDATE run SET alert_intent_id`, và trả `alert_created: False`. Kết quả trên một lần chạy
+thật: **hàng outbox đã được tạo, nhưng `run.alert_intent_id` vẫn `NULL`** và báo cáo nói không
+có alert nào. Không exception, không log lỗi — một **câu trả lời sai im lặng**, loại tệ nhất.
+
+**`delivery_id` là cái bẫy.** Nó là id của hàng *delivery*, một entity khác. Nếu tôi đã đọc nó
+thì kết quả sẽ là một id **trông hợp lệ nhưng trỏ nhầm chỗ** — tệ hơn hẳn `None`, vì `None`
+ít nhất còn để lại `NULL` mà người ta nhìn ra.
+
+## G.2 Sửa
+
+```python
+-        intent_id = result.get("delivery_intent_id") or result.get("id")
++        try:
++            intent_id = result["intent_id"]
++        except KeyError:
++            raise KeyError(
++                "delivery.create_intent returned no 'intent_id'; its return shape changed "
++                f"(got keys: {sorted(result)})"
++            ) from None
+```
+
+Đọc `intent_id`, và **ném lỗi** khi khóa vắng mặt thay vì suy biến về `None`. Một `intent_id`
+không có nghĩa là hình dạng return của service đã đổi; hấp thụ điều đó **chính là** cách khiếm
+khuyết này sống sót qua lần review đầu. Khối comment tại chỗ ghi cả ba điều: khóa đúng, cái bẫy
+`delivery_id`, và vì sao im lặng bị cấm ở đây.
+
+| File | sha256 sau |
+| --- | --- |
+| `server/app/wiring.py` | `1bfd9cd8b64503661d93f994f7256ae9e4031c0a6cc983fa409a4646dc6ed367` |
+
+## G.3 Bằng chứng — `EV-P0-16`, `SELF_VALIDATION`
+
+| Cửa | Kết quả |
+| --- | --- |
+| `tests/integration/test_collector_loop.py` + `server/tests/test_wiring.py` | **25 test: 24 passed**, 1 là `XPASS(strict)` — xem dưới |
+| **`test_the_run_points_at_the_alert_intent_it_caused`** | **`[XPASS(strict)] CR-TC-COLLECTOR-15`** — xfail nghiêm của WC nay **đậu**; WC cần lật nó |
+| `uv run mypy` | `Success: no issues found in 100 source files` |
+| `uv run ruff check` / `format --check` trên file đã sửa | sạch |
+
+**Vì sao một lỗi một dòng lại lọt qua `PKT-P0-FIX5`.** Bộ test của tôi ở gói đó chứng minh
+đường Owner tới `/v1/runs`, và `/v1/runs` **không đi qua** đường alert. Không assertion nào của
+tôi từng gọi `create_alert_intent`. Phát hiện đến từ WC, người nối vòng lặp collector thật qua
+composition root — lần thứ hai trong ba gói mà một lỗi trong `wiring.py` chỉ hiện ra khi có
+người thật đi qua nó, không phải khi tác giả tự kiểm. Đó là lập luận mạnh nhất tôi có cho việc
+`wiring.py` cần một consumer thật chứ không phải thêm test của chính tôi.
+
+## G.4 Mở rộng lease — `CR-TC-SECRET-06` và `CR-TC-SECRET-02`
+
+Coordinator mở rộng `LEASE-P0-e8` sang `pyproject.toml` + `uv.lock` sau khi service
+secret/settings của `WAI` landing với hai blocker triển khai thuộc về composition root.
+
+| File | Op | sha256 sau |
+| --- | --- | --- |
+| `server/app/wiring.py` | MODIFY | `9d1ad8b034d9ac2946cd0492997788336e4effc7be9819ab00ef811561da64c5` |
+| `server/app/settings.py` | MODIFY | `8c1ea267abbe855d6f70703c201fd404d2b8ac248554ee1a109a5e42a4d45c38` |
+| `server/tests/test_wiring.py` | MODIFY | `0340a881af9f4c39364b296acf27920b89ae83e76e9fa4f9fdbbdd70184b5cc9` |
+| `server/pyproject.toml` | MODIFY | `42add50b05a4099591175c24ed5d22667c11d9d186b3ae1d13f7a5f0a810bdfd` |
+| `uv.lock` | MODIFY | `b69a238c4c69e797d50c1cf14006f004ff29088db078184d6299d4d24324797d` |
+
+### `CR-TC-SECRET-02` — không có AEAD nào trong lock
+
+Thêm `cryptography>=43,<47` vào **dependency của `server`** (không phải dev group: đây là mã
+sản phẩm). Resolve → `cryptography==46.0.7`, 124 gói. Kiểm ngay bằng chính lớp của WAI:
+
+```
+CryptographyAesGcm().encrypt/decrypt  →  roundtrip ok: True, ciphertext 31 B
+```
+
+Mã hoá phong bì thật vì vậy **không còn là `NOT_RUN` ở mức thư viện**. Vế còn lại — adapter
+cipher thật đi qua `SecretStore` trong đường sản phẩm — là của `WAI` theo đúng lịch.
+
+### `CR-TC-SECRET-06` — hai context không bao giờ được dựng
+
+`/v1/settings` và mọi route `secret.*` trả **500** trên deployment thật, vì router đọc
+`getattr(app.state, "settings_context", None)` và nhận `None`. Nay cả hai được dựng đúng như
+`tests/integration/test_task_credential_lease.py` dựng, kèm một nút thắt phải cởi đúng thứ tự:
+`SettingsContext.secrets` trỏ tới secret context, còn `SecretContext.providers` là một
+`SettingsProviderView` **trên chính settings context**. Dựng settings trước, secret sau, gán
+back-reference cuối.
+
+### Master key — một chỗ tôi **lệch khỏi chữ của packet**, và vì sao
+
+Packet viết: *"refuse to start with a named reason when unset — never a default key"*. Tôi giữ
+nguyên vế thứ hai tuyệt đối, nhưng **tách vế thứ nhất làm hai điều kiện**:
+
+| Trạng thái `RR_SECRET_MASTER_KEY` | Hành vi | Lý do |
+| --- | --- | --- |
+| **Không đặt** | Server **vẫn chạy**; `SecretContext.store = None`; lý do ghi vào `unwired` | `REQ-D51` nói **không bắt buộc có key**, và `SecretContext.store` được khai `optional` **đúng vì thế** — docstring của WAI: *"a deployment with no master key configured still runs … every operation that needs one refuses with `INTERNAL`"*. Từ chối boot ở đây sẽ kéo sập cả `/v1/settings`, thứ **không cần** key — tức là làm hỏng đúng cái mà packet này yêu cầu trả 200. Và hôm nay "chưa có key" là trạng thái **bình thường**: `REQ-OQ03` chưa được trả lời |
+| **Đặt nhưng hỏng** | **Từ chối khởi động**, `RuntimeError` nêu đích danh biến và §4.1 | Đây là lỗi vận hành thật. Đi tiếp sẽ **âm thầm hạ cấp** một deployment tin rằng mình có mã hoá thành một deployment không có |
+
+Không nhánh nào sinh key, đoán key, hay dùng key mặc định.
+
+Nếu Coordinator muốn đúng chữ của packet (không key ⇒ không boot), đó là một dòng đổi và một
+CR với `REQ-D51`; tôi không tự quyết điều đó ở đây.
+
+### Test mở rộng — ba test mới trong `server/tests/test_wiring.py` (12 test, **12 passed**)
+
+`GET /v1/settings` **200** cho owner đã đăng nhập trên app đã nối; **401** khi chưa đăng nhập
+(default-deny, không phải 500 và không phải 200); và — quan trọng nhất — **không đặt**
+`RR_SECRET_MASTER_KEY` trong test, để một 200 ở đây chứng minh **context tồn tại** chứ không
+chứng minh ai đó đã cấp key. Test thứ ba khẳng định `store is None` và lý do có nêu tên biến.
+
+## G.5 Một cửa đỏ do chính thay đổi này gây ra — **ngoài lease, không sửa**
+
+`uv run mypy` → **1 lỗi**:
+
+```
+server/app/secret/store.py:103: error: Unused "type: ignore" comment  [unused-ignore]
+```
+
+Đây là hệ quả trực tiếp và **đã được WAI dự đoán bằng văn bản**. Comment ngay trên dòng đó
+viết: *"`type: ignore` because the package is not in `uv.lock` yet … **Both the ignore and the
+runtime guard below disappear when CR-TC-SECRET-02 lands the dependency**"*. Tôi vừa landing
+đúng dependency ấy, nên cái ignore nay thừa.
+
+Sửa là **xoá một dòng** trong `server/app/secret/store.py` — file của `WAI`, ngoài lease của
+tôi. Coordinator đã xếp `WAI` làm adapter cipher thật **ngay sau addendum này**, và bước đó gỡ
+cả ignore lẫn runtime guard. Tôi **không** sửa file người khác, và cũng **không** che nó bằng
+một override trong `pyproject.toml` — vá cấu hình lên một ignore đã chết còn tệ hơn để nó đỏ
+một lượt.
+
+Trước gói này mypy sạch 100 file; sau gói này 99 sạch + 1 lỗi thuộc `WAI`.
+
+## G.6 Bằng chứng sau cùng — toàn bộ suite
+
+**1 157 test: 1 153 passed · 1 failed · 3 xfailed.**
+
+Cái "failed" duy nhất là `test_the_run_points_at_the_alert_intent_it_caused` —
+**`XPASS(strict)`**, tức chính là kết quả gói này nhắm tới. Hai fail không tất định ở
+`test_worker_loop.py` (thấy ở `PKT-P0-FIX6`) **không còn xuất hiện**.
+
+| Cửa | Kết quả |
+| --- | --- |
+| Toàn bộ suite | 1 157 test · 1 153 passed · 1 `XPASS(strict)` · 3 xfailed |
+| `server/tests/test_wiring.py` | **12 passed** (9 cũ + 3 mới cho `/v1/settings`) |
+| `uv run ruff check .` | `All checks passed!` |
+| `uv run mypy` | 99 file sạch, **1 lỗi ở `server/app/secret/store.py:103`** — G.5, của `WAI` |
+| `CryptographyAesGcm` roundtrip | `True`, ciphertext 31 B — AEAD thật chạy được |
+
+## G.7 Kết thúc
+
+`lease_released_at`: **2026-09-09T09:30Z** (`LEASE-P0-e8`, đã mở rộng). Năm file được ghi
+(`server/app/wiring.py`, `server/app/settings.py`, `server/tests/test_wiring.py`,
+`server/pyproject.toml`, `uv.lock`) cộng addendum này. Mạng chỉ dùng để cài `cryptography`.
+Không lệnh git mutation, không secret, không `__pycache__` lạc.
+
+Việc của người khác: **WC** lật xfail nghiêm `test_the_run_points_at_the_alert_intent_it_caused`;
+**WAI** xoá `# type: ignore` đã chết ở `secret/store.py:103` cùng lượt làm adapter cipher thật;
+**Coordinator** quyết nếu muốn "không master key ⇒ không boot" đúng chữ packet (xem G.4) —
+điều đó cần một CR với `REQ-D51`.
+
+---
+
+# Addendum — `PKT-P0-FIX8` (`A3-P5-R1`: F-02, F-03, F-04)
+
+- `packet_id`: `PKT-P0-FIX8` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e9` ·
+  `next_actor`: `Coordinator` · `lease_released_at`: 2026-09-09T11:20Z.
+
+| File | Op | sha256 sau |
+| --- | --- | --- |
+| `server/app/wiring.py` | MODIFY | `907eb5816d70f8c7d13157d4ab2021f85cd2e2b9a8bbab0d5b476fd90d251c16` |
+| `tools/rr_admin.py` | MODIFY | `0f26be929925c1ab0eba8636a73a192be81c9e24dd99000bc9a5804fd8a96cad` |
+| `pyproject.toml` | MODIFY | `9b19b7064c67fe278eb7514fe6cc0f8880cbdfe5e127cf39050d6e5a9e4d9256` |
+| `uv.lock` | MODIFY | `74ec2846932af915a845d0c74d2384880394d144b15b92e1c60100e437eaf516` |
+| `Makefile` | MODIFY | `541e98bf47653db924fad36fbdb0b914dd12e3f2296033a0e4236bcf1ba31953` |
+| `README.md` | MODIFY | `b2bf1679893ead7f9275ba425a589d37681c5c55ab8a24393f99e5fb798df3b3` |
+| `server/tests/test_wiring.py` | MODIFY | `ec7873b0663c687a1ae21af0c9429ff88475930e16c5fdb9758fb4d6a5769e07` |
+| `tools/__init__.py` | CREATE | rỗng — cần để `tools` là một package cho console script |
+
+## H.1 `F-A3-P5-02` — lý do đã sai suốt ba giai đoạn, **trên đúng màn hình dành cho Owner**
+
+`wiring.py` in: `research_connector — REQ-A6 facts still PLACEHOLDER_KC`. Sai từ Giai đoạn 2:
+trên chính những byte đó, `contracts/retry-policy.yaml`
+`budgets.research_connector_rate_limit` mang **cả sáu giá trị** với `status: DOCS_derived`, và
+`REQ-A6` ở `XN`. Người đọc dòng ấy sẽ đi mở lại một requirement **đã đóng** — và họ đọc nó ở
+`rr_admin status`, thứ mà đợt này dựng riêng để Owner biết cái gì chạy được.
+
+Sửa theo đúng ràng buộc của audit — **đọc từ hợp đồng, đừng chép lại**:
+
+```python
+def research_connector_blockers(repo_root: Path | None = None) -> str:
+```
+
+Hàm này đọc `retry-policy.yaml` **lúc chạy**. Nửa rate-limit vì vậy tự đúng: nếu bốn dữ kiện
+có ngày nào lùi về `PLACEHOLDER_KC` thì dòng này nói thế **vì file nói thế**; còn khi chúng
+vẫn đã giải thì nó thôi khẳng định ngược lại. Hai blocker thật được nêu bằng hằng số, vì chúng
+là **sự vắng mặt** của một thứ — không có gì để tra:
+
+```
+SG-DOC: no contract names the arXiv/OpenAlex API host or endpoint
+        (endpoint_template is None; CR-PC05-03);
+SG-LIVE: a real call is E3 and is not permitted without its own packet
+```
+
+`rr_admin status` in đúng chuỗi đó, vì nó dựng app thật rồi hỏi chính app.
+
+### Hai dòng cùng loại tôi tự tìm thấy và sửa luôn
+
+Audit chỉ nêu connector, nhưng cùng một khiếm khuyết còn ở hai chỗ khác **do service của WAI
+vừa landing**:
+
+| Trước | Sau |
+| --- | --- |
+| `delivery_context.transport — no MOD-secret-service yet (gap G-6): no bot token` | `no Telegram bot token is configured; MOD-secret-service exists now, so this is a missing credential, not a missing module` |
+| `analysis_context.provider_config — no MOD-secret-service / MOD-settings-service (G-6)` | `no AI provider is enabled: REQ-OQ03 unanswered and both adapters stay enabled=false until their isolation evidence exists (REQ-A5, ADR-0010)` |
+
+Để nguyên thì đúng một tuần nữa lại là một `F-A3-P5-02` khác.
+
+## H.2 `F-A3-P5-03` — `report_context` nay được đặt **tường minh** `None`
+
+```python
+app.state.report_context = None
+unwired.append(("report_context", REPORT_CONTEXT_BLOCKED))
+```
+
+Với `getattr(..., None)` thì "None" và "thiếu thuộc tính" là một; nhưng chỉ một trong hai là
+một **lời khai**. W4A đang làm router trả một lỗi đã khai thay vì 500, và việc đó cần
+composition root đã nói *"cố ý không dựng"* chứ không phải đã *quên*. Lý do in ra đúng nguyên
+văn packet yêu cầu:
+
+```
+CR-P0-07: TagConfigVersionPort has no implementation; no real embedding model (REQ-OQ09)
+```
+
+Ở đây một literal là **đúng** và một lookup sẽ sai: blocker là sự **vắng mặt của hai hiện
+thực**, mà vắng mặt thì không có file nào để đọc. Ghi rõ điều đó tại chỗ để lần sau không ai
+"sửa cho nhất quán" với H.1.
+
+## H.3 `F-A3-P5-04` — năm console script
+
+`[project.scripts]` trong `pyproject.toml`, và root đổi từ `tool.uv.package = false` sang
+`true` với build target `hatchling` gồm năm cây (`tools`, `server`, `collector`, `worker`,
+`probe`, cộng `rr_contracts`). `tools/__init__.py` rỗng được thêm để `tools` là package.
+
+| Script | Đích | Đã chạy từ `/tmp` |
+| --- | --- | --- |
+| `rr-admin` | `tools.rr_admin:main` | `status`, `migrate`, `bootstrap-owner` — **đủ ba** |
+| `rr-backup` | `tools.backup_cli:main` | `--help` liệt kê 8 subcommand |
+| `rr-collector` | `collector.app.main:main` | `--print-registration` |
+| `rr-worker` | `worker.app.main:main` | `--print-capabilities` |
+| `rr-probe` | `probe.x_feasibility.run_probe:main` | `--help` |
+
+Kiểm thật: `cd /tmp && uv run --project /mnt/virtual/repo/xcrawl rr-admin migrate` tạo
+database, `bootstrap-owner` in một ULID, `status` in bảng wiring — **không đứng ở gốc repo lần
+nào**. Không `main()` nào bị viết lại cho hợp packaging.
+
+Chuỗi gợi ý trong `rr_admin` cũng đổi theo (`run \`uv run rr-admin migrate\`` thay vì
+`rr_admin.py migrate`): một hint nói tên file thì chỉ đúng khi người đọc đang đứng đúng chỗ,
+và đó là chính vấn đề mà script này sinh ra để xoá.
+
+### Về các bootstrap `sys.path` — **tôi phán quyết KHÔNG gỡ**
+
+Chỉ còn **hai** chỗ: `tools/rr_admin.py:50` và `probe/x_feasibility/run_probe.py:37`
+(`collector/app/main.py`, `worker/app/main.py` không có). Cả hai phục vụ lối gọi **thẳng file**
+(`uv run python tools/rr_admin.py …`), thứ mà `docs/owner-runbook.md` đã ghi và Owner có thể
+đã quen tay. Gỡ chúng sẽ **phá một đường đã tài liệu hoá** để đổi lấy ba dòng gọn hơn — một
+đánh đổi tồi. Vì vậy tôi **không phát CR cho WX/W6B/WC/W3A**; thay vào đó README và `Makefile`
+ghi `uv run rr-…` là **đường được hỗ trợ**, và ghi rõ gọi thẳng file vẫn chạy nhưng **chỉ từ
+gốc repo**.
+
+## H.4 Bằng chứng — `EV-P0-17`, `SELF_VALIDATION`
+
+| Cửa | Kết quả |
+| --- | --- |
+| `server/tests/test_wiring.py` | **13 passed** (thêm `test_unwired_reasons_are_derived_not_frozen`) |
+| Năm script từ `/tmp` | cả năm chạy; ba lệnh `rr-admin` đi trọn migrate → bootstrap → status |
+| `uv run mypy` | **`Success: no issues found in 101 source files`** — `type: ignore` chết ở `secret/store.py` đã được `WAI` gỡ |
+| `uv run ruff check .` / `format --check` | sạch trên mọi file trong lease |
+| `make status` | in cả hai lý do mới, nguyên văn |
+| **Toàn bộ suite** | **1 169 test: 1 166 passed · 0 failed · 3 xfailed** — lần đầu **sạch tuyệt đối**: `WC` đã lật xfail nghiêm ở `PKT-P0-FIX7`, và hai test không tất định của `W3B` không còn xuất hiện |
+
+Test mới khẳng định ba điều, và điều thứ ba là cái đắt nhất: `SG-DOC`/`SG-LIVE` **có mặt**,
+`PLACEHOLDER_KC` **vắng mặt** ("lời khai cũ đã quay lại"), và
+`analysis_context.provider_config` **không** còn đổ lỗi cho một module nay đã tồn tại. Hai
+assertion phủ định đó là thứ bắt được đúng lớp khiếm khuyết mà `F-A3-P5-02` là ví dụ.
+
+## H.5 Điều gói này **không** chứng minh
+
+Lý do nay **được suy ra** thay vì đóng băng, nhưng chỉ **nửa rate-limit** mới thật sự đọc từ
+hợp đồng. `SG-DOC` và `SG-LIVE` vẫn là chuỗi trong mã: chúng mô tả sự vắng mặt của một host
+đã hợp đồng và của quyền gọi thật, và nếu ngày nào một hợp đồng **nêu** host thì dòng này sẽ
+lại nói sai cho tới khi ai đó sửa. Cách chữa đúng là một cửa E0 đối chiếu lý do với hợp đồng
+sở hữu; tôi không dựng nó ở đây vì `evidence/tools/` ngoài lease. Ghi lại làm `CR-P0-09`.
+
+---
+
+# Addendum — `PKT-P0-FIX9` (đường dẫn database in ra)
+
+- `packet_id`: `PKT-P0-FIX9` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e10` ·
+  **`status`: `DONE_WITH_CONCERNS`** · `next_actor`: `Coordinator` ·
+  `lease_released_at`: 2026-09-09T12:10Z.
+
+| File | Op | sha256 sau |
+| --- | --- | --- |
+| `tools/rr_admin.py` | MODIFY | `053adb29e753b6011872e3fad82badb765c620f62a0fdadad1dcefe343c59937` |
+| `server/tests/test_wiring.py` | MODIFY | `be37b990e1a69aef71358c64a2e3eab598c0f1fd8317fac8e8236cee1509198a` |
+
+## I.1 Đây **không** phải lỗi in ra
+
+Packet mô tả triệu chứng là `status` in `/tmp/x/sqlite:/tmp/x/rr.db` và đề nghị "in đường dẫn
+đã resolve". Tôi tái hiện trước khi sửa, và engine **mở đúng chuỗi hỏng đó**:
+
+```
+$ RR_DATABASE_URL=sqlite:////tmp/x/rr.db  (cwd = /tmp)
+database_path : /tmp/sqlite:/tmp/x/rr.db
+engine url    : sqlite+pysqlite:////tmp/sqlite:/tmp/x/rr.db
+```
+
+Nghĩa là một deployment thật sẽ **âm thầm tạo một file tên `sqlite:...` trong thư mục làm
+việc** thay vì dùng database mà operator đã nêu. Chỗ in ra không phải lỗi — nó là **chỗ duy
+nhất lỗi nhìn thấy được**.
+
+Nguyên nhân: `server/app/settings.py::_resolve_database_path` chỉ bóc tiền tố
+`sqlite+pysqlite:///`. Dạng `sqlite:///` là **dạng đường dẫn tuyệt đối của chính SQLAlchemy**,
+có mặt khắp tài liệu của nó, nên một operator gõ như vậy **không hề sai**.
+
+**Điều này quan trọng:** nếu tôi làm đúng chữ của packet — thêm một test khẳng định "đường dẫn
+in ra bằng file engine mở" — test đó sẽ **XANH**, vì hai vế đã bằng nhau và **cùng sai**. Một
+cửa xanh phủ lên một lỗi thật.
+
+## I.2 Đã làm gì trong lease
+
+**`database_line(settings)`** — một chỗ duy nhất biến cấu hình thành chữ, dùng bởi **cả**
+`migrate` và `status` (và thêm khóa `database` vào `status --json`). In **đường dẫn tuyệt đối
+đã resolve**, không phải URL: việc tiếp theo của operator thường là `ls` hoặc `sqlite3` trên
+nó, và cả hai không nhận URL. Hai lệnh nay không thể mô tả hai file khác nhau — và chính việc
+chúng **nhất quán** mới làm lỗi này chẩn đoán được.
+
+Hai test:
+
+| Test | Vai trò |
+| --- | --- |
+| `test_status_prints_the_file_the_engine_actually_opens` | **passed** — chuỗi in ra khớp URL engine, và không có scheme `sqlite:` lọt vào |
+| `test_a_plain_sqlite_url_resolves_to_the_file_it_names` | **`xfail(strict=True)`** — ghim đúng lỗi thật, kèm `CR-P0-10` |
+
+## I.3 `CR-P0-10` — **BLOCKED_SCOPE**, sửa nằm ngoài lease
+
+Sửa thật là một dòng trong `server/app/settings.py`, **không có trong `LEASE-P0-e10`**:
+
+```python
+-    if raw.startswith(_SQLITE_PREFIX):
+-        raw = raw[len(_SQLITE_PREFIX) :]
++    for prefix in ("sqlite+pysqlite:///", "sqlite:///"):
++        if raw.startswith(prefix):
++            raw = "/" + raw[len(prefix) :].lstrip("/")
++            break
+```
+
+Tôi **không** tự mở rộng lease để sửa nó. Thay vào đó lỗi được ghim bằng `xfail(strict=True)`
+theo đúng khuôn mà `WC` đã dùng để ghim ba lỗi trong `wiring.py` của tôi: suite giữ xanh, và
+test **tự chuyển `XPASS`** ngay khi ai đó có lease sửa `settings.py` — lúc đó chỉ cần gỡ
+marker.
+
+Xin một packet một dòng cho `server/app/settings.py`.
+
+## I.4 Bằng chứng — `EV-P0-18`, `SELF_VALIDATION`
+
+| Cửa | Kết quả |
+| --- | --- |
+| `server/tests/test_wiring.py` | **15 test: 14 passed · 1 xfailed** |
+| `uv run mypy` | `Success: no issues found in 101 source files` |
+| `uv run ruff check` / `format --check` trên hai file | sạch |
+| **Toàn bộ suite** | **1 177 test: 1 173 passed · 0 failed · 4 xfailed** (xfail thứ tư là `CR-P0-10` mới ghim) |
+| `rr-admin status` từ `/tmp` với URL đó | vẫn in `/tmp/sqlite:/tmp/x/rr.db` — **đúng như phải thế**: gói này chưa sửa được nguyên nhân, và in ra một đường dẫn đẹp hơn thực tế sẽ là che lỗi |
+
+Phần còn lại của `status` mà Coordinator xác nhận đọc đúng (migrated `0015`, bảng
+wired/not-wired kèm bước tiếp theo có tên) **không đổi**.
+
+---
+
+# Addendum — `PKT-P0-FIX10` (`CR-P0-10`: giải URL SQLite)
+
+- `packet_id`: `PKT-P0-FIX10` · `worker_principal`: `worker-WS` · `lease_id`: `LEASE-P0-e11` ·
+  **`status`: `DONE`** · `next_actor`: `Coordinator` ·
+  `lease_released_at`: 2026-09-09T13:15Z.
+
+| File | Op | sha256 sau |
+| --- | --- | --- |
+| `server/app/settings.py` | MODIFY | `874558aa48b01032c1b5515a273ace461c3178f88bad5b61acae40728c8dd925` |
+| `server/tests/test_wiring.py` | MODIFY | `d0cdfc198039e6fa7aac0d0a12924f4b6721d69fa9899a399a45dd6f308710b2` |
+
+## J.1 Sửa
+
+`_resolve_database_path` trước đây bóc **đúng một** tiền tố, `sqlite+pysqlite:///`. Cách viết
+thông dụng nhất — `sqlite:////tmp/x/rr.db`, dạng tuyệt đối của chính SQLAlchemy — rơi xuống
+nhánh tương đối và bị nối vào thư mục làm việc; engine mở một file **tên là** `sqlite:...`
+cạnh chỗ operator đang đứng, còn database họ nêu thì không ai chạm.
+
+Nay nhận **mọi** dạng SQLAlchemy chấp nhận. Đo trực tiếp, `RR_DATA_DIR=/tmp/datadir`:
+
+| `RR_DATABASE_URL` | → `database_path` |
+| --- | --- |
+| `sqlite:////tmp/x/rr.db` | `/tmp/x/rr.db` |
+| `sqlite+pysqlite:////tmp/y/z.db` | `/tmp/y/z.db` |
+| `sqlite:///rel/x.db` | `/tmp/datadir/rel/x.db` |
+| `sqlite+pysqlite:///rel/y.db` | `/tmp/datadir/rel/y.db` |
+| `sqlite:///:memory:` · `sqlite://` | `:memory:` |
+| `/tmp/plain/abs.db` (đường dẫn trần) | `/tmp/plain/abs.db` |
+| `var/research-radar.db` (tương đối trần) | `/tmp/datadir/var/research-radar.db` |
+| `./var/research-radar.db` | `<cwd>/var/research-radar.db` |
+
+Và triệu chứng gốc, chạy lại nguyên văn từ `/tmp`:
+
+```
+$ RR_DATABASE_URL=sqlite:////tmp/x/rr.db  uv run --project … rr-admin status
+database    : /tmp/x/rr.db          (trước: /tmp/x/sqlite:/tmp/x/rr.db)
+```
+
+## J.2 Đường dẫn tương đối rơi vào `RR_DATA_DIR`, **không** phải cwd — vì sao
+
+`contracts/ops/deployment.md` gọi data store là **"file trên volume"** (hàng `RT-server` và
+`MOD-data-store`; SQLite không có cổng mạng, chỉ là một file trên volume gắn vào). Một vị trí
+**tương đối** vì vậy là vị trí **bên trong volume dữ liệu**, và `RR_DATA_DIR` là tên mà repo
+này đặt cho gốc volume đó.
+
+Giải theo cwd sẽ khiến **cùng một cấu hình mở những database khác nhau** tuỳ thư mục mà tiến
+trình được khởi động — đúng lớp lỗi mà `CR-P0-10` vừa là ví dụ. Với một container có volume
+gắn sẵn, cwd không mang thông tin gì về nơi dữ liệu sống.
+
+**Một ngoại lệ, có chủ đích:** tiền tố `./` hoặc `../` là operator nói thẳng *"ở đây, chỗ tôi
+đang đứng"*. Giữ nó có hai lý do: nó là ý định tường minh, và nó giữ cho ví dụ
+`RR_DATABASE_URL=./var/research-radar.db` — thứ `server/migrations/env.py` **in ra trong
+thông báo lỗi** — vẫn có nghĩa như xưa. Sửa một lỗi đường dẫn bằng cách âm thầm đổi nghĩa một
+ví dụ đã tài liệu hoá sẽ chỉ dời lỗi sang chỗ khác.
+
+`:memory:` được tách riêng trước mọi phép nối: nó **không phải** đường dẫn, và nối nó vào một
+thư mục sẽ lặng lẽ tạo một file rác tên `:memory:`. Thêm `Settings.is_memory_database` để chỗ
+gọi hỏi được mà không phải so chuỗi.
+
+## J.3 Test — xfail nghiêm nay là khẳng định thật
+
+`test_a_plain_sqlite_url_resolves_to_the_file_it_names` (xfail nghiêm của `PKT-P0-FIX9`) được
+thay bằng **ba** test thật:
+
+| Test | Khẳng định |
+| --- | --- |
+| `test_every_sqlite_url_form_resolves_to_the_file_it_names` | ba cách viết cùng trỏ về **một** file tuyệt đối |
+| `test_a_relative_database_lands_in_the_data_dir_not_the_cwd` | dạng URL và dạng trần đều rơi vào `RR_DATA_DIR`; `./` rơi vào cwd |
+| `test_the_in_memory_database_is_never_joined_to_a_directory` | ba cách viết `:memory:` không bị nối vào thư mục nào |
+
+Test đầu duyệt **mọi** dạng chứ không chỉ dạng đã hỏng: *"dạng mà chúng ta tình cờ có test"*
+chính là cách lỗ hổng này lọt vào.
+
+## J.4 Bằng chứng — `EV-P0-19`, `SELF_VALIDATION`
+
+| Cửa | Kết quả |
+| --- | --- |
+| `server/tests/test_wiring.py` | **17 test: 17 passed · 0 xfailed** (xfail `CR-P0-10` đã hết) |
+| `uv run mypy` | `Success: no issues found in 101 source files` |
+| `uv run ruff check` / `format --check` | sạch trên cả hai file |
+| `rr-admin status` với URL gây lỗi ban đầu | in `/tmp/x/rr.db` |
+| **Toàn bộ suite** | **1 179 test: 1 176 passed · 0 failed · 3 xfailed** — xfail `CR-P0-10` đã biến mất khỏi danh sách |
+
+## J.5 Điều gói này **không** chứng minh
+
+Nó sửa **cách giải** đường dẫn; nó không kiểm rằng file ở đó mở được, đúng quyền, hay nằm trên
+volume mà `deployment.md` mô tả — `storage.health` và drill restore mới nói được điều đó. Và
+một cảnh báo nhỏ: `rr-admin status` gọi `.resolve()` khi in, nên với `:memory:` nó sẽ in
+`<cwd>/:memory:`. Đó là lỗi hiển thị thuần tuý ở `tools/rr_admin.py`, **ngoài lease** của gói
+này; ghi lại để không ai đọc nhầm dòng đó là một đường dẫn thật.

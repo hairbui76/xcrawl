@@ -2,15 +2,15 @@
 
 | Trường | Giá trị |
 | --- | --- |
-| packet | `PKT-TC-SAVED` (e1) + **`PKT-TC-SAVED-FIX1`** (e2) · lease `LEASE-TC-SAVED-e2` · authority `AUTH-COORD-TC-SAVED` (dưới `AUTH-OWNER-20260908-10`) |
+| packet | `PKT-TC-SAVED` (e1) + `PKT-TC-SAVED-FIX1` (e2) + **`PKT-TC-SAVED-FIX2`** (e3) · lease `LEASE-TC-SAVED-e3` · authority `AUTH-COORD-TC-SAVED` (dưới `AUTH-OWNER-20260908-10`) |
 | worker | `worker-W5B` |
 | card | `agent-tasks/TC-saved-snapshot.md` (§1–§13 ràng buộc) |
 | pin epoch | `PC10-PIN-P3-20260908` — verify lại toàn bộ §0 trước dòng code đầu tiên: **32/32 file khớp, 0 lệch** |
 | status | `DONE` · claim `IMPLEMENTATION_VERIFIED` cho đúng phạm vi card |
 | audit_route | Coordinator quyết định; gói này **không** tự nhận đã qua review độc lập |
-| evidence | **`evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json`** (validate sạch). Bản e1 `…T020500Z.json` nay **STALE** |
+| evidence | **`evidence/runs/TC-saved-snapshot-E1-20260909T091000Z.json`** (validate sạch). Bản e1 `…T020500Z.json` và e2 `…T054000Z.json` nay **STALE** |
 | next actor | Coordinator |
-| `lease_released_at` | e1 2026-09-08T02:10Z · **e2 2026-09-08T05:45Z** |
+| `lease_released_at` | e1 2026-09-08T02:10Z · e2 2026-09-08T05:45Z · **e3 2026-09-09T09:15Z** |
 
 ## 1. Cổng chờ và baseline
 
@@ -39,15 +39,17 @@ phân định) — không file nào bị ghi đè ngoài ý muốn.
 | `tests/contract/test_saved_snapshot_schema.py` | CREATE | `fd7e3fef3cf5b504e4448d79d1f945935c5f78ba80ae0b7efd4d783ed32bb5b5` | 20809 |
 | `tests/integration/test_concurrent_save.py` | CREATE | `89a73368cdc7e8cb592830047191a399352c8fec797e85bdcfd9cb656fa1fd5c` | 27029 |
 | `tests/integration/test_snapshot_survives_delete.py` | CREATE | `f5c11d768b9399746728debd8b883cd703e9135684b1d18bf27ee26e87b2836f` | 27339 |
-| `server/app/main.py` | MODIFY (append 1 include block) | `8d534ebea326038a2633e07449a06bb5d71bd3828e9413850936320447cfcb59` (hash tại e1) | 11088 |
+| `server/app/main.py` | MODIFY (append 1 include block) | **không pin** (xem §9) — khối của card: `8639af05…38d9c`, 957 B | — |
 | `evidence/runs/TC-saved-snapshot-E1-20260908T020500Z.json` | CREATE (e1, nay **STALE**) | (bản ghi bằng chứng) | 18146 |
-| `evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json` | CREATE (e2) | (bản ghi bằng chứng thay thế) | 20259 |
+| `evidence/runs/TC-saved-snapshot-E1-20260908T054000Z.json` | CREATE (e2, nay **STALE**) | (bản ghi bằng chứng) | 20405 |
+| `evidence/runs/TC-saved-snapshot-E1-20260909T091000Z.json` | CREATE (e3) | (bản ghi bằng chứng thay thế) | 21199 |
 | `evidence/handoffs/TC-saved-snapshot-handoff.md` | CREATE | (file này) | — |
 
-`server/app/main.py` đã đổi byte SAU e1 — hiện là `73392a3c3dadd1b07a3f58383d014c1dbfdb1c4d4e0fe3727679980ca0ff8d97` / 13222 bytes — vì các card khác
-nối thêm khối include của họ. `PKT-TC-SAVED-FIX1` **không** chạm file này (nó không nằm trong
-lease e2); hash ở bảng trên là hash đúng tại thời điểm bàn giao e1, và giá trị hiện tại được
-ghi ở đây để Coordinator rehash không bị lệch mà không rõ vì sao.
+`server/app/main.py` **không được pin ở bất kỳ đâu trong bản ghi này** (ruling P4, §9). Nó là
+factory dùng chung: nhiều card nối thêm khối include của mình vào đó, nên mọi hash toàn-file
+ghi ở đây sẽ cũ ngay lần land kế tiếp — e2 đã từng ghi một hash như vậy và nó đã cũ. Thứ
+được pin là **khối có phân định của chính card** (957 byte, sha256 `8639af05…38d9c`), thứ
+duy nhất card này viết trong file đó.
 
 **Không** có `server/app/saved/__init__.py`: `server/app/research/` đã đặt tiền lệ dùng
 namespace package, và §3 không cấp file đó.
@@ -220,9 +222,39 @@ trong `saved_snapshot.payload`, không có DDL nào bị chạm và không có m
 `abstract` từ `work_version.abstract_text` khi có, thay vì luôn `post_only` — làm được nhưng
 chưa làm, ghi `NOT_RUN`.
 
+## 9. `PKT-TC-SAVED-FIX2` — manifest không được pin factory dùng chung
+
+**Vấn đề.** Manifest e2 pin `server/app/main.py` như một artifact **ĐƯỢC SẢN XUẤT**. Đợt wiring
+đã viết lại factory đó, nên pin ấy nay sai byte. Đó không chỉ là số cũ: một pin PRODUCED đã cũ
+là **một chứng chỉ sai** — nó khẳng định gói này sinh ra những byte mà gói này không sinh ra.
+`W6n` từ chối đăng ký card với một pin như vậy, và đúng ra phải từ chối.
+
+Bản thân bảng file ở §3 đã ghi chú điều này từ e2 ("`main.py` đã đổi byte SAU e1 … hash ở bảng
+trên là hash đúng tại thời điểm e1"), nhưng ghi chú trong handoff không sửa được một trường
+`artifacts` trong manifest — công cụ đọc trường, không đọc văn xuôi.
+
+**Sửa, theo ruling thường trực từ vòng P4** (tiền lệ: W5A,
+`evidence/runs/TC-telegram-linking-auth-E1-20260908T015949Z.json`): manifest của card **không**
+pin factory dùng chung. `server/app/main.py` đã được **gỡ khỏi `artifacts`**; thay vào đó
+`implementation_revision` pin nội dung **khối có phân định của chính card** — thứ duy nhất card
+này thực sự viết trong file đó:
+
+| Thứ được pin | Giá trị |
+| --- | --- |
+| Khối `# >>> TC-saved-snapshot` … `# <<< TC-saved-snapshot <<<` | sha256 `8639af0538741a2f9716c270fe7be73781d6eadd0f6db1eeac4828b4b6638d9c`, 957 byte |
+| `server/app/main.py` (cả file) | **không pin** — nhiều card nối thêm vào nó và nó sẽ còn đổi byte |
+
+Bảy artifact còn lại được pin lại theo byte hiện tại. e1 và e2 → **STALE**, có ghi lý do ngay
+trong bản ghi mới.
+
+**Kiểm.** 49 test của card chạy lại: **20 + 17 + 12 = 49 passed, 0 failed** — không có gì khác
+dịch chuyển. Gói này **không đổi một dòng mã sản phẩm nào** (lease chỉ gồm handoff + manifest),
+nên không chạy lại toàn bộ suite; số gần nhất còn hiệu lực là 1145 passed, 4 xfailed, exit 0.
+
+
 Mọi mục ở trên là `SELF_VALIDATION`. **Không** mục nào là independent audit.
 
 ---
 
-*`PKT-TC-SAVED` (e1) + `PKT-TC-SAVED-FIX1` (e2) · `worker-W5B` · `lease_released_at`
-2026-09-08T05:45Z · ceiling `IMPLEMENTATION_VERIFIED` cho phạm vi card.*
+*`PKT-TC-SAVED` (e1) + `PKT-TC-SAVED-FIX1` (e2) + `PKT-TC-SAVED-FIX2` (e3) · `worker-W5B` ·
+`lease_released_at` 2026-09-09T09:15Z · ceiling `IMPLEMENTATION_VERIFIED` cho phạm vi card.*

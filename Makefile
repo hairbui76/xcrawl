@@ -10,7 +10,7 @@ UV  ?= uv
 NPM ?= npm
 
 .DEFAULT_GOAL := help
-.PHONY: help setup gen gen-check lint test e0 cards openapi ci clean
+.PHONY: help setup migrate bootstrap status serve gen gen-check lint test e0 cards openapi ci clean
 
 help:  ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -19,6 +19,28 @@ help:  ## Show this help
 setup:  ## Install the Python workspace and the web dependencies
 	$(UV) sync --all-packages
 	cd web && $(NPM) ci
+
+# --- running the stack (docs/owner-runbook.md §§2-4) ---------------------------------
+# All three go through tools/rr_admin.py, which works from any directory: `alembic upgrade`
+# alone only worked from inside server/ (gap G-4), and there was no bootstrap command at all
+# (gap G-1). Configuration comes from the environment — RR_DATABASE_URL, RR_DATA_DIR,
+# RR_TIMEZONE, RR_SCHEDULE_SLOTS — see server/app/settings.py.
+
+# The five console scripts (`[project.scripts]` in pyproject.toml) are the supported entry
+# points from any working directory: `uv run rr-admin`, `rr-backup`, `rr-collector`,
+# `rr-worker`, `rr-probe`. From outside the repo add `--project <repo>`.
+
+migrate:  ## Create or upgrade the database (alembic upgrade head, from any directory)
+	$(UV) run rr-admin migrate
+
+bootstrap:  ## Create/re-credential the single owner account (prompts; never echoes)
+	$(UV) run rr-admin bootstrap-owner
+
+status:  ## Configuration, database state, and what a server process would wire
+	$(UV) run rr-admin status
+
+serve:  ## Run the API on 127.0.0.1:8080 (wired at startup; migrate + bootstrap first)
+	$(UV) run uvicorn server.app.main:app --host 127.0.0.1 --port 8080
 
 gen:  ## Regenerate everything that is generated from contracts/
 	$(UV) run python shared/rr_contracts/generate.py

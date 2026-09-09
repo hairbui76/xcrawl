@@ -1,4 +1,4 @@
-// GENERATED — do not edit; source sha256 28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92
+// GENERATED — do not edit; source sha256 a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d
 // Produced by web/scripts/generate.mjs from contracts/http/openapi.yaml.
 // Editing this file by hand makes code and contract drift apart silently; the rule is
 // ADR-0011 (Hệ quả) and agent-tasks/README.md §5.3. To change the wire types: change
@@ -339,13 +339,13 @@ export interface paths {
          * Xóa toàn bộ dữ liệu (thao tác thứ ba của SRC-SPEC §7.3, đòi xác nhận gõ tay)
          * @description `phase`, `purge_challenge_id` (phase execute), `confirmation_phrase` (phase execute).
          *
-         *     Xem transaction_vi và exclusions_vi. Ba tập bảng (37 xóa / 21 giữ / 2 không bao giờ xóa) theo ruling CR-PC05-06 + CR-PC05-07; CR-PC01-05 khép lại.
+         *     Xem transaction_vi và exclusions_vi. Ba tập bảng (37 xóa / 22 giữ / 2 không bao giờ xóa) theo ruling CR-PC05-06 + CR-PC05-07; CR-PC01-05 khép lại.
          *
          *     Xóa dữ liệu nghiên cứu. Phạm vi ĐÃ ĐƯỢC OWNER CHỐT — `ACCEPTED (OD-20260907-01 mục 24)`; nó KHÔNG còn `OWNER_DECISION_REQUIRED`, và `PROV-PC00-01` / `PROV-PC01-03` chỉ còn giá trị LỊCH SỬ. Ba tập bảng dưới đây lấy nguyên văn từ ruling `PURGE-LIST-ruling.md` (2026-09-07T05:55Z), bản đã sửa lỗi CR-PC05-06.
          *
          *     XÓA (37 bảng): post, post_work, work, work_version, identity_alias, identity_conflict, identity_merge_audit, work_label, analysis, analysis_generation, analysis_attempt, analysis_task, embedding_generation, tag_vector, report, report_item, emerging_direction, coverage_window, pending_item_ledger, backfill_ledger, first_announced_ledger, rescan_ledger, saved_item, saved_snapshot, delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run, assignment, assignment_lease, checkpoint, ingest_receipt, source_fetch_log, telegram_update_log, telegram_link_attempt (bộ đếm rate limit, giữ 30 ngày — dữ liệu VẬN HÀNH, không phải cấu hình).
          *
-         *     GIỮ LẠI (21 bảng): `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration` (đăng ký/token của collector là CẤU HÌNH, không chứa dữ liệu nghiên cứu; xóa nó buộc phải đăng ký lại collector).
+         *     GIỮ LẠI (22 bảng): `owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`, `maintenance_window` (đăng ký/token của collector là CẤU HÌNH, không chứa dữ liệu nghiên cứu; xóa nó buộc phải đăng ký lại collector).
          *
          *     KHÔNG BAO GIỜ XÓA (2 bảng): `schema_migration` (mô tả cấu trúc kho) và `data_deletion_audit` (bản ghi xóa được giữ VĨNH VIỄN theo tham số PC08 đã phê chuẩn; chính thao tác purge ghi một hàng audit vào đây).
          *

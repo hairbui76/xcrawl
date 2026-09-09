@@ -2587,6 +2587,104 @@ def purge_sets(repo: Repo):
     return p, r, n, None
 
 
+# CR-PC02-25 leg (d)/(e): LITERAL count agreement.
+#
+# AMD-ENT-maintenance-01 moved the purge sets to 37/22/2 (61 entities) and nine artefacts were
+# left asserting the old 21. E0-18 passed throughout, because legs (b)/(c) read markers and
+# STRUCTURED lists only — by design (see the long comment in leg (b)). The gap was not prose
+# enumerations; it was NUMBERS. A number is cheap to read and cannot be misread the way a
+# paragraph can, so this leg reads numbers and nothing else, over a named artefact list.
+PURGE_COUNT_ARTEFACTS = (
+    "contracts/ports.yaml",
+    "contracts/modules.yaml",
+    "contracts/http/openapi.yaml",
+    "contracts/ops/secrets.md",
+    "contracts/ops/backup-restore.md",
+    "contracts/ops/deployment.md",
+    "contracts/ui/screens.yaml",
+    "acceptance/scenarios.yaml",
+    "acceptance/fixtures/recovery/README.md",
+    "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json",
+)
+# A bare "37 bảng" is only a purge claim if the purge conversation is nearby; without this the
+# leg would read every table count in the corpus and go back to being noise.
+PURGE_COUNT_CUES = ("purge", "xóa", "retain", "giữ lại", "giữ nguyên",
+                    "never_purged", "tập bảng")
+TABLE_COUNT_RE = re.compile(r"(?<![\d.])(\d{1,3})\s*(?:bảng|tables\b|table\b)")
+ENTITY_COUNT_RE = re.compile(r"(?<![\d.])(\d{1,3})\s*(?:entity|entities|thực thể)\b", re.I)
+# Role-tagged forms, `never` first so that "không bao giờ xóa 2" is read as one `never` claim
+# and not additionally as a `purged` claim of 2 (it was, in the first draft).
+PURGE_ROLE_PATTERNS = (
+    ("never", re.compile(r"(?:không bao giờ xóa|never[ _-]?purged)\s*\**\s*(\d{1,3})", re.I)),
+    ("never", re.compile(r"(\d{1,3})\s*(?:bảng|tables?)\s*\**\s*(?:không bao giờ|never)", re.I)),
+    ("purged", re.compile(r"(?:bị\s+xóa|xóa|purge[ds]?)\s*\**\s*(\d{1,3})\s*\**\s*(?:bảng|tables?\b|,)", re.I)),
+    ("purged", re.compile(r"(\d{1,3})\s*(?:bảng|tables?)\s*\**\s*(?:bị\s+xóa|được\s+xóa|purged)", re.I)),
+    ("retained", re.compile(r"(?:giữ lại|giữ nguyên|giữ|retain(?:ed)?)\s*\**\s*(\d{1,3})\s*\**\s*(?:bảng|tables?\b|,)", re.I)),
+    ("retained", re.compile(r"(\d{1,3})\s*(?:bảng|tables?)\s*\**\s*(?:retained|giữ lại|giữ nguyên)", re.I)),
+)
+PURGE_TRIPLE_RE = re.compile(
+    r"xóa\s*\**\s*(\d{1,3})\s*\**\s*(?:bảng)?\s*\**\s*,\s*\**\s*giữ\s*\**\s*(\d{1,3})"
+    r"\s*\**\s*(?:bảng)?\s*\**\s*,\s*\**\s*không bao giờ xóa\s*\**\s*(\d{1,3})", re.I)
+# Structured keys whose VALUE is a purge-set size (int) or whose LENGTH is one (list/dict).
+PURGE_COUNT_KEYS = {
+    "purged_table_count": "purged", "retained_table_count": "retained",
+    "never_purged_table_count": "never", "_purged_tables": "purged",
+    "_retained_tables": "retained", "_never_purged_tables": "never",
+    "purged_table_counts_after": "purged", "purged_tables": "purged",
+    "retained_tables": "retained",
+}
+
+
+def purge_count_claims(text):
+    """Yield (kind, role, value, snippet) for every LITERAL count assertion in `text`.
+
+    Literal only: a number written next to `bảng`/`table(s)`/`entity`, next to one of the
+    three role words, or inside the ratified `xóa A, giữ B, không bao giờ xóa C` triple.
+    Prose ENUMERATIONS (runs of table names) are still NOT read here — that version produced
+    ~20 false positives and was withdrawn; see evidence/tools/README.md §5g.
+    """
+    claimed = []
+
+    def overlaps(a, b):
+        return any(not (b <= s or a >= e) for s, e in claimed)
+
+    for role, rx in PURGE_ROLE_PATTERNS:
+        for m in rx.finditer(text):
+            if overlaps(m.start(), m.end()):
+                continue
+            claimed.append((m.start(), m.end()))
+            yield "role", role, int(m.group(1)), " ".join(m.group(0).split())
+    for m in PURGE_TRIPLE_RE.finditer(text):
+        for role, g in (("purged", 1), ("retained", 2), ("never", 3)):
+            yield "triple", role, int(m.group(g)), " ".join(m.group(0).split())[:90]
+    for rx, unit in ((TABLE_COUNT_RE, "bảng"), (ENTITY_COUNT_RE, "entity")):
+        for m in rx.finditer(text):
+            win = text[max(0, m.start() - 120):m.end() + 120].lower()
+            if not any(k in win for k in PURGE_COUNT_CUES):
+                continue
+            yield ("magnitude" if unit != "entity" else "entity_total"), None, int(m.group(1)),                 " ".join(text[max(0, m.start() - 45):m.end() + 40].split())
+
+
+def purge_count_keys(doc):
+    """Yield (path, role, kind, value) for structured keys that carry a purge-set size."""
+    def walk(node, path="$"):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                p = "%s.%s" % (path, k)
+                role = PURGE_COUNT_KEYS.get(str(k))
+                if role is not None:
+                    if isinstance(v, (list, dict)):
+                        yield p, role, "length", len(v)
+                    elif isinstance(v, int) and not isinstance(v, bool):
+                        yield p, role, "value", v
+                yield from walk(v, p)
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                yield from walk(v, "%s[%d]" % (path, i))
+
+    yield from walk(doc)
+
+
 def structured_lists(repo: Repo, rel: str):
     """Yield (path, list) for every list value in a parsed structured document."""
     doc = repo.parsed.get(rel)
@@ -2613,7 +2711,10 @@ def check_purge_sets(repo: Repo, idx: Index) -> None:
         "exactly. Any artefact that enumerates five or more entity names inside a purge-context "
         "span must yield a set EQUAL to one of the three. No artefact may still mark the purge "
         "scope undecided (OWNER_DECISION_REQUIRED / PROV-PC00-01 / PROV-PC01-03) except on a "
-        "line that also names the ratification or the finding that closed it.",
+        "line that also names the ratification or the finding that closed it. Every "
+        "LITERAL count assertion (“N bảng”, the xóa/giữ/không-bao-giờ triple, a "
+        "*_table_count field) in the named artefact list must equal the size of the set it "
+        "names; prose ENUMERATIONS are not compared (CR-PC02-25).",
     )
     purged, retained, never, err = purge_sets(repo)
     if err:
@@ -2711,6 +2812,66 @@ def check_purge_sets(repo: Repo, idx: Index) -> None:
             if names != set(target):
                 c.fail(rel, "a structured purge list at %s differs from the authoritative set: %s"
                        % (path, ", ".join(sorted(names ^ set(target)))[:200]))
+
+    # (d)/(e) CR-PC02-25: literal COUNT agreement over the named artefact list.
+    #
+    # W3n's AMD-ENT-maintenance-01 moved the sets to 37/22/2 and nine artefacts kept asserting
+    # 21; grep found them, this check did not. Numbers are read three ways, all literal:
+    #   role      "22 bảng giữ lại" / "không bao giờ xóa 2"  -> must equal that set's size
+    #   triple    "xóa 37, giữ 22, không bao giờ xóa 2"      -> must equal all three
+    #   magnitude any "N bảng" near a purge cue              -> must be one of {37,22,2,61}
+    #   entity    any "N entity" near a purge cue            -> must be the union size
+    # The magnitude rule is the loose one on purpose: it cannot tell a swapped pair apart, but
+    # it catches every arithmetic that is simply out of date, with no window guessing.
+    auth = {"purged": len(purged), "retained": len(retained), "never": len(never)}
+    total = len(union)
+    legal = set(auth.values()) | {total}
+    seen_counts = 0
+    silent = []
+    for rel in PURGE_COUNT_ARTEFACTS:
+        txt = repo.text.get(rel)
+        if txt is None:
+            c.fail(rel, "artefact named in the purge count list is absent from the corpus")
+            continue
+        before = seen_counts
+        for kind, role, n, snip in purge_count_claims(txt):
+            c.checked += 1
+            seen_counts += 1
+            if kind in ("role", "triple"):
+                if n != auth[role]:
+                    c.fail(rel, "states the %s set as %d; contracts/data/entities.yaml "
+                                "TXN-purge-all says %d: %s" % (role, n, auth[role], snip[:120]))
+            elif kind == "entity_total":
+                if n != total:
+                    c.fail(rel, "states the purge scope as %d entities; the three sets cover "
+                                "%d: %s" % (n, total, snip[:120]))
+            elif n not in legal:
+                c.fail(rel, "a table count of %d appears in a purge context; the only "
+                            "authoritative sizes are %s: %s"
+                       % (n, "/".join(str(x) for x in sorted(legal)), snip[:120]))
+        if seen_counts == before:
+            silent.append(rel)
+        doc = repo.parsed.get(rel)
+        if doc is not None:
+            for path, role, kind, val in purge_count_keys(doc):
+                c.checked += 1
+                seen_counts += 1
+                if val != auth[role]:
+                    c.fail(rel, "%s at %s is %d; the %s set has %d members"
+                           % ("the length of the list" if kind == "length" else "the count",
+                              path, val, role, auth[role]))
+    c.note("CR-PC02-25 count leg: %d literal count assertion(s) read across %d named artefact(s) "
+           "and compared to purged %d / retained %d / never %d / union %d.%s"
+           % (seen_counts, len(PURGE_COUNT_ARTEFACTS), auth["purged"], auth["retained"],
+              auth["never"], total,
+              (" %d artefact(s) state no count at all and are therefore unconstrained by this "
+               "leg: %s." % (len(silent), ", ".join(silent))) if silent else ""))
+    c.note("NOT compared by E0-18, and this is deliberate (README §5g): PROSE ENUMERATIONS — a "
+           "paragraph or table that lists entity names one by one is never read as a purge set. "
+           "The set-comparison version of that rule produced 24 violations of which ~20 were "
+           "false. So a stale artefact that spells out the wrong 21 NAMES without writing a "
+           "number is still invisible to this check; only structured lists (leg c) and literal "
+           "numbers (leg d/e) are verified.")
 
 
 def check_declared_deviations(repo: Repo, idx: Index) -> None:

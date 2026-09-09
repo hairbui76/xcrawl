@@ -501,6 +501,7 @@ modules:
       - {token: sqlite_database_file, kind: artifact}
       - {token: wal, kind: artifact}
       - schema_migration
+      - maintenance_window   # AMD-ENT-maintenance-01 / CR-PC02-24: cửa sổ bảo trì do Operator mở, ghi bởi T-ST-03/-04/-09 của contracts/state/storage.yaml
     inbound_operations: [storage.get_health]
     outbound_operations: []
     auth_scope_used: [internal_only]
@@ -1699,8 +1700,8 @@ unresolved_refs:
     status: ACCEPTED
     resolution_vi: >
       OD-20260907-01 mục 24: phạm vi `data.purge_all` là **chỉ dữ liệu nghiên cứu**. Ba tập bảng theo ruling
-      CR-PC05-06 + CR-PC05-07 (`PURGE-LIST-ruling.md`), phủ đúng 60 entity: **xóa 37**,
-      **giữ 21** (`owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`), **không bao giờ xóa 2** (`schema_migration`, `data_deletion_audit`).
+      CR-PC05-06 + CR-PC05-07 (`PURGE-LIST-ruling.md`), phủ đúng 61 entity: **xóa 37**,
+      **giữ 22** (`owner`, `session`, `secret_ref`, `task_credential`, `secret_audit`, `telegram_link`, `telegram_link_code`, `provider_config`, `provider_test_result`, `settings`, `schedule_occurrence`, `tag`, `tag_alias`, `tag_exclusion`, `tag_config_version`, `source_connection`, `backup_snapshot`, `backup_manifest`, `restore_record`, `purge_challenge`, `worker_registration`, `maintenance_window`), **không bao giờ xóa 2** (`schema_migration`, `data_deletion_audit`).
       **Backup không bị xóa.** Không còn phần nào của REQ-S7.3-05 ở trạng thái OWNER_DECISION_REQUIRED.
     ratification_ref: OD-20260907-01
     target_package: PC02 (cascade/referential integrity) · PC08 (quy trình maintenance) · PC09 (scenario)

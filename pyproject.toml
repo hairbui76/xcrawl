@@ -41,8 +41,27 @@ dev = [
   "httpx>=0.27,<0.29",
 ]
 
+[project.scripts]
+# Console scripts so every entry point runs from ANY working directory (`F-A3-P5-04`).
+# Each target is the same `main()` the module already exposed; nothing was rewritten to
+# suit packaging.
+rr-admin = "tools.rr_admin:main"
+rr-backup = "tools.backup_cli:main"
+rr-collector = "collector.app.main:main"
+rr-worker = "worker.app.main:main"
+rr-probe = "probe.x_feasibility.run_probe:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# The trees the console scripts enter through. `server/` comes along because `rr-admin`
+# imports it; the two are one deployable unit on the Owner's machine.
+packages = ["tools", "server", "collector", "worker", "probe", "shared/rr_contracts/rr_contracts"]
+
 [tool.uv]
-package = false
+package = true
 
 [tool.uv.workspace]
 members = ["server", "collector", "worker", "shared/rr_contracts"]

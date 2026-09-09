@@ -1,0 +1,306 @@
+{
+ "schema_version": "0.1.0",
+ "evidence_id": "EV-E1-05-tc-backup-restore-drill",
+ "created_at": "2026-09-09T09:30:00Z",
+ "producer_principal": "worker-W6B",
+ "producer_role": "Worker",
+ "review_type": "SELF_VALIDATION",
+ "evidence_level": "E1",
+ "baseline": {
+  "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+  "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+  "contract_hashes": {
+   "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+   "precode/baseline.json": "52af62c8b11e6939a9a34798bd71b4a4e688d8ed85d9c579ee1858ed341037e9",
+   "precode/decision-register.md": "b26cf51a0d7c73661ab465e5a157aaad7a9ceb6f013926abd5117f6966764a7e",
+   "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+   "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+   "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+   "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+   "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+   "contracts/data/entities.yaml": "7cd85e09431fa52555ee13bb5fb8f5a00932e38801677212e8baa18c14c27827",
+   "contracts/ops/backup-restore.md": "826655daa469e3e8e2fbd54263f13be78f4e9a17fd490524a3b07f894989ad4f",
+   "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+   "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+   "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+   "precode/adr/ADR-0005-backup-method.md": "889de2812a8736e328eb7823a82e2b5dab1f46aee13257bfcfedd08d4668bd5c",
+   "acceptance/scenarios.yaml": "8d36036e865df1764caae3ed778e457d44c4fcf5ffab5d222b16ade6d9acea43",
+   "evidence/manifest.schema.json": "25ddb1b7afb529b0ca9500fa2f293897723406a704a25d71b0c0ed187607dfd8",
+   "contracts/ops/secrets.md": "14b3d8988a9de21bf70de076c2b85a21b3e87394c493f18082af51c191690ee9",
+   "contracts/state/delivery.yaml": "318789179ec79a4e21939a82d4fb78bfb3cd257ed7c3af4c519bf2ab631ee807"
+  },
+  "contract_versions": {
+   "CT-ops-backup-restore": "0.1.0",
+   "CT-state-storage": "0.3.0",
+   "CT-data-entities": "0.3.0",
+   "CT-arch-ports": "0.1.0",
+   "CT-http-openapi": "0.3.0"
+  },
+  "implementation_revision": "PKT-TC-BACKUP-FIX4 working tree, pin epoch PC10-PIN-P3b-20260908, commit 8cf3286; snapshot.py=6217b2a034ed6f8d58244475add7edbedea0504ec4840acd06edc43dad10d011, verify.py=b370d83e905ad8323dfc26f5e5e4b6d2ef834bf1548e0dfe04c22bf466abf629, restore.py=09b761d60ab876c9672936327b0a6a1dc7b714dbd85c168218eaee0069b6c664, reconcile.py=a4c7872cd7e4a11c021dff4aa2b1d5b3cb542196868d6f50feab0417f7db632d, backup_cli.py=60fbfd1fcd8c908beeb59c0250935710073fa635bd97b77e752c9535aeda9e46, 0012_tc_backup_restore_drill.py=4454be392837728303e55f97a2d071432cbd6c3fc3beca79cd2643cae4adefc1, test_wal_unsafe_detected.py=1b6c0cc0157903bd88180538653560931e1a3c5e2c206a730d403c8d1f9f400e, test_restore_side_effect_lock.py=46521fc6ef395164950a327a9c13ae5af09282d959e8e740e43a5199fc51a476"
+ },
+ "environment": {
+  "os": "Linux 7.0.0-30-generic",
+  "runtimes": {
+   "python": "3.12.3",
+   "sqlite": "3.45.1",
+   "uv": "0.12.9",
+   "pytest": "8.4.2",
+   "ruff": "0.6.9",
+   "mypy": "1.20.2",
+   "sqlalchemy": "2.0.52",
+   "alembic": "1.19.2",
+   "fastapi": "0.115.14"
+  },
+  "config_redacted": {
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "backup_operator_token": "không tồn tại trong môi trường này; test dùng hằng tường minh",
+   "database": "tệp SQLite tạm do pytest tmp_path cấp, dựng bằng alembic upgrade head",
+   "backup_artifacts": "ghi vào tmp_path của pytest; không có artifact nào rời thư mục tạm"
+  },
+  "provider": null,
+  "model": null,
+  "network_access": false
+ },
+ "inputs": {
+  "scenario_ids": [
+   "SC26",
+   "SC27",
+   "SC42",
+   "SC43",
+   "SC12",
+   "SC49",
+   "SC44",
+   "SC53"
+  ],
+  "requirement_ids": [
+   "REQ-D58",
+   "REQ-S6.4-01",
+   "REQ-S7.3-04",
+   "REQ-S7.3-05",
+   "REQ-S7.3-06",
+   "REQ-S9.3-08",
+   "REQ-S11.2-02",
+   "REQ-S11.2-03",
+   "REQ-AC12",
+   "REQ-S13-09"
+  ],
+  "invariant_ids": [
+   "I02",
+   "I08",
+   "I12",
+   "I13",
+   "I15"
+  ],
+  "fixtures": [
+   {
+    "path": "acceptance/fixtures/recovery/README.md",
+    "sha256": "982311e721d8e9e740f51ae011c557c363ba3d0de8151dd0643755ecb926dac8",
+    "bytes": 12235
+   },
+   {
+    "path": "acceptance/fixtures/recovery/a-restore-old-outbox-nothing-sent.json",
+    "sha256": "e7671e7d852f9b0564c5c269df95e598e3de88cdb94142df23a29ee38b543838",
+    "bytes": 4194
+   },
+   {
+    "path": "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json",
+    "sha256": "4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c",
+    "bytes": 3455
+   },
+   {
+    "path": "acceptance/fixtures/recovery/d-wal-unsafe-copy-detected.json",
+    "sha256": "64d11f5541826f64888a29b4fcc97af020715370a3d5237bfc9d371b4367a804",
+    "bytes": 3048
+   },
+   {
+    "path": "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json",
+    "sha256": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+    "bytes": 3665
+   },
+   {
+    "path": "acceptance/fixtures/recovery/e-saved-snapshot-hash-preserved.json",
+    "sha256": "3630edc83719ada07cae9b39f5da7ad8d1894379509c96bb1128cf958ca6ea0b",
+    "bytes": 3462
+   },
+   {
+    "path": "acceptance/fixtures/boundary/README.md",
+    "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+    "bytes": 10598
+   },
+   {
+    "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+    "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+    "bytes": 31529
+   },
+   {
+    "path": "acceptance/fixtures/recovery/l-purge-all-two-phase-and-negatives.json",
+    "sha256": "9cd382e270e581b1b4ea69ac78f9ddb7730d215d34fadf6ce537a4e1f0dc053a",
+    "bytes": 20786
+   },
+   {
+    "path": "acceptance/fixtures/recovery/m-post-restore-reconciled-dispatch-reopens.json",
+    "sha256": "90934af96aa37ea8917dbd581247afa05655be3e23fc77b4004c1c9227b4be94",
+    "bytes": 7808
+   }
+  ]
+ },
+ "execution": {
+  "kind": "command",
+  "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_wal_unsafe_detected.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_restore_side_effect_lock.py -q  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff check server/app/backup tools/backup_cli.py server/migrations/versions/0012_tc_backup_restore_drill.py tests/integration/test_wal_unsafe_detected.py tests/integration/test_restore_side_effect_lock.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run ruff format --check server/app/backup tools/backup_cli.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run mypy --strict server/app/backup tools/backup_cli.py server/migrations/versions/0012_tc_backup_restore_drill.py  &&  PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:randomly --tb=no -q  &&  PYTHONDONTWRITEBYTECODE=1 python3 evidence/tools/e0_check.py",
+  "working_directory": "/mnt/virtual/repo/xcrawl",
+  "manual_procedure": null,
+  "started_at": "2026-09-09T09:00:00Z",
+  "ended_at": "2026-09-09T09:29:00Z",
+  "exit_code": 0,
+  "attempts": 1,
+  "error_classification": null
+ },
+ "oracle": {
+  "statement_vi": "Bốn oracle của card §8, đo bằng đếm hàng, hash và đếm lời gọi ra — không đọc log. (1) Fixture a/j: sau restore, COUNT(outbound telegram) = 0 cho tới khi đối soát xong; đo bằng DispatchOutcome.outbound_calls của chính dispatcher W5C cộng một transport ghi lại mọi lời gọi. (2) Fixture d: bản copy WAL-unsafe THẬT (hàng commit nằm trong -wal, chỉ .db được copy) có sha256 khớp và integrity_check 'ok' nhưng counts lệch ⇒ bị từ chối RESTORE_UNVERIFIED, KHÔNG được đánh 'verified', và KHÔNG restore được. (3) Fixture e: saved_snapshot.content_hash trước backup = sau restore = sau reconcile, tính lại từ payload trên đĩa. (4) Fixture b: mọi assignment_lease bị thu hồi; claim bị chặn bằng RESTORE_UNVERIFIED. Cộng thêm: fixture j — integrity 'passed' + counts khớp mà reconciliation_complete vẫn false ở đúng mệnh đề 4 và 7; fixture m — đủ bảy mệnh đề ⇒ healthy + dispatcher_unlocked_at, nhưng intent generation cũ VẪN không được gửi; 0 route HTTP nào mang operation_id backup.*; caller ngoài MOD-backup-cli ⇒ FORBIDDEN_EDGE; alembic heads = 1. FIX1 thêm: fixture recovery/l được nạp THEO TÊN qua loader và phần thuộc card này được khẳng định — backup_snapshot/backup_manifest/restore_record nằm trong tập GIỮ LẠI của cả fixture lẫn TXN-purge-all, và mã của server/app/backup/ không chứa câu nào xóa được hàng backup hay artifact. FIX2 thêm: expected_vector_count là NULLABLE; mệnh đề 6 nay trả PHÁN QUYẾT thay vì ném TypeError. NULL trên một generation đang active ⇒ UNMET kèm lý do (backup-restore.md §5.3 bước 5 và §5.6 mệnh đề 6; entities.yaml định nghĩa cột là mốc phải đạt TRƯỚC khi active, nên NULL nghĩa là tiền điều kiện chưa từng được ghi — coi là met sẽ biến chưa-xác-định thành tốt, trái I13/CAP-P5, và mở selection trên index không chứng minh được, trái I12). Không có generation active ⇒ met; built != expected ⇒ unmet nêu tên hai con số. FIX3 thêm: (a) _resolve_owner trả ENVELOPE thay vì AttributeError cho cả hai ca owner không tồn tại và bảng owner rỗng — kiểm qua main(), vì lỗi nằm ở đường xử lý lỗi của chính CLI; (b) G-3/CR-TC-storage-07 đóng: _guard() dùng StorageGuard.from_engine, nên cửa sổ maintenance sống qua ranh giới tiến trình — mở ở một lần gọi main(), restore chạm được đường restore ở lần gọi kế tiếp, và maintenance_window.restore_record_id được liên kết SAU khi INSERT (khóa ngoại). Ca âm: không mở cửa sổ ⇒ vẫn từ chối, 0 hàng. FIX4 thêm (F-A3-P5-01): lệnh của runbook `maintenance --open` không còn ném MaintenanceWindowRequired ra terminal. --reason bắt buộc khi --open và trả ENVELOPE + exit 2 (không phải usage dump của argparse, vốn để stdout trống); reason lạ do argparse từ chối bằng choices. main() ánh xạ MỌI ngoại lệ guard/storage sang envelope — StorageRefused giữ mã của nó, MaintenanceWindowRequired/ForbiddenTransition → VALIDATION_ERROR trên storage_health, và một except Exception cuối → INTERNAL. Văn bản ngoại lệ không được lặp lại ở đâu; chỉ tên lớp ra stderr.",
+  "expected": {
+   "pytest_card_section_8": "2 lệnh, exit 0, 0 failed",
+   "outbound_calls_before_reconcile": 0,
+   "outbound_calls_for_old_generation_after_unlock": 0,
+   "wal_unsafe_sha256_matches": true,
+   "wal_unsafe_integrity_check": "ok",
+   "wal_unsafe_counts_match": false,
+   "wal_unsafe_snapshot_state": "failed",
+   "leases_held_after_restore": 0,
+   "unmet_clauses_when_integrity_and_counts_pass": [
+    4,
+    7
+   ],
+   "clauses_met_after_operator_actions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "saved_snapshot_hash_distinct_values": 1,
+   "backup_http_routes": 0,
+   "alembic_heads": 1,
+   "e0_20_violations_for_this_card": 0,
+   "clause6_null_expected_vector_count": "unmet_with_named_reason",
+   "maintenance_window_survives_a_process_boundary": true,
+   "restore_without_a_window_in_a_fresh_process": "refused",
+   "cli_never_prints_a_traceback": true
+  },
+  "observed": {
+   "pytest_card_section_8": "10 passed (wal unsafe), 35 passed (side effect lock); exit 0 mỗi lệnh",
+   "outbound_calls_before_reconcile": 0,
+   "outbound_calls_for_old_generation_after_unlock": 0,
+   "wal_unsafe_sha256_matches": true,
+   "wal_unsafe_integrity_check": "ok",
+   "wal_unsafe_counts_match": false,
+   "wal_unsafe_snapshot_state": "failed",
+   "leases_held_after_restore": 0,
+   "unmet_clauses_when_integrity_and_counts_pass": [
+    4,
+    7
+   ],
+   "clauses_met_after_operator_actions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "saved_snapshot_hash_distinct_values": 1,
+   "backup_http_routes": 0,
+   "alembic_heads": 1,
+   "ruff": "All checks passed; ruff format --check clean",
+   "mypy": "Success: no issues found in 6 source files (--strict)",
+   "full_suite": "1166 passed, 3 xfailed, exit 0 — 0 FAILED, 0 ERROR trên toàn bộ testpaths.",
+   "e0_20_violations_for_this_card": 0,
+   "clause6_null_expected_vector_count": "unmet_with_named_reason",
+   "maintenance_window_survives_a_process_boundary": true,
+   "restore_without_a_window_in_a_fresh_process": "refused",
+   "cli_never_prints_a_traceback": true
+  }
+ },
+ "result": "PASS",
+ "artifacts": [
+  {
+   "path": "server/app/backup/snapshot.py",
+   "sha256": "6217b2a034ed6f8d58244475add7edbedea0504ec4840acd06edc43dad10d011",
+   "bytes": 25402,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Không chứa token, key hay đường dẫn máy cá nhân."
+  },
+  {
+   "path": "server/app/backup/verify.py",
+   "sha256": "b370d83e905ad8323dfc26f5e5e4b6d2ef834bf1548e0dfe04c22bf466abf629",
+   "bytes": 10630,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Chỉ đọc bản sao của artifact; không sửa artifact."
+  },
+  {
+   "path": "server/app/backup/restore.py",
+   "sha256": "09b761d60ab876c9672936327b0a6a1dc7b714dbd85c168218eaee0069b6c664",
+   "bytes": 16739,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Không có đường mở khóa dispatcher."
+  },
+  {
+   "path": "server/app/backup/reconcile.py",
+   "sha256": "a4c7872cd7e4a11c021dff4aa2b1d5b3cb542196868d6f50feab0417f7db632d",
+   "bytes": 22376,
+   "kind": "other",
+   "redaction_note_vi": "Mã nguồn. Vị từ 7 mệnh đề, chỉ đọc."
+  },
+  {
+   "path": "tools/backup_cli.py",
+   "sha256": "60fbfd1fcd8c908beeb59c0250935710073fa635bd97b77e752c9535aeda9e46",
+   "bytes": 21605,
+   "kind": "other",
+   "redaction_note_vi": "CLI. Token chỉ được so sánh, không bao giờ được in ra hay đưa vào argv."
+  },
+  {
+   "path": "server/migrations/versions/0012_tc_backup_restore_drill.py",
+   "sha256": "4454be392837728303e55f97a2d071432cbd6c3fc3beca79cd2643cae4adefc1",
+   "bytes": 9506,
+   "kind": "other",
+   "redaction_note_vi": "DDL: backup_snapshot, backup_manifest, restore_record."
+  },
+  {
+   "path": "tests/integration/test_wal_unsafe_detected.py",
+   "sha256": "1b6c0cc0157903bd88180538653560931e1a3c5e2c206a730d403c8d1f9f400e",
+   "bytes": 18323,
+   "kind": "other",
+   "redaction_note_vi": "Test. Bản copy WAL-unsafe được tạo thật, không giả lập."
+  },
+  {
+   "path": "tests/integration/test_restore_side_effect_lock.py",
+   "sha256": "46521fc6ef395164950a327a9c13ae5af09282d959e8e740e43a5199fc51a476",
+   "bytes": 57303,
+   "kind": "other",
+   "redaction_note_vi": "Test. Không có secret; token trong test là hằng tường minh."
+  }
+ ],
+ "limitations": {
+  "mock_or_live": "mock",
+  "sample_size": 45,
+  "not_checked_vi": [
+   "**Diễn tập restore thật với RPO/RTO đo được là E3 và NOT_RUN** — cần môi trường của Owner (card §8 'Yêu cầu live', backup-restore.md §5.7). Cái đã chạy là E1/E2 trên SQLite tạm trong tiến trình: nó chứng minh thứ tự bước, các mệnh đề và các phép đếm, KHÔNG chứng minh một bản backup thật khôi phục được một hệ thống thật trong 2 giờ.",
+   "Hash của artifact KHÔNG chứng minh khôi phục được — entities.yaml nói rõ điều đó ở ux_backup_snapshot_artifact, và lần chạy này không phản bác nó.",
+   "data.purge_all KHÔNG được hiện thực (card §1 non-goal, SG-02). Fixture recovery/l chỉ được đọc, không chạy.",
+   "Không có route HTTP nào cho backup.* (CR-TC-BACKUP-01, ruling CLI-only), nên phần openapi của bốn operation là NOT_RUN: không có request/response thật đi qua dây.",
+   "ENT-schema-migration chưa được card nào hiện thực; backup_snapshot.schema_migration_version ghi NULL và bản sắc schema được ghi bằng alembic revision (CR-TC-BACKUP-04). Bước 3 của §5.3 ('khớp phiên bản ứng dụng sẽ chạy') vì thế được kiểm bằng revision string, không bằng số nguyên hợp đồng mô tả.",
+   "Mệnh đề 3 được đo bằng 'không còn lease held', không bằng đối chiếu số lease trong snapshot với số đã thu hồi — bảng run của scheduler mới land trong cùng đợt và nhánh nâng lease_epoch chỉ chạy khi cột tồn tại.",
+   "Việc thu hồi lease và nâng epoch được kiểm ở mức hàng; hành vi của một collector THẬT mang epoch cũ (fixture b seq1/seq2 qua worker.heartbeat và ingest.submit_batch) thuộc TC-scheduler-lease-claim và TC-ingest-*, là NOT_RUN ở đây.",
+   "Retention (14 daily / 8 weekly / vô thời hạn monthly) và backup_schedule là tham số PROVISIONAL trong hợp đồng và KHÔNG được hiện thực ở card này.",
+   "Không có secret nào được đọc hay ghi: kế hoạch khôi phục secret chỉ là một con trỏ trong manifest, đúng như §6 quy định.",
+   "ports.yaml đòi idempotency key cho create_snapshot/restore_snapshot nhưng entities.yaml không khai cột nào để giữ chúng (CR-TC-BACKUP-07). Bản đầu của gói này tự thêm hai cột và bị tests/contract/test_schema_matches_entities.py bắt; hai cột đã được GỠ. Idempotency hiện có: snapshot replay theo artifact_path; restore lần hai bị chặn bởi tiền điều kiện maintenance. Idempotency ĐẦY ĐỦ theo khóa của ports.yaml là NOT_RUN cho tới khi có cột.",
+   "recovery/l-purge-all-two-phase-and-negatives.json: chỉ mệnh đề 'backup không bị chạm' được chạy. Hai pha xác nhận, cụm từ gõ tay, tiền điều kiện maintenance, thu hồi lease trước khi xóa, bốn ca âm và phép đếm 37/20 bảng là NOT_RUN — data.purge_all thuộc MOD-data-admin-service, là non-goal ở §1 và bị SG-02 cấm hiện thực trong card này.",
+   "Mệnh đề 6 được kiểm trên BẢNG embedding_generation (bốn ca: không có active / active với expected NULL / built != expected / built == expected). Nửa còn lại của §5.3 bước 5 — artifact model tồn tại và sha256 khớp — vẫn NOT_RUN: không có file model thật trong môi trường này.",
+   "Test 'hai tiến trình' chạy hai lần gọi main() TRONG một tiến trình pytest, mỗi lần với engine và guard riêng. Nó chứng minh trạng thái đi qua ĐĨA chứ không qua bộ nhớ — đó là điều G-3 hỏi. Nó KHÔNG chứng minh hành vi dưới hai tiến trình HĐH thật chạy đồng thời; khóa mức tiến trình và tranh chấp thật vẫn NOT_RUN.",
+   "F-A3-P5-01 tồn tại được vì ở FIX3 một phép thay chuỗi đã im lặng không khớp và tôi báo cáo phần đó là xong mà không chạy thử lệnh. Lần này mọi phép thay đều assert trước khi ghi và bản sửa được chạy bằng chính CLI trước khi viết test. Điều này KHÔNG được kiểm bằng máy: không có phép kiểm nào bắt được 'một phép sửa đã không áp dụng' ngoài việc chạy thứ vừa sửa."
+  ],
+  "uncertainty_vi": "Rủi ro còn lại lớn nhất là chính điều mà card đã nói trước: chưa có drill thật. Mọi thứ ở đây chứng minh hệ thống TỪ CHỐI đúng chỗ; không có gì chứng minh nó KHÔI PHỤC được. Rủi ro thứ hai là CR-TC-BACKUP-05: backup.restore_snapshot không có mã đăng ký cho 'sai storage.health', nên tiền điều kiện maintenance hiện trả VALIDATION_ERROR; nếu Owner/Coordinator thêm CONFLICT vào danh sách thì mã đổi, hành vi không đổi. Không mục nào ở đây là independent audit."
+ }
+}

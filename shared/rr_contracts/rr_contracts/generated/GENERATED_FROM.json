@@ -69,13 +69,13 @@
     },
     {
       "path": "contracts/ports.yaml",
-      "sha256": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
-      "bytes": 128850
+      "sha256": "c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412",
+      "bytes": 128872
     },
     {
       "path": "contracts/http/openapi.yaml",
-      "sha256": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
-      "bytes": 231705
+      "sha256": "a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d",
+      "bytes": 231727
     }
   ],
   "outputs": {

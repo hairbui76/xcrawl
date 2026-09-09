@@ -21,6 +21,7 @@ because the test database was healthy would prove nothing about the incident.
 from __future__ import annotations
 
 import importlib.util
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,7 @@ from rr_contracts.generated.errors import ErrorCode
 from rr_contracts.generated.operations import OperationId
 from rr_contracts.generated.states import StorageHealth
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from server.app.db.engine import create_sqlite_engine, session_scope
 from server.app.db.faults import WriteFaultInjector
@@ -44,7 +46,12 @@ from server.app.health.router import (
     owner_session_absent,
 )
 from server.app.main import create_app
-from server.app.storage.guard import StorageGuard, StorageRefused
+from server.app.storage.guard import (
+    MaintenanceWindowRequired,
+    MaintenanceWindowStore,
+    StorageGuard,
+    StorageRefused,
+)
 from server.app.storage.health import (
     READINESS_OF_STORAGE,
     TRANSITIONS,
@@ -615,3 +622,352 @@ def test_liveness_on_the_factory_is_still_public() -> None:
     response = TestClient(create_app()).get("/healthz")
     assert response.status_code == 200
     assert response.json()["status"] == "up"
+
+
+# ---------------------------------------------------------------------------------------
+# Persistence across processes -- gap G-3, ENT-maintenance-window
+# ---------------------------------------------------------------------------------------
+
+OWNER_ID = "01JOWNER90000000000000000W"
+SEED_NOW = "2026-09-09T03:00:00.000Z"
+SNAPSHOT_HASH = "sha256:" + "0" * 64
+
+
+def _migrate(path: Path) -> None:
+    """`alembic upgrade head` on a blank file, the way a fresh deployment runs."""
+    from alembic import command
+    from alembic.config import Config
+
+    repo_root = Path(__file__).resolve().parents[2]
+    previous = os.environ.get("RR_DATABASE_URL")
+    os.environ["RR_DATABASE_URL"] = str(path)
+    try:
+        config = Config(str(repo_root / "server" / "alembic.ini"))
+        config.set_main_option("script_location", str(repo_root / "server" / "migrations"))
+        command.upgrade(config, "head")
+    finally:
+        if previous is None:
+            os.environ.pop("RR_DATABASE_URL", None)
+        else:
+            os.environ["RR_DATABASE_URL"] = previous
+
+
+@pytest.fixture()
+def db_path(tmp_path: Path) -> Path:
+    path = tmp_path / "research-radar.db"
+    _migrate(path)
+    engine = create_sqlite_engine(path)
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO owner (id, singleton_guard, display_name, timezone_iana,"
+            " created_at, failed_login_count) VALUES (?, 1, 'owner', 'Asia/Ho_Chi_Minh', ?, 0)",
+            (OWNER_ID, SEED_NOW),
+        )
+    engine.dispose()
+    return path
+
+
+def _process(db_path: Path) -> StorageGuard:
+    """A guard as a *separate process* would build it: its own engine on the same file.
+
+    A new :class:`~sqlalchemy.Engine` means a new connection pool and no shared Python
+    object with any other guard in the test, so anything one guard sees of another's work
+    travelled through SQLite. That is the whole claim being tested; sharing an engine would
+    prove only that two objects can point at one dict.
+    """
+    return StorageGuard.from_engine(create_sqlite_engine(db_path), owner_id=OWNER_ID)
+
+
+def test_a_second_process_observes_the_open_maintenance_window(db_path: Path) -> None:
+    """**G-3, the headline.** One process opens the window; the next one sees it.
+
+    Before this, `backup_cli maintenance --open` reported `T-ST-03` and exit 0, and the next
+    invocation started at `healthy` -- so `restore`, which begins from `maintenance`
+    (`T-ST-05`), refused with `precondition_not_met` and the documented two-step restore in
+    `docs/owner-runbook.md` §9.4 could never be completed.
+    """
+    first = _process(db_path)
+    assert first.current_health() is StorageHealth.HEALTHY
+    assert first.enter_maintenance(reason="restore", opened_by="operator@local") == "T-ST-03"
+
+    second = _process(db_path)
+    assert second.current_health() is StorageHealth.MAINTENANCE
+
+    # And the state is not merely reported -- it refuses what `maintenance` must refuse.
+    with pytest.raises(StorageRefused) as caught:
+        second.assert_writable(OperationId.WORKER_CLAIM_ASSIGNMENT)
+    assert caught.value.code is ErrorCode.STORAGE_WRITE_FAILED
+
+
+def test_closing_the_window_is_visible_to_a_third_process(db_path: Path) -> None:
+    """The window closes as durably as it opens, or the store would trap the operator."""
+    opener = _process(db_path)
+    opener.enter_maintenance(reason="migration", opened_by="operator@local")
+    closer = _process(db_path)
+    assert closer.current_health() is StorageHealth.MAINTENANCE
+    assert closer.leave_maintenance(snapshot_verified=True, closed_by="operator@local") == "T-ST-04"
+
+    third = _process(db_path)
+    assert third.current_health() is StorageHealth.HEALTHY
+    third.assert_writable(OperationId.WORKER_CLAIM_ASSIGNMENT)
+
+
+def test_a_second_process_observes_recovery_required_from_the_restore_record(
+    db_path: Path,
+) -> None:
+    """`recovery_required` needs no table of its own (``what_it_is_not_vi``).
+
+    A `restore_record` with `dispatcher_unlocked_at IS NULL` *is* that state, so the row the
+    backup card already writes is read here rather than duplicated -- two copies could
+    disagree, and the disagreeing copy would unlock a dispatcher.
+    """
+    engine = create_sqlite_engine(db_path)
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO backup_snapshot (id, owner_id, method, started_at, state,"
+            " completed_at, artifact_path, artifact_sha256)"
+            " VALUES ('01JSNAP9000000000000000000', ?, 'vacuum_into', ?, 'completed', ?,"
+            " '/dev/null', ?)",
+            (OWNER_ID, SEED_NOW, SEED_NOW, SNAPSHOT_HASH),
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO restore_record (id, owner_id, backup_snapshot_id, restored_at,"
+            " new_restore_generation, integrity_check_outcome, counts_observed,"
+            " leases_revoked, dispatcher_unlocked_at)"
+            " VALUES ('01JRESTORE9000000000000000', ?, '01JSNAP9000000000000000000', ?,"
+            " 7, 'not_run', '{}', 0, NULL)",
+            (OWNER_ID, SEED_NOW),
+        )
+    engine.dispose()
+
+    guard = _process(db_path)
+    assert guard.current_health() is StorageHealth.RECOVERY_REQUIRED
+    assert guard.machine.pending_restore_id == "01JRESTORE9000000000000000"
+    with pytest.raises(StorageRefused) as caught:
+        guard.assert_writable(OperationId.DELIVERY_DISPATCH_NEXT)
+    assert caught.value.code is ErrorCode.RESTORE_UNVERIFIED
+
+
+def test_recovery_required_outranks_an_open_window_on_load(db_path: Path) -> None:
+    """Both rows can exist at once, because `T-ST-05` restores *inside* the window.
+
+    Of the two, `recovery_required` is the state that keeps the dispatcher locked, so it has
+    to win. Loading `maintenance` instead would refuse strictly less than the contract
+    requires (`I15`).
+    """
+    opener = _process(db_path)
+    opener.enter_maintenance(reason="restore", opened_by="operator@local")
+    engine = create_sqlite_engine(db_path)
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO backup_snapshot (id, owner_id, method, started_at, state,"
+            " completed_at, artifact_path, artifact_sha256)"
+            " VALUES ('01JSNAP9000000000000000100', ?, 'vacuum_into', ?, 'completed', ?,"
+            " '/dev/null', ?)",
+            (OWNER_ID, SEED_NOW, SEED_NOW, SNAPSHOT_HASH),
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO restore_record (id, owner_id, backup_snapshot_id, restored_at,"
+            " new_restore_generation, integrity_check_outcome, counts_observed,"
+            " leases_revoked, dispatcher_unlocked_at)"
+            " VALUES ('01JRESTORE9000000000000010', ?, '01JSNAP9000000000000000100', ?,"
+            " 8, 'not_run', '{}', 0, NULL)",
+            (OWNER_ID, SEED_NOW),
+        )
+    engine.dispose()
+
+    assert _process(db_path).current_health() is StorageHealth.RECOVERY_REQUIRED
+
+
+def test_write_blocked_is_never_loaded_from_disk(db_path: Path) -> None:
+    """`T-ST-01` and `forbidden_transitions` row 4, asserted rather than assumed.
+
+    A process that starts while the disk is full must learn that from its own failed write,
+    never from a row. There is no column that could say it, and this proves the load path
+    does not invent one: a guard that has just gone `write_blocked` hands a *fresh* process
+    `healthy`, because nothing about a full disk is persistable.
+    """
+    first = _process(db_path)
+    first.record_write_failure()
+    assert first.current_health() is StorageHealth.WRITE_BLOCKED
+
+    assert _process(db_path).current_health() is StorageHealth.HEALTHY
+
+
+def test_at_most_one_window_is_open_at_a_time(db_path: Path) -> None:
+    """`ux_maintenance_window_open` makes "*the* window" a database guarantee.
+
+    Two processes racing to open one would otherwise leave two open rows and no answer to
+    "which window am I in".
+    """
+    first = _process(db_path)
+    first.enter_maintenance(reason="snapshot", opened_by="operator@local")
+
+    second = _process(db_path)
+    # The second process already reads `maintenance`, so the machine refuses before SQL:
+    # there is no `maintenance --> maintenance` edge in storage.yaml §3.
+    with pytest.raises(ForbiddenTransition):
+        second.enter_maintenance(reason="snapshot", opened_by="operator@local")
+
+    engine = create_sqlite_engine(db_path)
+    with engine.connect() as connection:
+        open_rows = connection.exec_driver_sql(
+            "SELECT COUNT(*) FROM maintenance_window WHERE closed_at IS NULL"
+        ).scalar()
+    engine.dispose()
+    assert open_rows == 1
+
+
+def test_the_unique_index_refuses_a_second_open_row_at_the_store(db_path: Path) -> None:
+    """The index bites even when the in-memory machine is bypassed entirely.
+
+    Going straight at the store is what a second *process* effectively does when its guard
+    was built around an explicit machine, so the constraint must hold without the machine's
+    help.
+    """
+    store = MaintenanceWindowStore(create_sqlite_engine(db_path), owner_id=OWNER_ID)
+    store.open(
+        window_id="01JWINDOW90000000000000010",
+        opened_at=SEED_NOW,
+        opened_by="operator@local",
+        reason="snapshot",
+        storage_health_at_open=StorageHealth.HEALTHY,
+    )
+    with pytest.raises(IntegrityError):
+        store.open(
+            window_id="01JWINDOW90000000000000020",
+            opened_at=SEED_NOW,
+            opened_by="operator@local",
+            reason="snapshot",
+            storage_health_at_open=StorageHealth.HEALTHY,
+        )
+
+
+def test_a_persisted_open_without_its_audit_fields_moves_nothing(db_path: Path) -> None:
+    """`opened_by` and `reason` are NOT NULL, and are not defaulted.
+
+    The entity's own words: a window with no principal does not evidence an explicit act. A
+    placeholder principal would be worse than a refusal, because afterwards it reads as
+    evidence. The refusal must also leave memory and disk agreeing -- a half-applied
+    transition is the failure this whole table exists to fix.
+    """
+    guard = _process(db_path)
+    with pytest.raises(MaintenanceWindowRequired):
+        guard.enter_maintenance(reason="snapshot")
+    assert guard.current_health() is StorageHealth.HEALTHY
+    assert _process(db_path).current_health() is StorageHealth.HEALTHY
+
+
+def test_closing_a_window_opened_from_write_blocked_needs_the_write_path_back(
+    db_path: Path,
+) -> None:
+    """`T-ST-09` `forbidden_vi`: "Dùng đường này để lách sang `healthy`".
+
+    `storage_health_at_open` exists precisely so this prohibition survives a process
+    boundary: in one process the probe streak enforced it, across processes only the column
+    can. No tenth transition is introduced -- `T-ST-04` is guarded, not replaced.
+    """
+    blocked = _process(db_path)
+    blocked.record_write_failure()
+    assert blocked.enter_maintenance(reason="disk_cleanup", opened_by="operator@local") == (
+        "T-ST-09"
+    )
+
+    reopener = _process(db_path)
+    with pytest.raises(ForbiddenTransition):
+        reopener.leave_maintenance(snapshot_verified=True, closed_by="operator@local")
+    assert _process(db_path).current_health() is StorageHealth.MAINTENANCE
+
+    assert (
+        reopener.leave_maintenance(
+            snapshot_verified=True, closed_by="operator@local", write_path_recovered=True
+        )
+        == "T-ST-04"
+    )
+    assert _process(db_path).current_health() is StorageHealth.HEALTHY
+
+
+def test_a_snapshot_window_records_when_verify_passed(db_path: Path) -> None:
+    """`ck_maintenance_window_verify_before_close` needs the column populated, not just true."""
+    guard = _process(db_path)
+    guard.enter_maintenance(reason="snapshot", opened_by="operator@local")
+    guard.leave_maintenance(snapshot_verified=True, closed_by="operator@local")
+
+    engine = create_sqlite_engine(db_path)
+    with engine.connect() as connection:
+        row = connection.exec_driver_sql(
+            "SELECT closed_at, closed_by, snapshot_verified_at, storage_health_at_open"
+            " FROM maintenance_window WHERE owner_id = ?",
+            (OWNER_ID,),
+        ).fetchone()
+    engine.dispose()
+    assert row is not None
+    assert row[0] is not None and row[1] == "operator@local"
+    assert row[2] is not None, "a closed snapshot window must record when verify passed"
+    assert row[3] == StorageHealth.HEALTHY.value
+
+
+def test_an_unverified_snapshot_window_is_refused_before_it_reaches_the_check(
+    db_path: Path,
+) -> None:
+    """The guard refuses first; the CHECK is the backstop for a process that bypasses it."""
+    guard = _process(db_path)
+    guard.enter_maintenance(reason="snapshot", opened_by="operator@local")
+    with pytest.raises(ForbiddenTransition):
+        guard.leave_maintenance(snapshot_verified=False, closed_by="operator@local")
+    assert _process(db_path).current_health() is StorageHealth.MAINTENANCE
+
+
+def test_link_restore_record_attaches_the_restore_to_its_window(db_path: Path) -> None:
+    """The seam the backup card calls after its INSERT commits.
+
+    It cannot be written at `mark_recovery_required` time: `restore.py` calls that *before*
+    inserting the `restore_record`, and the column is a foreign key.
+    """
+    guard = _process(db_path)
+    guard.enter_maintenance(reason="restore", opened_by="operator@local")
+    engine = create_sqlite_engine(db_path)
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO backup_snapshot (id, owner_id, method, started_at, state,"
+            " completed_at, artifact_path, artifact_sha256)"
+            " VALUES ('01JSNAP9000000000000000200', ?, 'vacuum_into', ?, 'completed', ?,"
+            " '/dev/null', ?)",
+            (OWNER_ID, SEED_NOW, SEED_NOW, SNAPSHOT_HASH),
+        )
+        connection.exec_driver_sql(
+            "INSERT INTO restore_record (id, owner_id, backup_snapshot_id, restored_at,"
+            " new_restore_generation, integrity_check_outcome, counts_observed,"
+            " leases_revoked, dispatcher_unlocked_at)"
+            " VALUES ('01JRESTORE9000000000000020', ?, '01JSNAP9000000000000000200', ?,"
+            " 9, 'not_run', '{}', 0, NULL)",
+            (OWNER_ID, SEED_NOW),
+        )
+    guard.link_restore_record("01JRESTORE9000000000000020")
+    with engine.connect() as connection:
+        linked = connection.exec_driver_sql(
+            "SELECT restore_record_id FROM maintenance_window WHERE owner_id = ?",
+            (OWNER_ID,),
+        ).scalar()
+    engine.dispose()
+    assert linked == "01JRESTORE9000000000000020"
+
+
+def test_a_guard_without_a_store_is_unchanged(db_path: Path) -> None:
+    """Persistence is opt-in, and the opt-out path must stay exactly as it was.
+
+    A dozen other cards construct `StorageGuard()` bare in their own tests. If attaching a
+    store had changed the default, this card would have broken them all -- so the default is
+    asserted here rather than left to those cards to discover.
+    """
+    guard = StorageGuard()
+    assert guard.enter_maintenance() == "T-ST-03"
+    assert guard.current_health() is StorageHealth.MAINTENANCE
+    assert guard.leave_maintenance(snapshot_verified=True) == "T-ST-04"
+    assert guard.window_id is None
+    # Nothing reached the database.
+    engine = create_sqlite_engine(db_path)
+    with engine.connect() as connection:
+        rows = connection.exec_driver_sql("SELECT COUNT(*) FROM maintenance_window").scalar()
+    engine.dispose()
+    assert rows == 0

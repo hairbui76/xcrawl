@@ -623,3 +623,357 @@ the E1 runs in `evidence/index.json`): this card now has **two** manifests, and 
 register as current is `…-E1-20260907T113817Z.json`. The 10:09Z record should be registered
 as `STALE` or not at all — registering it as a live PASS would reinstate exactly the
 mismatch `F-A3R2-03` reported.
+
+---
+
+# ADDENDUM — `PKT-TC-STORAGE-FIX3` — **STOPPED at `SG-EDGE`**
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-STORAGE-FIX3` (wiring wave 1, gap `G-3`) |
+| worker principal | `worker-WR` |
+| authority_id | `AUTH-COORD-TC-STORAGE-FIX3` (parent `AUTH-OWNER-20260908-11`) |
+| lease_id | `LEASE-TC-STORAGE-e4` (fencing 4) |
+| status | **`BLOCKED_DEPENDENCY`** — the packet's own stop condition fired |
+| change request | **`CR-TC-storage-06`** (below) |
+| next actor | Coordinator → whoever owns `contracts/data/entities.yaml` |
+| lease_released_at | 2026-09-08T06:45Z |
+
+**No change was made to `server/app/storage/guard.py` or `server/app/storage/health.py`.**
+The packet said: *"if an entity/table for storage health/maintenance exists, use it; if none
+exists, STOP with a CR naming the missing entity — do not add an undeclared table"*. None
+exists. This addendum and the re-issued manifest are the only writes.
+
+## C.1 The gap is real — reproduced end to end
+
+`docs/owner-runbook.md` §9.4 documents a two-step restore: open the window, then restore.
+Run against a fresh migrated database with a bootstrapped owner
+(scratch dir, never in the repo):
+
+```
+inv A  backup_cli snapshot           → backup_snapshot_id 01M1ZJD1VNBKKFG5KHWTAZ89ZB, exit 0
+inv D  backup_cli verify             → {"state":"verified","artifact_sha256_matches":true,
+                                        "counts_match":true}, exit 0
+inv E  backup_cli maintenance --open → {"transition":"T-ST-03",
+                                        "storage_health":"maintenance"}, exit 0
+inv F  backup_cli restore …          → {"code":"VALIDATION_ERROR",
+                                        "details_safe":{"field_path":"storage_health",
+                                        "violation_kind":"precondition_not_met",
+                                        "operation_id":"backup.restore_snapshot"}}, exit 2
+```
+
+Step E reports success and step F — the very next invocation — cannot see the window it
+opened. `server/app/backup/restore.py:209` checks `guard.current_health().value != "maintenance"`,
+and each CLI process constructs a fresh `StorageGuard()`, which starts at `healthy`
+(`contracts/state/storage.yaml` `initial_state`). **The documented restore path is
+unreachable**, exactly as `G-3` states.
+
+The cause is mine and I will name it plainly: `StorageHealthMachine` holds its state in
+process memory. That was correct for `write_blocked` and is required by `T-ST-01`
+(*"KHÔNG có transaction DB … giữ TRONG BỘ NHỚ tiến trình"* — you cannot write "cannot write"
+into a database that cannot be written). But `maintenance` is the opposite case: `T-ST-03`
+says *"**Ghi một hàng maintenance window** (trạng thái vẫn ghi được ở thời điểm này) + chuyển
+cờ trong bộ nhớ"* — a row **and** a flag, precisely because storage is still writable when an
+operator opens the window. I implemented the flag and not the row, and no test caught it
+because every test of mine lives in one process. The single-process assumption was never
+stated in my handoff; it should have been.
+
+## C.2 Why I stopped instead of persisting it
+
+`contracts/data/entities.yaml` (60 entities, sha256 `ebcf460f…` at the time of writing)
+declares **no** entity for storage health or a maintenance window. Verified four ways:
+
+1. entity names — none named `storage_health`, `maintenance_window`, `storage_probe`, or
+   anything similar; the only `*_window` is `coverage_window`, which is a reporting period;
+2. field names — no field anywhere in the 60 entities contains `storage`, `health`,
+   `maintenance` or `probe`;
+3. transactions — of the 8 declared, only `TXN-purge-all` mentions maintenance, and it
+   mentions it as a *precondition read* via `storage.get_health`, not as a row it writes;
+4. the shipped schema — 49 tables after `alembic upgrade head`; none of them either.
+
+Every occurrence of "maintenance" in `entities.yaml` points **outward** at
+`contracts/state/storage.yaml`. The entity contract treats storage health as state owned
+elsewhere; the state contract says a row is written. The two do not meet. That is the defect,
+and it is in the contract layer, which this card may not edit (`SG-CONTRACT`, `SG-EDGE`).
+
+The two tables I could have abused, and why I did not:
+
+* **`settings`** (`key`, `value_json`) would hold it fine — but `contracts/modules.yaml`
+  gives `data_owner_of: settings` to `MOD-settings-service`. Writing storage state into
+  another module's table is a `FORBIDDEN_EDGE` in everything but name, and it would put a
+  `MOD-data-store` invariant behind a service that does not exist yet (`G-6`).
+* **inventing `storage_maintenance_window`** is what the packet forbids, and
+  `tests/contract/test_schema_matches_entities.py` would fail it on assertion 1 ("every table
+  has an entity of the same name") — that gate asserts equality in both directions per
+  shipped table, so an undeclared table cannot ship even quietly.
+
+## C.3 `CR-TC-storage-06` — the missing entity
+
+**Requested:** an entity in `contracts/data/entities.yaml` owned by `MOD-data-store` that
+persists the `maintenance` window `T-ST-03` already says is written. Suggested shape, derived
+from `contracts/state/storage.yaml` §3 and nothing else — the contract owner decides:
+
+| field | type | nullable | why the contract needs it |
+| --- | --- | --- | --- |
+| `id` | `string_ulid` | no | |
+| `owner_id` | `string_ulid` | no | single-owner scoping, as every other table |
+| `opened_at` | `timestamp_utc_ms` | no | `T-ST-03` is an explicit operator act at a time |
+| `opened_by_principal` | `string` | no | `T-ST-03`: *"Hành động EXPLICIT của Operator (`backup_operator` scope)"* — a window with no principal cannot evidence that |
+| `reason` | `enum` | no | `snapshot \| migration \| purge_all \| restore` — `maintenance` is entered for four contracted purposes |
+| `closed_at` | `timestamp_utc_ms` | yes | NULL = open. This is the field that makes the state readable by the next process |
+| `snapshot_verified_at` | `timestamp_utc_ms` | yes | `T-ST-04` forbids closing before `backup.verify_snapshot` passes; without this the guard cannot enforce it across processes |
+
+A partial index on `(owner_id) WHERE closed_at IS NULL` gives "at most one open window",
+which is the invariant `T-ST-03`/`T-ST-09` assume when they speak of *the* window.
+
+**Scope of the fix once the entity exists** (ready to execute on a new lease): the guard
+loads `maintenance` and `recovery_required` at construction and writes on `T-ST-03`,
+`T-ST-04`, `T-ST-09`; `write_blocked` **stays in memory** — persisting it is what `T-ST-01`
+and `forbidden_transitions` row 4 forbid; and a test proves a second process on the same
+database file observes `maintenance`.
+
+**What is already persistable and is not:** `recovery_required` needs no new entity —
+`restore_record` exists with `dispatcher_unlocked_at` and `operator_ack_at`, so "a restore
+record whose dispatcher is still locked" *is* `recovery_required` on disk. I did not
+implement that half either, because doing so would leave `maintenance` in memory and
+`recovery_required` on disk: `T-ST-05` requires `maintenance` first, so the restore path
+would still be unreachable and the state machine would be split across two storage models
+for no gain. It should land in one change, with the entity.
+
+## C.4 Two defects observed in files outside this card
+
+Reported, not touched:
+
+* `tools/backup_cli.py:187` — `_resolve_owner` raises `BackupError.__new__(BackupError)`
+  (bypassing `__init__`), so on a database with no owner row the CLI dies with
+  `AttributeError: 'BackupError' object has no attribute 'code'` at
+  `server/app/backup/snapshot.py:145` instead of emitting an error envelope. Exit 1 with a
+  traceback where the contract wants a `code`. Owner: the backup card.
+* `server/app/wiring.py:153` — `mypy` error: *Module "server.app.delivery.service" does not
+  explicitly export attribute "DeliveryIntentKind"*. The one `mypy` error in the tree.
+  Owner: `PKT-P0-FIX5` (WS).
+
+## C.5 Verification
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `uv run pytest tests/integration/test_disk_full_no_ack.py tests/integration/test_readiness_independent_channel.py` | 0 | **55 total, 0 failed, 0 errors, 0 skipped** |
+| `uv run ruff check <this card's files>` | 0 | clean |
+| `uv run ruff format --check <this card's files>` | 0 | 7 files already formatted |
+| `uv run mypy` | 1 | 0 errors in this write set; 1 in `server/app/wiring.py` (above) |
+| full suite | varies | **unstable, and not because of this card** — see below |
+
+**The full suite is a moving target right now.** Three consecutive runs during this packet
+gave 0, 5 and 29 failures, in `test_collector_loop.py`, `test_analysis_once_per_key.py`,
+`test_attempt_not_result.py` and `test_worker_loop.py` — wave-2 files being written while the
+suite ran. The clean run recorded **1093 tests, 1088 passed, 5 xfailed, 0 failed**. In every
+run, zero failures were in this card's files. I am reporting the instability rather than
+picking the green run and calling it the result.
+
+## C.6 Manifest re-issue
+
+| Path | Operation | sha256 | Bytes |
+| --- | --- | --- | --- |
+| `evidence/runs/TC-storage-write-blocked-readiness-E1-20260908T063909Z.json` | CREATE (`EV-E1-05`, `PASS`) | `4b73f86a35c0e31babc576602e179191cba51c361a2463ab1c406e7b25bf1d40` | 15468 |
+| `evidence/runs/TC-storage-write-blocked-readiness-E1-20260907T113817Z.json` | MODIFY → `STALE` | `09fa4fcabf7c21c7af63c943a2cf87ab1a150174624d4b4f98944e450ce4acf5` | 15361 |
+
+The 11:38Z record went stale **by its own rule**: five files it pinned changed
+(`contracts/retry-policy.yaml`, `contracts/data/entities.yaml`,
+`precode/adr/ADR-0011-frameworks-and-toolchain.md`, `precode/baseline.json`,
+`precode/decision-register.md`) and all five are in the `invalidation.invalidated_by_paths`
+block added in FIX2. That block did the job it was added for.
+
+Worth stating because it bounds the blast radius: **no artifact of this card changed**, the
+whole of `contracts/state/storage.yaml` is still byte-identical to the original §0 pin
+(`a77803f1…`), and the three constants this card reads from `retry-policy.yaml` are unchanged
+(30 s, 3 consecutive probes, grace 0 s). The code is not stale; only the manifest's pinned
+baseline was.
+
+Both manifests validate against `evidence/manifest.schema.json`; the new one was re-verified
+to have zero hash mismatches against disk.
+
+## C.7 Standing items
+
+`CR-TC-storage-02`, `-04`, `-05` remain open; **`CR-TC-storage-06` is new and blocks `G-3`**.
+`CR-TC-storage-01` and `-03` stay resolved. `PROV-WR-01`..`-03` stand.
+
+`CR-TC-storage-04` (no `storage_probe` entity) and `CR-TC-storage-06` (no maintenance-window
+entity) are the same defect seen twice: `contracts/state/storage.yaml` describes rows that
+`contracts/data/entities.yaml` never declared. They should be fixed in one amendment.
+
+---
+
+# ADDENDUM — `PKT-TC-STORAGE-FIX4` — `G-3` closed at the port
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-STORAGE-FIX4` (wiring wave 1, gap `G-3`) |
+| worker principal | `worker-WR` |
+| authority_id | `AUTH-COORD-TC-STORAGE-FIX4` (parent `AUTH-OWNER-20260908-11`) |
+| lease_id | `LEASE-TC-STORAGE-e5` (fencing 5) |
+| gate | `maintenance_window` in `entities.yaml` 0.3.0 (`AMD-ENT-maintenance-01`) **and** `PKT-PC02-FIX16` released — both verified before the first write |
+| status | **`DONE_WITH_CONCERNS`** — the port is closed and proven; the CLI caller is another card's file (`CR-TC-storage-07`) |
+| next actor | Coordinator → W6B for `tools/backup_cli.py` |
+| lease_released_at | 2026-09-09T07:30Z |
+
+## D.1 Changes
+
+| Path | Operation | sha256 | Bytes |
+| --- | --- | --- | --- |
+| `server/migrations/versions/0015_tc_storage_maintenance_window.py` | CREATE | `82df80ad6352cbcd…` | — |
+| `server/app/storage/guard.py` | MODIFY | `1a913367693180ae…` | — |
+| `tests/integration/test_readiness_independent_channel.py` | MODIFY (+13 tests) | `2ca9ae0262e7e20b…` | — |
+| `evidence/runs/…-E1-20260909T072209Z.json` | CREATE (`EV-E1-06`, PASS) | `9bcc5dde33f7fbf1bf8a91387e4e6ab5e501ca94259571d76b87cb03000d12f6` | 17421 |
+| `evidence/runs/…-E1-20260908T063909Z.json` | MODIFY → `STALE` | `efb3dabb35e97148ae04ec10309100e1a3336ebb2fe0e120805fed8e6202926e` | 16145 |
+
+`server/app/storage/health.py` is **unchanged**. The state machine did not need to change:
+persistence is a load at construction (`initial=` / `pending_restore_id=`, parameters it
+already had) plus writes in the guard. Keeping the machine pure is why `write_blocked` could
+not accidentally acquire a persistence path.
+
+**`SG-HASH` note, as the packet predicted:** `contracts/data/entities.yaml` no longer matches
+this card's §0 pin — it now carries `AMD-ENT-maintenance-01`, which is the amendment this
+packet was waiting for. Expected drift, not staleness; WP re-pins after. Verified that
+`contracts/state/storage.yaml` — the card's actual oracle — is still byte-identical to the
+original pin `a77803f1…`, so no transition changed under me.
+
+## D.2 The migration
+
+`0015_tc_storage_maintenance_window`, chained off `0014_tc_secret_settings_service`
+(`alembic heads` → 1, asserted structurally, not against a literal). Ten columns, three named
+CHECKs and the partial unique index, all transcribed from `ENT-maintenance-window` rather
+than from my earlier CR draft — the amendment added `storage_health_at_open`, `closed_by` and
+`restore_record_id` beyond what I had proposed, and `test_schema_matches_entities.py` asserts
+set equality **in both directions**, so a field invented or omitted here fails that gate.
+It passes with **0 differences**.
+
+## D.3 What is persisted, and what must never be
+
+The entity's `what_it_is_not_vi` is the whole design, so the code follows it literally:
+
+* **`maintenance` → the table.** One row per window; `closed_at IS NULL` means open.
+* **`recovery_required` → `restore_record`, not a new column.** A restore whose
+  `dispatcher_unlocked_at` is NULL *is* that state. Reading it there rather than copying it
+  means the two can never disagree, and a disagreeing copy is one that unlocks a dispatcher.
+* **`write_blocked` → nothing, ever.** `T-ST-01` and `forbidden_transitions` row 4. A row
+  read at startup saying "blocked" would refuse writes on a healthy disk; one saying
+  "healthy" would let a full disk take assignments, which is what `I02` forbids.
+  `test_write_blocked_is_never_loaded_from_disk` asserts a guard that has just gone
+  `write_blocked` hands a *fresh* process `healthy`.
+
+**Load order:** an unreconciled restore outranks an open window. `T-ST-05` runs the restore
+*inside* the window so both rows can exist at once, and of the two only
+`recovery_required` keeps the dispatcher locked — loading `maintenance` would refuse strictly
+less than `I15` requires. `test_recovery_required_outranks_an_open_window_on_load` pins it.
+
+**Persistence is opt-in.** `StorageGuard()` with no store behaves exactly as before, because
+a dozen other cards construct it bare in their own tests; `StorageGuard.from_engine(engine,
+owner_id=…)` is the persisted path. `test_a_guard_without_a_store_is_unchanged` asserts the
+default rather than leaving those cards to discover a change.
+
+## D.4 One prohibition that needed a column to survive a process — `PROV-WR-04`
+
+`T-ST-09`'s `forbidden_vi` is *"Dùng đường này để lách sang `healthy`"*: opening maintenance
+from `write_blocked` must not become a laundering route to healthy. Inside one process the
+probe streak enforced that. Across processes only `storage_health_at_open` can, which is why
+the amendment carries that column.
+
+`leave_maintenance(..., write_path_recovered=False)` therefore refuses to close a window
+opened from `write_blocked` unless the caller asserts the write path came back. **No tenth
+transition was introduced** — `contracts/state/storage.yaml` declares nine and this is
+`T-ST-04` being guarded, with the refusal raised as the existing `ForbiddenTransition`,
+exactly as `T-ST-09` is already refused while a restore is pending. Recorded as `PROV-WR-04`
+because the enforcement point is my choice; the prohibition is the contract's.
+
+Two audit fields are required and **not defaulted**: `opened_by`/`reason` on open,
+`closed_by` on close, all `NOT NULL` or CHECK-bound. A fabricated principal in an audit
+column is worse than a refused call, because afterwards it reads as evidence. Both are
+validated *before* the machine moves, so a refusal leaves memory and disk agreeing — a
+half-applied transition is the failure this table exists to fix.
+
+## D.5 Second-process proof
+
+In-test (`test_a_second_process_observes_the_open_maintenance_window`): a new `Engine` on the
+same file, so nothing is shared but SQLite. Also reproduced across two real OS interpreters:
+
+```
+process 1:  before: healthy   transition: T-ST-03   after: maintenance
+process 2:  storage_health: maintenance
+            restore precondition (T-ST-05) satisfied: True
+```
+
+Before this packet, process 2 read `healthy` and `restore` refused with
+`precondition_not_met`. Thirteen tests were added in total, including the unique-index
+refusal at the store, the `T-ST-09` close guard, `snapshot_verified_at` being populated, the
+`link_restore_record` seam, and the two negative controls above.
+
+## D.6 `CR-TC-storage-07` — the CLI caller is not in this lease
+
+`tools/backup_cli.py:_guard()` still builds an in-memory `StorageGuard`, so the *CLI* chain
+`maintenance --open` → `restore` is still not closed end to end. That file belongs to the
+backup card. The port is ready and the change is small:
+
+```python
+StorageGuard.from_engine(engine, owner_id=owner_id,
+                         reconciliation_check=reconcile.reconciliation_complete(engine, owner_id=owner_id))
+```
+
+plus `--reason` / operator principal at the `maintenance --open` call site and `closed_by` at
+`--close`. Until then, `G-3` is closed at the port and open at the caller — stated that way
+rather than claimed as finished.
+
+`link_restore_record()` is the other seam W6B should call, **after** its `restore_record`
+INSERT commits: `restore.py` calls `mark_recovery_required` *before* that INSERT and the
+column is a foreign key, so the link cannot be written at mark time.
+
+## D.7 Verification
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| card tests + `test_schema_matches_entities.py` | 0 | **78 tests, 0 failed, 0 errors, 0 skipped** |
+| `test_schema_matches_entities.py` alone | 0 | 10/10, **0 differences both ways** |
+| `alembic heads` | 0 | **1 head** (`0015_tc_storage_maintenance_window`) |
+| full suite | 0 | **1147 tests, 1143 passed, 0 failed, 0 errors, 4 xfailed** |
+| `ruff check` / `ruff format --check` | 0 | clean on this write set |
+| `uv run mypy` | 0 | **Success: no issues found in 100 source files** |
+
+## D.8 Standing items
+
+`CR-TC-storage-06` is **resolved** by `AMD-ENT-maintenance-01` and this packet.
+`CR-TC-storage-07` is **new**. Still open: `CR-TC-storage-02` (evidence schema caps
+`SELF_VALIDATION` below the card's ceiling), `CR-TC-storage-04` (no `storage_probe` entity, so
+`write_blocked → healthy` still cannot fire unaided on a real deployment), `CR-TC-storage-05`
+(§0 re-pin — now also covering `entities.yaml`). `PROV-WR-01`..`-04` stand.
+
+---
+
+# ADDENDUM — `LEASE-TC-STORAGE-e6` — format finding was misattributed; **no change made**
+
+The report was that repo-wide `ruff format --check` is red on
+`tests/integration/test_readiness_independent_channel.py`. It is not. That file reports
+`1 file already formatted`, exit 0, and its sha256 is unchanged at
+`2ca9ae0262e7e20bd5e15bad12e9e5346f0f216d3370ca82a6b17e23372068a7` before and after this
+packet — I ran the check, not a reformat, so there is nothing to re-run and nothing to
+re-issue.
+
+Reproducing the CI step exactly (`uv run ruff format --check .`, per
+`.github/workflows/python.yml:38` and `Makefile:51`) names a different file:
+
+```
+Would reformat: tests/integration/test_restore_side_effect_lock.py
+1 file would be reformatted, 185 files already formatted
+```
+
+That file belongs to `TC-backup-restore-drill`, is outside this lease, **and has uncommitted
+changes in the working tree right now** — `git status` shows it modified, and
+`ruff format --diff` shows the pending edits are a new CLI test calling
+`maintenance --open --reason restore` and asserting `opened["window_id"]`. That is W6B taking
+up `CR-TC-storage-07` and wiring `tools/backup_cli.py` to the port this card shipped in FIX4.
+
+So I did not reformat it. Running `ruff format` across another card's file while its author
+has it open would collide with in-flight work to fix two lines of line-wrapping, and the two
+files are easy to confuse because both are about maintenance windows. The one-line fix is
+W6B's to apply with the rest of their change; the diff is trivial (two statements that now
+fit on one line).
+
+No manifest re-issue: no pinned artefact's bytes changed.

@@ -155,7 +155,7 @@
     "attempts": 1,
     "error_classification": null
   },
-  "result": "PASS",
+  "result": "STALE",
   "artifacts": [],
   "invalidation": {
     "invalidated_by_paths": [
@@ -276,5 +276,6 @@
       "KHÔNG thiết lập idempotency của claim theo đúng hình thức hợp đồng (CR-TC-SCHED-05).",
       "Card §9 còn ghi: contracts/http/openapi.yaml và contracts/schemas/worker-assignment.schema.json vẫn khai claim_ceiling DRAFT_FOR_REVIEW trong header của chính chúng."
     ]
-  }
+  },
+  "stale_reason": "Superseded by evidence/runs/TC-scheduler-lease-claim-E1-20260908T064307Z.json under PKT-TC-SCHED-FIX1. Two blocking findings from WC's real collector wiring changed the bytes this record pins: CR-TC-COLLECTOR-11 (AlertIntentPort now receives the caller's open connection, so the intent row and run.alert_intent_id land in one commit instead of deadlocking a second SQLite writer) and CR-TC-COLLECTOR-12 (the claim payload now satisfies worker-assignment.schema.json, and the tests validate the real service dict and the real HTTP body rather than a constructed copy). service.py and both named test files changed (INV-06)."
 }

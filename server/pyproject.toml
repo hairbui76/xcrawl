@@ -17,6 +17,11 @@ dependencies = [
   "alembic>=1.13,<2",
   "httpx>=0.27,<0.29",
   "argon2-cffi>=23.1,<24",
+  # AEAD for the secret store's envelope encryption (`server/app/secret/store.py`
+  # `CryptographyAesGcm`, AES-256-GCM per contracts/ops/secrets.md §4.1). Without it in the
+  # lock the real cipher could not be exercised at all and envelope encryption stayed
+  # NOT_RUN — `CR-TC-SECRET-02`.
+  "cryptography>=43,<47",
   "uvicorn>=0.30,<0.36",
   "rr-contracts",
 ]

@@ -390,3 +390,252 @@ fake. Added by this packet:
 
 *`PKT-TC-ADAPTER-FIX1` · worker-W3A · `lease_released_at` 2026-09-07T20:25Z · claim unchanged
 · `F-A3-P3-01` and `F-A3-P3-03` `FIX_PROPOSED`, neither closed by me · `SELF_VALIDATION`.*
+
+---
+
+# ADDENDUM 2 — `PKT-TC-ADAPTER-FIX2` (gap G-7b: the worker process loop)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-ADAPTER-FIX2` (`…/packets/WIRING-wave-1.md` wave 2, row **G-7b**) |
+| worker principal | `worker-W3A` |
+| authority_id | `AUTH-COORD-TC-ADAPTER` (parent `AUTH-OWNER-20260908-11`, Owner instruction "next I will test by myself") |
+| lease_id | `LEASE-TC-ADAPTER-e3` (fencing 3) — `worker/app/main.py`, NEW `worker/app/loop.py`, NEW `tests/integration/test_worker_loop.py`, this handoff, a re-issued manifest |
+| status | **`DONE`** |
+| completion_claim | `IMPLEMENTATION_VERIFIED` for the worker cycle **as exercised in-process against the real server**; unchanged for the adapter paths. `CONTRACT_READY` still caps CLI/ACP, REQ-AC16 is still `BLOCKED`. |
+| next actor | Coordinator |
+| lease_released_at | 2026-09-08T06:40Z |
+
+**Baseline.** SG-HASH before the first write: **32 rows, 0 mismatches**, at epoch
+**`PC10-PIN-P4b-20260908`** (the card was re-pinned twice more between `e2` and `e3`).
+Nothing under `contracts/`, `acceptance/`, `precode/` or `agent-tasks/` was touched.
+
+*Interrupted mid-packet by a session rate limit and resumed on the Coordinator's instruction;
+`loop.py` and a partial `main.py` were on disk and were re-read before continuing.*
+
+## B.1 What was built
+
+`worker/app/loop.py` — the cycle `contracts/ports.yaml` fixes:
+`analysis.claim_task` → `get_task_input` → `secret.issue_task_credential` (port) →
+`ai.run_inference_task` → `submit_result` / `report_attempt_unknown`, with
+`analysis.heartbeat` interleaved.
+
+Three decisions carry most of the weight:
+
+1. **The server is reached over HTTP, never by import.** `contracts/modules.yaml` types every
+   `MOD-analysis-worker → MOD-analysis-service` edge `transport: http`, and FE-15 denies the
+   worker any route to the server's SQLite. `loop.py` imports nothing from `server.*`; it
+   speaks to `AnalysisServerPort`, which the tests bind to the real FastAPI app through an
+   in-process client. Calling the service functions directly would have been easier and would
+   have proved the loop on an edge that does not exist in deployment.
+2. **`report_attempt_unknown` is used only when the provider may actually have run.** It
+   writes `cost_uncertain = true`; filing it after a refusal that happened *before* any
+   provider call would record an uncertainty the system does not have. So
+   `CREDENTIAL_REFUSED` and `DISPATCH_REFUSED` end by letting the lease lapse — see
+   `CR-TC-adapter-08` for the operation the contract does not provide.
+3. **Every end is a named `CycleOutcome`**, not an exception type a caller has to interpret:
+   `no_task`, `credential_refused`, `dispatch_refused`, `provider_unavailable`,
+   `output_invalid`, `attempt_unknown`, `submitted`, `submit_rejected`.
+
+`worker/app/main.py` — `--run` refuses to start with **one reason per cause**
+(`server_url_not_configured`, `worker_token_file_missing`, `worker_token_file_not_a_file`,
+`worker_token_file_permissions_too_wide`, `worker_token_empty`). The permission check is a
+refusal, not a warning, because `contracts/ops/secrets.md` §3 says so in as many words. The
+token is read through one accessor and `WorkerConfig.__repr__` renders it `<redacted>`.
+
+`--print-capabilities` is **byte-identical** to the Phase-0 output that
+`docs/owner-runbook.md` §4.3 records as already run, and a test asserts that. A new
+`--print-adapters` reports the registry, each entry's probe outcome and `ac16: BLOCKED`, so
+the Owner can see *why* `ai_providers` is empty without reading the contract. The runbook does
+not document it yet — a note for WS2.
+
+## B.2 Changes — before / after
+
+| Path | Operation | Before (sha256, bytes) | After (sha256, bytes) |
+| --- | --- | --- | --- |
+| `worker/app/loop.py` | CREATE | ABSENT | `4988973138256a73208a1ebfc35ef9dad4004ae6faac4882b70f7f8f4da1ceff`, 29146 |
+| `worker/app/main.py` | MODIFY | `2e3fd9e72629773c2a66aed6f4fff9a5a64778e1667379fe15176552ef4bce27` (P0 stub, 1655) | `a85f38409161aef6e5c8a0fa7046a667c5d0c7911f8ad4466dd3bd44a942fe42`, 13215 |
+| `tests/integration/test_worker_loop.py` | CREATE | ABSENT | `9f7145279f15cb68ca713f654fff8dc6f6f6dba1b7f81cd18f45edaf31fff4d7`, 35461 |
+| `evidence/runs/…-E1-20260907T201840Z.json` | MODIFY (`result` → `STALE`) | `372320cd92a5fb85c08e9a9185515af7a65c66e12001d0e42cb2d4ec7410a4c5` | `6eae0895d024e7cc7b453c3faf96a0e886b8365521c5b20fa8f4b57f85382d6c` |
+| `evidence/runs/…-E1-20260908T062924Z.json` | CREATE | ABSENT | `5608cdc6471ac2c588b7be17282b242ded0bf49abb9d597c6dd245ed1c546afe`, 31052 |
+| `evidence/handoffs/TC-analysis-adapter-validation-handoff.md` | MODIFY | `278773956a133c287df7ced048981604dc0040a07ec969ef07a05da7f8732116` | (this file) |
+
+The five adapter modules and the two earlier test files are **byte-identical** to `e2`
+(`base.py` `82d3a896…`, `api_provider.py` `a59ed47c…`, `cli_acp.py` `6865a099…`,
+`extract_json.py` `3be00460…`, `validate.py` `96ee0ec7…`,
+`test_analysis_result_schema.py` `d6c94a8e…`, `test_injection_canary.py` `be68bcf1…`).
+
+## B.3 Verification
+
+| Command | Result |
+| --- | --- |
+| `PYTHONDONTWRITEBYTECODE=1 uv run ruff format --check .` | **174 files already formatted** — rc=0 |
+| `PYTHONDONTWRITEBYTECODE=1 uv run ruff check worker tests/…` | All checks passed! |
+| `… mypy --strict … worker/app` | Success: no issues found in **8** source files (`worker/` is in scope) |
+| `… pytest tests/contract/test_analysis_result_schema.py tests/integration/test_injection_canary.py tests/integration/test_worker_loop.py` | **67 passed**, 0 failed, 0 xfail (34 + 15 + 18) |
+| `… pytest -p no:warnings` (full suite) | **1088 passed, 4 xfailed, 0 failed** — exit 0 |
+
+### What the loop tests prove, in rows
+
+Each is asserted with SQL after the cycle, through the real routes and the real bearer
+dependency:
+
+* **credential refused (G-6)** — `credential_refused`, backoff 60 s, **0** `analysis` rows,
+  task still `running` and lease still `held`. The last two are the load-bearing pair: the
+  opening attempt is written as `timeout_unknown`/`cost_uncertain = 1` *by design*, so the
+  attempt row alone cannot say whether an unknown attempt was filed — only the task state and
+  the lease can.
+* **the real registry entry refuses** — `anthropic@claude-opus-5` read from
+  `providers.yaml` §2.1: `CAPABILITY_DENIED`, `isolation_unverified`, transport untouched.
+  This is the disagreement that must not become a fake success: the provider registry the
+  server consulted said enabled, and the adapter still refused.
+* **a full cycle** — one `analysis` row `valid`, attempt `accepted`, task `valid`, lease
+  `released`, credential issued for exactly that `(task_id, attempt_id)`, one provider call,
+  its request carrying `tools == ()`.
+* **a long inference** — clock stepping 120 s per read: ≥1 heartbeat, lease `expires_at`
+  moved, well inside the 900 s TTL.
+* **`AI_ATTEMPT_UNCERTAIN`** — attempt `timeout_unknown`, `cost_uncertain = 1`, `ended_at`
+  NULL, task `unknown_attempt`, **0** `analysis` rows (I16).
+* **empty queue** — 5, 15, 45, 45 s, the `retry-policy.yaml` ladder holding at its ceiling.
+* **the wired app** — through `server.app.wiring.create_wired_app()` (wave 1's composition
+  root, which landed while this packet ran): `claim_task` answers `no_enabled_provider`. That
+  is the honest state of a real deployment today, so it is asserted rather than avoided.
+
+## B.4 New change requests
+
+| ID | Severity | Finding |
+| --- | --- | --- |
+| `CR-TC-adapter-08` | medium | **No way for an analysis worker to hand a task back.** `contracts/ports.yaml` gives the collector `worker.release_assignment` but the analysis worker only `claim_task`, `get_task_input`, `heartbeat`, `submit_result`, `report_attempt_unknown`. When the worker refuses *before* any provider call (no credential, adapter disabled), the only contract-legal exits are a false `report_attempt_unknown` or letting the lease lapse. The loop lets it lapse, so the task is unavailable for `lease_ttl_analysis` = 900 s after every such refusal — today, that is *every* cycle. Requesting an `analysis.release_task` (or an explicit `attempt_outcome` for "never started"). |
+| `CR-TC-adapter-09` | low | **A locally-detected invalid output leaves no server-side record.** `tasks.yaml` §4 has the adapter validate early "to save a network round trip", and the server records a rejection only through a failing `analysis.submit_result`. So when the adapter's local check catches the defect, the worker holds no document to submit and the attempt the provider actually consumed is invisible to the server. Either the adapter needs a "skip the local check" mode or the worker needs a way to report it. |
+| `CR-TC-adapter-10` | medium | **`analysis.get_task_input` returns no `analysis_key`.** Its response carries `task_id`, `task_type`, `target_ref`, `sources`, `input_source_ids`, `max_evidence_level`, `inference_timeout_seconds` — and four of the key's seven components (`owner_id`, `source_fingerprint`, `prompt_version`, `generation_number`) are not derivable from anything the worker holds. SV-01 compares the model's key against the task's, so a worker that built one would be inventing the value the check exists to test. `AnalysisWorkerLoop.analysis_key_resolver` is a declared seam, not a computation; **the submit path therefore cannot complete on a real deployment today**, and the test supplies the key. A `test_get_task_input_carries_no_analysis_key_for_the_worker_to_use` asserts the gap so it fails the day the server starts sending one. |
+
+`CR-TC-adapter-01` … `-07` are unchanged and still open. `CR-TC-adapter-05` (the
+`evidence/index.json` registration the card's §13 asks for) now covers **three** run records.
+
+## B.5 Not established
+
+Everything in §5 and §A.6 still holds — E3 `NOT_RUN`, isolation unverified, both Anthropic
+adapters `enabled: false`, AC-16 `BLOCKED`. Added by this packet:
+
+* **The loop was not run as a process.** `--run` builds an `httpx.Client` and a socket; a test
+  asserting those would be asserting the transport library. What is proved is the *cycle*,
+  in-process against the real app.
+* **The server half of ISO-05 is still `NOT_RUN`.** `AbsentSecretService` is a real refusal
+  rather than a stub that pretends, but it says nothing about whether the real secret service
+  will refuse a worker that does not hold the lease.
+* **The `output_invalid` branch has no row-level test** — see `CR-TC-adapter-09`.
+* **Jitter is not applied.** `retry-policy.yaml` RP-03 asks for ±20%; the loop returns the
+  ladder's base number and leaves the waiting to its caller. A production supervisor must add
+  it.
+* Still `SELF_VALIDATION`. No independent audit was run for this packet.
+
+---
+
+*`PKT-TC-ADAPTER-FIX2` · worker-W3A · `lease_released_at` 2026-09-08T06:40Z · gap G-7b closed
+for the cycle, `CR-TC-adapter-08/09/10` opened · `SELF_VALIDATION`.*
+
+---
+
+# ADDENDUM 3 — `PKT-TC-ADAPTER-FIX3` (the reported loop failures; the server now sends the key)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-ADAPTER-FIX3` |
+| worker principal | `worker-W3A` |
+| lease_id | `LEASE-TC-ADAPTER-e4` (fencing 4) — `worker/app/loop.py`, `tests/integration/test_worker_loop.py`, this handoff, a re-issued manifest |
+| status | **`DONE`** |
+| completion_claim | unchanged |
+| next actor | Coordinator |
+| lease_released_at | 2026-09-09T07:35Z |
+
+**Baseline.** Started under the Coordinator's **`STALE_BASELINE`** ruling: three pinned
+read-set files had drifted from the `P5` table (`contracts/ports.yaml`,
+`contracts/modules.yaml`, `contracts/ops/secrets.md`), the whole diff being purge-set prose
+from `AMD-ENT-maintenance-01` — 60 → 61 entities for the new `maintenance_window` table. I
+read the diff before relying on the ruling: no `ai.*` or `analysis.*` operation, no
+`MOD-ai-adapter` edge and no `secrets.md` §3 token rule is touched. WP's re-pin to
+**`PC10-PIN-P5b-20260908`** landed while this packet ran, and **SG-HASH at the end is 32 rows,
+0 mismatches** — the manifest's `contract_hashes` equal the card's §0 table again.
+
+## C.1 The seven reported failures did not reproduce
+
+On current bytes `tests/integration/test_worker_loop.py` is **18/18 green**, before any change
+of mine. Two causes account for what WS saw, and **neither is a defect in WS's wiring or in
+W3B's FIX4**, so no CR is filed against either and nothing is left red-with-reason:
+
+1. **A regeneration race.** One collection attempt here failed with
+   `ImportError: cannot import name 'constants' from 'rr_contracts.generated' (unknown
+   location)` — the generated tree was being rewritten (mtime 14:14) while pytest imported it.
+   The next run was clean, and `rr_contracts.generated.__path__` resolves correctly. Transient,
+   not a code fault; worth knowing because it presents as a collection *error*, not a failure,
+   and could easily be misread as a broken import in someone's package.
+2. **`VALIDATION_ERROR: source_fingerprint…` was this harness's own wrong assumption**, which
+   is the answer the packet asked me to distinguish. My `enqueue_one` passed a literal
+   `SOURCE_FINGERPRINT` (the fixture's `sha256:858c06cf…`) to `TargetRequest`, while
+   `PKT-TC-ANALYSIS-FIX4` made the service **derive** the fingerprint from the sources the
+   task-input port will actually serve — which is what `ENT-analysis.source_fingerprint` is
+   defined to be, and what keeps the key one value across enqueue, task input and commit so
+   REQ-AC06 keeps holding. The released FIX4 treats a disagreeing hint as advisory
+   (`source_fingerprint_hint_ignored`) rather than refusing it, so it no longer raises; the
+   assumption was wrong either way and is now gone.
+
+## C.2 The harness goes through the real path, and the seam is retired
+
+* `enqueue_one` supplies **no** `source_fingerprint`, `prompt_version` or `schema_version`.
+  All three are optional and advisory; passing literals only tested that two constants in one
+  file agreed with each other.
+* The fake provider's answer is built from the **`TaskInput` the adapter was handed** — via a
+  small `CapturingAdapter` wrapper — so its `analysis_key`, `attempt_id`, granted source ids
+  and evidence ceiling are the server's values. Nothing is read out of the database to build
+  it and nothing is a literal, which is what makes SV-01 passing mean something.
+* `AnalysisWorkerLoop.analysis_key_resolver` is **no longer used**. It is left in place, marked
+  vestigial, for one reason: `tests/integration/test_analysis_once_per_key.py` passes it
+  explicitly and that file belongs to another card, so removing the keyword would break it.
+  It can go the moment W3B drops the argument — a one-line coordination item, not a CR.
+* `test_get_task_input_carries_no_analysis_key_for_the_worker_to_use` is **inverted** into
+  `test_get_task_input_now_carries_the_whole_analysis_key`, asserting all seven components off
+  a live response rather than off the function's source.
+
+**`CR-TC-adapter-10` is CLOSED** — by `PKT-TC-ANALYSIS-FIX4`, not by this packet. The submit
+path now completes on the real path with no seam. `CR-TC-adapter-08` and `-09` remain open;
+`-01`…`-07` unchanged.
+
+## C.3 Changes — before / after
+
+| Path | Operation | Before (sha256, bytes) | After (sha256, bytes) |
+| --- | --- | --- | --- |
+| `worker/app/loop.py` | MODIFY | `4988973138256a73…`, 29146 | `977242783e01ef82630d3fdedd1e1fb62abc8d43b947ac3f3fea42f65be79499`, 29448 |
+| `tests/integration/test_worker_loop.py` | MODIFY | `9f7145279f15cb68…`, 35461 | `ba3b0d4c6069af9217098a4bc73e07d52d66ab565e9f053ea9bb0fb6159369d1`, 36136 |
+| `evidence/runs/…-E1-20260908T062924Z.json` | MODIFY (`result` → `STALE`) | `5608cdc6471ac2c5…` | `2193a7db3acefc0866a85076af02ce9f9d6fb33df7bf546ec7fb431165adfbec` |
+| `evidence/runs/…-E1-20260909T072030Z.json` | CREATE | ABSENT | `9374df6b663efcd0c01a6a0efce475d1500796b053a0208e39a5fe253f1c55d4`, 34092 |
+| `evidence/handoffs/TC-analysis-adapter-validation-handoff.md` | MODIFY | `12a37bb4d00bf554…` | (this file) |
+
+`worker/app/main.py` and the five adapter modules are **byte-identical** to `e3`.
+
+## C.4 Verification
+
+| Command | Result |
+| --- | --- |
+| `ruff format --check worker tests` | 59 of 60 already formatted; the exception is `tests/integration/test_readiness_independent_channel.py`, WR's file |
+| `ruff check worker tests/integration/test_worker_loop.py` | All checks passed! |
+| `mypy --strict … worker/app` | Success: no issues found in 8 source files |
+| card tests (3 files) | **67 passed**, 0 failed, 0 xfail (34 + 15 + 18) |
+| `tests/integration/test_analysis_once_per_key.py` (W3B's, drives my loop) | 14 passed — the retained keyword keeps their file green |
+| full suite | **1143 passed, 4 xfailed, 0 failed** |
+
+An earlier full-suite run in this session reported 3 failures in
+`tests/integration/test_readiness_independent_channel.py` — WR's write set, mid-edit; clean in
+the run recorded above.
+
+## C.5 Not established — one item removed, one added
+
+The `analysis_key` limitation is **gone**: the submit path is now proved on the real path. The
+`STALE_BASELINE` note is superseded by the `P5b` re-pin. Everything else in §5, §A.6 and §B.5
+stands unchanged — E3 `NOT_RUN`, isolation unverified, both Anthropic adapters
+`enabled: false`, AC-16 `BLOCKED`, ISO-05 half-covered, the loop never run as a process, no
+jitter applied. Still `SELF_VALIDATION`.
+
+---
+
+*`PKT-TC-ADAPTER-FIX3` · worker-W3A · `lease_released_at` 2026-09-09T07:35Z · reported failures
+not reproduced and explained; `CR-TC-adapter-10` closed by W3B · `SELF_VALIDATION`.*

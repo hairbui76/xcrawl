@@ -184,7 +184,7 @@
    "pending_ledger_rows_after_failure": 1
   }
  },
- "result": "PASS",
+ "result": "STALE",
  "artifacts": [],
  "limitations": {
   "mock_or_live": "mock",
@@ -254,5 +254,6 @@
   "invalidated_by_rule_ids": [
    "INV-06"
   ]
- }
+ },
+ "stale_reason": "Superseded by EV-E1-05-tc-analysis-once-per-generation (evidence/runs/TC-analysis-once-per-generation-E1-20260908T064438Z.json) under packet PKT-TC-ANALYSIS-FIX4, lease LEASE-TC-ANALYSIS-e5. CR-TC-adapter-10: analysis.get_task_input sent no analysis_key, so analysis.submit_result could not complete on a real deployment. service.py (21d40f83… -> 6e07239e…) and both integration test files changed. No claim changed; the gap this record did not know about is now closed."
 }

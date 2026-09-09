@@ -40,12 +40,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import yaml
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
+from rr_contracts.generated.constants import CONTRACT_SCHEMA_VERSION
 from sqlalchemy import Engine, text
 
+from server.app.auth.service import AuthService
 from server.app.db import create_sqlite_engine
 from server.app.embedding.generation import (
     DeterministicHashEncoder,
@@ -54,6 +58,7 @@ from server.app.embedding.generation import (
     Vector,
 )
 from server.app.embedding.service import EmbeddingService
+from server.app.main import create_app
 from server.app.report.builder import (
     EMERGING_DIRECTION_LABEL,
     DensityParameters,
@@ -70,6 +75,7 @@ from server.app.report.publisher import (
     record_build,
     verify_content_hash,
 )
+from server.app.report.router import UNWIRED_MESSAGE_SAFE
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONTRACTS = REPO_ROOT / "contracts" / "schemas"
@@ -81,6 +87,13 @@ MODEL_NAME = "multilingual-e5-small"
 MODEL_VERSION = "1.0.0"
 DIMENSION = 4
 MOD_JOB = "MOD-job-service"
+OWNER_NAME = "owner"
+OWNER_PASSWORD = "correct horse battery staple"
+WIRE_HEADERS = {
+    "X-Schema-Version": CONTRACT_SCHEMA_VERSION,
+    "X-Request-Id": "01J0000000000000000000000Z",
+}
+REPORT_ROUTES = ("/v1/reports", "/v1/reports/01JRPT10000000000000000000")
 TAG_ID = "01JTAGPFD00000000000000000"
 TCV1 = "01JTCV10000000000000000000"
 
@@ -504,3 +517,154 @@ def test_canonical_json_is_key_order_independent() -> None:
     """JCS: the hash describes the content, not the order a dict happened to be built in."""
     assert canonical_json({"b": 1, "a": 2}) == canonical_json({"a": 2, "b": 1})
     assert canonical_json({"a": [1, 2]}) != canonical_json({"a": [2, 1]})
+
+
+# --- F-A3-P5-03 / CR-P0-07: what an unwired deployment answers ---------------------------------
+#
+# On the wire, not in a unit: the finding was found by curling a running server, so the
+# assertion is made through the ASGI app the same way. It belongs in the *contract* file
+# because the question is "which declared response does this operation give", which is
+# `contracts/http/openapi.yaml`'s to answer, not the publish transaction's.
+
+
+def declared_status_codes(operation_id: str) -> set[int]:
+    """The status codes ``contracts/http/openapi.yaml`` declares for one operation.
+
+    Read from the contract rather than restated, so a response this module invents cannot be
+    blessed by a constant sitting next to it.
+    """
+    contract = REPO_ROOT / "contracts" / "http" / "openapi.yaml"
+    document = yaml.safe_load(contract.read_text("utf-8"))
+    for path in document["paths"].values():
+        for operation in path.values():
+            if isinstance(operation, dict) and operation.get("operationId") == operation_id:
+                return {int(code) for code in operation["responses"]}
+    raise AssertionError(f"{operation_id} is not in openapi.yaml")
+
+
+@pytest.fixture
+def authed_client(engine: Engine) -> TestClient:
+    """A server with auth wired and ``report_context`` deliberately absent.
+
+    That is the shipped process the audit curled: the owner is logged in, so 401 is out of the
+    way and the *availability* question is the one being asked. A bare ``create_app()`` would
+    answer 401 first and never reach it — which is itself asserted below, because the order is
+    a property worth keeping.
+    """
+    AuthService(engine).bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    app = create_app()
+    app.state.auth_service = AuthService(engine)
+    client = TestClient(app, base_url="https://testserver")
+    response = client.post(
+        "/v1/auth/login",
+        json={"username": OWNER_NAME, "password": OWNER_PASSWORD},
+        headers=WIRE_HEADERS,
+    )
+    assert response.status_code == 200, response.text
+    return client
+
+
+def test_the_declared_responses_do_not_include_503_for_the_read_routes() -> None:
+    """The premise of the choice made in ``router._context``, asserted against the contract.
+
+    ``503 STORAGE_WRITE_FAILED`` exists in openapi — on 27 **mutations**. If it is ever
+    declared for these two reads, this test fails and the router should be changed to use it;
+    that is the point of reading it from the file instead of asserting the router's own view.
+    """
+    listing = declared_status_codes("report.list")
+    detail = declared_status_codes("report.get")
+    assert 503 not in listing and 503 not in detail
+    assert listing == {200, 401, 403, 500}
+    assert detail == {200, 401, 403, 404, 500}
+
+
+@pytest.mark.parametrize("route", REPORT_ROUTES)
+def test_an_unwired_deployment_answers_a_declared_code_and_names_the_gap(
+    authed_client: TestClient, route: str
+) -> None:
+    """``F-A3-P5-03``: a disclosed gap must not read as a crash.
+
+    The status stays what the contract declares — 500 ``INTERNAL``, the only code declared on
+    **both** routes that does not misstate the cause (the reasoning, and why 401/403/404 are
+    excluded, is in ``router._context``'s docstring). What changed is the body: it names the
+    gap and ``CR-P0-07`` instead of saying "unexpected", and it carries the **route's own**
+    ``operation_id`` — which was hard-coded to ``report.get``, so ``GET /v1/reports`` used to
+    answer with the wrong one. That wrong id is in the audit's quoted body.
+    """
+    response = authed_client.get(route, headers=WIRE_HEADERS)
+
+    expected_operation = "report.list" if route == "/v1/reports" else "report.get"
+    assert response.status_code == 500
+    assert response.status_code in declared_status_codes(expected_operation)
+
+    body = response.json()
+    assert body["code"] == "INTERNAL"
+    assert body["message_safe"] == UNWIRED_MESSAGE_SAFE
+    assert "CR-P0-07" in body["message_safe"]
+    assert "không mong đợi" not in body["message_safe"], "still reads as an unexpected crash"
+    assert body["details_safe"] == {"operation_id": expected_operation}
+    assert body["correlation_id"]
+    # errors.yaml §error_envelope: additionalProperties false, and these are its fields.
+    assert set(body) == {
+        "code",
+        "scope",
+        "retry_class",
+        "message_safe",
+        "correlation_id",
+        "details_safe",
+    }
+    # forbidden_content_vi: no stack trace, no SQL, no table or column names.
+    rendered = json.dumps(body, ensure_ascii=False)
+    for leak in ("Traceback", "SELECT", "report_item", "coverage_window", "sqlite"):
+        assert leak not in rendered
+
+
+@pytest.mark.parametrize("route", REPORT_ROUTES)
+def test_an_anonymous_caller_is_refused_before_availability_is_disclosed(route: str) -> None:
+    """Order: headers, then identity, then availability.
+
+    A bare ``create_app()`` has neither auth nor a report context. It must answer ``401``, not
+    the unwired message — how a deployment is wired is not something to tell a caller who has
+    not proved who they are.
+    """
+    client = TestClient(create_app(), base_url="https://testserver")
+    response = client.get(route, headers=WIRE_HEADERS)
+    assert response.status_code == 401
+    body = response.json()
+    assert body["code"] == "UNAUTHORIZED"
+    assert "CR-P0-07" not in json.dumps(body, ensure_ascii=False)
+
+
+def test_a_wired_deployment_is_unchanged(engine: Engine) -> None:
+    """The other half: with a context installed, the routes behave exactly as before.
+
+    Without this, the fix above would also pass for a router that answered the unwired body
+    unconditionally.
+    """
+    seed(engine)
+    context, result = publish(engine)
+    AuthService(engine).bootstrap_owner(display_name=OWNER_NAME, password=OWNER_PASSWORD)
+    app = create_app()
+    app.state.auth_service = AuthService(engine)
+    app.state.report_context = context
+    client = TestClient(app, base_url="https://testserver")
+    assert (
+        client.post(
+            "/v1/auth/login",
+            json={"username": OWNER_NAME, "password": OWNER_PASSWORD},
+            headers=WIRE_HEADERS,
+        ).status_code
+        == 200
+    )
+
+    listing = client.get("/v1/reports", headers=WIRE_HEADERS)
+    assert listing.status_code == 200
+    assert [row["report_id"] for row in listing.json()["reports"]] == [result.report_id]
+
+    detail = client.get(f"/v1/reports/{result.report_id}", headers=WIRE_HEADERS)
+    assert detail.status_code == 200
+    assert detail.json()["content_hash"] == result.content_hash
+
+    missing = client.get("/v1/reports/01JRPTZZ000000000000000000", headers=WIRE_HEADERS)
+    assert missing.status_code == 404
+    assert missing.json()["code"] == "NOT_FOUND"

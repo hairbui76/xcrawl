@@ -25,6 +25,8 @@ Contract references
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from typing import Any, Protocol
 
 from fastapi import FastAPI
@@ -67,11 +69,20 @@ class StubReadinessProvider:
         }
 
 
-def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
+def create_app(
+    readiness_provider: ReadinessProvider | None = None,
+    *,
+    lifespan: Callable[[FastAPI], Any] | None = None,
+) -> FastAPI:
     """Build the ASGI application.
 
     :param readiness_provider: injected by ``TC-storage-write-blocked-readiness`` later;
         Phase 0 falls back to :class:`StubReadinessProvider`.
+    :param lifespan: optional ASGI lifespan. **Defaulted to ``None`` on purpose**: with no
+        argument this factory still returns the same bare, unconfigured application it
+        always has -- no database, no services, every card's test unaffected. The parameter
+        exists so the module-level ``app`` below can wire itself when a real server starts
+        it, without the mere *import* of this module touching a filesystem.
     """
     app = FastAPI(
         title="Research Radar — Owner API",
@@ -79,6 +90,7 @@ def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+        lifespan=lifespan,
     )
     app.state.readiness_provider = readiness_provider or StubReadinessProvider()
 
@@ -234,6 +246,27 @@ def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
     app.include_router(jobs_router)
     # <<< TC-scheduler-lease-claim <<<
 
+    # >>> TC-secret-settings-service (MOD-secret-service, MOD-settings-service) >>>
+    # Four routes: three `settings.*` on the owner session (the two mutations additionally
+    # behind CSRF) and one `secret.issue_task_credential` on the analysis worker token.
+    #
+    # `secret.store_provider_key` and `secret.revoke_task_credential` are NOT routed. Both are
+    # `transport: internal` in contracts/ports.yaml -- MOD-settings-service calls the first in
+    # process, MOD-analysis-service the second -- and publishing a key-writing endpoint would
+    # create an edge the registry does not grant.
+    #
+    # The routers read `app.state.secret_context` / `app.state.settings_context`, which
+    # `server/app/wiring.py` does not build yet (that file is outside this card's write set;
+    # its own comments still record the gap as G-6). Until it does, both routers answer 500
+    # INTERNAL rather than inventing an engine or an owner id -- the same shape the analysis
+    # router already uses for an unwired context.
+    from server.app.secret.router import router as secret_router
+    from server.app.settings_service.router import router as settings_router
+
+    app.include_router(secret_router)
+    app.include_router(settings_router)
+    # <<< TC-secret-settings-service <<<
+
     @app.get("/healthz", operation_id=OperationId.HEALTH_GET_LIVENESS.value)
     def get_liveness() -> JSONResponse:
         """``health.get_liveness`` — DB-independent liveness (HC-01).
@@ -249,4 +282,25 @@ def create_app(readiness_provider: ReadinessProvider | None = None) -> FastAPI:
     return app
 
 
-app = create_app()
+@asynccontextmanager
+async def _wire_on_startup(application: FastAPI) -> AsyncIterator[None]:
+    """Build the real runtime when the process starts serving (``docs/owner-runbook.md`` G-2).
+
+    Wiring belongs in a lifespan rather than at import time for one concrete reason: importing
+    ``server.app.main`` must not create a database file. Test collection imports this module
+    dozens of times, ``rr_admin status`` imports it to ask what a server *would* wire, and a
+    factory that opened storage on import would make all of those write to disk.
+
+    The failure mode is deliberately loud. If configuration is broken the process fails to
+    start with the real error, instead of booting and answering 500 to the first login --
+    which is exactly the symptom this whole packet exists to remove.
+    """
+    from server.app.wiring import wire
+
+    wire(application)
+    yield
+
+
+#: The ASGI entry point the runbook and README name: ``server.app.main:app``. It is wired by
+#: :func:`_wire_on_startup`; ``create_app()`` called directly stays bare.
+app = create_app(lifespan=_wire_on_startup)

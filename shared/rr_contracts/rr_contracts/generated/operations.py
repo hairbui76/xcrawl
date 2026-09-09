@@ -1,9 +1,9 @@
-# GENERATED — do not edit; source sha256 contracts/ports.yaml=c15b676b5619df7a…
+# GENERATED — do not edit; source sha256 contracts/ports.yaml=c7c7734001b98f25…
 # Produced by shared/rr_contracts/generate.py from the contract file(s) named above.
 # Editing this file by hand makes code and contract drift apart silently; the rule is
 # ADR-0011 (Hệ quả) and agent-tasks/README.md §5.3. To change behaviour: change the
 # contract, regenerate, and mark the affected task cards STALE per INV-06.
-#   contracts/ports.yaml  sha256:c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684
+#   contracts/ports.yaml  sha256:c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412
 
 """Operation ids from contracts/ports.yaml.
 

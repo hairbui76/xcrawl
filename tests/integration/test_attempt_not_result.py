@@ -40,7 +40,9 @@ from server.app.analysis.service import (
     TaskSource,
     auto_rerun_unknown_attempt,
     claim_task,
+    derived_source_fingerprint,
     enqueue_tasks,
+    get_task_input,
     ledger_state,
     reap_expired_leases,
     report_attempt_unknown,
@@ -60,7 +62,6 @@ ATTEMPT_ID = "01JATTA1000000000000000000"
 LEASE_ID = "01JASGNA100000000000000000"
 TASK_ID = "01JATASKA10000000000000000"
 RUN_ID = "01JRUNA1000000000000000000"
-SOURCE_FINGERPRINT = "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38"
 
 #: Fixture ``i``'s timeline: claim at 18:00, provider answers at 18:01, worker dies at
 #: 18:01:30, and the unknown outcome is filed at 18:20 -- after the lease has run out.
@@ -188,15 +189,33 @@ def ctx(engine: Engine, clock: Clock) -> AnalysisContext:
     )
 
 
+def _derived_fingerprint() -> str:
+    """What the server computes from ``FakeTaskInput``'s one source (``CR-TC-adapter-10``)."""
+    return derived_source_fingerprint(list(FakeTaskInput().sources_for(target_key="")))
+
+
 def _target() -> TargetRequest:
-    return TargetRequest(
-        target_kind="work",
-        target_id=WORK_ID,
-        task_type="summary",
-        source_fingerprint=SOURCE_FINGERPRINT,
-        prompt_version="1.0.0",
-        schema_version="0.1.0",
+    """No fingerprint and no versions: the server derives all three (ADR-0008)."""
+    return TargetRequest(target_kind="work", target_id=WORK_ID, task_type="summary")
+
+
+def _document(ctx: AnalysisContext, task: dict[str, Any], fixture_loader) -> dict[str, Any]:
+    """Fixture ``j``'s result, keyed with the key the **server** issued for this task.
+
+    A worker cannot build the key -- four of its seven components exist only server-side --
+    so it echoes the one ``analysis.get_task_input`` returned. That is what makes SV-01 a real
+    comparison rather than a check of the worker against itself (``CR-TC-adapter-10``).
+    """
+    document = copy.deepcopy(
+        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
     )
+    document["analysis_key"] = get_task_input(
+        ctx,
+        task_id=task["task_id"],
+        lease_id=task["lease_id"],
+        lease_epoch=task["lease_epoch"],
+    )["analysis_key"]
+    return document
 
 
 def _claim(ctx: AnalysisContext, *, worker: str = "worker-1", request_id: str) -> dict[str, Any]:
@@ -321,7 +340,7 @@ def test_the_query_for_a_result_never_returns_an_attempt(ctx, engine, clock) -> 
             owner_id=OWNER_ID,
             target_key=f"work:{WORK_ID}",
             task_type="summary",
-            source_fingerprint=SOURCE_FINGERPRINT,
+            source_fingerprint=_derived_fingerprint(),
             prompt_version="1.0.0",
             schema_version="0.1.0",
             generation_number=1,
@@ -341,10 +360,8 @@ def test_a_late_submit_after_an_unknown_outcome_writes_no_result(
     quả từ log của worker rồi ghi thành valid". Here the old worker comes back and submits a
     perfectly well-formed result; it is refused on the lease, and no row appears.
     """
-    document = copy.deepcopy(
-        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
-    )
     task = _crash_after_provider(ctx, clock)
+    document = _document(ctx, task, fixture_loader)
     clock.advance(LEASE_TTL_ANALYSIS_SECONDS + 120)
     report_attempt_unknown(
         ctx,
@@ -631,11 +648,11 @@ def test_a_worker_whose_lease_was_swept_commits_nothing(ctx, engine, clock, fixt
     what it does not lose is the record that it tried, because that record is the only
     evidence that money may have been spent.
     """
-    document = copy.deepcopy(
-        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
-    )
     enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
     first = _claim(ctx, worker="worker-1", request_id="claim-1")
+    # Built while the first lease is still live: the old worker really did get a task input,
+    # which is what makes its later submit a stale-lease refusal and not a malformed request.
+    document = _document(ctx, first, fixture_loader)
 
     clock.advance(LEASE_TTL_ANALYSIS_SECONDS + 120)
     assert reap_expired_leases(ctx) == [first["task_id"]]
@@ -736,14 +753,12 @@ def test_a_semantically_invalid_result_becomes_an_attempt_not_a_row(
     whole contract, so the result is refused, the try is recorded as ``schema_invalid``, and
     ``analysis`` stays empty.
     """
-    document = copy.deepcopy(
-        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
-    )
+    enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
+    task = _claim(ctx, request_id="claim-1")
+    document = _document(ctx, task, fixture_loader)
     document["result"]["statements"][0]["citation_refs"] = [
         "work_version:01JWVRZZZZ000000000000000Z"
     ]
-    enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
-    task = _claim(ctx, request_id="claim-1")
 
     with pytest.raises(AnalysisError) as raised:
         submit_result(
@@ -774,17 +789,15 @@ def test_usage_is_never_written_as_zero_when_it_is_unknown(ctx, engine, fixture_
     Two halves: ``unknown = true`` stores ``NULL`` (not ``0``), and the one shape that could
     produce a stand-in zero -- ``unknown = false`` with a count missing -- is refused.
     """
-    document = copy.deepcopy(
-        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
-    )
+    enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
+    task = _claim(ctx, request_id="claim-1")
+    document = _document(ctx, task, fixture_loader)
     document["usage"] = {
         "unknown": True,
         "tokens_in": None,
         "tokens_out": None,
         "cost_micro_usd": None,
     }
-    enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
-    task = _claim(ctx, request_id="claim-1")
     submit_result(
         ctx,
         task_id=task["task_id"],
@@ -813,11 +826,9 @@ def test_a_full_disk_during_submit_acknowledges_nothing(ctx, engine, fixture_loa
     are read back: a transaction that rolled back must leave the same numbers behind, and the
     task must still be claimable rather than stranded.
     """
-    document = copy.deepcopy(
-        fixture_loader("ai/j-same-key-resubmitted-one-result").expected["analysis_result"]
-    )
     enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
     task = _claim(ctx, request_id="claim-1")
+    document = _document(ctx, task, fixture_loader)
 
     injector = WriteFaultInjector(engine)
     with injector.disk_full(), pytest.raises(AnalysisError) as raised:

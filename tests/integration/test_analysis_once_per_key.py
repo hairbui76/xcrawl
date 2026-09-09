@@ -26,10 +26,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from rr_contracts.generated.errors import ErrorCode
 from sqlalchemy import Engine, text
 
-from server.app.analysis.key import compute_source_fingerprint
+from server.app.analysis.key import ANALYSIS_KEY_COMPONENTS
 from server.app.analysis.repository import AnalysisRepository
 from server.app.analysis.service import (
     AnalysisContext,
@@ -38,6 +39,7 @@ from server.app.analysis.service import (
     TargetRequest,
     TaskSource,
     claim_task,
+    derived_source_fingerprint,
     enqueue_tasks,
     get_task_input,
     request_reanalysis,
@@ -58,8 +60,12 @@ LEASE_ID = "01JASGNA100000000000000000"
 TASK_ID = "01JATASKA10000000000000000"
 RUN_ID = "01JRUNA1000000000000000000"
 
-#: The fingerprint fixture ``j`` carries in its ``analysis_key``.
-SOURCE_FINGERPRINT = "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38"
+#: Fixture ``j``'s own ``analysis_key.source_fingerprint``. It is an *example* value: the
+#: fingerprint is defined as a hash of the source content actually used, and the fixture does
+#: not ship that content. Where a real key is needed these tests take the one the **server**
+#: issues through ``analysis.get_task_input`` -- which is what a worker does, and what SV-01
+#: compares against.
+FIXTURE_J_FINGERPRINT = "sha256:858c06cf9c505c9f135e64d506f2e40dcb5bc6992bfd8d97f31e6b7caa8b0d38"
 T0 = datetime(2026, 9, 6, 18, 0, 0, tzinfo=UTC)
 
 
@@ -216,15 +222,18 @@ def ctx(engine: Engine, counter: ProviderCallCounter) -> AnalysisContext:
     )
 
 
-def _target() -> TargetRequest:
-    return TargetRequest(
-        target_kind="work",
-        target_id=WORK_ID,
-        task_type="summary",
-        source_fingerprint=SOURCE_FINGERPRINT,
-        prompt_version="1.0.0",
-        schema_version="0.1.0",
-    )
+def _derived_fingerprint() -> str:
+    """What the server computes from ``FakeTaskInput``'s one source."""
+    return derived_source_fingerprint(list(FakeTaskInput().sources_for(target_key="")))
+
+
+def _target(target_id: str = WORK_ID, task_type: str = "summary") -> TargetRequest:
+    """A target with no fingerprint and no versions: the server derives all three.
+
+    ``CR-TC-adapter-10``: the key is the server's to compute (ADR-0008). A caller may still
+    supply a fingerprint and it is checked against the derived one, but nothing here needs to.
+    """
+    return TargetRequest(target_kind="work", target_id=target_id, task_type=task_type)
 
 
 def _counts(engine: Engine) -> dict[str, int]:
@@ -259,6 +268,25 @@ def _submitted_document(fixture_loader) -> dict[str, Any]:
     return document
 
 
+def _document(ctx: AnalysisContext, task: dict[str, Any], fixture_loader) -> dict[str, Any]:
+    """Fixture ``j``'s result, keyed with the key the **server** issued for this task.
+
+    This is what a worker actually does and what ``CR-TC-adapter-10`` was about: the key is
+    not something the worker can assemble -- four of its seven components exist only on the
+    server -- so it comes back on ``analysis.get_task_input`` and is echoed unchanged. SV-01
+    then has something real to compare, which it does not if the worker made the key up.
+    """
+    document = _submitted_document(fixture_loader)
+    payload = get_task_input(
+        ctx,
+        task_id=task["task_id"],
+        lease_id=task["lease_id"],
+        lease_epoch=task["lease_epoch"],
+    )
+    document["analysis_key"] = payload["analysis_key"]
+    return document
+
+
 # --------------------------------------------------------- fixture j: one result per key
 
 
@@ -274,7 +302,7 @@ def test_a_first_submit_commits_exactly_one_result(ctx, engine, fixture_loader) 
         task_id=task["task_id"],
         lease_id=task["lease_id"],
         lease_epoch=task["lease_epoch"],
-        result=_submitted_document(fixture_loader),
+        result=_document(ctx, task, fixture_loader),
     )
     assert receipt["status"] == "committed"
 
@@ -327,7 +355,7 @@ def test_a_replay_of_the_same_payload_returns_the_receipt_and_writes_nothing(
     fixture = fixture_loader("ai/j-same-key-resubmitted-one-result")
     enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
     task = _claim(ctx)
-    document = _submitted_document(fixture_loader)
+    document = _document(ctx, task, fixture_loader)
     first = submit_result(
         ctx,
         task_id=task["task_id"],
@@ -361,7 +389,7 @@ def test_the_same_key_with_a_different_payload_is_a_conflict(ctx, engine, fixtur
     fixture = fixture_loader("ai/j-same-key-resubmitted-one-result")
     enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
     task = _claim(ctx)
-    document = _submitted_document(fixture_loader)
+    document = _document(ctx, task, fixture_loader)
     committed = submit_result(
         ctx,
         task_id=task["task_id"],
@@ -420,7 +448,7 @@ def test_re_adding_a_tag_enqueues_nothing_and_calls_no_provider(
         task_id=task["task_id"],
         lease_id=task["lease_id"],
         lease_epoch=task["lease_epoch"],
-        result=_submitted_document(fixture_loader),
+        result=_document(ctx, task, fixture_loader),
     )
     before = _counts(engine)
     calls_before = counter.calls
@@ -449,7 +477,7 @@ def test_a_tag_change_is_not_a_reason_a_reanalysis_can_be_asked_for(ctx, engine)
                 target_kind="work",
                 target_id=WORK_ID,
                 task_type="summary",
-                source_fingerprint=SOURCE_FINGERPRINT,
+                source_fingerprint=_derived_fingerprint(),
                 prompt_version="1.0.0",
                 schema_version="0.1.0",
                 reason=refused,
@@ -476,7 +504,7 @@ def test_reanalysis_opens_a_new_generation_and_keeps_the_old_result(
         task_id=task["task_id"],
         lease_id=task["lease_id"],
         lease_epoch=task["lease_epoch"],
-        result=_submitted_document(fixture_loader),
+        result=_document(ctx, task, fixture_loader),
     )
 
     opened = request_reanalysis(
@@ -484,7 +512,7 @@ def test_reanalysis_opens_a_new_generation_and_keeps_the_old_result(
         target_kind="work",
         target_id=WORK_ID,
         task_type="summary",
-        source_fingerprint=SOURCE_FINGERPRINT,
+        source_fingerprint=_derived_fingerprint(),
         prompt_version="1.0.0",
         schema_version="0.1.0",
         reason="manual",  # the ports.yaml wire spelling
@@ -502,7 +530,7 @@ def test_reanalysis_opens_a_new_generation_and_keeps_the_old_result(
         target_kind="work",
         target_id=WORK_ID,
         task_type="summary",
-        source_fingerprint=SOURCE_FINGERPRINT,
+        source_fingerprint=_derived_fingerprint(),
         prompt_version="1.0.0",
         schema_version="0.1.0",
         reason="manual",
@@ -637,33 +665,58 @@ def test_the_task_input_this_service_hands_out_builds_the_adapter_s_TaskInput(ct
     assert task_input.timeout_seconds == payload["inference_timeout_seconds"]
 
 
-def test_the_source_fingerprint_a_caller_supplies_is_the_contract_s(ctx, engine) -> None:
-    """``ENT-analysis.source_fingerprint`` is computed from content hashes and nothing else.
+def test_the_key_uses_the_derived_fingerprint_and_says_so_when_a_hint_disagrees(
+    ctx, engine
+) -> None:
+    """``ENT-analysis.source_fingerprint`` is a function of the source content, so the server
+    computes it — and a caller that computed a different one is told, not obeyed and not
+    ignored.
 
-    Stated here as well as in the contract test because it is the join between the two: the
-    enqueue path takes the fingerprint from the caller, so if a caller ever computed it from
-    something tag-shaped, the key would move and AC-06 would break in a place the key test
-    cannot see.
+    Why the derived value has to win rather than the caller's: the enqueue path looks a key up
+    to decide "already analysed?", the worker is handed a key by ``analysis.get_task_input``,
+    and the result is stored under the key it submits. Those three must be one value or
+    REQ-AC06 quietly stops holding — the lookup would miss, the model would run again, and
+    nothing would look broken.
+
+    Why it is reported rather than refused: a disagreement means the hash of what the caller
+    committed and the hash of what the task-input port will serve are different, which is a
+    real wiring defect worth surfacing — but refusing the enqueue would make one card's fake
+    port able to stop another card's work, and the honest key is available either way
+    (``CR-TC-ANALYSIS-10``).
     """
-    fingerprint = compute_source_fingerprint(
-        work_version_content_fingerprint="sha256:" + "d" * 64,
-        post_source_snapshot_hashes=["sha256:" + "e" * 64],
-    )
-    enqueue_tasks(
+    derived = _derived_fingerprint()
+    agreeing = enqueue_tasks(
         ctx,
         [
             TargetRequest(
                 target_kind="work",
                 target_id=WORK_ID,
                 task_type="label",
-                source_fingerprint=fingerprint,
-                prompt_version="1.0.0",
-                schema_version="0.1.0",
+                source_fingerprint=derived,
             )
         ],
         caller_module="MOD-ingest-service",
     )
-    assert _counts(engine)["analysis_generation"] == 1
+    assert agreeing["created"][0]["analysis_key"]["source_fingerprint"] == derived
+    assert "source_fingerprint_hint_ignored" not in agreeing["created"][0]
+
+    disagreeing = enqueue_tasks(
+        ctx,
+        [
+            TargetRequest(
+                target_kind="work",
+                target_id=WORK_ID,
+                task_type="summary",
+                source_fingerprint="sha256:" + "d" * 64,
+            )
+        ],
+        caller_module="MOD-ingest-service",
+    )
+    entry = disagreeing["created"][0]
+    assert entry["source_fingerprint_hint_ignored"] is True
+    # The key is the derived one regardless, so the lookup AC-06 rests on still matches.
+    assert entry["analysis_key"]["source_fingerprint"] == derived
+    assert _counts(engine)["analysis_generation"] == 2
 
 
 # ------------------------------------------- fixture reporting/e: the summary that arrives late
@@ -769,16 +822,7 @@ def test_a_late_summary_commits_and_touches_no_published_period(
     # Event 1, 13:00 -- selected, no summary yet, so a task is queued.
     queued = enqueue_tasks(
         ctx,
-        [
-            TargetRequest(
-                target_kind="work",
-                target_id=e1["id"],
-                task_type=expected_analysis["task_type"],
-                source_fingerprint=SOURCE_FINGERPRINT,
-                prompt_version="1.0.0",
-                schema_version="0.1.0",
-            )
-        ],
+        [_target(target_id=e1["id"], task_type=expected_analysis["task_type"])],
         caller_module="MOD-report-service",
     )
     assert [entry["target_key"] for entry in queued["created"]] == [e1_target_key]
@@ -794,8 +838,8 @@ def test_a_late_summary_commits_and_touches_no_published_period(
     at["now"] = datetime(2026, 9, 6, 17, 59, 0, tzinfo=UTC)
     task = _claim(ctx)
     at["now"] = datetime(2026, 9, 6, 18, 0, 0, tzinfo=UTC)
-    document = _submitted_document(fixture_loader)
-    document["analysis_key"]["target_key"] = e1_target_key
+    document = _document(ctx, task, fixture_loader)
+    assert document["analysis_key"]["target_key"] == e1_target_key
     receipt = submit_result(
         ctx,
         task_id=task["task_id"],
@@ -839,17 +883,121 @@ def test_a_late_summary_commits_and_touches_no_published_period(
     assert (
         enqueue_tasks(
             ctx,
-            [
-                TargetRequest(
-                    target_kind="work",
-                    target_id=e1["id"],
-                    task_type=expected_analysis["task_type"],
-                    source_fingerprint=SOURCE_FINGERPRINT,
-                    prompt_version="1.0.0",
-                    schema_version="0.1.0",
-                )
-            ],
+            [_target(target_id=e1["id"], task_type=expected_analysis["task_type"])],
             caller_module="MOD-report-service",
         )["created"]
         == []
     )
+
+
+def test_the_worker_loop_completes_a_whole_cycle_against_this_service(
+    ctx, engine, fixture_loader
+) -> None:
+    """`CR-TC-adapter-10`, closed: claim → task input → inference → submit, over real HTTP.
+
+    W3A's `AnalysisWorkerLoop` is driven against this card's router through a `TestClient`,
+    with **`analysis_key_resolver=None`** — the seam their card had to declare because
+    ``analysis.get_task_input`` sent no key. The loop now takes the key straight off the
+    payload, so the cycle reaches `SUBMITTED` and a row lands. That is the whole finding:
+    without the key the submit path could not complete on a real deployment at all, and no
+    amount of care on either side would have fixed it, because four of the seven components
+    exist only here.
+
+    Deliberately not a stub anywhere it matters: the transport is the real ASGI app, the
+    router is this card's, the service is this card's, and the loop and its `TaskInput` are
+    W3A's. The adapter and the secret service are doubles because one may not be called at
+    all in tests (no live provider) and the other has no code yet (gap G-6).
+    """
+    loop_module = pytest.importorskip(
+        "worker.app.loop", reason="pending TC-analysis-adapter-validation worker loop"
+    )
+    adapter_base = pytest.importorskip("worker.app.adapter.base")
+    from fastapi.testclient import TestClient
+
+    from server.app.analysis.router import install_analysis_error_handlers
+    from server.app.analysis.router import router as analysis_router
+    from server.app.auth.middleware import PrincipalKind, TokenRegistry
+
+    app = FastAPI()
+    install_analysis_error_handlers(app)
+    app.include_router(analysis_router)
+    app.state.analysis_context = ctx
+    app.state.token_registry = TokenRegistry({"worker-token": PrincipalKind.ANALYSIS_WORKER})
+
+    result_body = _submitted_document(fixture_loader)
+
+    class EchoingAdapter:
+        """Returns fixture ``j``'s result under **the key the server issued**.
+
+        Which is exactly what an adapter must do: `contracts/ai/tasks.yaml` SV-01 compares the
+        submitted key with the assigned one, so an adapter that invented a key would be
+        checking the model against a value nobody assigned.
+        """
+
+        def __init__(self) -> None:
+            self.keys_seen: list[dict[str, Any]] = []
+
+        def run_inference_task(self, task, *, credential=None):  # type: ignore[no-untyped-def]
+            self.keys_seen.append(dict(task.analysis_key))
+            payload = copy.deepcopy(result_body)
+            payload["analysis_key"] = dict(task.analysis_key)
+            return adapter_base.AdapterResult(
+                payload=payload,
+                # Matches the usage block of the payload it returns: the adapter's report is
+                # metadata, and the row is written from the document, so the two disagreeing
+                # would make the test assert on the wrong one.
+                usage=adapter_base.UsageReport(
+                    unknown=False, tokens_in=1200, tokens_out=300, cost_micro_usd=450
+                ),
+                provider=adapter_base.ProviderRef(
+                    auth_family=adapter_base.AuthFamily.API_KEY,
+                    provider_name="example-vendor-api",
+                    model_name="m-1",
+                ),
+                extraction_method=adapter_base.JsonExtractionMethod.NATIVE_JSON,
+                audit=adapter_base.CallAudit(),
+            )
+
+    class IssuingSecrets:
+        def issue_task_credential(self, *, task_id, attempt_id, lease_id, lease_epoch):  # type: ignore[no-untyped-def]
+            return adapter_base.TaskCredential(
+                value="not-a-real-key",
+                provider_config_id="01JPRVCFG10000000000000000",
+                task_id=task_id,
+                expires_at="2026-09-06T19:00:00.000Z",
+            )
+
+    enqueue_tasks(ctx, [_target()], caller_module="MOD-report-service")
+    adapter = EchoingAdapter()
+    with TestClient(app, base_url="http://testserver") as client:
+        loop = loop_module.AnalysisWorkerLoop(
+            server=loop_module.AnalysisServerPort(client, token="worker-token"),
+            adapter=adapter,
+            worker_instance_id="worker-1",
+            credentials=IssuingSecrets(),
+            task_types=["summary"],
+            analysis_key_resolver=None,  # the seam CR-TC-adapter-10 required. Not needed now.
+        )
+        report = loop.run_once()
+
+    assert report.outcome is loop_module.CycleOutcome.SUBMITTED, report
+
+    # The key the adapter was handed is the server's, complete and well formed.
+    assert len(adapter.keys_seen) == 1
+    assert set(adapter.keys_seen[0]) == set(ANALYSIS_KEY_COMPONENTS)
+    assert adapter.keys_seen[0]["source_fingerprint"] == _derived_fingerprint()
+    assert adapter.keys_seen[0]["target_key"] == TARGET_KEY
+    assert adapter.keys_seen[0]["generation_number"] == 1
+
+    counts = _counts(engine)
+    assert counts["analysis_valid"] == 1
+    assert counts["analysis_attempt"] == 1
+    with engine.connect() as connection:
+        usage = (
+            connection.execute(text("SELECT usage_tokens_in, usage_tokens_out FROM analysis"))
+            .mappings()
+            .one()
+        )
+    # Written from the submitted document, which is fixture `j`'s -- the api_key branch of
+    # I14, where the counts are real numbers rather than the CLI path's nulls.
+    assert (usage["usage_tokens_in"], usage["usage_tokens_out"]) == (1200, 300)

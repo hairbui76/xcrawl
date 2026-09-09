@@ -1,0 +1,269 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-04-tc-collector-checkpoint-resume-loop-fix3",
+  "created_at": "2026-09-09T07:16:05Z",
+  "producer_principal": "worker-WC",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7",
+      "precode/baseline.json": "e8cf3910c6f2351a2c7c4a8620121b0415a58c5c7ec86eee7ba5d33c343c1a70",
+      "precode/decision-register.md": "ab47a9adf997041655a0a571d62987d0f36e45cc04b2639d9f0d0c755e7fc7ed",
+      "contracts/modules.yaml": "7a4e19bdbb43e1339f305cd4715f1e7ac704b09720408ccf1db48a01b23c1e25",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "7cd85e09431fa52555ee13bb5fb8f5a00932e38801677212e8baa18c14c27827",
+      "contracts/ops/collector-probe.md": "9cf2b0185b100d0dc4fc8c69bc6d964c2b3853fb9814852444b56c8cdcbb0b79",
+      "contracts/ops/internet-boundary.md": "04ab315096336bc85ac170de4e4f819c6dd4aa85b3fc01b510bd709a4b8b27ff",
+      "contracts/ops/secrets.md": "22f7a0075ada77c69dfce6b8b7d6e6b0af625317f2fc4c1be726abf5c3c391a5",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
+      "contracts/schemas/ingest-batch.schema.json": "8ab444f557645ee85dbd0951af7261ac4355d3a0b8ca6b96d8450c9e1a5ae690",
+      "contracts/schemas/ingest-receipt.schema.json": "ff5232f46bb08369ea9af653d652d7782a42ea16798992f2507878c964ac537c",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+      "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+      "acceptance/fixtures/collection/a-feed-layout-changed.json": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+      "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+      "acceptance/fixtures/collection/c-challenge-mid-batch.json": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+      "acceptance/fixtures/collection/e-limit-reached-stop.json": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+      "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/e2e/README.md": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+      "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00"
+    },
+    "implementation_revision": "pin epoch PC10-PIN-P5-20260908; 27/30 pinned files match, 3 drifted (see limitations - wave-2 secret/settings work, not this packet). Runs on top of P0-FIX5 (wiring) and SCHED-FIX1 (jobs claim payload + AlertIntentPort connection)."
+  },
+  "environment": {
+    "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "pytest": "8.4.2",
+      "httpx": "0.28.1",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "jsonschema": "4.26.0",
+      "sqlite3": "3.45.1",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "composition_root": "server/app/wiring.py wire() ONLY -- the three workarounds of FIX2 (LeaseReader, manual collector_token, alert_port=None) are deleted",
+      "x_source": "collector.app.reader.RecordedSource; no browser, no Playwright, no X",
+      "network": "none during the run"
+    },
+    "provider": null,
+    "model": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC01",
+      "SC03",
+      "SC04",
+      "SC20",
+      "SC21",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-AC01",
+      "REQ-AC03",
+      "REQ-AC04",
+      "REQ-D09",
+      "REQ-S11.2-02"
+    ],
+    "invariant_ids": [
+      "I02",
+      "I10",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/collection/README.md",
+        "sha256": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+        "bytes": 12636
+      },
+      {
+        "path": "acceptance/fixtures/collection/a-feed-layout-changed.json",
+        "sha256": "2cf0fd00657c63883ae69d42a81d31cdb02d51d2e3d7c4c36a82dd5818506b70",
+        "bytes": 13611
+      },
+      {
+        "path": "acceptance/fixtures/collection/b-cursor-invalidated-reread-dedup.json",
+        "sha256": "6ea2b75b3690af3a85b218ee8b3b32c9f339f285a86ca0a3a683c206628ec775",
+        "bytes": 12816
+      },
+      {
+        "path": "acceptance/fixtures/collection/c-challenge-mid-batch.json",
+        "sha256": "b4330c7e473779279ba545f0ecb6d9cd8f2a811beb0bae7310c62ff5dcf7e16b",
+        "bytes": 12528
+      },
+      {
+        "path": "acceptance/fixtures/collection/e-limit-reached-stop.json",
+        "sha256": "ce13e459e9e82755ab6b25f01b1e5e77e76f9a4f073ee7b69e2ab5eb9364c34e",
+        "bytes": 7892
+      },
+      {
+        "path": "acceptance/fixtures/collection/h-metadata-unavailable-post-only.json",
+        "sha256": "7b588ca0ad1999bacdfa78ffb17ba6f0ad1336e399cb291502397f079168079b",
+        "bytes": 7475
+      },
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/e2e/README.md",
+        "sha256": "74790ee8435791e5dbc360cf84a0737f660e2bebcbdb0749cdc1528a669d9ca8",
+        "bytes": 6013
+      },
+      {
+        "path": "acceptance/fixtures/e2e/a-happy-path-schedule-to-delivered.json",
+        "sha256": "a925781ecf2d36e3cd02a3d666819bc5186c8d809e7865e51bac77d387678c00",
+        "bytes": 30745
+      }
+    ],
+    "protocol_version": "agent_profile/protocol.md (as at 2026-09-09)"
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts=\"\" -W ignore::DeprecationWarning tests/integration/test_collector_loop.py",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-09T07:15:00Z",
+    "ended_at": "2026-09-09T07:16:05Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Hai ghim cua FIX2 duoc lat thanh khang dinh that, va phan con lai duoc ghim lai chinh xac hon. (a) CR-TC-COLLECTOR-12 DONG: body claim THAT (khong phai ban tu dung) validate voi worker-assignment.schema.json — 0 loi, truoc day 7 loi. (b) CR-TC-COLLECTOR-11 DONG: RecordingAlertPort boc adapter DA WIRE va uy quyen moi lan goi, ghi lai rang port nhan duoc connection cua caller; goi hoan tat khong deadlock; dung 1 hang outbox_intent kind='telegram_alert'. (c) CR-TC-COLLECTOR-09/-10 DONG: fixture KHANG DINH composition root tu dung assignment port va collector_token, thay vi tu va vao. (d) CR-TC-COLLECTOR-15 MOI, ghim strict xfail: delivery/service.py:623,645,670 tra key 'intent_id'; wiring.py:198 doc 'delivery_intent_id' hoac 'id'; giao cua hai tap khoa la RONG (kiem bang may, khong bang mat), nen adapter luon tra None va jobs/service.py:1236-1246 (DUNG) bo qua UPDATE run.alert_intent_id. (e) 13 khang dinh con lai cua vong lap giu nguyen va van xanh.",
+    "expected": {
+      "tests_total": 16,
+      "passed": 15,
+      "failed": 0,
+      "xfailed": 1,
+      "skipped": 0,
+      "exit_code": 0
+    },
+    "observed": {
+      "tests_total": 16,
+      "passed": 15,
+      "failed": 0,
+      "xfailed": 1,
+      "skipped": 0,
+      "exit_code": 0,
+      "card_files_together": {
+        "passed": 70,
+        "xfailed": 1
+      },
+      "key_mismatch_proof": {
+        "create_intent_return_keys": [
+          "created",
+          "delivery_id",
+          "intent_id",
+          "state"
+        ],
+        "adapter_reads": [
+          "delivery_intent_id",
+          "id"
+        ],
+        "intersection": [],
+        "note_vi": "'delivery_id' CO ton tai va la cai bay: no la id cua hang delivery, khong phai cua intent. Sua dung la 'intent_id'."
+      },
+      "static_checks": {
+        "ruff_check": "clean on this card's files",
+        "ruff_format": "clean on this card's files",
+        "mypy": "Success: no issues found in 8 source files (collector/app)"
+      },
+      "full_suite": {
+        "passed": 1143,
+        "failed": 0,
+        "xfailed": 4,
+        "duration_s": 171
+      },
+      "fixture_leak_found_and_fixed": {
+        "symptom": "tests/integration/test_unknown_chat_silent.py::test_over_the_rate_limit_the_code_is_not_even_looked_up failed in the full suite only",
+        "attribution": "mine: full suite --ignore this file = 1128 passed 0 failed; with it = 1 failed; this file alone and tests/integration alone both pass",
+        "cause": "the app fixture built a runtime per test via wire() and never disposed runtime.engine; 16 leaked SQLAlchemy pools exhausted SQLite file handles",
+        "fix": "app is now a generator fixture that disposes runtime.engine on teardown",
+        "after": "1143 passed, 4 xfailed, 0 failed"
+      }
+    }
+  },
+  "result": "PASS",
+  "artifacts": [
+    {
+      "path": "tests/integration/test_collector_loop.py",
+      "sha256": "309f666c46792679291c50c04afb047cecc46b0382efb84254d08fb1f86a9bee",
+      "bytes": 38189,
+      "kind": "other",
+      "redaction_note_vi": "Test. Token duy nhat la mot chuoi test tuong minh, khong phai secret."
+    }
+  ],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 16,
+    "not_checked_vi": [
+      "KHONG chay live: khong browser, khong Playwright, khong mang, khong phien X. `--run` van TU CHOI vi chua co bo dieu khien nguon X; SG-01/SG-02 nguyen hieu luc.",
+      "CR-TC-COLLECTOR-15 chua duoc sua: run.alert_intent_id van NULL va alert_created van False tren mot bao cao CO tao alert. Ghim bang xfail(strict=True, run=True).",
+      "Mot ro ri cua CHINH goi nay da duoc tim va sua: fixture `app` dung mot runtime moi qua wire() cho moi test nhung khong bao gio dispose runtime.engine, lam mot test telegram khong lien quan that bai trong lan chay full suite. Da sua bang teardown; full suite sau do xanh hoan toan.",
+      "SG-HASH: 3/30 file da pin lech so voi epoch PC10-PIN-P5-20260908 — contracts/modules.yaml, contracts/ports.yaml, contracts/ops/secrets.md. Do wave-2 (secret/settings) landing, KHONG do goi nay; goi nay khong ghi hop dong nao. Khong oracle nao gay: ports.yaml duoc doc boi tests/contract/test_collector_stop_reasons.py va file do van xanh. Viec pin lai thuoc Coordinator (F-A2R1-03).",
+      "Heartbeat theo nhip thoi gian that qua jobs router van chua co test rieng.",
+      "Chua dang ky run vao evidence/index.json (file cua PC09, ngoai write set).",
+      "Chi tu kiem (SELF_VALIDATION). Khong co review doc lap nao."
+    ],
+    "uncertainty_vi": "Ban ghi nay BO SUNG cho EV-E1-03 va lam hai dong xfail cua ban do het hieu luc: mot dong duoc dong bang khang dinh that (CR-11, CR-12), mot dong thu hep thanh CR-TC-COLLECTOR-15. Phien lam viec bi tam dung mot ngay giua goi roi chay tiep.",
+    "unresolved_issue_refs": [
+      "CR-TC-COLLECTOR-02",
+      "CR-TC-COLLECTOR-03",
+      "CR-TC-COLLECTOR-04",
+      "CR-TC-COLLECTOR-05",
+      "CR-TC-COLLECTOR-06",
+      "CR-TC-COLLECTOR-08",
+      "CR-TC-COLLECTOR-13",
+      "CR-TC-COLLECTOR-14",
+      "CR-TC-COLLECTOR-15"
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "tests/integration/test_collector_loop.py",
+      "collector/app/loop.py",
+      "collector/app/client.py",
+      "collector/app/reader.py",
+      "server/app/wiring.py",
+      "server/app/jobs/service.py",
+      "server/app/delivery/service.py",
+      "server/app/ingest/service.py",
+      "contracts/schemas/worker-assignment.schema.json"
+    ]
+  },
+  "claim": {
+    "scope_vi": "Chi pham vi FIX3: hai ghim cua FIX2 duoc lat thanh khang dinh that tren composition root THAT, ba workaround bi xoa, va phan con lai duoc ghim lai bang mot xfail(strict) chi dung file:line.",
+    "not_established_vi": [
+      "KHONG thiet lap rang collector chay duoc tren X that.",
+      "KHONG thiet lap rang duong alert hoan chinh: hang intent duoc ghi, nhung run.alert_intent_id KHONG duoc dat (CR-TC-COLLECTOR-15).",
+      "KHONG thiet lap rang baseline con nguyen: 3 file da pin bi lech, xem limitations.",
+      "KHONG thiet lap IMPLEMENTATION_VERIFIED bang chinh ban ghi nay: manifest.schema.json gioi han mot ban SELF_VALIDATION o CONTRACT_READY.",
+      "Khong phai independent audit."
+    ]
+  }
+}

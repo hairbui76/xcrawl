@@ -1,0 +1,312 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-06-tc-storage-write-blocked-readiness",
+  "created_at": "2026-09-09T07:22:09Z",
+  "producer_principal": "worker-WR",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E2",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_versions": {
+      "CT-state-storage": "0.3.0"
+    },
+    "contract_hashes": {
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/data/entities.yaml": "7cd85e09431fa52555ee13bb5fb8f5a00932e38801677212e8baa18c14c27827",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/http/openapi.yaml": "a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d",
+      "contracts/modules.yaml": "7a4e19bdbb43e1339f305cd4715f1e7ac704b09720408ccf1db48a01b23c1e25",
+      "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+      "contracts/ports.yaml": "c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+      "contracts/ui/screens.yaml": "464579a807e00e44c3215cf9fbf243df4a2bef8db6e137d71a2409fe6bc6b854",
+      "precode/adr/ADR-0001-topology-and-placement.md": "9dd1aab43a0dbc8cefe83be997456b76bfc2595c7d20a0d69045b6c706319039",
+      "precode/adr/ADR-0005-backup-method.md": "889de2812a8736e328eb7823a82e2b5dab1f46aee13257bfcfedd08d4668bd5c",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7",
+      "precode/baseline.json": "e8cf3910c6f2351a2c7c4a8620121b0415a58c5c7ec86eee7ba5d33c343c1a70",
+      "precode/decision-register.md": "ab47a9adf997041655a0a571d62987d0f36e45cc04b2639d9f0d0c755e7fc7ed"
+    },
+    "implementation_revision": null
+  },
+  "environment": {
+    "os": "Linux 7.0.0-30-generic (x86_64)",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "fastapi": "0.115.14",
+      "sqlalchemy": "2.0.52",
+      "pydantic": "2.13.5",
+      "pytest": "8.4.2",
+      "uv": "workspace (uv.lock pinned)"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC15",
+      "SC26",
+      "SC27",
+      "SC36",
+      "SC42",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-S9.3-08",
+      "REQ-S8.3-01",
+      "REQ-S8.3-02",
+      "REQ-S8.3-03",
+      "REQ-AC12",
+      "REQ-AC15",
+      "REQ-D58"
+    ],
+    "invariant_ids": [
+      "I02",
+      "I13",
+      "I15"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/recovery/c-disk-full-mid-ingest.json",
+        "sha256": "8f6379b4b0c633ca7d3b48be039671b17ece9da58c1f96067003bf2fb0194092",
+        "bytes": 3532
+      },
+      {
+        "path": "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json",
+        "sha256": "b518ea3ac66e00e2c117b6586eadb648746fe71947b0c37a17ab50f81cdf7e82",
+        "bytes": 3665
+      },
+      {
+        "path": "acceptance/fixtures/collection/l-storage-write-blocked-mid-run.json",
+        "sha256": "7f5f751e9f23ea48ddb0623ce38a168967e621a014f2ca954b5852add193aeaf",
+        "bytes": 9225
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/identity/pos-ingest-batch-valid.json",
+        "sha256": "00886301c74078211be6720d3c6ec620a0a6355534cd58e73ce267073a0178f9",
+        "bytes": 4047
+      },
+      {
+        "path": "acceptance/fixtures/recovery/README.md",
+        "sha256": "f1de7368db67e6380b3c75d981edfeaddb4045f95b4d696c5a3b90f86e6298da",
+        "bytes": 12235
+      },
+      {
+        "path": "acceptance/fixtures/boundary/README.md",
+        "sha256": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+        "bytes": 10598
+      }
+    ],
+    "seed": null,
+    "clock": "2026-09-07T08:00:00Z",
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/integration/test_disk_full_no_ack.py tests/integration/test_readiness_independent_channel.py tests/contract/test_schema_matches_entities.py -p no:cacheprovider -q",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "manual_procedure": null,
+    "started_at": "2026-09-09T07:18:00Z",
+    "ended_at": "2026-09-09T07:18:31Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture c: khi disk-full giữa ingest, mọi mutation bị từ chối bằng STORAGE_WRITE_FAILED, KHÔNG có câu lệnh nào chạm DB (statements_attempted == 0), sha256 file DB không đổi, readiness storage = down VÀ liveness = up cùng lúc. Fixture l: checkpoint không tiến; nhánh A về healthy (T-ST-02), nhánh B về recovery_required (T-ST-08). Fixture j: reconciliation_complete(RR-03) == false, dispatch và worker claim bị từ chối bằng RESTORE_UNVERIFIED, storage.health vẫn recovery_required, dispatcher_unlocked_at null. SC49: năm cạnh cấm vào MOD-data-store bị từ chối đúng mã đã pin trong fixture boundary (FE-01/05/15/18 = CAPABILITY_DENIED, FE-29 = FORBIDDEN_EDGE). FIX1 (F-A3R1-11) bổ sung: sau create_app() thì app.state.storage_guard LUÔN tồn tại; guard và readiness provider là CÙNG một state machine (đẩy guard sang write_blocked thì endpoint đổi theo); cổng reconciliation tới được và vẫn đóng khi chưa có reconciliation_check (complete_reconciliation trả RESTORE_UNVERIFIED). FIX3 (G-3) KHÔNG thêm oracle nào: gói dừng ở stop-gate SG-EDGE vì contracts/data/entities.yaml không khai entity nào cho storage health / maintenance window. Mã không đổi; bản ghi này chỉ ghim lại byte hiện tại sau khi năm file hợp đồng khác trôi. FIX4 (G-3, AMD-ENT-maintenance-01): một tiến trình mở cửa sổ bảo trì rồi thoát; một TIẾN TRÌNH KHÁC (engine mới trên cùng file) đọc được `maintenance` và từ chối đúng những gì `maintenance` phải từ chối. `recovery_required` đọc từ `restore_record.dispatcher_unlocked_at IS NULL` và THẮNG một cửa sổ đang mở khi cả hai cùng có. `write_blocked` KHÔNG bao giờ được nạp từ đĩa (T-ST-01). `test_schema_matches_entities.py` xanh 0 khác biệt hai chiều; `alembic heads` = 1.",
+    "expected": {
+      "tests_passed": 78,
+      "tests_failed": 0,
+      "db_statements_during_readiness": 0,
+      "db_file_sha256_changed": false,
+      "reconciliation_complete_RR_03": false,
+      "boundary_edge_codes": {
+        "FE-01": "CAPABILITY_DENIED",
+        "FE-05": "CAPABILITY_DENIED",
+        "FE-15": "CAPABILITY_DENIED",
+        "FE-18": "CAPABILITY_DENIED",
+        "FE-29": "FORBIDDEN_EDGE"
+      },
+      "storage_guard_on_bare_factory": true,
+      "guard_and_readiness_provider_share_one_machine": true,
+      "reconciliation_gate_open_without_check": false,
+      "second_process_observes_maintenance": true,
+      "write_blocked_loaded_from_disk": false,
+      "schema_matches_entities_differences": 0,
+      "alembic_heads": 1
+    },
+    "observed": {
+      "tests_passed": 78,
+      "tests_failed": 0,
+      "db_statements_during_readiness": 0,
+      "db_file_sha256_changed": false,
+      "reconciliation_complete_RR_03": false,
+      "boundary_edge_codes": {
+        "FE-01": "CAPABILITY_DENIED",
+        "FE-05": "CAPABILITY_DENIED",
+        "FE-15": "CAPABILITY_DENIED",
+        "FE-18": "CAPABILITY_DENIED",
+        "FE-29": "FORBIDDEN_EDGE"
+      },
+      "storage_guard_on_bare_factory": true,
+      "guard_and_readiness_provider_share_one_machine": true,
+      "reconciliation_gate_open_without_check": false,
+      "second_process_observes_maintenance": true,
+      "write_blocked_loaded_from_disk": false,
+      "schema_matches_entities_differences": 0,
+      "alembic_heads": 1
+    }
+  },
+  "result": "PASS",
+  "artifacts": [
+    {
+      "path": "server/app/db/faults.py",
+      "sha256": "035547f389346549729b15df3b3e8e253d3b6c48610ea5ea5e13520faaf2eb8c",
+      "bytes": 4274,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/app/health/__init__.py",
+      "sha256": "76e82ad622bb4fb11417ada2f72a203160c9e120f676e7f1c96e25c767f559b7",
+      "bytes": 795,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/app/health/router.py",
+      "sha256": "4cfe39ea4aa777579c287da8c2acb6c88dfbea01cb2154574c8e34ee03c72738",
+      "bytes": 14249,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/app/storage/__init__.py",
+      "sha256": "539e2d15ad3b7ce50be07bfa167ed1e5495edf1a7833b3d0e214dc16fe73f2bb",
+      "bytes": 1195,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/app/storage/guard.py",
+      "sha256": "1a913367693180aeeb81c0dedcaade1958382d7b964885ac47bbe50a0530c6fd",
+      "bytes": 33026,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/app/storage/health.py",
+      "sha256": "3d72bf1558e63a1bfde107ab757f5f6773d2415fce7e9b2269448ed2798a06f2",
+      "bytes": 19460,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "server/migrations/versions/0015_tc_storage_maintenance_window.py",
+      "sha256": "82df80ad6352cbcdedee25a3389d48a1ad00bda37aa14ad3a00e4d7f40a0ea72",
+      "bytes": 6436,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "tests/integration/test_disk_full_no_ack.py",
+      "sha256": "4196bb092e566e9e60eae60014a7e68f49ff09b2ce164c8f8bd4f02547d03140",
+      "bytes": 18743,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    },
+    {
+      "path": "tests/integration/test_readiness_independent_channel.py",
+      "sha256": "2ca9ae0262e7e20bd5e15bad12e9e5346f0f216d3370ca82a6b17e23372068a7",
+      "bytes": 42395,
+      "kind": "other",
+      "redaction_note_vi": "Mã nguồn, migration và test; không chứa secret."
+    }
+  ],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 78,
+    "not_checked_vi": [
+      "Hành vi THẬT của SQLite khi ổ đĩa đầy: lỗi được TIÊM qua server/app/db/faults.py, không phải một volume đầy thật. REQ-S9.3-08 ('không ghi hỏng file SQLite') vẫn NOT_RUN — cần drill live.",
+      "Probe hồi phục dùng đồng hồ tiêm (FrozenClock); 30 s và 3 lần liên tiếp chưa được đo trên đồng hồ thật.",
+      "Bảng probe riêng mà T-ST-02 mô tả KHÔNG tồn tại trong contracts/data/entities.yaml; probe được hiện thực như một cổng tiêm (record_probe), chưa phải một write thật xuống bảng. Xem CR-TC-storage-04.",
+      "reconciliation_complete() là interface trả False cho mọi restore; nội dung đối soát thật thuộc TC-backup-restore-drill (CR không cần — đây là phạm vi đã hoãn có chủ đích).",
+      "Không có migration Alembic nào được viết hay chạy: toàn bộ trạng thái của card sống trong bộ nhớ tiến trình theo T-ST-01.",
+      "Không có independent audit. Đây là SELF_VALIDATION: tôi viết cả code lẫn test kiểm nó.",
+      "E3/E4 (live X / Telegram / AI) không chạy và không liên quan tới card này.",
+      "Probe hồi phục vẫn là điểm tiêm sau FIX1 (CR-TC-storage-04): chưa có entity storage_probe, nên trên một triển khai thật, write_blocked → healthy KHÔNG tự xảy ra. Mọi claim nhắc tới write_blocked end-to-end phải loại trừ chuyển tiếp này (A3-R1 §4.1).",
+      "server/app/db/faults.py đã chuyển quyền sở hữu sang Phase 0 skeleton (worker-WS, F-A3R1-07); card này chỉ còn là bên tiêu thụ, và đổi ngữ nghĩa bộ đếm của nó sẽ làm hỏng oracle 'không có câu lệnh nào chạm DB'.",
+      "Bộ test toàn cây đang KHÔNG ổn định trong wave 2 (các card khác đang ghi file giữa lúc chạy): ba lần chạy liên tiếp cho 0, 5 và 29 FAILED ở các file KHÔNG thuộc card này. 55/55 test của card này xanh ở cả ba lần.",
+      "Chứng minh 'tiến trình thứ hai' dùng engine mới trên cùng file DB (và đã lặp lại bằng hai interpreter OS riêng biệt ngoài test). KHÔNG kiểm tranh chấp ghi đồng thời thật giữa hai tiến trình cùng mở cửa sổ một lúc — `ux_maintenance_window_open` là thứ chặn, và nó được kiểm ở tầng store chứ không bằng một race thật.",
+      "`tools/backup_cli.py` VẪN dựng guard trong bộ nhớ: file đó không thuộc lease của card này. Cho tới khi W6B đổi `_guard()` sang `StorageGuard.from_engine(...)` và truyền reason/opened_by/closed_by, chuỗi CLI `maintenance --open` → `restore` vẫn chưa đóng đầu-cuối (CR-TC-storage-07).",
+      "Probe hồi phục vẫn là điểm tiêm (CR-TC-storage-04): chưa có entity `storage_probe`, nên `write_blocked → healthy` vẫn không tự xảy ra trên triển khai thật."
+    ],
+    "uncertainty_vi": "Bộ đếm câu lệnh chứng minh guard từ chối TRƯỚC khi mở transaction trong đường đi đã kiểm; nó không chứng minh mọi đường ghi tương lai đều gọi guard. Ràng buộc đó phải do từng card mutation tự giữ.",
+    "unresolved_issue_refs": [
+      "REQ-A1"
+    ]
+  },
+  "claim": {
+    "supports_label": "DRAFT_FOR_REVIEW",
+    "scope_vi": "storage.health T-ST-01..T-ST-09, guard từ chối mutation, kênh health độc lập DB (HC-01..HC-04), và default-deny trên storage.get_health. Trần của card là IMPLEMENTATION_VERIFIED nhưng evidence/manifest.schema.json giới hạn một bản ghi SELF_VALIDATION ở CONTRACT_READY; nâng nhãn cần review độc lập — xem CR-TC-storage-02.",
+    "not_established_vi": [
+      "KHÔNG chứng minh SQLite an toàn trên ổ đầy thật (REQ-S9.3-08 vẫn NOT_RUN).",
+      "KHÔNG chứng minh quy trình đối soát sau restore đúng — chỉ chứng minh cổng khóa khi vị từ false.",
+      "KHÔNG chứng minh UI phân biệt last-known (card 16); chỉ cung cấp as_of và storage_health cho nó.",
+      "KHÔNG phải independent audit.",
+      "KHÔNG chứng minh mọi đường ghi trong hệ thống gọi guard — chỉ đường ingest.submit_batch đã có mặt.",
+      "KHÔNG chứng minh write_blocked → healthy trên triển khai thật: probe vẫn là điểm tiêm (CR-TC-storage-04).",
+      "KHÔNG chứng minh chuỗi CLI đầu-cuối: `tools/backup_cli.py` chưa gắn store (CR-TC-storage-07)."
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "acceptance/fixtures/boundary/README.md",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/collection/l-storage-write-blocked-mid-run.json",
+      "acceptance/fixtures/identity/pos-ingest-batch-valid.json",
+      "acceptance/fixtures/recovery/README.md",
+      "acceptance/fixtures/recovery/c-disk-full-mid-ingest.json",
+      "acceptance/fixtures/recovery/j-restore-verification-incomplete-dispatch-locked.json",
+      "contracts/capabilities.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml",
+      "contracts/modules.yaml",
+      "contracts/ops/deployment.md",
+      "contracts/ports.yaml",
+      "contracts/retry-policy.yaml",
+      "contracts/state/run.yaml",
+      "contracts/state/storage.yaml",
+      "contracts/ui/screens.yaml",
+      "precode/adr/ADR-0001-topology-and-placement.md",
+      "precode/adr/ADR-0005-backup-method.md",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md",
+      "precode/baseline.json",
+      "precode/decision-register.md",
+      "server/app/db/faults.py",
+      "server/app/health/__init__.py",
+      "server/app/health/router.py",
+      "server/app/storage/__init__.py",
+      "server/app/storage/guard.py",
+      "server/app/storage/health.py",
+      "server/migrations/versions/0015_tc_storage_maintenance_window.py",
+      "tests/integration/test_disk_full_no_ack.py",
+      "tests/integration/test_readiness_independent_channel.py"
+    ]
+  }
+}

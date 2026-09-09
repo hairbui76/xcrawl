@@ -245,7 +245,7 @@
             "ruff_format_check": "clean"
         }
     },
-    "result": "PASS",
+    "result": "STALE",
     "artifacts": [],
     "limitations": {
         "mock_or_live": "mock",
@@ -316,5 +316,6 @@
         "invalidated_by_rule_ids": [
             "INV-06"
         ]
-    }
+    },
+    "stale_reason": "Superseded by evidence/runs/TC-analysis-adapter-validation-E1-20260908T062924Z.json under PKT-TC-ADAPTER-FIX2 (lease LEASE-TC-ADAPTER-e3, gap G-7b of packets/WIRING-wave-1.md). The card's five adapter modules and its two test files are byte-identical; what changed is that the card now also owns worker/app/main.py and a new worker/app/loop.py, and a third test file (tests/integration/test_worker_loop.py) drives the worker process loop against the real FastAPI app. Test count 49 -> 67. Pin epoch also advanced PC10-PIN-P3b-20260908 -> PC10-PIN-P4b-20260908. Observations here remain true of the bytes they name."
 }

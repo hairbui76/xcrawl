@@ -345,7 +345,13 @@ scenarios:
       `STALE_LEASE`; `outbox_intent` nay là bảng thật. KHÔNG đo được: `COUNT(outbox_intent WHERE
       kind='run_alert' AND run_id=<run>) = 1` **bất kể số lần phát hiện lại** — không test nào
       chạy chuỗi phát-hiện-lại đó; và nhánh "người dùng xử lý tay trong cửa sổ Chrome" là bước
-      con người. Tần suất challenge thật chỉ đo được bằng probe SP1.
+      con người. Tần suất challenge thật chỉ đo được bằng probe SP1. **Đợt nối dây (FC-P5, epoch
+      3)** thêm một vòng lặp collector THẬT (`collector/app/loop.py`,
+      `tests/integration/test_collector_loop.py`): đăng ký → claim → heartbeat → submit_batch →
+      commit_checkpoint chạy qua router thật trong tiến trình. Điều đó KHÔNG chuyển được dòng
+      này: chuỗi phát-hiện-lại vẫn không có test, và `--run` vẫn TỪ CHỐI vì chưa có bộ điều
+      khiển nguồn X — A3-P5-R1 §2 chạy nó như một tiến trình và nhận
+      `{"status":"refused_to_start","reason":"missing_server_url"}` với 0 hàng ghi.
 
   - id: SC05
     title_vi: "Bỏ tag trước transaction publish → mục khớp tag đó không vào báo cáo, dữ liệu vẫn ở kho"
@@ -1058,7 +1064,11 @@ scenarios:
       đã chạy: khi không có API key nào, cả hai adapter **từ chối từ registry thật trước khi
       chạm transport** — A3-P3-R1 §2 tự nạp registry và xác minh thứ tự từ chối thay vì đọc
       code. `REQ-OQ03` để cả hai adapter `enabled: false`, nên nhánh "đợt hoàn tất qua CLI" chưa
-      từng chạy.
+      từng chạy. **Đợt nối dây (FC-P5, epoch 3)** thêm card thứ 20 `TC-secret-settings-service`:
+      mã hóa envelope nay là THẬT (AES-256-GCM) và fixture `ai/k` chạy được vế `secret_ref =
+      NULL` cho đường `cli_acp` (REQ-D51 — không cấu hình key nào ⇒ **0** lời gọi tới secret
+      store). Mức yêu cầu vẫn là **E3**: không lượt chạy live nào tồn tại, nên dòng này không
+      chuyển được bằng thêm code.
 
   - id: SC17
     title_vi: "Nội dung nguồn là dữ liệu, không phải lệnh: injection, canary secret, yêu cầu gọi tool đều bị chặn"
@@ -1123,7 +1133,12 @@ scenarios:
       Phần đã chạy và mạnh: `test_injection_canary.py` chứng minh nội dung nguồn được xử lý như
       dữ liệu — injection bị chặn, yêu cầu gọi tool bị bỏ, và bộ test cố ý **không giữ canary
       thật nào trong repo**. Vế còn lại là cô lập tiến trình đo trên binary thật, và
-      `tool_definitions_registered = 0` chỉ mới đúng trên adapter đã tắt.
+      `tool_definitions_registered = 0` chỉ mới đúng trên adapter đã tắt. **Đợt nối dây (FC-P5,
+      epoch 3)** bổ sung hai quan sát ở mức TIẾN TRÌNH (A3-P5-R1 §2): khóa chủ **không đặt** ⇒
+      `secret.*` từ chối và không khóa nào được sinh hay mặc định; khóa chủ **hỏng** ⇒ tiến
+      trình TỪ CHỐI khởi động thay vì chạy không có envelope encryption. Fixture `recovery/f`
+      đếm canary = 0 trên mọi bảng, mọi audit row và mọi error envelope. Vế cô lập tiến trình
+      thật vẫn là E3.
 
   - id: SC18
     title_vi: "Chat ID chưa liên kết → bot không phản hồi gì, không mutation; ngoại lệ hẹp cho đúng định dạng mã"
@@ -2164,7 +2179,13 @@ scenarios:
       Cửa sổ write_blocked, kênh health độc lập và nhánh B (recovery_required) đã chạy (fixture
       l). Nhánh hồi phục write_blocked → healthy chỉ chạy qua một probe được tiêm, KHÔNG qua một
       lần ghi thật: bảng probe của T-ST-02 không tồn tại (CR-TC-storage-04). A3-R1 §4.1 và A3-R2
-      §5.1 loại trừ đúng nhánh này khỏi nhãn.
+      §5.1 loại trừ đúng nhánh này khỏi nhãn. **Đợt nối dây (FC-P5, epoch 3)** đóng một nửa KHÁC
+      của vấn đề và cố ý không phải nửa này: `AMD-ENT-maintenance-01` thêm entity
+      `maintenance_window` (migration `0015`), WR đưa `storage.health` xuống đĩa, và A3-P5-R1 §2
+      chứng minh bằng **hai lần gọi tiến trình riêng biệt** rằng cửa sổ maintenance sống qua các
+      lần gọi — `G-3` của runbook đóng. Nhánh `write_blocked → healthy` vẫn chạy qua probe TIÊM;
+      `CR-TC-storage-04` còn mở và chính manifest mới của WR nhắc lại điều đó. Dòng này **vẫn
+      NOT_RUN**.
     notes_vi: >
       Fixture riêng được cấp ở đợt FIX5 (`collection/l-…`, ruling R5-02), phủ nhánh
       `write_blocked → recovery_required` của T-ST-08 mà `recovery/c-disk-full-mid-ingest.json`
@@ -2429,7 +2450,10 @@ scenarios:
     status: NOT_RUN
     partial_evidence_vi: >
       Token collector đi sai cạnh bị từ chối bằng UNAUTHORIZED 401 và đường ingest vẫn chạy — đã
-      đo. Vế tag_config_version không đổi KHÔNG đo được: bảng `tag` chưa tồn tại.
+      đo. Vế tag_config_version không đổi KHÔNG đo được: bảng `tag` chưa tồn tại. **Đợt nối dây
+      (FC-P5, epoch 3)** KHÔNG đổi gì cho dòng này: `MOD-tag-service` vẫn chưa có card nào
+      (`CR-TC-BACKFILL-07`, `CR-TC-SCHED-06`), nên `tag_config_version` vẫn không có nguồn để
+      đọc. A3-P5-R1 §5 liệt kê "tags" là một trong năm thứ Owner vẫn chưa dùng được.
     notes_vi: >
       `acceptance/fixtures/recovery/README.md` (bảng §fixture) vẫn mô tả ca này là
       `FORBIDDEN_EDGE`, trong khi chính fixture và ruling CR-PC08-04 nói `UNAUTHORIZED`; câu
@@ -2560,15 +2584,15 @@ scenarios:
       - "4. Pha 2 hợp lệ trong `maintenance` → thu hồi mọi lease, xóa theo phạm vi."
       - "5. Ca âm C: dùng lại cùng `purge_challenge_id`."
     expected_durable_state_vi: >
-      Ca âm A, B, C: KHÔNG hàng nào bị xóa — `COUNT(*)` của cả 60 bảng bằng nhau trước và sau.
+      Ca âm A, B, C: KHÔNG hàng nào bị xóa — `COUNT(*)` của cả 61 bảng bằng nhau trước và sau.
       Ca hợp lệ, phân hoạch ba nhóm theo `OD-20260907-01` mục 24 (nguồn liệt kê CÓ THẨM QUYỀN:
       `contracts/data/entities.yaml` → `transactions[TXN-purge-all].tables`): (a) **37 bảng dữ
-      liệu nghiên cứu về 0 hàng**; (b) **21 bảng giữ lại KHÔNG đổi một hàng nào**; (c) **2 bảng
+      liệu nghiên cứu về 0 hàng**; (b) **22 bảng giữ lại KHÔNG đổi một hàng nào**; (c) **2 bảng
       never_purged** — `schema_migration` không đổi, `data_deletion_audit` **tăng đúng 1 hàng**
       (chính bản ghi của lần purge này). Mọi `assignment_lease` `revoked`. Backup và backup
       artefact KHÔNG bị chạm.
     oracle_vi: >
-      Ở mỗi ca âm, `COUNT(*)` của cả 60 bảng trước và sau bằng nhau. Ở ca hợp lệ, kiểm ĐỦ BA TẬP,
+      Ở mỗi ca âm, `COUNT(*)` của cả 61 bảng trước và sau bằng nhau. Ở ca hợp lệ, kiểm ĐỦ BA TẬP,
       không kiểm mẫu:
       (1) `COUNT(*) = 0` cho **37 bảng bị xóa** — post, post_work, work, work_version,
       identity_alias, identity_conflict, identity_merge_audit, work_label, analysis,
@@ -2578,11 +2602,11 @@ scenarios:
       delivery, delivery_part, delivery_attempt, delivery_receipt, outbox_intent, run,
       assignment, assignment_lease, checkpoint, ingest_receipt, source_fetch_log,
       telegram_update_log, telegram_link_attempt.
-      (2) `COUNT(*)` KHÔNG ĐỔI cho **21 bảng giữ lại** — owner, session, secret_ref,
+      (2) `COUNT(*)` KHÔNG ĐỔI cho **22 bảng giữ lại** — owner, session, secret_ref,
       task_credential, secret_audit, telegram_link, telegram_link_code, provider_config,
       provider_test_result, settings, schedule_occurrence, tag, tag_alias, tag_exclusion,
       tag_config_version, source_connection, backup_snapshot, backup_manifest, restore_record,
-      purge_challenge, worker_registration; và Owner **vẫn đăng nhập được** sau purge (kiểm bằng
+      purge_challenge, worker_registration, maintenance_window; và Owner **vẫn đăng nhập được** sau purge (kiểm bằng
       một lần đọc phiên thành công trên phiên cũ) — đây là hệ quả REQ-D05 mà Owner được cảnh báo
       trước khi trả lời.
       (3) `schema_migration` không đổi; `data_deletion_audit` tăng ĐÚNG 1 hàng.
@@ -2617,9 +2641,13 @@ scenarios:
     partial_evidence_vi: >
       **Không hiện thực, và card khai thẳng.** `data.purge_all` là non-goal của
       `TC-backup-restore-drill` (`SG-02`, §1); fixture `recovery/l` **chỉ được đọc**. Bảng
-      `data_deletion_audit` chưa tồn tại. Oracle đòi kiểm **đủ ba tập** trên 60 bảng (37 xóa /
-      21 giữ / 2 không bao giờ xóa) — phạm vi đã được Owner chốt ở `OD-20260907-01` mục 24, nên
-      đây là việc còn lại, không phải một câu hỏi còn mở.
+      `data_deletion_audit` chưa tồn tại. Oracle đòi kiểm **đủ ba tập** trên 61 bảng — và ba tập
+      đó nay là **37 xóa / 22 giữ / 2 không bao giờ xóa** sau `AMD-ENT-maintenance-01`, không
+      phải 37/21/2 như bản trước. **Đợt nối dây (FC-P5, epoch 3)** cập nhật fixture `recovery/l`
+      và tám artefact khác theo con số mới, và `E0-18` nay so **từng con số đếm** trong mười
+      artefact với `entities.yaml` (`CR-PC02-25`, 91 mục kiểm) để một lần trôi số như lần vừa
+      rồi không lọt qua nữa. Không có gì trong đợt này thực hiện `data.purge_all`; dòng **vẫn
+      NOT_RUN**.
     notes_vi: >
       Fixture được cấp ở đợt FIX5 (`recovery/l-…`, ruling R5-02), gồm xác nhận hai pha và các ca
       âm. `F-A2R5-01` (MAJOR): oracle của scenario này từng ghi phạm vi loại trừ là
@@ -2962,7 +2990,9 @@ scenarios:
       network/process capability cho worker trên máy cá nhân — vẫn là **14 cạnh
       `CAPABILITY_DENIED`** giữ ở `NOT_TESTABLE_AT_THIS_LAYER`; chúng chỉ đo được trên máy có
       Chrome thật và một tiến trình worker thật. `CR-PC09-24` ghi rằng SC49 sẽ **không** chuyển
-      được bằng thêm test ở tầng này, dù thêm bao nhiêu cạnh.
+      được bằng thêm test ở tầng này. **Đợt nối dây (FC-P5, epoch 3)** thêm card thứ 20 mang
+      `scenario_refs: [SC49]` và giữ nguyên bộ quét 36 cạnh làm oracle chung; lý do cấu trúc ở
+      trên không đổi một chữ.
     notes_vi: >
       HAI THIẾU SÓT ĐÃ ĐO. (a) 26 trong 36 cạnh KHÔNG có `denied_cases[]` với
       `expected_error_code` được pin, nên scenario này có oracle "không đổi trạng thái" cho cả 36

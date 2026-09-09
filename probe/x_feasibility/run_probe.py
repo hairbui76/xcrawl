@@ -49,6 +49,7 @@ from typing import Any, Protocol
 
 from probe.x_feasibility import PROTOCOL_VERSION
 from probe.x_feasibility.config import (
+    OUTPUT_DIR_RULE_VI,
     PROBE_MIN_GAP_MINUTES,
     PROBE_RUN_COUNT_MAX,
     PROBE_RUNS_PER_DAY_MAX,
@@ -470,15 +471,29 @@ class RedactingFormatter(logging.Formatter):
         return redact(super().format(record))
 
 
-def setup_logging(log_path: Path, *, verbose: bool = False) -> None:
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    formatter = RedactingFormatter("%(asctime)s %(levelname)s %(message)s")
-    file_handler = logging.FileHandler(log_path, encoding="utf-8")
-    file_handler.setFormatter(formatter)
+_FORMATTER = RedactingFormatter("%(asctime)s %(levelname)s %(message)s")
+
+
+def setup_console_logging(*, verbose: bool = False) -> None:
+    """Log to stderr only. Touches no file and creates no directory.
+
+    This is everything a ``--dry-run`` or a refused run gets. Writing a log file before the
+    gates have passed would mean the command that is *not allowed to run* still leaves a
+    directory behind -- which is how ``probe/evidence/runs/SP1-x-feasibility/probe.log``
+    appeared (wiring gap G-5).
+    """
     stream_handler = logging.StreamHandler(sys.stderr)
-    stream_handler.setFormatter(formatter)
+    stream_handler.setFormatter(_FORMATTER)
     LOG.setLevel(logging.DEBUG if verbose else logging.INFO)
-    LOG.handlers = [file_handler, stream_handler]
+    LOG.handlers = [stream_handler]
+
+
+def attach_file_logging(log_path: Path) -> None:
+    """Add the redacted log file. Called only once a run is actually about to start."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setFormatter(_FORMATTER)
+    LOG.handlers = [*LOG.handlers, file_handler]
 
 
 # --- CLI ----------------------------------------------------------------------------
@@ -525,7 +540,10 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = cfg.output_dir
     runs_path = out_dir / RUNS_FILENAME
     ledger_path = out_dir / LEDGER_FILENAME
-    setup_logging(out_dir / LOG_FILENAME, verbose=args.verbose)
+    # Nothing is written to disk until every gate below has passed. Until then the log goes
+    # to stderr only, so a refused command and a --dry-run leave the filesystem untouched.
+    setup_console_logging(verbose=args.verbose)
+    LOG.info("output_dir: %s", redact(str(out_dir)))
 
     try:
         check_owner_gate(cfg)
@@ -571,9 +589,12 @@ def main(argv: list[str] | None = None) -> int:
                         "config": cfg.redacted_summary(),
                         "runs_recorded": len(existing),
                         "runs_file": str(runs_path),
+                        "output_dir_rule_vi": OUTPUT_DIR_RULE_VI,
+                        "wrote_nothing": True,
                         "note_vi": (
                             "dry-run: cổng §6 và cổng lịch §3.1 đã qua. KHÔNG mở trình duyệt, "
-                            "KHÔNG chạm X. Bỏ --dry-run để chạy thật."
+                            "KHÔNG chạm X, và KHÔNG ghi gì xuống đĩa — kể cả thư mục "
+                            "output_dir hay probe.log. Bỏ --dry-run để chạy thật."
                         ),
                     },
                     ensure_ascii=False,
@@ -582,6 +603,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0
+
+    # Every gate has passed and a run is about to start: from here on the output directory
+    # is created and the redacted log file is written.
+    attach_file_logging(out_dir / LOG_FILENAME)
 
     state = _StopState()
 

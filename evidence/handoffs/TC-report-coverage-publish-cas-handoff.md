@@ -493,3 +493,99 @@ records all three at their run-time hashes.
 *`PKT-TC-REPORT-FIX2` · `worker-W4A` · `lease_released_at` 2026-09-08T01:40Z · manifest
 `EV-E1-03-tc-report-coverage-publish-cas`; `EV-E1-02-…` marked `STALE` · **no item here is an
 independent audit** — the independent signal is W4B's XPASS, which is theirs, not mine.*
+
+---
+
+# ADDENDUM 3 — `PKT-TC-REPORT-FIX3` (lease `LEASE-TC-REPORT-e4`)
+
+| Field | Value |
+| --- | --- |
+| trigger | Audit `F-A3-P5-03` (MEDIUM, `…/audits/A3-P5-R1-report.md`), ruling `…/packets/FIX-A3P5R1-rulings.md`. On the shipped process `GET /v1/reports` answered `500 INTERNAL` *"Có lỗi không mong đợi."* because `app.state.report_context` is absent (`CR-P0-07`). Contract-conformant, but a **disclosed gap read as a crash** |
+| write set | `server/app/report/router.py`, `tests/contract/test_report_schema.py`, this addendum, the re-issued manifest. Nothing else |
+| pin epoch | **`PC10-PIN-P5c-20260909`** — SG-HASH recomputed from the card's own §0 (not from a cached list, which was three epochs stale): **34/34 match, 0 drift** |
+| status | **`DONE`** — fix in, mutation-checked, whole repo green. One new CR (`CR-TC-REPORT-11`); `CR-P0-07` itself stays open and is not this card's to close |
+| next actor | Coordinator (re-verify with `uvicorn` + `curl /v1/reports`, which is the one thing this packet could not do) |
+| lease_released_at | 2026-09-09T08:25Z |
+
+## C.1 Code chosen, and the clause
+
+**`INTERNAL` (500)** — `contracts/http/openapi.yaml`, `/v1/reports` → `responses.500` and
+`/v1/reports/{report_id}` → `responses.500` (both literally *"Lỗi: `INTERNAL`"*).
+
+The rule was: whatever openapi declares for these operations' *unavailability*, else the
+closest **declared** code, never a new one. openapi declares no unavailability response here.
+`503 STORAGE_WRITE_FAILED` does exist — on **27 operations, every one of them a mutation**;
+`report.list` and `report.get` are reads and declare exactly `200 / 401 / 403 / 500`
+(`report.get` adds `404`). Of those four, three would state something untrue:
+
+* `UNAUTHORIZED` (401) — the caller's identity is fine; it would also bounce a logged-in owner
+  to a login screen over a server-side gap.
+* `FORBIDDEN_EDGE` (403) — `MOD-web-ui → MOD-report-service` **is** in `allowed_edges`. Ruling
+  R5-01 row 2 reserves this code for an edge the registry does not have, and card §10
+  `SG-DENY` makes picking the wrong code a FAIL in itself.
+* `NOT_FOUND` (404) — declared on `report.get` only, and it would assert something about a
+  *report* this path never looked for.
+
+`INTERNAL` remains, is declared on **both** routes, and does not misstate the cause:
+`errors.yaml` calls it *"lỗi không phân loại được ở phía server"*, and its one relevant
+prohibition — *"Dùng INTERNAL để che một mã đã có trong danh mục này"* — is satisfied, because
+none of the 28 catalogued codes covers "this deployment has not wired a port". The premise is
+asserted from the contract file, not restated:
+`test_the_declared_responses_do_not_include_503_for_the_read_routes` fails the day a 503 is
+declared for these reads, which is when the router should change.
+
+## C.2 What actually changed
+
+The status is what it was; the **body** is the finding, and it was wrong in two ways.
+
+1. `message_safe` said *"Có lỗi không mong đợi."* It now names the gap and the change request
+   that tracks it: *"Dịch vụ báo cáo chưa được cấu hình trong bản triển khai này (CR-P0-07):
+   chưa có cổng tag-service và cổng embedding. Yêu cầu của bạn hợp lệ và không có dữ liệu nào
+   bị đọc hay ghi."* A fixed literal — it interpolates nothing, so it cannot carry a value
+   outside `details_safe_keys`, and it contains none of the four things `forbidden_content_vi`
+   bars.
+2. `details_safe.operation_id` was **hard-coded to `report.get`**, so `GET /v1/reports` answered
+   with the wrong operation id. That wrong id is visible in the body the audit quoted. It is
+   now the route's own.
+
+Order is unchanged and now pinned by a test: headers → identity → availability. An anonymous
+caller still gets `401` and is told nothing about how the deployment is wired.
+
+## C.3 Verification
+
+| Command | Exit | Result |
+| --- | --- | --- |
+| `pytest tests/contract/test_report_schema.py` | 0 | **24 passed** (18 + 6 new) |
+| `pytest tests/integration/test_publish_cas.py` | 0 | 13 passed |
+| `pytest tests/integration/test_coverage_contiguous.py` | 0 | 11 passed |
+| `ruff check` / `ruff format` / `mypy --strict server/app/report` | 0 | clean, 6 source files |
+| `pytest` (whole repo) | 0 | **1172 passed, 3 xfailed, 0 failed, 0 errors** |
+
+Six new tests, three of which exist to stop the other three passing vacuously: the declared-code
+premise read from openapi; both routes unwired (parametrised); the anonymous 401-first order;
+and a fully wired app asserting `200` on both routes plus `404` for an unknown id — without
+that last one the fix would also pass for a router that answered the unwired body
+unconditionally.
+
+**Mutation-checked**: restoring the old `_context` body (generic `message_safe`, hard-coded
+`report.get`) fails both route tests; restoring the fix passes them.
+
+**Not run here**: the audit found this with `uvicorn` + `curl`. These tests drive the same ASGI
+app through `TestClient` — same application, same middleware stack — but the real process run
+belongs to the Coordinator's re-verify step, and is recorded as such rather than implied.
+
+## C.4 Change request
+
+| ID | To | Content |
+| --- | --- | --- |
+| `CR-TC-REPORT-11` | PC01 / PC03 | `INTERNAL.details_safe_keys` is closed to `{correlation_id, operation_id}`, so an unwired deployment can only name its reason in **prose**. `CR-P0-07` is therefore in `message_safe` and a client cannot branch on it — the web UI still cannot tell "not configured" from "crashed" without string-matching Vietnamese. Requested: either declare `503` on `report.list`/`report.get` with a catalogued unavailability code, or add a `reason_ref` key to `INTERNAL.details_safe_keys`. Until then the distinction is human-readable only. |
+
+`CR-P0-07` itself is untouched and still open: this packet fixed how the gap is *reported*, not
+the gap. WS sets `report_context = None` explicitly with the reason in `rr_admin status` (their
+file, in parallel).
+
+---
+
+*`PKT-TC-REPORT-FIX3` · `worker-W4A` · `lease_released_at` 2026-09-09T08:25Z · manifest
+`EV-E1-04-tc-report-coverage-publish-cas`; `EV-E1-03-…` marked `STALE` · **no item here is an
+independent audit**.*

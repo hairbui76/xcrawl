@@ -71,6 +71,7 @@ SRC-PLAN §12.
 | 16 | [`TC-ui-runs-three-states`](TC-ui-runs-three-states.md) | M4 → M7 | G5 | `IMPLEMENTATION_VERIFIED` |
 | 17 | [`TC-backup-restore-drill`](TC-backup-restore-drill.md) | M8 | G5 | `IMPLEMENTATION_VERIFIED` |
 | 18 | [`TC-research-connector-metadata`](TC-research-connector-metadata.md) | M2 | G5 | `IMPLEMENTATION_VERIFIED` (E1 với response ghi sẵn; module **chưa** `CONTRACT_READY` — `REQ-A6`) |
+| 19 | [`TC-secret-settings-service`](TC-secret-settings-service.md) | M3 | G5 | `IMPLEMENTATION_VERIFIED` (E1+E2 trên fixture; **không** provider nào được bật) |
 
 **SP1 chạy sớm.** SRC-PLAN §12: *"SP1 cho X nên chạy sớm sau G2 và PC05, vì rủi ro nguồn lớn nhất."*
 `TC-x-feasibility-probe` đứng số 0 không phải vì dễ mà vì nếu nó no-go thì phần lớn phần còn lại đổi nghĩa.
@@ -105,6 +106,11 @@ TC-telegram-linking-auth ──► TC-telegram-unknown-delivery
 
 TC-canonical-identity-merge ──► TC-research-connector-metadata ◄── TC-ingest-idempotent-ack-lost
         (connector trả metadata; identity vẫn là nơi duy nhất ghi work/alias)
+
+TC-owner-auth-session ──► TC-secret-settings-service ──► TC-analysis-adapter-validation
+        ▲                            │
+        └── settings.* đi qua owner   └──► credential ngắn hạn cho task đang giữ lease
+            session + CSRF                 (TC-analysis-once-per-generation sở hữu lease đó)
 ```
 
 Đọc mũi tên là "phải xong trước". Một số phụ thuộc chỉ chặn **claim đầy đủ** chứ không chặn bắt đầu; §11
@@ -121,12 +127,12 @@ Mỗi card mang §0 với SHA-256 và byte count của **mọi** file nó đọc
   review. Bản cũ vẫn giữ để audit."*
 - Ma trận vô hiệu hóa bằng chứng (thay đổi nào làm STALE bằng chứng nào) nằm ở `precode/change-control.md` §4.
 
-**Pin hiện tại: `PC10-PIN-P4b-20260908`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
+**Pin hiện tại: `PC10-PIN-P5c-20260909`.** Hash tính lại trực tiếp trên repo sau mỗi wave FIX chạm file có
 pin. Lần pin này chạy sau `PKT-PC02-FIX13` (release 11:44Z): `contracts/data/entities.yaml` được sửa **chỉ ở
 phần văn xuôi** của khối amendment `AMD-ENT-owner-01` — **không trường nào đổi**. Card vẫn phải pin lại, và
 đó là điểm mấu chốt: quy tắc `STALE` đọc **byte**, không đọc ý định. Một ngoại lệ "chỉ là văn xuôi" sẽ biến
 cửa pin thành thứ phải phán đoán mới dùng được, và phán đoán là thứ cơ chế này tồn tại để khỏi cần. Epoch cũ,
-theo thứ tự bị thay: `PC10-PIN-P4-20260908` ← `PC10-PIN-P3b-20260908` ← `PC10-PIN-P3-20260908` ← `PC10-PIN-P2d-20260907` ← `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
+theo thứ tự bị thay: `PC10-PIN-P5b-20260908` ← `PC10-PIN-P4b-20260908` ← `PC10-PIN-P4-20260908` ← `PC10-PIN-P3b-20260908` ← `PC10-PIN-P3-20260908` ← `PC10-PIN-P2d-20260907` ← `PC10-PIN-P2c-20260907` ← `PC10-PIN-P2b-20260907` ← `PC10-PIN-P2-20260907` ← `PC10-PIN-P1d-20260907` ← `PC10-PIN-P1c-20260907` ← `PC10-PIN-P1b-20260907` ← `PC10-PIN-P1-20260907` ←
 `PC10-PIN-OD01e-20260907` ← `PC10-PIN-OD01d-20260907` ←
 `PC10-PIN-OD01c-20260907` ← `PC10-PIN-OD01b-20260907` ← `PC10-PIN-OD01-20260907` ← `PC10-PIN-FCW4f-20260907` ← `PC10-PIN-FCW4e-20260907` ← `PC10-PIN-FCW4d-20260907` ← `PC10-PIN-FCW4c-20260907` ← `PC10-PIN-FCW4b-20260907` ← `PC10-PIN-FCW4-20260907` ← `PC10-PIN-20260907`.
 
@@ -344,10 +350,18 @@ vẫn `NOT_RUN`. Mười bốn card còn lại chưa bắt đầu.
 sẵn — `TC-x-feasibility-probe` và `TC-collector-checkpoint-resume` (§0 của chúng nay mang `dispatch_status`);
 khẳng định **live** của probe vẫn bị chặn bởi cổng Owner ở `contracts/ops/collector-probe.md` §6 mục 2–4.
 **2B** cần một card chưa tồn tại, nên gói này viết nó: `TC-research-connector-metadata` (M2). Thư mục nay có
-**19 card**. Card thứ 19 **chưa được thi công** và trần của nó **không** nâng trần của `MOD-research-connector`:
+**20 card**. Card thứ 19 **chưa được thi công** và trần của nó **không** nâng trần của `MOD-research-connector`:
 module đó vẫn không đủ điều kiện `CONTRACT_READY` cho tới khi bốn giá trị `PLACEHOLDER_KC` của
 `contracts/retry-policy.yaml` `research_connector_rate_limit` được điền bằng **dữ kiện đọc từ tài liệu chính
 thức** (`REQ-A6`). Không con số nào được đoán, và card ghi điều đó thành một điểm dừng (`SG-A6`).
+
+**Card thứ 20 — `TC-secret-settings-service` (M3, `PKT-PC10-FIX28`).** Nó lấp khoảng trống `G-6`: sáu
+operation `secret.*` / `settings.*` có trong `contracts/ports.yaml` nhưng **không module nào hiện thực**, nên
+hiện **không có chỗ hợp lệ** để cất một API key, webhook secret Telegram, hay credential ngắn hạn theo task —
+và ca âm `ISO-05` của `contracts/ai/providers.yaml` §4 (*gọi `secret.issue_task_credential` cho một worker
+**không** giữ lease và thấy nó bị từ chối*) **không chạy được**, vì operation đó chưa có mã. Card **chưa được
+thi công**; nó được pin tại **cùng epoch** với 19 card kia — tên epoch đọc ở §4, file này **không** chép tay
+tên đó lần thứ hai (`F-A2R1-03`) — và 19 card kia **không** bị sinh lại vì không file đã pin nào đổi byte.
 
 ## 5.5 Bộ khung Giai đoạn 0 đã tồn tại — và tên module để import
 

@@ -116,11 +116,26 @@ Chép [`probe/probe-config.example.json`](probe-config.example.json) thành file
 | --- | --- |
 | `chrome_user_data_dir` | thư mục profile ở §3.2, **đường dẫn tuyệt đối** |
 | `search_terms` | từ khóa tìm trên X. Tag ở đây **chỉ để tìm kiếm** (REQ-D24) |
-| `output_dir` | mặc định `evidence/runs/SP1-x-feasibility` |
+| `output_dir` | nơi ghi `runs.jsonl`, `probe.log`, sổ id. Mặc định `evidence/runs/SP1-x-feasibility` — **tương đối với thư mục bạn đang đứng khi chạy lệnh**, xem cảnh báo dưới bảng |
 | `max_posts_per_run` / `max_duration_s` | ngân sách §3.2 — **hạ được, không nâng được** |
 | `request_min_interval_ms` | **sàn** 2000 ms giữa hai thao tác điều hướng |
 | `owner_confirmations` | bốn xác nhận §6 — xem §5 dưới đây |
 | `extra_markers` | chuỗi bổ sung cho bộ dò tín hiệu — xem §7 |
+
+> ### `output_dir` tương đối tính từ ĐÂU
+>
+> **Đường dẫn tuyệt đối** (ví dụ `/home/<bạn>/rr-evidence`) được dùng nguyên văn — không mơ hồ, và là lựa
+> chọn an toàn nhất nếu bạn hay chạy lệnh từ nhiều chỗ.
+>
+> **Đường dẫn tương đối** tính từ **thư mục bạn đang đứng khi gõ lệnh** (cwd), **không phải** thư mục chứa
+> file config. Nên: đứng ở **gốc repo** khi chạy, để `evidence/runs/SP1-x-feasibility` trỏ đúng vào cây
+> evidence của repo — cũng chính là đường dẫn mà `probe/go_no_go.py` mặc định đọc lại ở §9, nên hai lệnh
+> luôn nói về cùng một thư mục.
+>
+> (Bản trước tính đường dẫn tương đối từ thư mục chứa file config. Vì file config mẫu nằm trong `probe/`,
+> một lần `--dry-run` từ gốc repo đã ghi vào `probe/evidence/runs/SP1-x-feasibility/` — một thư mục không ai
+> chỉ định. Đó là lỗi G-5, đã sửa; probe in đường dẫn đã giải ra ở dòng log đầu tiên và trong `--dry-run`,
+> nên bạn luôn thấy nó sẽ ghi vào đâu **trước khi** nó ghi.)
 
 Kiểm cấu hình mà **không** mở trình duyệt:
 
@@ -128,8 +143,10 @@ Kiểm cấu hình mà **không** mở trình duyệt:
 uv run python probe/x_feasibility/run_probe.py --config ~/rr-probe.json --dry-run
 ```
 
-`--dry-run` kiểm config, cổng §6 và cổng lịch §3.1 rồi thoát. Nó **không** mở Chrome và
-**không** chạm X.
+`--dry-run` kiểm config, cổng §6 và cổng lịch §3.1, in ra đường dẫn `output_dir` đã giải, rồi thoát. Nó
+**không** mở Chrome, **không** chạm X, và **không ghi bất cứ thứ gì xuống đĩa** — kể cả thư mục
+`output_dir` hay `probe.log`. Một lần bị cổng từ chối cũng vậy: không thư mục nào được tạo cho tới khi một
+đợt thật sự bắt đầu.
 
 ## 5. Cổng Owner §6 — bốn xác nhận, bằng văn bản
 
@@ -170,6 +187,11 @@ uv run python probe/x_feasibility/run_probe.py --config ~/rr-probe.json \
 
 Cửa sổ Chrome mở ra và bạn **nhìn thấy** nó cuộn. Đó là cố ý: `headless=False` để bạn quan
 sát được, và để nếu X đòi xác minh thì **bạn** là người xử lý, không phải một dòng code.
+
+Đợt thật là lúc **đầu tiên** có gì đó được ghi xuống đĩa: `output_dir` được tạo, rồi `runs.jsonl`,
+`probe.log` và `seen-post-ids.sha256` xuất hiện trong đó. Dòng log đầu tiên của mỗi lần chạy in đúng
+`output_dir` đã giải ra (đã che tên người dùng), nên nếu nó không phải chỗ bạn muốn thì bạn biết ngay —
+`Ctrl-C`, sửa config hoặc `cd` về gốc repo, chạy lại.
 
 ### Lịch (§3.1, probe tự ép)
 

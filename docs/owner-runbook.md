@@ -79,16 +79,23 @@ môi trường `RR_DATABASE_URL` và **từ chối đoán** nếu biến đó tr
 
 ### 2.2 Chạy migration từ một file trắng
 
-> **`KHOẢNG TRỐNG G-4`** — `script_location = migrations` trong `server/alembic.ini` là đường
-> dẫn **tương đối theo thư mục làm việc**, không theo vị trí file `.ini`. Vì vậy lệnh chạy từ
-> gốc repo **thất bại**; đúng thư mục làm việc là `server/`.
->
-> Đã quan sát: `uv run alembic -c server/alembic.ini upgrade head` từ gốc repo trả
-> `alembic.util.exc.CommandError: Path doesn't exist: migrations.` (Bộ test tránh được điều
-> này bằng cách tự ghi đè `script_location` thành đường dẫn tuyệt đối — xem
-> `tests/integration/test_multipart_partial_receipt.py::build_database`.)
+> **`KHOẢNG TRỐNG G-4` — ĐÃ ĐÓNG** (`PKT-P0-FIX5`). `script_location = migrations` trong
+> `server/alembic.ini` vẫn là đường dẫn **tương đối theo thư mục làm việc**, nên gọi `alembic`
+> trần từ gốc repo vẫn trả `alembic.util.exc.CommandError: Path doesn't exist: migrations.`
+> Điều đã đổi: có một lệnh **không** phụ thuộc cwd. `tools/rr_admin.py migrate` dựng config
+> bằng đường dẫn tuyệt đối và đặt `RR_DATABASE_URL` quanh lần upgrade — đúng cách bộ test đã
+> làm (`tests/integration/test_denied_edges.py::_migrate`). `server/alembic.ini` và
+> `server/migrations/env.py` **không** bị sửa: việc `env.py` từ chối đoán vị trí database là
+> đúng và được giữ nguyên.
 
-Lệnh đúng — **`đã chạy ở đây`**:
+Lệnh đúng — **`đã chạy ở đây`**, từ **gốc repo** (hoặc bất kỳ thư mục nào):
+
+```bash
+make migrate
+# tương đương: uv run python tools/rr_admin.py migrate
+```
+
+Đường cũ vẫn dùng được nếu bạn muốn gọi thẳng alembic — **`đã chạy ở đây`**:
 
 ```bash
 mkdir -p var
@@ -124,25 +131,28 @@ dẫn, lệnh và output giống hệt.)*
 Trong mã, việc đó là `AuthService.bootstrap_owner()` (`server/app/auth/service.py`), và
 docstring của chính nó nói đây là **"CLI/console call"**, không có đường HTTP nào tới nó.
 
-> ### `KHOẢNG TRỐNG G-1` — chưa có CLI bootstrap
+> ### `KHOẢNG TRỐNG G-1` — **ĐÃ ĐÓNG** (`PKT-P0-FIX5`)
 >
-> **Không tồn tại** một lệnh nào đặt `owner.password_hash`. `tools/` chỉ có `backup_cli.py`.
-> Không có `server/app/auth/cli.py`, không có console-script trong `server/pyproject.toml`.
-> Con đường duy nhất đã được kiểm là **gọi thẳng phương thức** — đúng như bộ test làm
-> (`tests/integration/test_concurrent_save.py:382`).
+> Bản trước của tài liệu này ghi: *"**Không tồn tại** một lệnh nào đặt `owner.password_hash`"*,
+> và đường duy nhất đã kiểm là gọi thẳng phương thức bằng `python -c` **với mật khẩu nằm trên
+> dòng lệnh** — thứ mà mọi tiến trình khác trên máy đọc được.
 >
-> Tài liệu này **không** viết CLI đó: viết mã sản phẩm nằm ngoài phạm vi được uỷ quyền. Đây là
-> việc cần một card.
+> Nay đã có CLI: `tools/rr_admin.py bootstrap-owner` (hoặc `make bootstrap`). Nó **hỏi mật khẩu
+> hai lần và không hiện lại** (`getpass`), đọc được từ stdin để bạn pipe từ một file `0600`, và
+> **không có tham số `--password`** — cố ý, vì tham số tiến trình là thứ ai cũng đọc được. Nó in
+> **đúng một dòng: ULID của owner**, không in mật khẩu, không in hash, không in tham số Argon2.
 
-Đường đã được kiểm — **`đã chạy ở đây`**:
+Đường đúng — **`đã chạy ở đây`**:
 
 ```bash
-uv run python -c "
-from server.app.db import create_sqlite_engine
-from server.app.auth.service import AuthService
-engine = create_sqlite_engine('var/research-radar.db')
-print(AuthService(engine).bootstrap_owner(display_name='Owner', password='<mật-khẩu-của-bạn>'))
-"
+make migrate      # nếu bạn chưa chạy ở §2
+make bootstrap
+```
+
+hoặc trực tiếp, khi bạn muốn đọc mật khẩu từ file:
+
+```bash
+uv run python tools/rr_admin.py bootstrap-owner < /đường/dẫn/mật-khẩu-0600
 ```
 
 **Kỳ vọng:** đúng một dòng — ULID của owner, ví dụ dạng `01M1ZH…` (26 ký tự Crockford base32).
@@ -151,7 +161,9 @@ database, và hàm chuyển sang nhánh đặt lại mật khẩu, đồng thờ
 (`secrets.md` §2.3).
 
 **Đừng gõ mật khẩu thẳng vào dòng lệnh** trên máy dùng chung: tham số tiến trình đọc được bởi
-người khác. Đọc từ stdin hoặc từ một file `0600` mà bạn xoá sau đó.
+người khác. `bootstrap-owner` vì vậy **không nhận** mật khẩu qua tham số; hãy để nó hỏi, hoặc
+pipe từ một file `0600` mà bạn xoá sau đó. Mật khẩu ngắn hơn **8 ký tự** bị từ chối ngay tại
+console và **không ghi gì** vào database.
 
 Tham số băm là Argon2id với `memory_cost` 64 MiB, `time_cost` 3, `parallelism` 1
 (`secrets.md` §2.2, khai lại thành hằng số ở `server/app/auth/service.py`). Cả năm tham số vẫn
@@ -161,26 +173,40 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 
 ## 4. Khởi động các tiến trình
 
-### 4.0 Điều phải đọc trước — `KHOẢNG TRỐNG G-2`
+### 4.0 Điều phải đọc trước — `KHOẢNG TRỐNG G-2` — **ĐÃ ĐÓNG** (`PKT-P0-FIX5`)
 
-> **Chưa có "composition root".** `create_app()` trong `server/app/main.py` dựng đối tượng
-> FastAPI và gắn router của từng card, nhưng **không nhận** database URL, **không** dựng
-> `AuthService`, và **không** đặt bất kỳ context nào mà các router đọc:
-> `app.state.engine`, `app.state.auth_service`, `app.state.ingest_context`,
-> `app.state.telegram_context`, `app.state.delivery_context`, `app.state.analysis_context`,
-> `app.state.report_context`, `app.state.job_context`.
+> **Bản trước ghi:** *"Chưa có composition root … `RR_DATABASE_URL` chỉ được Alembic đọc, ứng
+> dụng không đọc nó … `POST /v1/auth/login` trả **500** kèm `AttributeError: 'State' object has
+> no attribute 'auth_service'`."*
 >
-> Đó là **cố ý** ở Giai đoạn 0 (docstring của `main.py`: bare factory không có database URL nên
-> "dựng một AuthService ở đây là bịa ra một chỗ lưu trữ"). Hệ quả thực tế: **`RR_DATABASE_URL`
-> chỉ được Alembic đọc, ứng dụng không đọc nó.** Server bạn khởi động ở dưới **không nối vào
-> database bạn vừa tạo ở §2**.
+> **Nay không còn đúng.** `server/app/settings.py` đọc môi trường, `server/app/wiring.py` dựng
+> engine → service → `app.state.*_context` đúng như test của từng card dựng, và
+> `server.app.main:app` tự nối bằng **lifespan lúc khởi động**. Đo lại trên một tiến trình
+> uvicorn thật, database trắng, sau `make migrate` + `make bootstrap`:
 >
-> Cụ thể, đã quan sát trên tiến trình thật: `/healthz` trả `200`; mọi route cần owner session
-> trả `401 UNAUTHORIZED`; và `POST /v1/auth/login` với đủ header trả **`500`** kèm
-> `AttributeError: 'State' object has no attribute 'auth_service'` trong log.
+> | Lệnh | Trước | Nay |
+> | --- | --- | --- |
+> | `POST /v1/auth/login` | **500** `AttributeError` | **200**, đặt cookie `rr_session` + `rr_csrf` |
+> | `GET /v1/health/readiness` (có phiên) | 401 mãi mãi | **200**, `storage_health: healthy` |
+> | `GET /v1/runs` (có phiên) | 500 | **200** `{"runs":[]}` |
 >
-> Vì vậy: **§4.1 chứng minh tiến trình boot được, không chứng minh hệ thống dùng được.** Mọi
-> mục sau ([§7](#7-telegram) Telegram, [§8](#8-ai) AI) đều bị chặn bởi cùng khoảng trống này.
+> `create_app()` **gọi trần vẫn là app rỗng** — không database, không service — vì hàng chục
+> test của các card dựa vào đúng điều đó. Chỉ `server.app.main:app` (thứ `make serve` và
+> uvicorn dùng) mới tự nối. Import module **không** tạo file database.
+
+> ### Cái vẫn **chưa** nối, và vì sao
+>
+> `make status` in đúng danh sách này kèm lý do. Không thứ nào bị "cắm tạm" cho có:
+>
+> | Không nối | Lý do |
+> | --- | --- |
+> | `report_context` | `PublishContext` **bắt buộc** `tag_port` và `embedding_port`. `TagConfigVersionPort` **chưa có** hiện thực nào (`CR-TC-REPORT-01`), và `LocalEncoder` chỉ có hiện thực trong test vì model embedding còn là `REQ-OQ09`/`REQ-A3`. Cắm encoder băm của test vào một deployment thật sẽ ghi vector mà **không model nào** sinh ra. Xem `CR-P0-07` |
+> | `delivery.transport`, `analysis.provider_config` | cần credential, mà `MOD-secret-service` chưa tồn tại (khoảng trống `G-6`, wave 2) |
+> | `telegram_ingress_secret` | chưa đặt `RR_TELEGRAM_WEBHOOK_SECRET` ⇒ **mọi update bị từ chối**, đúng hướng default-deny |
+> | `research_connector` | bốn dữ kiện `REQ-A6` còn `PLACEHOLDER_KC` |
+>
+> Hệ quả: §7 (Telegram) và §8 (AI) **vẫn bị chặn**, nhưng nay bị chặn vì **thiếu credential và
+> thiếu một quyết định của Owner**, không còn vì thiếu composition root.
 
 ### 4.1 Server
 
@@ -189,10 +215,13 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 phiên có cờ `Secure`, nên đăng nhập **không** hoạt động qua HTTP thường; đó là kết quả mong
 muốn). Trên máy cá nhân bạn chỉ chạy tiến trình trần, nghe loopback.
 
-Chuỗi import đúng là `server.app.main:app` (`README.md` §2) — **`đã chạy ở đây`**:
+Chuỗi import đúng là `server.app.main:app` (`README.md` §2.1) — **`đã chạy ở đây`**. Chạy
+`make migrate` và `make bootstrap` **trước**, nếu không server vẫn khởi động nhưng mọi route cần
+owner sẽ từ chối và `make status` sẽ nói thẳng còn thiếu bước nào:
 
 ```bash
-uv run uvicorn server.app.main:app --host 127.0.0.1 --port 8080
+make serve
+# tương đương: uv run uvicorn server.app.main:app --host 127.0.0.1 --port 8080
 ```
 
 **Kỳ vọng:**
@@ -222,7 +251,7 @@ curl -i http://127.0.0.1:8080/v1/health/readiness
 | Lệnh | Quan sát được |
 | --- | --- |
 | `/healthz` | `HTTP/1.1 200 OK`, header `x-schema-version: 0.3.0`, thân `{"status":"up","schema_version":"0.3.0"}`. **Không** lộ cấu hình, tên provider hay chat id — đúng `contracts/state/storage.yaml` `HC-01`/`HC-03` và `secrets.md` §2.4. Đây là endpoint **duy nhất** không cần xác thực. |
-| `/v1/health/readiness` | `HTTP 401` + phong bì lỗi `{"code":"UNAUTHORIZED", …, "details_safe":{"required_auth_scope":"owner_session"}}`. Đúng hướng default-deny: chưa cấu hình xác thực thì từ chối tất cả, không mở cho tất cả. |
+| `/v1/health/readiness` **chưa đăng nhập** | `HTTP 401` + phong bì lỗi `{"code":"UNAUTHORIZED", …, "details_safe":{"required_auth_scope":"owner_session"}}`. Đúng hướng default-deny. **Sau khi đăng nhập** (gửi kèm cookie phiên) route này trả **200** với khối `modules` — **`đã chạy ở đây`**. |
 
 Về `auth.login`, hai header **bắt buộc** trên mọi request (quan sát được bằng chính lỗi trả
 về): `X-Schema-Version` và `X-Request-Id`. Thiếu header nào thì server trả `422` kèm
@@ -236,8 +265,28 @@ curl -i -X POST http://127.0.0.1:8080/v1/auth/login \
   -d '{"username":"owner","password":"<mật-khẩu>"}'
 ```
 
-**Kỳ vọng trên bộ khung hôm nay:** `HTTP 500` (`KHOẢNG TRỐNG G-2`). Mật khẩu ngắn hơn 8 ký tự
-bị chặn sớm hơn, ở tầng validate: `422` với `"String should have at least 8 characters"`.
+**Kỳ vọng — `đã chạy ở đây` trên tiến trình uvicorn thật:** `HTTP 200` và thân
+`{"authenticated":true,"csrf_token":"…","expires_at":"…","schema_version":"0.3.0"}`, kèm hai
+cookie `rr_session` (HttpOnly) và `rr_csrf` (không HttpOnly, cho double-submit). `username` là
+`display_name` bạn đã đặt ở §3 (mặc định `Owner`).
+
+Mật khẩu ngắn hơn 8 ký tự vẫn bị chặn ở tầng validate: `422` với
+`"String should have at least 8 characters"`. Sai mật khẩu 5 lần trong 15 phút thì khoá tài
+khoản 15 phút (`RATE_LIMITED`) — `owner.failed_login_count`/`locked_until`, nên khoá **sống sót
+qua restart**.
+
+Sau khi có cookie, hai phép thử còn lại — **`đã chạy ở đây`**:
+
+```bash
+curl -i http://127.0.0.1:8080/v1/health/readiness -b cookies.txt \
+  -H 'X-Schema-Version: 0.3.0' -H 'X-Request-Id: <ULID>'
+curl -i http://127.0.0.1:8080/v1/runs -b cookies.txt \
+  -H 'X-Schema-Version: 0.3.0' -H 'X-Request-Id: <ULID>'
+```
+
+**Kỳ vọng:** readiness `200` với `{"modules":{...},"storage_health":"healthy",...}`; `/v1/runs`
+`200` với `{"runs":[]}` trên một database trắng. `/v1/runs` là phép thử đáng giá nhất trong ba:
+nó đọc `app.state.job_context`, thứ chỉ tồn tại khi engine, owner id và lịch đều đã được nối.
 
 `GET /openapi.json` trả `404` — có chủ đích: `create_app()` đặt `openapi_url=None`,
 `docs_url=None`, `redoc_url=None`. Hợp đồng HTTP là `contracts/http/openapi.yaml`, không phải
@@ -264,8 +313,8 @@ npm --prefix web run build
 `dist/index.html` + `dist/assets/index-<hash>.js` (~207 kB, ~68 kB gzip). Đầu ra ở `web/dist/`,
 đã nằm trong `.gitignore`; `make clean` xoá nó.
 
-Giao diện hiện **không có dữ liệu để hiển thị**: nó gọi API của server, mà server chưa nối
-database (`KHOẢNG TRỐNG G-2`).
+Giao diện gọi API của server. Server **nay đã nối database** (§4.0), nên các màn hình đọc được
+dữ liệu thật ngay khi có dữ liệu; trên một database trắng chúng hiển thị trạng thái rỗng.
 
 ### 4.3 Analysis worker
 
@@ -818,15 +867,16 @@ hành vi: **sửa hợp đồng → `make gen` → card thành `STALE` theo `INV
 
 ## 11. Bảng khoảng trống
 
-Mười việc bạn **chưa làm được** vì thiếu một mảnh mã hoặc một mảnh bằng chứng. Không mục nào
-trong đây được "vá tạm" trong tài liệu này.
+Mười khoảng trống ghi ở vòng đầu. **Ba đã đóng** ở `PKT-P0-FIX5` (`G-1`, `G-2`, `G-4`) và được
+gạch dưới đây thay vì xoá, để bản ghi vẫn đọc được. Bảy mục còn lại chưa được "vá tạm" ở đâu
+trong tài liệu này.
 
 | # | Khoảng trống | Hệ quả với bạn | Mục |
 | --- | --- | --- | --- |
-| `G-1` | **Chưa có CLI bootstrap Owner.** `AuthService.bootstrap_owner()` tồn tại nhưng không có entry point nào gọi nó | Đặt mật khẩu phải gọi Python trực tiếp | [§3](#3-tạo-tài-khoản-owner-duy-nhất) |
-| `G-2` | **Chưa có composition root.** `create_app()` không nhận DB URL, không dựng `AuthService`, không đặt context nào | Server boot được nhưng **không nối database**; `auth.login` trả `500`; toàn bộ §7, §8 bị chặn theo | [§4.0](#40-điều-phải-đọc-trước--khoảng-trống-g-2) |
+| ~~`G-1`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~Chưa có CLI bootstrap Owner~~ → `tools/rr_admin.py bootstrap-owner` / `make bootstrap`: hỏi mật khẩu, không hiện lại, không nhận qua tham số | — | [§3](#3-tạo-tài-khoản-owner-duy-nhất) |
+| ~~`G-2`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~Chưa có composition root~~ → `server/app/settings.py` + `server/app/wiring.py`, nối qua lifespan của `server.app.main:app`. `auth.login` **200**, readiness **200**, `/v1/runs` **200** trên uvicorn thật. Còn lại: `report_context`, transport Telegram và provider AI chưa nối vì thiếu credential/quyết định — xem §4.0 và `CR-P0-07` | §7/§8 vẫn chặn, nhưng vì `G-6`/`G-8`/`G-9`, không còn vì `G-2` | [§4.0](#40-điều-phải-đọc-trước--khoảng-trống-g-2--đã-đóng-pkt-p0-fix5) |
 | `G-3` | **`storage.health` chỉ sống trong bộ nhớ tiến trình** | Quy trình restore hai bước bằng CLI **không hoàn tất được** | [§9.4](#94-cửa-sổ-bảo-trì--điều-kiện-tiên-quyết-của-restore) |
-| `G-4` | **`alembic` chỉ chạy khi cwd = `server/`** (`script_location` tương đối) | Lệnh từ gốc repo thất bại với `Path doesn't exist: migrations` | [§2.2](#22-chạy-migration-từ-một-file-trắng) |
+| ~~`G-4`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~`alembic` chỉ chạy khi cwd = `server/`~~ → `tools/rr_admin.py migrate` / `make migrate` dựng config bằng đường dẫn tuyệt đối và chạy từ thư mục nào cũng được (`server/alembic.ini` và `env.py` **không** bị sửa) | — | [§2.2](#22-chạy-migration-từ-một-file-trắng) |
 | `G-5` | **`output_dir` của probe giải theo thư mục file config**, không theo cwd | Bản ghi probe rơi cạnh file config; một lần `--dry-run` đã tạo `probe/evidence/runs/SP1-x-feasibility/probe.log` | [§6.3](#63-một-cái-bẫy-đường-dẫn--khoảng-trống-g-5) |
 | `G-6` | **Chưa có `MOD-secret-service` / `MOD-settings-service`.** Ba operation `secret.*` chưa có mã; master key chưa được đọc ở đâu | **Không có chỗ hợp lệ nào để đặt API key**; và `ISO-05` không kiểm chứng được vì không có gì để chạy denied-case | [§8.4](#84-api-key-để-ở-đâu) |
 | `G-7` | **Collector và analysis worker là stub Giai đoạn 0** | Không đăng ký, không heartbeat, không claim ⇒ **"collector online" chưa thể xảy ra** | [§4.3](#43-analysis-worker), [§4.4](#44-collector) |

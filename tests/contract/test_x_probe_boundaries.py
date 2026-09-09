@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 import re
 import sys
 from datetime import UTC, datetime, timedelta
@@ -42,6 +43,7 @@ from probe.x_feasibility.config import (
 from probe.x_feasibility.dom import observe_html, parse_posts
 from probe.x_feasibility.record import ProbeRunRecord, append_record, new_ulid
 from probe.x_feasibility.run_probe import (
+    LOG,
     GateRefused,
     PlaywrightXDriver,
     _StopState,
@@ -49,6 +51,7 @@ from probe.x_feasibility.run_probe import (
     check_schedule,
     main,
     run_one,
+    setup_console_logging,
 )
 from probe.x_feasibility.signals import PageObservation
 
@@ -530,3 +533,102 @@ def test_cli_refuses_when_the_ceiling_is_already_reached(tmp_path: Path, monkeyp
     path = tmp_path / "probe.json"
     path.write_text(json.dumps(base_config(tmp_path)), encoding="utf-8")
     assert main(["--config", str(path)]) == 2
+
+
+# --- G-5: where output lands, and the promise that a dry run lands nothing ---------------
+def _tree(root: Path) -> set[Path]:
+    """Every path under ``root``, files and directories alike."""
+    return set(root.rglob("*"))
+
+
+def test_relative_output_dir_resolves_against_cwd_not_the_config_file(
+    tmp_path, monkeypatch
+) -> None:
+    """Wiring gap G-5.
+
+    The config file used to decide where evidence landed: a relative ``output_dir`` was
+    resolved against the config's own directory, so shipping the example config inside
+    ``probe/`` sent the default to ``probe/evidence/runs/SP1-x-feasibility/`` -- a directory
+    the Owner never named. CWD is the rule now, and it is the rule ``probe/go_no_go.py``
+    already assumed for its default argument.
+    """
+    config_dir = tmp_path / "somewhere" / "else"
+    config_dir.mkdir(parents=True)
+    workdir = tmp_path / "workdir"
+    workdir.mkdir()
+
+    data = base_config(tmp_path)
+    data["output_dir"] = "evidence/runs/SP1-x-feasibility"
+    config_path = config_dir / "probe.json"
+    config_path.write_text(json.dumps(data), encoding="utf-8")
+
+    monkeypatch.chdir(workdir)
+    cfg = load_config(config_path)
+
+    assert cfg.output_dir == workdir / "evidence/runs/SP1-x-feasibility"
+    assert (
+        config_dir not in cfg.output_dir.parents
+    ), "output_dir không được bám theo thư mục chứa file config (G-5)"
+
+
+def test_absolute_output_dir_is_used_verbatim(tmp_path) -> None:
+    cfg = parse_config(base_config(tmp_path, output_dir=str(tmp_path / "elsewhere")))
+    assert cfg.output_dir == tmp_path / "elsewhere"
+
+
+def test_dry_run_creates_nothing_anywhere(tmp_path, monkeypatch, capsys) -> None:
+    """A dry run must leave the filesystem exactly as it found it.
+
+    Not "nothing outside the output directory" -- nothing at all, the output directory
+    included. A command whose whole purpose is to check whether it is *allowed* to run has
+    no business creating the place it would have written to.
+    """
+    monkeypatch.setattr("probe.x_feasibility.run_probe.open_driver", _explode)
+    workdir = tmp_path / "workdir"
+    workdir.mkdir()
+    config_path = tmp_path / "probe.json"
+    data = base_config(tmp_path)
+    data["output_dir"] = "evidence/runs/SP1-x-feasibility"
+    config_path.write_text(json.dumps(data), encoding="utf-8")
+
+    monkeypatch.chdir(workdir)
+    before = _tree(tmp_path)
+    assert main(["--config", str(config_path), "--dry-run"]) == 0
+    after = _tree(tmp_path)
+
+    assert after == before, f"dry-run đã tạo: {sorted(str(p) for p in after - before)}"
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["wrote_nothing"] is True
+
+
+def test_a_refused_run_creates_nothing_either(tmp_path, monkeypatch) -> None:
+    """The gate-refusal path used to build the output directory before refusing."""
+    monkeypatch.setattr("probe.x_feasibility.run_probe.open_driver", _explode)
+    workdir = tmp_path / "workdir"
+    workdir.mkdir()
+    data = base_config(tmp_path)
+    data["output_dir"] = "evidence/runs/SP1-x-feasibility"
+    data["owner_confirmations"]["go_no_go_criteria"] = {"confirmed": False, "evidence_ref": ""}
+    config_path = tmp_path / "probe.json"
+    config_path.write_text(json.dumps(data), encoding="utf-8")
+
+    monkeypatch.chdir(workdir)
+    before = _tree(tmp_path)
+    assert main(["--config", str(config_path)]) == 2
+    assert _tree(tmp_path) == before, "một lần bị cổng từ chối không được để lại thư mục nào"
+
+
+def test_console_logging_opens_no_file(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    setup_console_logging()
+    assert not any(isinstance(h, logging.FileHandler) for h in LOG.handlers)
+    assert _tree(tmp_path) == set()
+
+
+def test_the_example_config_default_lands_in_the_repo_evidence_tree(monkeypatch) -> None:
+    """Run from the repo root, the shipped example writes where card §3 says it should."""
+    data = json.loads((REPO_ROOT / "probe/probe-config.example.json").read_text(encoding="utf-8"))
+    data["chrome_user_data_dir"] = "/home/tester/rr-x-profile"
+    monkeypatch.chdir(REPO_ROOT)
+    cfg = parse_config(data)
+    assert cfg.output_dir == REPO_ROOT / "evidence/runs/SP1-x-feasibility"

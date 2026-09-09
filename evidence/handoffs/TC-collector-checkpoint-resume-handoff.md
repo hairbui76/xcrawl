@@ -307,3 +307,408 @@ caught them.
   tolerance would be a tuning decision needing real data.
 
 **Lease released at 2026-09-07T14:05Z.** No further writes.
+
+---
+
+# ADDENDUM — `PKT-TC-COLLECTOR-FIX2` (wave 2, gap G-7a)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-COLLECTOR-FIX2` |
+| worker principal | `worker-WC` |
+| lease_id | `LEASE-TC-COLLECTOR-e3` (`collector/app/main.py`, NEW `collector/app/loop.py`, this card's tests + NEW `tests/integration/test_collector_loop.py`, handoff, manifest) |
+| status | **`DONE_WITH_CONCERNS`** |
+| completion_claim | `IMPLEMENTATION_VERIFIED (E1)` for the collector process loop against the **real** `jobs` and `ingest` routers. Still no claim about live X: there is no source driver, and `--run` refuses rather than pretend. |
+| next actor | Coordinator |
+| lease_released_at | 2026-09-08T06:35Z |
+
+`DONE_WITH_CONCERNS` because building the loop against the real server surfaced **four
+defects in code this card may not write** — one of which stops the Owner ever being told a
+run needs them (`CR-TC-COLLECTOR-11`). Three are pinned by tests that fail the day they are
+fixed.
+
+The session was killed by a rate limit mid-packet and resumed; `main.py` and `loop.py` were
+already complete on disk, and the test file's harness was rewritten afterwards to use
+`server/app/wiring.py`, which had landed in the meantime.
+
+## A1. Changes
+
+| Path | Operation | Before (sha256) | After (sha256) | Bytes |
+| --- | --- | --- | --- | --- |
+| `collector/app/loop.py` | CREATE | ABSENT | `11d434618be3b7ba2ccdd1656942352b4cf640db7d88dc95f198eb30119256eb` | 19945 |
+| `collector/app/main.py` | MODIFY (whole file) | `addef73dfcd10d43e3c5879dedad3414713c032cdea59c55e25cf49361c59651` (2715) | `86c85771aac71a93b65a3976d4ae1fc1c0d2783841b741486d0664652b7539a2` | 6897 |
+| `tests/integration/test_collector_loop.py` | CREATE | ABSENT | `a1e13c5d910e95385a9d632f95d3eb8d0572399dba3cee25f69809cd6b133a77` | 36140 |
+| `evidence/runs/TC-collector-checkpoint-resume-E1-20260908T063000Z.json` | CREATE | ABSENT | `5a3ad322610c18047c18959f3eb29c598e05841ec8dd8694ac82e9bfd87d0109` | 15519 |
+
+The five modules and two test files of the original card are **unchanged**. No file outside
+the lease was touched: `server/`, `contracts/`, `acceptance/`, `docs/` are all untouched.
+
+## A2. What the loop does
+
+`collector/app/loop.py` — `load_config` (env → `CollectorConfig`, every failure naming its
+reason), and `CollectorLoop`: `register` → `claim` → `SegmentRunner` → `release`, with
+`run_forever` returning a typed `LoopExit`.
+
+Three refusals give it its shape, and each is measured in §A3:
+
+1. **It will not claim work it cannot do.** A collector whose session is `challenge`,
+   `expired` or `unknown`, or whose profile is not ready, exits `SESSION_NEEDS_OWNER` without
+   a single claim. `requires_x_session_ok` is `const: true`, so asking would be asking for
+   work it knows it cannot do.
+2. **It will not resume a run waiting for a person.** After a challenge the loop stops. I10
+   forbids the worker resuming itself; only `run.resume` in the app moves the run (T-RUN-10).
+3. **It will not treat "nothing to do" as failure.** `no_work` is a 200; the loop waits the
+   server's own `retry_after_ms` (`claim_idle_backoff`), not a number it chose (I13).
+
+`collector/app/main.py` — real entry point with three explicit modes and no default action.
+Verified by hand, not only by tests:
+
+| Command | Observed |
+| --- | --- |
+| no arguments | usage error, exit **2** |
+| `--print-registration` | the Phase-0 payload, exit **0** (`collector/tests/test_smoke.py` still passes untouched) |
+| `--check-config` with nothing set | `{"status":"refused_to_start","reason":"missing_server_url",…}`, exit **3** |
+| `--check-config` with a `0644` token file | `reason: token_file_permissions_too_open`, exit **3** (`contracts/ops/secrets.md` §3: refuse, because a silent warning is useless) |
+| `--run`, fully configured | `reason: no_x_source_driver`, config echoed with `"token": "<redacted>"`, exit **4** |
+
+Config comes from `RR_SERVER_URL`, `RR_COLLECTOR_TOKEN_FILE` (preferred — the `0600` file
+`secrets.md` §3 describes) or `RR_COLLECTOR_TOKEN`, `RR_CHROME_PROFILE_DIR`, and optional
+`RR_COLLECTOR_WORKER_ID`. The machine's default Chrome profile is refused at load time
+(REQ-D09), so a misconfiguration cannot reach the browser layer at all.
+
+`--run` refusing is the honest state of gap G-7a: the loop exists and is tested, and the
+thing it still lacks is a live source driver, which is `TC-x-feasibility-probe`'s behind SP1.
+A collector that started and collected nothing would look like "no new research" — exactly the
+confusion I13 forbids.
+
+## A3. Evidence
+
+`tests/integration/test_collector_loop.py` — **13 passed, 2 xfailed (strict)**, exit 0:
+
+```
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts="" \
+  -W ignore::DeprecationWarning tests/integration/test_collector_loop.py
+```
+
+The harness is the **real composition root**: `server/app/wiring.upgrade_database` +
+`wiring.wire(app, settings)`, a real `Settings` (collector token configured as a digest via
+the shipped `hash_bearer_token`), the real `jobs` and `ingest` routers, and a real SQLite
+database at `alembic head`. Only three things are adjusted, each for a stated reason: a fake
+clock and deterministic ids on `job_context`, and the two objects the composition root does
+not build (`CR-TC-COLLECTOR-09`, `-10`). The X source is a `RecordedSource`; the collector
+object under test is the production `CollectorClient` and `CollectorLoop`.
+
+Measured on rows the real services wrote:
+
+- **A full cycle** — registration grants no lease (`assignment_lease` stays empty, LM-01);
+  after the cycle `post` = 20, `MAX(checkpoint.acked_through_ingest_sequence)` = 20,
+  `ingest_receipt` ≥ 1, `run.status` = `running`, lease `released`, and
+  `run.current_lease_epoch` = 2 (LM-06's bump lands on the run, not on the retired lease row).
+- **A challenge cycle** — `post` = 20 and the 7 downloaded posts have **no rows**; the
+  checkpoint does not move; the *server* sets `run.status = needs_user` and
+  `run.stop_reason = captcha` from the collector's `challenge_required` (T-RUN-09).
+- **No self-resume** — `run_forever(max_cycles=5)` uses one cycle, exits
+  `SESSION_NEEDS_OWNER`, and the source read count stops at 3.
+- **No claim with a bad session** — starting in `challenge`, zero cycles run and
+  `assignment_lease` is never written.
+- **A limit stop** — `stop_reason = limit_reached` with no error code (AMD-B02), a non-empty
+  coverage note, the lease released, and the run still `running`.
+- **Resume from the server's checkpoint** — after `run.resume`, the second cycle re-reads 7
+  known posts and adds only the 3 new ones (row count 20 → 30, not 40; AMD-B05).
+- **A late repeat report** — once the lease is handed back, a further `report_stop` is
+  refused `STALE_LEASE` and nothing changes.
+- **Idle** — `no_work` twice, positive sleeps from the server's `retry_after_ms`, zero source
+  reads.
+- **Config** — five named refusals, the `0600` rule, and a redacted summary with no token.
+
+Evidence manifest: `evidence/runs/TC-collector-checkpoint-resume-E1-20260908T063000Z.json`
+(`EV-E1-03`, level E1, result `PASS`, validates against `evidence/manifest.schema.json` with
+0 errors). It supplements `EV-E1-02` rather than superseding it: that record measured the
+modules, this one measures the process against the real server.
+
+Gates, this card's files: `ruff check` clean, `ruff format --check` clean (12 files), `mypy`
+clean on `collector/app` (8 source files) — and `collector/app` is now inside the strict gate,
+since `pyproject.toml` `files` lists it. Repo-wide the same three gates were clean when this
+work began and are now red on files another card landed meanwhile; see `CR-TC-COLLECTOR-13`.
+
+Full suite, final: **1088 passed, 5 xfailed, 0 failed** (187 s). Three of those xfails were
+already in the tree; the two added here are the `CR-TC-COLLECTOR-11` and `-12` pins, both
+`strict=True`, so each turns into a failure the moment the defect it describes is fixed. The
+`test_migration_chain_resolves_to_a_single_head` failure reported in the first handoff is
+gone — another card fixed it, so `CR-TC-COLLECTOR-07` is closed.
+
+## A4. Change requests — four defects found by wiring this up
+
+| ID | To | Finding |
+| --- | --- | --- |
+| `CR-TC-COLLECTOR-11` | WS (`wiring.py`) + W6A (`jobs/service.py`) | **Blocking for the Owner's first challenge.** `jobs.report_stop` calls `alert_port.create_alert_intent` from *inside* its open `session_scope`; `wiring._AlertIntentAdapter` calls `delivery.create_intent` **without** passing that connection, so SQLite refuses the nested writer — observed: `database is locked` on the `INSERT INTO outbox_intent`. A port that instead returns an id *without* writing fails the other way: `run.alert_intent_id` is `REFERENCES outbox_intent (id)`, so the follow-up `UPDATE run` fails the foreign key. **The alert path therefore cannot succeed in any wiring**, and on a real deployment the first challenge raises inside `report_stop` — the run never reaches `needs_user` and the Owner is never told. `delivery.create_intent` already accepts `connection=` for exactly this ("the outbox pattern"); the fix is to thread the caller's connection through `AlertIntentPort`. Pinned by `test_the_wired_alert_adapter_cannot_create_an_alert_today` (strict xfail). |
+| `CR-TC-COLLECTOR-12` | W6A (`jobs/service.py`) | The claim response does **not** validate against `worker-assignment.schema.json`, which `contracts/ports.yaml` names as its response schema — 7 violations, checked against the live response: `x_coverage_note_vi` missing (required; it is the AMD-B05 sentence that stops "completed" being read as "all of X"), `search_config.source_limits` is `{}` where five `const` fields are required, and `tag_config_version_id` is `null` where a ULID is declared. `source_limits` is the block `collector-probe.md` §8 says exists "để collector không phải suy diễn", so an empty one silently withdraws SL-1…SL-6 from the wire. Also absent: `job_id` — the collector needs one for `ingest-batch.schema.json` and now infers `assignment_id`, which is correct (the jobs service sets `assignment_lease.job_id` to it) but undeclared. Pinned by `test_the_claim_response_validates_against_its_own_schema` (strict xfail). |
+| `CR-TC-COLLECTOR-09` | WS (`wiring.py`) | The composition root builds `IngestContext` with **no `assignment` port**, so ingest cannot resolve a lease and a wired deployment cannot validate `lease_epoch` on any batch. The test supplies a 20-line `LeaseReader` over `assignment_lease`; production needs the same object, in `wiring.py`. |
+| `CR-TC-COLLECTOR-10` | WS (`wiring.py`) | The composition root never sets `app.state.collector_token`, which is what `server/app/ingest/router.py` reads. `RR_COLLECTOR_TOKEN_SHA256` configures `token_registry`, which covers only the `jobs` routes — so a correctly configured deployment answers **401 to every collector ingest call**. Either set the attribute from settings, or move the ingest router onto the registry (preferable: one authentication path, not two). |
+| `CR-TC-COLLECTOR-08` | WS2 (`docs/owner-runbook.md`) | §4.4 documents the collector as a Phase-0 stub whose only mode is `--print-registration` and describes gap G-7. That is now stale: `--check-config` and `--run` exist, no-argument exit is still `2` but with a different message, and G-7a is closed except for the source driver. `docs/` is outside this lease. |
+| `CR-TC-COLLECTOR-13` | WAI (`TC-secret-settings-service`) + Coordinator | Informational, and **not caused by this packet**: the repo-wide style gates are red on files that landed while this packet ran. `ruff format --check` would reformat `server/app/secret/{repository,service,store}.py`; `ruff check` flags `tests/integration/test_analysis_once_per_key.py`; `mypy` reports 16 errors across `server/app/secret/{router,store}.py` and `server/app/settings_service/{router,service}.py`. The full suite still passes, so these are style/type gates rather than behaviour. Verified clean in isolation for this card's files: `ruff check`, `ruff format --check` and `mypy` are all clean on `collector/` and `tests/integration/test_collector_loop.py`. |
+| `CR-TC-COLLECTOR-07` | — | **Closed.** The single-head migration test passes again. |
+
+`CR-TC-COLLECTOR-02`, `-03`, `-04`, `-05`, `-06` from the first handoff are unchanged and
+still open.
+
+## A5. Checklist
+
+| Item | Status |
+| --- | --- |
+| `collector/app/loop.py` — register/claim/heartbeat/collect/ingest/checkpoint/stop/release | **DONE** |
+| every `limits.py` stop reason mapped to `report_stop` | **DONE** (`WireStopReason` table; limit, rate-limit, challenge, layout, blocked all exercised) |
+| config via env, refusal with a named reason | **DONE** (five reasons + the `0600` rule) |
+| in-process harness composing the real app | **DONE** — via `server/app/wiring.py`, which had landed |
+| fake X source, fake clock, no browser/network | **DONE** |
+| one full cycle + one challenge cycle against real server state | **DONE** (`assignment_lease`, `run`, `checkpoint`, `post`) |
+| heartbeat on the contract interval | **PARTIAL** — the interval is read from `assignment.lease.heartbeat_interval_s` and the beat fires from the monotonic clock (covered in the earlier packet's stale-lease test); the loop tests use a frozen clock, so no beat fires in them. A timed-heartbeat test over the real jobs router is not written. |
+| full suite, ruff/format/mypy | **DONE** |
+| handoff addendum + manifest | **DONE** |
+
+## A6. Stop gates
+
+`SG-01`/`SG-02` unchanged: no browser, no Playwright import, no network, no X session, and
+`--run` refuses precisely because the probe gate is still shut. `SG-PC09` remains **not
+discharged** — `acceptance/scenarios.yaml` has still not been compared against card §8.
+
+**Lease released at 2026-09-08T06:35Z.**
+
+---
+
+# ADDENDUM — `PKT-TC-COLLECTOR-FIX3` (flip the two pins)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-COLLECTOR-FIX3` · lease `LEASE-TC-COLLECTOR-e4` (`tests/integration/test_collector_loop.py`, handoff, manifest) |
+| status | **`DONE_WITH_CONCERNS`** |
+| gate | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md` carries a released `PKT-TC-SCHED-FIX1` addendum (`lease_released_at` 2026-09-08T06:55Z). Gate open; work proceeded. |
+| next actor | Coordinator |
+| lease_released_at | 2026-09-09T07:25Z |
+
+## D1. Changes
+
+| Path | Operation | After (sha256) | Bytes |
+| --- | --- | --- | --- |
+| `tests/integration/test_collector_loop.py` | MODIFY | `309f666c46792679291c50c04afb047cecc46b0382efb84254d08fb1f86a9bee` | 38189 |
+| `evidence/runs/TC-collector-checkpoint-resume-E1-20260909T071605Z.json` | CREATE | `d928570c8825b2f2aecca8a3434b7b46fab67af43973029491f34511ae40698b` | 14171 |
+
+No source file was touched. `collector/app/{loop,main}.py` are unchanged from `FIX2`.
+
+## D2. Three workarounds deleted, not adjusted
+
+`P0-FIX5` made the composition root complete, so the harness now uses it and nothing else.
+The `LeaseReader` adapter this card carried is **deleted**; the manual
+`app.state.collector_token` assignment is **deleted**; `alert_port=None` is **deleted**. In
+their place the fixture asserts the wiring did each job:
+
+```python
+assert application.state.ingest_context.assignment is not None   # CR-TC-COLLECTOR-09
+assert application.state.collector_token == COLLECTOR_TOKEN      # CR-TC-COLLECTOR-10
+```
+
+The only thing still adjusted after `wire()` is determinism — a fake clock and deterministic
+ids on `job_context` — because lease expiry and catch-up are statements about time.
+
+**`CR-TC-COLLECTOR-09`, `-10`, `-11`, `-12` are closed.**
+
+## D3. The two pins, flipped
+
+**`CR-TC-COLLECTOR-12` → a passing assertion.** `test_the_claim_response_validates_against_
+its_own_schema` validates the **live** claim body against `worker-assignment.schema.json`
+and finds zero errors, where it previously found seven. `SCHED-FIX1`'s own note is worth
+repeating: this card's contract test was green throughout, because it validated payloads it
+built itself. The live-body check is what caught it.
+
+**`CR-TC-COLLECTOR-11` → a passing assertion, split from what remains.** The deadlock is
+genuinely gone, and `test_the_alert_intent_lands_in_the_callers_transaction` now asserts the
+outcome. It wraps the **wired** adapter in a `RecordingAlertPort` that delegates every call,
+so production code is what runs; the wrapper exists only to make the one previously
+unobservable thing observable — that `report_stop` passes its open transaction down. Three
+measurements: the port is handed a live connection, the call completes rather than
+deadlocking, and exactly one `telegram_alert` intent exists afterwards.
+
+## D4. `CR-TC-COLLECTOR-15` — the residual, and it is one line
+
+The intent row lands; the run never points at it. **This is not two cards disagreeing about
+a key name.** It is one expression in one file, and the read side is correct:
+
+| Side | Location | What it does |
+| --- | --- | --- |
+| producer | `server/app/delivery/service.py` **623, 645, 670** | returns `{"intent_id": …, "delivery_id": …, "state": …, "created": …}` — the key is **`intent_id`** |
+| consumer | `server/app/wiring.py` **198** | reads `result.get("delivery_intent_id") or result.get("id")` — **neither key exists**, so line 199 returns `None` |
+| reader | `server/app/jobs/service.py` **1236–1246** | **correct**: takes the port's return value and skips `UPDATE run SET alert_intent_id` when it is `None` |
+
+Key sets checked mechanically, not by eye: producer keys are
+`{created, delivery_id, intent_id, state}`; the adapter reads `{delivery_intent_id, id}`;
+**intersection empty**. Note `delivery_id` *is* present and is the trap — it is the delivery
+row's id, not the intent's, so the fix is `intent_id` and not the nearest-looking neighbour.
+
+**Fix (WS, one line):** `server/app/wiring.py:198` → `intent_id = result.get("intent_id")`.
+
+Two operator-visible consequences until then. `run.alert_intent_id` stays NULL, so nothing
+can navigate from a run to the alert it raised. And `report_stop`'s `alert_created` flag —
+the field that says "the Owner has been told" — reports `False` on a report that did create
+an alert. `REQ-AC04` survives by luck rather than design: the guard is
+`run["alert_intent_id"] is None`, so a second report calls the port again, and only
+`create_intent`'s own idempotency plus `ux_outbox_alert_per_run` prevent a duplicate row.
+
+Pinned by `test_the_run_points_at_the_alert_intent_it_caused`, `strict=True, run=True`, with
+that file:line detail in the marker's `reason` so the next reader does not have to re-derive
+it.
+
+## D5. A leak of my own, found by the full suite
+
+The full suite failed once on
+`tests/integration/test_unknown_chat_silent.py::test_over_the_rate_limit_the_code_is_not_
+even_looked_up` — a telegram test this packet does not touch. It was mine anyway.
+
+Attributed rather than guessed at: the test passes alone; it passes with this file; the whole
+`tests/integration` directory passes **with** this file; and the full suite passes with
+`--ignore` on this file (1128 passed) but fails with it (1 failed). That pattern is not a
+logical interaction, it is exhaustion — and the cause was in the `app` fixture. Every test
+here builds an entire runtime through `wire()`, each runtime holds a SQLAlchemy pool, and the
+fixture returned the app without ever disposing the engine. Sixteen leaked pools were enough,
+once the contract tests had run first, to push an unrelated test over a file-handle limit.
+
+Fixed by making `app` a generator fixture that disposes `runtime.engine` on teardown. A
+fixture that builds a composition root has to take it down again. Full suite after the fix:
+**1143 passed, 4 xfailed, 0 failed**.
+
+## D5b. Evidence
+
+`tests/integration/test_collector_loop.py`: **15 passed, 1 xfailed**, exit 0.
+All three of this card's test files together: **70 passed, 1 xfailed**.
+Full suite: **1143 passed, 4 xfailed, 0 failed** (171 s).
+
+```
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -p no:cacheprovider -o addopts="" \
+  -W ignore::DeprecationWarning tests/integration/test_collector_loop.py
+```
+
+Gates on this card's files: `ruff check` clean, `ruff format --check` clean, `mypy` clean on
+`collector/app` (8 source files).
+
+Manifest: `evidence/runs/TC-collector-checkpoint-resume-E1-20260909T071605Z.json`
+(`EV-E1-04`). It supplements `EV-E1-03`; that record's two `xfail` rows are now superseded —
+one closed by assertion, one narrowed to `CR-TC-COLLECTOR-15`.
+
+## D6. Baseline drift — `SG-HASH`, reported not judged
+
+The card is at epoch `PC10-PIN-P5-20260908` and **3 of its 30 pinned files no longer match**:
+
+| Path | Pinned | Observed |
+| --- | --- | --- |
+| `contracts/modules.yaml` | `cf536acb…` (108721) | `7a4e19bd…` (108912) |
+| `contracts/ports.yaml` | `c15b676b…` (128850) | `c7c77340…` (128872) |
+| `contracts/ops/secrets.md` | `14b3d898…` (25301) | `22f7a007…` (25323) |
+
+The drift is from wave-2 work landing (`MOD-secret-service` / `MOD-settings-service` add
+operations, module edges and a secrets section) — it was not caused by this packet, and this
+packet wrote no contract. The pin was clean at `PC10-PIN-P4b-20260908` when the work began.
+
+It did not silently invalidate an oracle: `contracts/ports.yaml` is read as an oracle by
+`tests/contract/test_collector_stop_reasons.py`, which still passes, and the other two are
+not read by any test of this card. That is an observation, not a waiver — re-pinning is the
+Coordinator's (`F-A2R1-03`), and this addendum reports the drift rather than deciding it is
+harmless.
+
+**Lease released at 2026-09-09T07:25Z.**
+
+---
+
+# ADDENDUM — `PKT-TC-COLLECTOR-FIX4` (gate 1: `CR-TC-COLLECTOR-15` closed)
+
+| Field | Value |
+| --- | --- |
+| packet_id | `PKT-TC-COLLECTOR-FIX4` · lease `LEASE-TC-COLLECTOR-e5` |
+| gate | `evidence/handoffs/P0-skeleton-handoff.md` §`PKT-P0-FIX7`, `worker-WS`, `lease_released_at` 2026-09-09T08:05Z. Verified present before any edit. |
+| status | `DONE` |
+
+WS's one-line fix landed (`server/app/wiring.py` now reads `result["intent_id"]`, and raises
+rather than degrading to `None` if that key ever disappears — the better shape, because
+absorbing a changed return is how the defect survived its first review). The strict pin
+XPASSed, so it became the assertion it was standing in for.
+
+`test_the_run_points_at_the_alert_intent_it_caused` now asserts two things:
+
+- `run.alert_intent_id` names the `outbox_intent` row. Since that column is
+  `REFERENCES outbox_intent (id)` and `foreign_keys` is ON, the UPDATE could not have
+  committed unless the intent was already present in the same transaction — so "one commit"
+  is measured rather than argued.
+- the `report_stop` response reports `alert_intent_created: True`, read from the wire.
+
+**One correction for the record.** `PKT-P0-FIX7`'s own note credits this finding as
+`CR-TC-COLLECTOR-13`. It is **`-15`**; `-13` is the repo-gates item from `FIX2`.
+
+---
+
+# ADDENDUM — `PKT-TC-COLLECTOR-FIX4` (gate 2: `CR-TC-COLLECTOR-16` and `CR-TC-SCHED-08`)
+
+| Field | Value |
+| --- | --- |
+| gate | `evidence/handoffs/TC-scheduler-lease-claim-handoff.md` §`PKT-TC-SCHED-FIX2`, `worker-W6A`, `lease_released_at` 2026-09-09T07:48Z |
+| lease | extended to `collector/app/client.py` for the error-path expression only |
+| status | **`DONE`** |
+
+## F1. What was wrong, on both sides
+
+`worker.report_stop`'s response was disputed three ways: the pinned fixture
+`collection/c-challenge-mid-batch.json` said `{run{status, phase, outcome, stop_reason},
+alert_intent_created, alert_intent_id}`; the service answered `{run_status, stop_reason,
+alert_created}`; and this client parsed the fixture. The ruling made the fixture canonical
+(`contracts/http/openapi.yaml` types the body as a `GenericObject`, so the fixtures are the
+only concrete shape there is), `PKT-TC-SCHED-FIX2` moved the service onto it, and the three
+now agree.
+
+`CR-TC-SCHED-08` was the mirror-image defect **in this card's client**, and W6A was right to
+raise it. `client.py` read `run` and `alert_intent_created` out of `error.details_safe` on the
+409 echo path. Two things wrong with that, and the second is the one that matters:
+`contracts/errors.yaml` closes `details_safe` to each code's own `details_safe_keys`, and
+`run` is not among them for any code — so it was a contract violation, not merely a wrong
+lookup. `a-feed-layout-changed` puts the three fields *beside* `error`, and that is where
+they are now read from.
+
+The fix is three small edits serving one expression: `ServerError` carries the whole response
+body (an error response can have siblings of `error`, and the envelope alone cannot see
+them), `_raise_for_envelope` passes it, and the `report_stop` except-branch reads
+`error.body`. `alert_intent_id` is now returned on that path too — it was hard-coded `None`.
+
+## F2. Why the earlier tests did not catch it
+
+They asserted on database rows. That was the right call while the shapes disagreed and the
+wrong one afterwards: a `StopAck` whose three fields were all empty passes every row-count
+assertion ever written, and a collector process that cannot tell whether the Owner was
+alerted is precisely the failure worth catching. The two new tests therefore assert the
+**typed object against the wire body**, field by field:
+
+- `test_stop_ack_carries_the_servers_answer_on_a_200` — `ack.run == body["run"]`,
+  `status = needs_user`, `stop_reason = captcha` (the stored spelling, T-RUN-09),
+  `alert_intent_created is True`, and `ack.alert_intent_id` equals both the body's and the id
+  on `run`.
+- `test_stop_ack_carries_the_servers_answer_on_a_409` — the layout-changed echo. Asserts the
+  three fields are siblings of `error`, that `details_safe` does **not** carry `run`, that
+  `ack.echoed_code` is `SOURCE_LAYOUT_CHANGED`, and that the run really landed there (12 of
+  40 posts, one alert, `blocked`).
+
+## F3. Evidence
+
+`tests/integration/test_collector_loop.py`: **18 passed, 0 xfailed** — the file now carries
+no pins at all, which is the point: `CR-TC-COLLECTOR-09, -10, -11, -12, -15, -16` and
+`CR-TC-SCHED-08` are all closed by assertion.
+
+| Path | Operation | sha256 | Bytes |
+| --- | --- | --- | --- |
+| `tests/integration/test_collector_loop.py` | MODIFY | `0fc21b5230206c26d125cf1cabb2adaf0dd04af3d69ddb5d9270b6a3248fa94c` | 43115 |
+| `collector/app/client.py` | MODIFY (error-path expression) | `49d48ac1cd504051b593900fca00ac2a3003e3bfe4b58774aea049228dfa01b2` | 28549 |
+| `evidence/runs/TC-collector-checkpoint-resume-E1-20260909T074631Z.json` | CREATE | `0a7b90ea0c79974fd70d6c2778f563878abaafdd816e24171c99b151e8d6dab3` | 12806 |
+
+Full suite: **1161 passed, 3 xfailed, 0 failed** (182 s) — the three remaining xfails belong
+to other cards. Gates on this card's files: `ruff check`, `ruff format --check` and `mypy`
+all clean. Baseline: pin epoch `PC10-PIN-P5c-20260909`, **30/30 match** — the drift reported
+in `FIX3` §D6 has been re-pinned by the Coordinator.
+
+Manifest `EV-E1-05` supersedes `EV-E1-04`: both of that record's strict xfails are now
+assertions.
+
+**Lease released at 2026-09-09T10:05Z.**

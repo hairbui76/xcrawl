@@ -1,0 +1,287 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-14-tc-scheduler-lease-claim",
+  "created_at": "2026-09-08T06:43:21Z",
+  "producer_principal": "worker-W6A",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "da5181b2888674134f6e3919ce401014015f223ea46a967d9fda3833c01a037b",
+      "precode/baseline.json": "52af62c8b11e6939a9a34798bd71b4a4e688d8ed85d9c579ee1858ed341037e9",
+      "precode/decision-register.md": "b26cf51a0d7c73661ab465e5a157aaad7a9ceb6f013926abd5117f6966764a7e",
+      "contracts/modules.yaml": "cf536acba6c02d377c5fc6c4e7ab0318dc88e0994ed998c926c3d65bdbda0457",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c15b676b5619df7aee4f92afa35bdd7852c53333de7424e1423f702cf1e32684",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "ebcf460fa2e415cc6897cdbe7cee144bda9368e4a5af9cd514ec676224399936",
+      "contracts/state/run.yaml": "479125cb0d927c690836b631d85804abdc0a9f6bd013dec3cb31f692ba1b4b27",
+      "contracts/state/storage.yaml": "a77803f1690ee7749ccc79c9dbee538288a1e7797d318d206e900d50bbd52849",
+      "contracts/schemas/worker-assignment.schema.json": "14efde6fdbff8a19ed2d931660a2752cc40ae96a2ecb1aa5594bdcba87fd5c18",
+      "contracts/reporting/time-and-tags.md": "70f4bc57a0fa2733d92136194eb4d563fa5d9145726141ee30493fe3a2b1a66c",
+      "contracts/http/openapi.yaml": "28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92",
+      "contracts/ops/deployment.md": "dd7b10a961f00159068fc16d72456ffb4370e108c0c9ea060726e987a3240936",
+      "precode/adr/ADR-0002-run-state-model-split.md": "70fcac8f9c7fdcdce84889015d31f109d423d1d15d68116165e9e3d0612399f8",
+      "precode/adr/ADR-0007-timezone-handling.md": "fbb464c22df45248895107a3f38e85f700e9cdecd9a722eaa9f2a4b028995e44",
+      "acceptance/fixtures/collection/README.md": "bcae6ae10961c353722d59f74b5941972f617341ee7d3b272cd686a5717c5ce1",
+      "acceptance/fixtures/collection/g-schedule-due-claim.json": "32a9defa30bbbbe334b6e28378b8bcf09f2bc1d002a2fc2275886b6df5ca60ba",
+      "acceptance/fixtures/collection/f-two-workers-claim-same-assignment.json": "92939afbb6896caae0510ea2d34e638ba5a8d74ea94be89bd9755de33dbe0518",
+      "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1",
+      "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json": "4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "acceptance/fixtures/collection/i-run-now-while-active.json": "b2b809e1e3fb4ca5553d29ab4eeb3400cdf5af9056e3f96d73eaff1dc64a074e",
+      "acceptance/fixtures/collection/j-dst-boundary-occurrences.json": "d709a547e557842d021e1b65d5a63f4c009e71e06578d3daae2dfff96b5983de",
+      "acceptance/fixtures/collection/k-cancel-from-every-non-terminal.json": "4c7a46b976baac02a2fbe95064f5620c22ac8ae04b84a2fd1f36321a3cb06d76",
+      "agent-tasks/TC-scheduler-lease-claim.md": "2d5387cae2b80321cb6115d709723419aed01e5c4d17f500587c6ff5bb571aef"
+    },
+    "implementation_revision": "PKT-TC-SCHED-FIX1 working tree on commit fb3944a, pin epoch PC10-PIN-P3b-20260908; evaluator.py=656a0356a64a5753ab5f131f4d4b1b4135ac9716895fd7c353a94ab1ca06085c; lease.py=00eb8421360e83750f3b3e05edf1a904498b555e6435b68e0c08d17e2c523e8b; service.py=6017cd71924999aab3afa3bd3aafe3e3171a6a3a462229c0d66c2cbe364510fe; router.py=285da7b65243e730583aadff43fc7557a1d73c7ac7a49127503f6d908aa9385f; 0010_tc_scheduler_lease_claim.py=55de48ef3d6454871d658c2e5b857e02714c6c3b443f8b2ca2a104eafab8e79d; 0011_merge_phase4_6_heads.py=f1ea8f31599469797ae68efbc763fefadf95293932c49109de998dd35d0ca9d4; test_worker_assignment_schema.py=9d51f7324fae43136f0c61b23dde1652e29ca5c931a7cd2d7364835d5fbfdcd4; test_scheduler_catchup.py=162401f492a1581f5354866e09be7f2fb781210316ec3e10b6a17ae33a37568d; test_lease_two_claimants.py=1650c03e2ba6506d84fff0aa997608b099bc4ea5c412aed95f43e3f8aa9e122f; main.py=73392a3c3dadd1b07a3f58383d014c1dbfdb1c4d4e0fe3727679980ca0ff8d97"
+  },
+  "environment": {
+    "os": "Linux-7.0.0-30-generic-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1",
+      "sqlalchemy": "2.0.52",
+      "alembic": "1.19.2",
+      "pydantic": "2.13.5",
+      "fastapi": "0.115.14",
+      "pytest": "8.4.2",
+      "PyYAML": "6.0.3",
+      "jsonschema": "4.25.1",
+      "ruff": "0.6.9",
+      "mypy": "1.20.2",
+      "uv": "0.12.9"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_DATABASE_URL": "per-test temporary file under pytest tmp_path",
+      "clock": "FakeClock injected on JobContext and passed as `now=` to scheduler.evaluate_due; no test reads the wall clock",
+      "schedule_timezone": "Asia/Ho_Chi_Minh for every non-DST test; America/New_York for the two DST rules, because fixture collection/j deliberately leaves the zone abstract ('some IANA timezone WITH DST') and Asia/Ho_Chi_Minh has none",
+      "schedule_slots_local": "['08:00', '20:00'] passed as configuration; ScheduleSettings has no default for slots or timezone",
+      "collector_token": "<test-only bearer, never a real credential>",
+      "network_calls_made": 0
+    },
+    "provider": null,
+    "model": null,
+    "embedding_generation_id": null,
+    "network_access": false
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC01",
+      "SC02",
+      "SC04",
+      "SC15",
+      "SC20",
+      "SC33",
+      "SC34",
+      "SC35",
+      "SC49"
+    ],
+    "requirement_ids": [
+      "REQ-D11",
+      "REQ-D13",
+      "REQ-D14",
+      "REQ-D15",
+      "REQ-D16",
+      "REQ-AC02",
+      "REQ-AC04",
+      "REQ-OQ05",
+      "REQ-S8.2-08"
+    ],
+    "invariant_ids": [
+      "I01",
+      "I10",
+      "I13"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/collection/g-schedule-due-claim.json",
+        "sha256": "32a9defa30bbbbe334b6e28378b8bcf09f2bc1d002a2fc2275886b6df5ca60ba",
+        "bytes": 11845
+      },
+      {
+        "path": "acceptance/fixtures/collection/f-two-workers-claim-same-assignment.json",
+        "sha256": "92939afbb6896caae0510ea2d34e638ba5a8d74ea94be89bd9755de33dbe0518",
+        "bytes": 9384
+      },
+      {
+        "path": "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json",
+        "sha256": "e9f9d893a954f92c1918ea2fbb79f7ac0d65a31a60bbf009f7786be25612a1f1",
+        "bytes": 13675
+      },
+      {
+        "path": "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json",
+        "sha256": "4655e8d95fcc433bba5912c273b0642d4da21e8b730b1c3a046db956e693e88c",
+        "bytes": 3455
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      },
+      {
+        "path": "acceptance/fixtures/collection/i-run-now-while-active.json",
+        "sha256": "b2b809e1e3fb4ca5553d29ab4eeb3400cdf5af9056e3f96d73eaff1dc64a074e",
+        "bytes": 7470
+      },
+      {
+        "path": "acceptance/fixtures/collection/j-dst-boundary-occurrences.json",
+        "sha256": "d709a547e557842d021e1b65d5a63f4c009e71e06578d3daae2dfff96b5983de",
+        "bytes": 6372
+      },
+      {
+        "path": "acceptance/fixtures/collection/k-cancel-from-every-non-terminal.json",
+        "sha256": "4c7a46b976baac02a2fbe95064f5620c22ac8ae04b84a2fd1f36321a3cb06d76",
+        "bytes": 12397
+      }
+    ],
+    "seed": null,
+    "clock": "injected FakeClock; the execution host's UTC clock reads 2026-09-07 while the dispatch epoch is named PC10-PIN-P3b-20260908, and the timestamps below are the measured clock",
+    "protocol_version": null
+  },
+  "execution": {
+    "kind": "command",
+    "command": "PYTHONDONTWRITEBYTECODE=1 python -m pytest tests/contract/test_worker_assignment_schema.py tests/integration/test_scheduler_catchup.py tests/integration/test_lease_two_claimants.py -p no:warnings",
+    "working_directory": "/mnt/virtual/repo/xcrawl",
+    "started_at": "2026-09-08T06:43:07Z",
+    "ended_at": "2026-09-08T06:43:21Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "result": "STALE",
+  "artifacts": [],
+  "invalidation": {
+    "invalidated_by_paths": [
+      "acceptance/fixtures/boundary/README.md",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+      "acceptance/fixtures/collection/README.md",
+      "acceptance/fixtures/collection/f-two-workers-claim-same-assignment.json",
+      "acceptance/fixtures/collection/g-schedule-due-claim.json",
+      "acceptance/fixtures/collection/i-run-now-while-active.json",
+      "acceptance/fixtures/collection/j-dst-boundary-occurrences.json",
+      "acceptance/fixtures/collection/k-cancel-from-every-non-terminal.json",
+      "acceptance/fixtures/recovery/b-post-restore-stale-lease-rejected.json",
+      "acceptance/fixtures/reporting/f-three-offline-periods-one-catchup.json",
+      "agent-tasks/TC-scheduler-lease-claim.md",
+      "contracts/capabilities.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/errors.yaml",
+      "contracts/http/openapi.yaml",
+      "contracts/modules.yaml",
+      "contracts/ops/deployment.md",
+      "contracts/ports.yaml",
+      "contracts/reporting/time-and-tags.md",
+      "contracts/retry-policy.yaml",
+      "contracts/schemas/worker-assignment.schema.json",
+      "contracts/state/run.yaml",
+      "contracts/state/storage.yaml",
+      "precode/adr/ADR-0002-run-state-model-split.md",
+      "precode/adr/ADR-0007-timezone-handling.md",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md",
+      "precode/baseline.json",
+      "precode/decision-register.md"
+    ],
+    "invalidated_by_rule_ids": [
+      "INV-06"
+    ]
+  },
+  "oracle": {
+    "statement_vi": "Fixture là oracle. (a) reporting/f + catch_up.oracle_vi: ba (và sáu) mốc quá hạn ⇒ COUNT(run) = 1 và len(run.schedule_occurrence_ids) = 3 (và 6); catch_up_window_from/to bằng mốc sớm nhất/muộn nhất. (b) collection/f: sau khi lease của A hết hạn (CHỈ khi vượt expires_at + heartbeat_grace, kiểm cả mốc chưa đủ), B thắng ở epoch 2, COUNT(assignment_lease held) = 1; heartbeat của A ở epoch 1 trả STALE_LEASE và TOÀN BỘ bảng assignment_lease so sánh trước/sau không đổi một byte — qua service VÀ qua HTTP. (c) ux_assignment_lease_one_held: INSERT thẳng bằng SQL một hàng 'held' thứ hai cho cùng job bị UNIQUE constraint từ chối — 'đúng một người thắng' là tính chất của schema, không phải của thứ tự chạy. (d) collection/g: register_capabilities trả lease_granted=false và COUNT(assignment_lease) = 0; claim lần hai trả no_work/'assignment_already_held' với retry_after_ms = 45000 (đọc TỪ fixture), status 200 chứ không phải lỗi. (e) collection/i: năm lần run_now ⇒ run_created_by_these_events = 0, mọi response cùng run_id; run_now trên run needs_user ⇒ snapshot (status, phase, outcome, stop_reason, current_lease_epoch, attempt_count, next_attempt_at) không đổi — transition log rỗng. (f) collection/j: DST-01 giờ 02:30 không tồn tại ⇒ resolved = 07:00Z (instant kết thúc khoảng nhảy), KHÔNG bỏ occurrence; DST-02 giờ 01:30 lặp ⇒ resolved = min(hai instant); occurrence_id suy từ giờ ĐỊA PHƯƠNG DANH NGHĨA nên giờ lặp cho MỘT id; hai mốc ⇒ 2 occurrence, 2 run, 0 skipped. (g) collection/k: cancel từ cả năm trạng thái non-terminal ⇒ 5 run cancelled, outcome NOT NULL ở cả năm, assignment_lease held = 0, post_deleted = 0. (h) recovery/b + LM-08: sau restore, lease đúng epoch và chưa hết TTL VẪN bị từ chối (STALE_LEASE), claim mới trả RESTORE_UNVERIFIED, bảng lease không đổi. (i) T-RUN-15: report_stop đã commit needs_user TRƯỚC khi lease hết hạn ⇒ sweep thu hồi lease nhưng KHÔNG đưa run về queued (runs_requeued = 0). (j) worker-assignment.schema.json (Draft 2020-12, format checker BẬT): mọi payload do service thật dựng đều validate; khối checkpoint được chiếu về ĐÚNG 6 thuộc tính vì ingest.get_checkpoint trả thêm created_at và schema là additionalProperties:false. (k) CR-TC-COLLECTOR-11: AlertIntentPort nay NHẬN connection đang mở của report_stop. Test dùng một port GHI THẬT một hàng outbox_intent qua chính connection đó (không phải mock chỉ ghi lại lời gọi — một port không ghi thì không tái hiện được deadlock), rồi khẳng định: alert_created=true, đúng MỘT hàng outbox_intent intent_type='telegram_alert', và run.alert_intent_id trỏ đúng hàng đó. Vì foreign_keys=ON trên mọi connection, phép UPDATE con trỏ sẽ HỎNG nếu hàng intent chưa nằm trong cùng transaction — nên 'một commit' được ĐO chứ không suy diễn. Lần report_stop thứ hai KHÔNG gọi port (REQ-AC04). (l) CR-TC-COLLECTOR-12: payload claim nay validate với worker-assignment.schema.json ở HAI tầng — dict do service thật dựng, VÀ body HTTP thật đọc từ TestClient qua router, app factory, token registry và DB đã migrate. Bảy chỗ sai trước đây nay có mặt: x_coverage_note_vi (AMD-B05), năm const của source_limits (collector-probe §8), tag_config_version_id dạng ULID, và catch_up_window.occurrence_count.",
+    "expected": {
+      "card_tests": 66,
+      "card_failures": 0,
+      "runs_for_three_overdue_slots": 1,
+      "runs_for_six_overdue_slots": 1,
+      "occurrence_ids_on_the_catch_up_run": 6,
+      "held_leases_after_two_claimants": 1,
+      "lease_rows_changed_by_a_stale_heartbeat": 0,
+      "runs_created_by_five_run_now_presses": 0,
+      "occurrences_per_dst_boundary_slot": 1,
+      "runs_cancelled_from_non_terminal_states": 5,
+      "rows_deleted_by_cancel": 0,
+      "alembic_heads": 1,
+      "create_table_assignment_lease_statements_in_tree": 1,
+      "network_calls": 0,
+      "claim_response_schema_errors": 0,
+      "outbox_alert_rows_per_run": 1
+    },
+    "observed": {
+      "card_tests": 66,
+      "card_passed": 66,
+      "card_failures": 0,
+      "runs_for_three_overdue_slots": 1,
+      "runs_for_six_overdue_slots": 1,
+      "occurrence_ids_on_the_catch_up_run": 6,
+      "held_leases_after_two_claimants": 1,
+      "lease_rows_changed_by_a_stale_heartbeat": 0,
+      "runs_created_by_five_run_now_presses": 0,
+      "occurrences_per_dst_boundary_slot": 1,
+      "runs_cancelled_from_non_terminal_states": 5,
+      "rows_deleted_by_cancel": 0,
+      "alembic_heads": 1,
+      "create_table_assignment_lease_statements_in_tree": 1,
+      "network_calls": 0,
+      "gates_rerun": {
+        "ruff check + ruff format --check": "clean on server/app/jobs/, server/app/scheduler/ and the three test files",
+        "mypy --strict": "Success: no issues found in 100 source files (the sibling report package errors are gone too)",
+        "tests/integration/test_collector_loop.py": "13 passed, 2 XPASS(strict) — WC's two strict xfails for CR-TC-COLLECTOR-11 and -12 now pass, which is the designed signal that both fixes landed; removing the markers is WC's edit, not this card's."
+      },
+      "full_suite": {
+        "passed": 1119,
+        "xfailed": 3,
+        "failed": 11,
+        "errors": 0,
+        "duration_s": 193,
+        "note": "Two of the 11 are WC's XPASS(strict) markers described above — a pass reported as a failure by design. The other nine are in tests/integration/test_task_credential_lease.py (2) and tests/integration/test_worker_loop.py (7), owned by the secret/settings and analysis-worker cards landing in the same round; their causes are a timestamp format string, a task_credential UNIQUE violation and an analysis source_fingerprint mismatch. Neither file imports server.app.jobs or server.app.scheduler, and no file of this card's write set is involved."
+      },
+      "claim_response_schema_errors": 0,
+      "outbox_alert_rows_per_run": 1
+    }
+  },
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 66,
+    "not_checked_vi": [
+      "KHÔNG có collector thật, KHÔNG có Chrome, KHÔNG có lời gọi mạng nào. Toàn bộ đường worker.* được gọi qua service và qua TestClient trong tiến trình; E3 (một đợt chạy live có timestamp, bằng chứng của AC-01) thuộc SP1/M0 và là NOT_RUN ở card này.",
+      "ĐỒNG THỜI THẬT chưa được đo. 'Hai claimant, một thắng' được chứng minh ở hai tầng: tuần tự qua service, và bằng một INSERT SQL thô bị ux_assignment_lease_one_held từ chối. Chưa có hai tiến trình chạy song song tranh nhau một job dưới tải.",
+      "E2 (fault injection SQLite qua server/app/db/faults.py) CHƯA chạy cho đường claim, heartbeat hay cancel. STORAGE_WRITE_FAILED được nối qua StorageGuardPort nhưng không lần chạy nào kích hoạt nó, và JobContext.storage_guard mặc định None trong test.",
+      "SearchConfig.tag_config_version_id mặc định là PLACEHOLDER hiển thị rõ ('PENDNGTAGSERVCE…'), KHÔNG phải id snapshot thật: MOD-job-service không có cạnh tới MOD-tag-service (contracts/modules.yaml) và không card nào tạo bảng tag_config_version, nên deployment phải cấu hình giá trị này. Xem CR-TC-SCHED-06. tags mặc định RỖNG — module này không tự nghĩ ra từ khóa tìm kiếm.",
+      "IDEMPOTENCY CỦA CLAIM chỉ đúng VỀ HIỆU LỰC, chưa đúng VỀ HÌNH THỨC: cùng claim_request_id không cấp lease thứ hai (ux_assignment_lease_one_held chặn), nhưng KHÔNG trả lại đúng assignment object như ports.yaml hứa, vì ENT-assignment-lease không có cột nào để lưu claim_request_id. Xem CR-TC-SCHED-05.",
+      "assignment_lease.run_id vẫn KHÔNG có REFERENCES run(id): thêm FK vào bảng SQLite có sẵn cần dựng lại bảng, mà analysis_attempt đang trỏ vào nó. Xem CR-TC-SCHED-04.",
+      "delivery.create_intent chỉ được nối qua AlertIntentPort và mặc định None; 'tối đa một alert cho một run' (REQ-AC04) do ux_outbox_alert_per_run trên outbox_intent bảo đảm — bảng của card delivery — và KHÔNG được đo ở đây.",
+      "Chỉ các cạnh chạm module này trong 36 forbidden_edges được xét; sweep SC49 đầy đủ là tests/integration/test_denied_edges.py và không đổi ở gói này.",
+      "Ngưỡng 08:00/20:00, 200 post, 30 phút vẫn là GIÁ TRỊ LÀM VIỆC Owner chấp nhận (OD-20260907-01 mục 20) và REQ-OQ05 còn phải đo lại sau M0. Code đọc chúng từ settings và KHÔNG có default; không con số nào ở đây là kết quả đo.",
+      "Đây là SELF_VALIDATION. Không có audit độc lập nào được chạy."
+    ],
+    "uncertainty_vi": "Ba chỗ hợp đồng không tự nhất quán, cả ba đã được Coordinator phân xử và code theo phán quyết: (1) card §10 SG-01 nói không operation nào đưa run rời `blocked` ngoài run.cancel, nhưng contracts/state/run.yaml đã pin có T-RUN-23 (blocked → queued qua run.resume + unblock_reason bắt buộc) và ports.yaml mô tả đúng đường đó — hợp đồng thắng (CR-TC-SCHED-02). (2) run.yaml CU-04 gọi trạng thái là `skipped_stale`, entities.yaml đóng enum ở `skipped` — entities.yaml thắng (CR-TC-SCHED-03). (3) entities.yaml lưu worker_kind là `x_collector | analysis_worker` còn ports.yaml/worker-assignment.schema.json dùng `collector | analysis`; hai từ vựng cho hai tầng, ánh xạ tường minh trong WIRE_TO_STORED_WORKER_KIND, không phải defect.",
+    "unresolved_issue_refs": [
+      "CR-TC-SCHED-01",
+      "CR-TC-SCHED-02",
+      "CR-TC-SCHED-03",
+      "CR-TC-SCHED-04",
+      "CR-TC-SCHED-05",
+      "CR-TC-SCHED-06",
+      "REQ-OQ05"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "Mười bốn operation scheduler.*/job.*/worker.*/run.* của contracts/ports.yaml, invariant I01/I10/I13 tại cổng của MOD-scheduler và MOD-job-service, bốn bảng run/assignment/schedule_occurrence/worker_registration, và hai index thêm vào bảng custodian assignment_lease — trên baseline pin PC10-PIN-P3b-20260908, commit fb3944a. Card §9 đặt trần IMPLEMENTATION_VERIFIED, nhưng bản ghi NÀY là SELF_VALIDATION và schema (allOf mục 6, protocol §9) chặn tự kiểm ở CONTRACT_READY.",
+    "not_established_vi": [
+      "KHÔNG thiết lập IMPLEMENTATION_VERIFIED: đó là trần của card, không phải của một lần tự kiểm. Cần INDEPENDENT_AUDIT theo §12 của card (câu hỏi bắt buộc: có đường nào để worker epoch cũ ghi được dữ liệu không).",
+      "KHÔNG thiết lập hành vi dưới đồng thời thật hay dưới lỗi lưu trữ thật (E2 chưa chạy).",
+      "KHÔNG thiết lập bất kỳ điều gì về một đợt chạy collector thật (E3, thuộc SP1/M0).",
+      "KHÔNG thiết lập rằng lịch 08:00/20:00 hay giới hạn 200/30 phút là đúng (REQ-OQ05, đo sau M0).",
+      "KHÔNG thiết lập idempotency của claim theo đúng hình thức hợp đồng (CR-TC-SCHED-05).",
+      "Card §9 còn ghi: contracts/http/openapi.yaml và contracts/schemas/worker-assignment.schema.json vẫn khai claim_ceiling DRAFT_FOR_REVIEW trong header của chính chúng."
+    ]
+  },
+  "stale_reason": "Superseded by evidence/runs/TC-scheduler-lease-claim-E1-20260909T073930Z.json under PKT-TC-SCHED-FIX2. CR-TC-COLLECTOR-16: worker.report_stop answered {run_status, stop_reason, alert_created} where the pinned fixtures (collection/c, /a, /e) define {run{...}, alert_intent_created, alert_intent_id}, so every field of the collector's StopAck came back blank; the response is now the fixture's shape on both the 200 and the 409 echo path, limit_reached moves the phase per T-RUN-02, and the tests read the expected key sets out of the fixtures. service.py, router.py and test_lease_two_claimants.py changed (INV-06)."
+}

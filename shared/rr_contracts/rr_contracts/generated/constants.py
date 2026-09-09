@@ -1,9 +1,9 @@
-# GENERATED — do not edit; source sha256 contracts/http/openapi.yaml=28b3820e983736f8…, contracts/errors.yaml=640991c91ad046eb…
+# GENERATED — do not edit; source sha256 contracts/http/openapi.yaml=a3e7e42203bdb2c2…, contracts/errors.yaml=640991c91ad046eb…
 # Produced by shared/rr_contracts/generate.py from the contract file(s) named above.
 # Editing this file by hand makes code and contract drift apart silently; the rule is
 # ADR-0011 (Hệ quả) and agent-tasks/README.md §5.3. To change behaviour: change the
 # contract, regenerate, and mark the affected task cards STALE per INV-06.
-#   contracts/http/openapi.yaml  sha256:28b3820e983736f8a02c1ea32fe062ef818b0b1bc29fcb583cab6b34de784d92
+#   contracts/http/openapi.yaml  sha256:a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d
 #   contracts/errors.yaml  sha256:640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f
 
 """Wire constants generated from the contracts.

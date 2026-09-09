@@ -308,6 +308,142 @@ def test_an_absent_checkpoint_is_the_empty_new_one_not_an_error(schema) -> None:
     assert set(block) == set(schema["$defs"]["server_checkpoint"]["required"])
 
 
+# --- CR-TC-COLLECTOR-12: the payload the SERVICE really builds ---------------------------------
+
+
+def test_the_claim_payload_the_service_builds_validates(validator, tmp_path) -> None:
+    """The gap ``CR-TC-COLLECTOR-12`` found, closed at the level it was found.
+
+    Everything above validates objects this file constructs. That is worth doing -- it pins
+    the shapes -- but it cannot catch the payload the *service* assembles being wrong, and it
+    did not: the live claim response failed the schema in seven places (no
+    ``x_coverage_note_vi``, ``source_limits: {}``, ``tag_config_version_id: null``, and a
+    ``catch_up_window`` missing ``occurrence_count``) while every test here was green.
+
+    So this drives the real :func:`~server.app.jobs.service.claim_assignment` against a real
+    migrated database and validates what comes back. The HTTP half -- the same assertion on
+    the actual response body -- is
+    ``tests/integration/test_lease_two_claimants.py::test_the_claim_response_over_http_validates_against_the_schema``.
+    """
+    from server.app.jobs.service import claim_assignment, run_now
+
+    engine, ctx = _claimable_run(tmp_path)
+    try:
+        run_now(ctx, request_id="01JREQ0000000000000000000A")
+        answer = claim_assignment(ctx, _claim_body())
+        assert "assignment" in answer, "the run is queued, so a claim must return work"
+        assert_valid(validator, answer)
+
+        assignment = answer["assignment"]
+        # The four the live response was missing, named individually so a regression says
+        # which one came back rather than "schema failed".
+        assert assignment["x_coverage_note_vi"], "AMD-B05: the coverage sentence is required"
+        assert assignment["search_config"]["source_limits"]["author_thread_only"] is True
+        assert assignment["search_config"]["source_limits"]["chrome_scope"] == "x_only"
+        assert assignment["search_config"]["tag_config_version_id"] is not None
+    finally:
+        engine.dispose()
+
+
+def test_a_catch_up_assignment_carries_its_occurrence_count(validator, tmp_path) -> None:
+    """``catch_up_window`` requires ``from``, ``to`` **and** ``occurrence_count``.
+
+    The count is part of the sentence ``REQ-D15`` asks the Telegram message to carry -- "three
+    periods, from X to Y" -- so a window without it is a window nobody can describe.
+    """
+    from datetime import UTC, datetime
+
+    from server.app.jobs.service import claim_assignment, coalesce_overdue
+    from server.app.scheduler.evaluator import evaluate_due
+
+    engine, ctx = _claimable_run(tmp_path)
+    try:
+        due = evaluate_due(
+            owner_id=OWNER_ID, now=datetime(2026, 9, 7, 8, 0, tzinfo=UTC), settings=ctx.settings
+        ).due[-3:]
+        coalesce_overdue(ctx, occurrences=due)
+        answer = claim_assignment(ctx, _claim_body())
+
+        assert_valid(validator, answer)
+        window = answer["assignment"]["catch_up_window"]
+        assert window is not None
+        assert set(window) == {"from", "to", "occurrence_count"}
+        assert window["occurrence_count"] == len(due) == 3
+    finally:
+        engine.dispose()
+
+
+def _claim_body() -> dict[str, Any]:
+    return {
+        "claim_request": {
+            "request_id": "01JREQ0000000000000000000A",
+            "schema_version": "0.1.0",
+            "claim_request_id": "claim-schema-check-0001",
+            "worker_instance_id": "01JWORKERA0000000000000000",
+            "worker_kind": "collector",
+            "capabilities": {
+                "collector_online": True,
+                "chrome_profile_ready": True,
+                "x_session_state": "ok",
+            },
+            "max_assignments": 1,
+        }
+    }
+
+
+def _claimable_run(tmp_path: Path):  # type: ignore[no-untyped-def]
+    """A migrated database with an owner, and a ``JobContext`` on a fixed clock."""
+    import os
+    from datetime import UTC, datetime
+
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import text
+
+    from server.app.db import create_sqlite_engine
+    from server.app.jobs.service import JobContext
+    from server.app.scheduler.evaluator import ScheduleSettings
+
+    db_path = tmp_path / "radar.db"
+    config = Config(str(REPO_ROOT / "server" / "alembic.ini"))
+    config.set_main_option("script_location", str(REPO_ROOT / "server" / "migrations"))
+    previous = os.environ.get("RR_DATABASE_URL")
+    os.environ["RR_DATABASE_URL"] = str(db_path)
+    try:
+        command.upgrade(config, "head")
+    finally:
+        if previous is None:
+            os.environ.pop("RR_DATABASE_URL", None)
+        else:
+            os.environ["RR_DATABASE_URL"] = previous
+
+    engine = create_sqlite_engine(db_path)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO owner (id, singleton_guard, display_name, timezone_iana, "
+                "created_at, password_hash, password_updated_at, failed_login_count, "
+                "locked_until) VALUES (:id, 1, 'owner', 'Asia/Ho_Chi_Minh', "
+                "'2026-09-01T00:00:00.000Z', 'x', '2026-09-01T00:00:00.000Z', 0, NULL)"
+            ),
+            {"id": OWNER_ID},
+        )
+    counter = {"n": 0}
+
+    def ids() -> str:
+        counter["n"] += 1
+        return f"01JTEST{counter['n']:019d}"[:26]
+
+    context = JobContext(
+        engine=engine,
+        owner_id=OWNER_ID,
+        settings=ScheduleSettings(slots_local=("08:00", "20:00"), timezone_iana="Asia/Ho_Chi_Minh"),
+        clock=lambda: datetime(2026, 9, 7, 8, 0, tzinfo=UTC),
+        id_factory=ids,
+    )
+    return engine, context
+
+
 # --- the vocabularies the wire and the database each own --------------------------------------
 
 
