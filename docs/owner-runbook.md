@@ -4,12 +4,15 @@
 > hiện có, theo đúng thứ tự. Nó không thay thế hợp đồng: mỗi bước dẫn ra file hợp đồng
 > quyết định bước đó.
 >
-> **Tài liệu này KHÔNG nói sản phẩm chạy được.** Xem [§10](#10-điều-hệ-này-chưa-chứng-minh)
+> **Tài liệu này KHÔNG nói sản phẩm chạy được.** Xem [§12](#12-điều-hệ-này-chưa-chứng-minh)
 > trước khi kết luận bất cứ điều gì từ một lệnh chạy thành công.
 
-Ngày viết: **2026-09-08**. Uỷ quyền: Owner 2026-09-08 (`AUTH-OWNER-20260908-11`).
+Ngày viết: **2026-09-08**. Chạy lại và cập nhật: **2026-09-09**, đối chiếu commit
+`feat: integration wiring` — mọi lệnh trong bản này được chạy lại trên đúng cây đã commit đó.
+Uỷ quyền: Owner (`AUTH-OWNER-20260908-11`).
 Bối cảnh trạng thái: [`README.md`](../README.md) §6, [`docs/master-plan.md`](master-plan.md),
-[`precode/review.md`](../precode/review.md) §17.5–§17.7.
+[`precode/review.md`](../precode/review.md) §17.5–§17.7, và ba báo cáo audit
+[`A3-P5-R1..R3`](../evidence/audits/).
 
 ---
 
@@ -26,7 +29,7 @@ Máy dùng để kiểm: `uv 0.12.9`, `node v22.23.2`, `npm 10.9.8`, `Python 3.1
 `.venv` đã cài sẵn (nên mọi lệnh Python dưới đây chạy được ở chế độ `--offline`).
 
 **Chín khoảng trống** phát hiện trong lúc kiểm — những việc bạn **chưa làm được** vì thiếu
-một mảnh — nằm ở [§11](#11-bảng-khoảng-trống). Chúng được nhắc ngay tại bước liên quan, dưới
+một mảnh — nằm ở [§11](#11-bảng-khoảng-trống--đã-đóng-và-còn-mở). Chúng được nhắc ngay tại bước liên quan, dưới
 nhãn `KHOẢNG TRỐNG G-n`.
 
 ---
@@ -137,7 +140,7 @@ docstring của chính nó nói đây là **"CLI/console call"**, không có đ�
 > và đường duy nhất đã kiểm là gọi thẳng phương thức bằng `python -c` **với mật khẩu nằm trên
 > dòng lệnh** — thứ mà mọi tiến trình khác trên máy đọc được.
 >
-> Nay đã có CLI: `tools/rr_admin.py bootstrap-owner` (hoặc `make bootstrap`). Nó **hỏi mật khẩu
+> Nay đã có CLI: `rr-admin bootstrap-owner` (hoặc `make bootstrap`). Nó **hỏi mật khẩu
 > hai lần và không hiện lại** (`getpass`), đọc được từ stdin để bạn pipe từ một file `0600`, và
 > **không có tham số `--password`** — cố ý, vì tham số tiến trình là thứ ai cũng đọc được. Nó in
 > **đúng một dòng: ULID của owner**, không in mật khẩu, không in hash, không in tham số Argon2.
@@ -152,10 +155,16 @@ make bootstrap
 hoặc trực tiếp, khi bạn muốn đọc mật khẩu từ file:
 
 ```bash
-uv run python tools/rr_admin.py bootstrap-owner < /đường/dẫn/mật-khẩu-0600
+uv run rr-admin bootstrap-owner < /đường/dẫn/mật-khẩu-0600
 ```
 
-**Kỳ vọng:** đúng một dòng — ULID của owner, ví dụ dạng `01M1ZH…` (26 ký tự Crockford base32).
+**Kỳ vọng:** đúng một dòng — ULID của owner, ví dụ dạng `01M22R…` (26 ký tự Crockford base32).
+
+> **Tên đăng nhập của bạn là `--display-name`, mặc định `Owner`** — `auth.login` so `username`
+> với `owner.display_name` (`server/app/auth/service.py`: *"``username`` is matched against
+> ``owner.display_name``"*). Nó **phân biệt hoa thường**: đăng nhập bằng `owner` trả `401`
+> `UNAUTHORIZED`, bằng `Owner` trả `200` — **`đã chạy ở đây`**, cả hai. Nếu bạn đặt
+> `--display-name` khác, đó mới là tên đăng nhập.
 Gọi lại lần nữa **không** tạo hàng thứ hai: `owner.singleton_guard` khiến điều đó là lỗi
 database, và hàm chuyển sang nhánh đặt lại mật khẩu, đồng thời **thu hồi mọi session** đang mở
 (`secrets.md` §2.3).
@@ -198,15 +207,26 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 >
 > `make status` in đúng danh sách này kèm lý do. Không thứ nào bị "cắm tạm" cho có:
 >
-> | Không nối | Lý do |
+> Bảy dòng dưới đây là **nguyên văn** những gì `uv run rr-admin status` in ra trên máy kiểm —
+> **`đã chạy ở đây`**. Không thứ nào bị "cắm tạm" cho có, và mỗi dòng tự nêu lý do:
+>
+> | Không nối | Lý do `status` in ra |
 > | --- | --- |
-> | `report_context` | `PublishContext` **bắt buộc** `tag_port` và `embedding_port`. `TagConfigVersionPort` **chưa có** hiện thực nào (`CR-TC-REPORT-01`), và `LocalEncoder` chỉ có hiện thực trong test vì model embedding còn là `REQ-OQ09`/`REQ-A3`. Cắm encoder băm của test vào một deployment thật sẽ ghi vector mà **không model nào** sinh ra. Xem `CR-P0-07` |
-> | `delivery.transport`, `analysis.provider_config` | cần credential, mà `MOD-secret-service` chưa tồn tại (khoảng trống `G-6`, wave 2) |
-> | `telegram_ingress_secret` | chưa đặt `RR_TELEGRAM_WEBHOOK_SECRET` ⇒ **mọi update bị từ chối**, đúng hướng default-deny |
-> | `research_connector` | bốn dữ kiện `REQ-A6` còn `PLACEHOLDER_KC` |
+> | `collector_token` | `RR_COLLECTOR_TOKEN` chưa đặt ⇒ collector gọi ingest nhận `401` |
+> | `telegram_ingress_secret` | `RR_TELEGRAM_WEBHOOK_SECRET` chưa đặt ⇒ **mọi update bị từ chối**, đúng hướng default-deny |
+> | `delivery_context.transport` | chưa cấu hình bot token Telegram. `status` nói thẳng: *"MOD-secret-service exists now, so this is a missing credential, not a missing module"* |
+> | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng cả hai adapter giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
+> | `secret_store` | `RR_SECRET_MASTER_KEY` chưa đặt ⇒ `secret.*` từ chối. *"No key is ever generated or defaulted"* — xem §7.1 và §8.4 |
+> | `report_context` | `CR-P0-07`: `TagConfigVersionPort` chưa có hiện thực, và chưa có model embedding thật (`REQ-OQ09`) |
+> | `research_connector` | `SG-DOC`: **không hợp đồng nào** nêu host hay endpoint của arXiv/OpenAlex (`endpoint_template` là `None`, `CR-PC05-03`); `SG-LIVE`: một lời gọi thật là E3, cần packet riêng |
 >
 > Hệ quả: §7 (Telegram) và §8 (AI) **vẫn bị chặn**, nhưng nay bị chặn vì **thiếu credential và
-> thiếu một quyết định của Owner**, không còn vì thiếu composition root.
+> thiếu bằng chứng cô lập**, không còn vì thiếu composition root hay thiếu module.
+>
+> *(Bản trước của bảng này ghi `research_connector` bị chặn vì *"bốn dữ kiện `REQ-A6` còn
+> `PLACEHOLDER_KC`"*. Điều đó **đã sai từ Giai đoạn 2** — `REQ-A6` ở trạng thái `XN` và
+> `retry-policy.yaml` mang `DOCS_derived`. Lý do thật là `SG-DOC`/`SG-LIVE`; audit
+> `A3-P5-R1` bắt lỗi này là `F-A3-P5-02` và `status` nay in đúng.)*
 
 ### 4.1 Server
 
@@ -288,6 +308,45 @@ curl -i http://127.0.0.1:8080/v1/runs -b cookies.txt \
 `200` với `{"runs":[]}` trên một database trắng. `/v1/runs` là phép thử đáng giá nhất trong ba:
 nó đọc `app.state.job_context`, thứ chỉ tồn tại khi engine, owner id và lịch đều đã được nối.
 
+#### Toàn bộ ma trận route sau khi đăng nhập
+
+Năm route dưới đây đã được gọi **trên một tiến trình uvicorn thật, qua TCP** — **`đã chạy ở
+đây`**, cùng một phiên:
+
+| Route | Mã | Thân (rút gọn) |
+| --- | --- | --- |
+| `GET /v1/health/readiness` | **200** | `{"modules":{"storage":"ok","job_dispatch":"ok","delivery_dispatcher":"ok","scheduler":null,…},"storage_health":"healthy","dispatcher_locked_for_recovery":false}` |
+| `GET /v1/runs` | **200** | `{"runs":[]}` |
+| `GET /v1/settings` | **200** | `{"settings":{},"timezone_iana":null,"providers":[],"source_connections":[]}` |
+| `GET /v1/saved` | **200** | `{"schema_version":"0.3.0","items":[],"count":0}` |
+| `GET /v1/reports` | **500** | xem ngay dưới |
+
+Trong khối `modules` của readiness, những mục chưa nối trả **`null`**, không trả `ok`. Đó là
+`I13` và `CAP-P5` được tôn trọng đúng chỗ dễ vi phạm nhất: *"không có dữ liệu"* phải phân biệt
+được với *"khoẻ"*.
+
+> #### `GET /v1/reports` trả `500` — và vì sao bạn **không** cần lo
+>
+> Đây là route owner-facing **duy nhất** chưa hoạt động. Thân trả về — **`đã chạy ở đây`**:
+>
+> ```json
+> {"code":"INTERNAL","scope":"request","retry_class":"unknown_outcome",
+>  "message_safe":"Dịch vụ báo cáo chưa được cấu hình trong bản triển khai này (CR-P0-07):
+>                  chưa có cổng tag-service và cổng embedding. Yêu cầu của bạn hợp lệ và
+>                  không có dữ liệu nào bị đọc hay ghi.",
+>  "details_safe":{"operation_id":"report.list"}}
+> ```
+>
+> Ba điều đáng ghi nhận: mã `500` **đúng hợp đồng** (`openapi.yaml` khai `500` cho đường này),
+> phong bì là `ErrorEnvelope` hợp lệ **không rò traceback**, và `message_safe` **nói thẳng
+> nguyên nhân, mã CR, và rằng không dữ liệu nào bị đọc hay ghi**.
+>
+> Audit `A3-P5-R1` nêu đúng điểm yếu còn lại (`F-A3-P5-03`): mã vẫn là `INTERNAL` — nghĩa là
+> *"bất ngờ"* — cho một tình huống **hoàn toàn được dự đoán. `retry_class` là
+> `unknown_outcome`, nên đừng đọc nó như "thử lại sẽ được": sẽ không, cho tới khi `CR-P0-07`
+> đóng. Điều đã cải thiện so với vòng trước là `message_safe`: nó không còn chỉ nói *"Có lỗi
+> không mong đợi"*.
+
 `GET /openapi.json` trả `404` — có chủ đích: `create_app()` đặt `openapi_url=None`,
 `docs_url=None`, `redoc_url=None`. Hợp đồng HTTP là `contracts/http/openapi.yaml`, không phải
 một trang tự sinh.
@@ -321,54 +380,68 @@ dữ liệu thật ngay khi có dữ liệu; trên một database trắng chúng
 `deployment.md` §1–§2: worker chạy **trên máy cá nhân, không container**, **không lắng nghe
 cổng nào**, mọi kết nối là outbound.
 
-**`đã chạy ở đây`**:
+Ba lệnh, cả ba **`đã chạy ở đây`**:
 
 ```bash
-uv run python -m worker.app.main --print-capabilities
+uv run rr-worker --print-capabilities   # khai báo năng lực, không chạm mạng
+uv run rr-worker --print-adapters       # adapter AI nào bật, adapter nào không, vì sao
+uv run rr-worker --run                  # vòng chạy thật
 ```
 
-**Kỳ vọng:** một object JSON —
-`{"worker_kind":"analysis","agent_version":"0.1.0","schema_version":"0.3.0","tasks_supported":["label","summary","direction_phrasing"],"ai_providers":[]}`
-— rồi thoát `0`.
+**Kỳ vọng `--print-capabilities`:**
+`{"worker_kind":"analysis","agent_version":"0.1.0","schema_version":"0.3.0","tasks_supported":["label","summary","direction_phrasing"],"ai_providers":[]}`,
+thoát `0`. `ai_providers` rỗng vì chưa adapter nào được bật ([§8](#8-ai)).
 
-**Chạy không tham số thì nó từ chối** — **`đã chạy ở đây`**:
+**Kỳ vọng `--print-adapters`:** hai mục Anthropic, **cả hai** `"enabled": false` với
+`"reason_code": "isolation_unverified"` và `"probe_outcome": "unknown"`, rồi
+`"ac16": "BLOCKED"` ở cuối. Đây là §8.2 nhìn từ phía tiến trình sẽ dùng chúng.
 
-```bash
-uv run python -m worker.app.main
+**Kỳ vọng `--run` khi chưa cấu hình:**
+
+```json
+{"started": false, "reason": "server_url_not_configured",
+ "detail": "set RR_SERVER_URL to the base URL of the Research Radar server"}
 ```
 
-**Kỳ vọng:** `main.py: error: Phase 0 worker has no runnable behaviour; use --print-capabilities`,
-thoát **`2`**. Đó là lời từ chối đúng, không phải lỗi cấu hình của bạn.
+thoát **`2`**. Nó **không** đoán một địa chỉ server, **không** ghi hàng nào, và nói đúng biến
+môi trường bạn còn thiếu. Đó là lời từ chối đúng, không phải lỗi của bạn.
 
-> **`KHOẢNG TRỐNG G-7`** — worker là **stub Giai đoạn 0**. Nó không đọc token, không gọi
-> `worker.register_capabilities`, không gửi heartbeat, không claim task, không khởi động
-> provider nào. `ai_providers` rỗng vì chưa adapter nào được bật ([§8](#8-ai)).
-> Vì vậy **"collector online"** theo nghĩa `deployment.md` §6 (đăng ký hợp lệ **và** heartbeat
-> trong `online_threshold` = 90 s **và** server ghi được) **chưa thể xảy ra**.
+> **`KHOẢNG TRỐNG G-7` — ĐÃ ĐÓNG một nửa.** Worker **không còn là stub**: `--run` là một vòng
+> chạy thật, biết đăng ký, heartbeat và claim khi có `RR_SERVER_URL` cùng token. Cái **chưa**
+> chứng minh được ở đây là vòng chạy đó **nói chuyện với một server thật** — điều đó cần cả
+> hai tiến trình cùng cấu hình, và audit `A3-P5-R1` ghi rõ nó **không** chạy được vòng backoff
+> của adapter bị tắt trong đợt kiểm đó. Vì vậy **"collector online"** theo `deployment.md` §6
+> (đăng ký hợp lệ **và** heartbeat trong `online_threshold` = 90 s **và** server ghi được)
+> vẫn **chưa từng được quan sát**.
 
-Cấu hình worker sẽ cần khi phần thật tồn tại (`secrets.md` §3, chưa có mã đọc nó): một file
-**`0600`** trong thư mục cấu hình của user, **không bao giờ trong repo**, chứa
-`analysis_worker_token`; worker phải **từ chối khởi động** nếu quyền file rộng hơn `0600`.
+Cấu hình worker cần (`secrets.md` §3): `RR_SERVER_URL`, và `analysis_worker_token` trong một
+file **`0600`** ở thư mục cấu hình của user — **không bao giờ trong repo**.
 
 ### 4.4 Collector
 
-**`đã chạy ở đây`**:
+Kiểm cấu hình **trước** khi chạy — **`đã chạy ở đây`**:
 
 ```bash
-uv run python -m collector.app.main --print-registration
+uv run rr-collector --check-config
 ```
 
-**Kỳ vọng:** object JSON hình dạng payload `worker.register_capabilities`, với
-`"collector_online": false`, `"chrome_profile_ready": false`, `"x_session_state": "unknown"`.
-Ba giá trị đó là **cố ý**: `CAP-P5` cấm quy đổi `unknown` thành `ok`. Thoát `0`.
+**Kỳ vọng khi chưa cấu hình:**
 
-Không tham số → **`đã chạy ở đây`**: `error: Phase 0 collector has no runnable behaviour; use
---print-registration`, thoát **`2`**.
+```json
+{"status": "refused_to_start",
+ "reason": "missing_server_url",
+ "message": "RR_SERVER_URL is not set; the collector has no default server address"}
+```
 
-Collector **không** mở trình duyệt, **không** chạy `playwright install`, **không** gọi server,
-**không** chạm Chrome profile (docstring `collector/app/main.py`). Token riêng của nó
-(`collector_token`) tách khỏi token của analysis worker dù hai tiến trình cùng máy — bán kính
-ảnh hưởng khác nhau (`secrets.md` §3).
+thoát **`3`**. Giống worker: **không đoán** địa chỉ server, **không** mở trình duyệt, **không**
+chạm Chrome profile, **không** ghi hàng nào.
+
+Collector cần hai thứ trước khi `--check-config` xanh: `RR_SERVER_URL`, và `collector_token`
+trong file `0600` của user. Token này **tách rời** token của analysis worker dù hai tiến trình
+chạy cùng máy — bán kính ảnh hưởng khác nhau (`secrets.md` §3): collector chạm dữ liệu thô X,
+analysis worker chạm credential provider.
+
+Repo **không bao giờ** chạy `playwright install`; trình duyệt là bước trên máy bạn ([§1](#1-chuẩn-bị-và-cài-đặt)).
 
 ---
 
@@ -442,19 +515,25 @@ uv run python probe/x_feasibility/run_probe.py --config ~/rr-probe.json
 Tính go/no-go sau **≥ 5 đợt** trải **≥ 3 ngày**: `uv run python probe/go_no_go.py
 evidence/runs/SP1-x-feasibility/runs.jsonl` (**`chưa chạy ở đây`** — không có dữ liệu để chạy).
 
-### 6.3 Một cái bẫy đường dẫn — `KHOẢNG TRỐNG G-5`
+### 6.3 Đường dẫn đầu ra — `KHOẢNG TRỐNG G-5` **ĐÃ ĐÓNG**
 
-> `output_dir` **tương đối** trong file config được giải theo **thư mục chứa file config**, chứ
-> không theo thư mục làm việc (`probe/x_feasibility/config.py`: `out_path = (base_dir or
-> Path.cwd()) / out_path`). Giá trị mặc định trong `probe/probe-config.example.json` là
-> `evidence/runs/SP1-x-feasibility`, nên nếu bạn để config ở `~/rr-probe.json` thì bản ghi rơi
-> vào `~/evidence/runs/SP1-x-feasibility/`, **không** vào repo.
+> **Bản trước ghi:** `output_dir` tương đối được giải theo **thư mục chứa file config**, nên
+> bản ghi rơi cạnh config thay vì vào repo; một lần `--dry-run` với file mẫu đã thật sự tạo
+> `probe/evidence/runs/SP1-x-feasibility/probe.log` bên trong cây nguồn.
 >
-> Đã quan sát: một lần `--dry-run` chạy thẳng với file mẫu trong repo đã tạo
-> `probe/evidence/runs/SP1-x-feasibility/probe.log`.
+> **Nay đã sửa.** `output_dir` tương đối được giải theo **thư mục làm việc**, và probe **in ra
+> đường dẫn nó đã chọn** ngay dòng đầu — nên quy tắc không còn phải đoán:
 >
-> **Cách tránh:** đặt `output_dir` là **đường dẫn tuyệt đối** trỏ tới
-> `<repo>/evidence/runs/SP1-x-feasibility`.
+> ```
+> INFO output_dir: /<cwd>/evidence/runs/SP1-x-feasibility
+> ```
+>
+> Và `--dry-run` nay **không ghi gì cả**. Kiểm bằng cách chạy từ một thư mục tạm rồi liệt kê
+> lại thư mục đó — **`đã chạy ở đây`**: sau lệnh chỉ còn đúng `cfg.json` và thư mục profile;
+> **không** có cây `evidence/`, **không** có `probe.log`.
+
+Vẫn nên đặt `output_dir` **tuyệt đối** nếu bạn hay đổi thư mục giữa các đợt: quy tắc đã rõ,
+nhưng một đường dẫn tuyệt đối thì không phụ thuộc vào việc bạn đứng ở đâu khi gõ lệnh.
 
 ### 6.4 Ranh giới — không thương lượng
 
@@ -482,9 +561,16 @@ Hợp đồng: [`contracts/telegram/commands.yaml`](../contracts/telegram/comman
 1. Tạo bot với @BotFather trên Telegram, nhận **bot token**.
 2. Bot token vào **secret store phía server**, `secret_ref.purpose = telegram_bot`
    (`secrets.md` §7). Nó **không** vào repo, **không** vào log, **không** vào tin nhắn.
-   → chặn bởi **`KHOẢNG TRỐNG G-6`**: chưa có `MOD-secret-service`.
-3. Sinh một **webhook secret** ngẫu nhiên và đăng ký webhook với Telegram trỏ vào đường dẫn
-   `POST /v1/telegram/webhook` của bạn qua **HTTPS 443**.
+   Nơi cất này **nay đã tồn tại** — xem [§8.4](#84-api-key-để-ở-đâu); nó cần
+   `RR_SECRET_MASTER_KEY`.
+3. Sinh một **webhook secret** ngẫu nhiên, đặt vào biến môi trường
+   **`RR_TELEGRAM_WEBHOOK_SECRET`** của tiến trình server, rồi đăng ký webhook với Telegram trỏ
+   vào `POST /v1/telegram/webhook` qua **HTTPS 443**.
+
+Chưa đặt `RR_TELEGRAM_WEBHOOK_SECRET` thì `rr-admin status` in
+`not wired : telegram_ingress_secret — RR_TELEGRAM_WEBHOOK_SECRET is not set; updates denied`
+— **`đã chạy ở đây`** — và **mọi** update bị từ chối. Đó là default-deny đúng chỗ: ingress là
+điểm duy nhất một caller chưa xác thực chạm tới được.
 
 Hai lớp bảo vệ, **cả hai đều bắt buộc** (`secrets.md` §7): đường dẫn ingress khó đoán **và**
 kiểm header bí mật `X-Telegram-Bot-Api-Secret-Token` (security scheme `telegramIngressSecret`).
@@ -620,16 +706,49 @@ không chứa key**; mất master key là mất mọi secret dù backup còn ngu
 `backup-restore.md` §6 đòi một **kế hoạch khôi phục secret riêng**, giữ ở nơi bạn chọn, ngoài
 server và ngoài backup.
 
-> ### `KHOẢNG TRỐNG G-6` — chưa có nơi để cất key
+> ### `KHOẢNG TRỐNG G-6` — **ĐÃ ĐÓNG** (`TC-secret-settings-service`, card thứ 20)
 >
-> `server/app/` **không có** thư mục `secret/` hay `settings/`. Ba operation của `ports.yaml`
-> (`secret.store_provider_key`, `secret.issue_task_credential`, `secret.revoke_task_credential`)
-> **chưa có mã**; chúng chỉ được **nhắc đến** trong docstring của `analysis/service.py`,
-> `auth/middleware.py` và `worker/app/adapter/base.py`. Biến môi trường master key cũng chưa
-> được đọc ở đâu.
+> **Bản trước ghi:** *"hôm nay bạn không có chỗ hợp lệ nào để đặt API key"* — `server/app/`
+> không có `secret/` hay `settings/`, ba operation `secret.*` chưa có mã.
 >
-> Nghĩa là: **hôm nay bạn không có chỗ hợp lệ nào để đặt API key.** Đừng đặt nó vào biến môi
-> trường tuỳ tiện, đừng đặt vào file trong repo. Chờ card.
+> **Nay đã có.** `server/app/secret/` và `server/app/settings_service/` tồn tại, migration
+> `0014` tạo sáu bảng (`secret_ref`, `task_credential`, `secret_audit`, `provider_config`,
+> `provider_test_result`, `source_connection`), và cipher là **AES-256-GCM** thật — chọn từ hai
+> lựa chọn của `secrets.md` §4.1 vì `cryptography` không hiện thực cái kia
+> (XChaCha20-Poly1305). Kèm theo: `ISO-05` **cuối cùng đã có thứ để chạy denied-case**.
+
+### Master key: đặt thế nào, và hai hướng hỏng
+
+Biến môi trường là **`RR_SECRET_MASTER_KEY`**, phải giải mã ra **đúng 32 byte** base64url hoặc
+hex (`server/app/secret/store.py`). Repo **không** sinh key, **không** commit key, **không**
+đặt mặc định — `SG-MASTER-KEY` của card cấm cả ba.
+
+Hai hướng hỏng, **cả hai `đã chạy ở đây`**:
+
+| Tình huống | Hệ thống làm gì |
+| --- | --- |
+| **Không đặt** | Server **vẫn chạy** — bạn đăng nhập, thu thập, báo cáo được, vì `REQ-D51` nói không key nào là bắt buộc. `rr-admin status` in `not wired : secret_store — RR_SECRET_MASTER_KEY is not set; secret.* operations refuse … No key is ever generated or defaulted.` |
+| **Đặt nhưng sai định dạng** | Tiến trình **từ chối khởi động**: `RuntimeError: RR_SECRET_MASTER_KEY is set but unusable: … must decode to 32 bytes of base64url or hex. Refusing to start rather than run with no envelope encryption (contracts/ops/secrets.md §4.1)` |
+
+Hướng thứ hai là điều bạn muốn: một store tự sinh key khi khởi động sẽ **mất sạch** secret ở
+lần restart kế tiếp với key khác, mà không báo gì.
+
+Đặt key hợp lệ rồi thì `secret_store` xuất hiện trong dòng `wired` của `status` — **`đã chạy ở
+đây`**. Sinh một key mới:
+
+```bash
+uv run python -c "import base64,os;print(base64.b64encode(os.urandom(32)).decode())"
+```
+
+Cất nó **ngoài repo và ngoài backup** — file `0400` mount vào container, hoặc biến môi trường
+của container (`secrets.md` §4.1). Ciphertext nằm sau `SecretMaterialStore`; mặc định là
+`FileMaterialStore` với file `0600` dưới `RR_SECRET_MATERIAL_DIR` (mặc định
+`<RR_DATA_DIR>/secret-material`), **không** trong database — nên `CR-TC-SECRET-01` ghi nhận
+rằng `entities.yaml` chưa khai bảng nào cho phần material này.
+
+**API key của provider** đi vào qua `settings.update_config` / `secret.store_provider_key`, và
+**không đường nào trả nó ra**: read model chỉ có `key_configured: true|false` cộng một
+`secret_ref` id — không có trường nào để một giá trị nằm vào.
 
 ### 8.5 Ba việc không bao giờ được làm
 
@@ -664,18 +783,24 @@ chung.
 **`đã chạy ở đây`** — không token:
 
 ```bash
-uv run python -m tools.backup_cli --database var/research-radar.db status --restore-id <ULID>
+uv run rr-backup --database var/research-radar.db status --restore-id <ULID>
 ```
 
 **Kỳ vọng:** JSON
 `{"code":"UNAUTHORIZED","message_safe":"Thao tác này chỉ chấp nhận backup operator token.","required_auth_scope":"backup_operator"}`,
 thoát **`3`**. Một `expected` chưa cấu hình là **từ chối**, không bao giờ là cho qua.
 
-> **`KHOẢNG TRỐNG G-10`** — token "đúng" đến từ biến môi trường
-> `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` **do chính người gọi đặt**; không có nơi nào phía server
-> lưu hay cấp phát nó. `secrets.md` §3 nói token phải nằm trong file `0600` trên server, nhưng
-> chưa có mã nào đọc file đó ra thành `EXPECTED`. Trên một máy một người dùng đây là bất tiện;
-> trên máy dùng chung nó có nghĩa là **ai chạy được CLI thì tự cấp quyền cho mình**.
+> **`KHOẢNG TRỐNG G-10` — VẪN MỞ.** Token "đúng" vẫn đến từ biến môi trường
+> `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` **do chính người gọi đặt**: `tools/backup_cli.py` đọc
+> `os.environ.get(EXPECTED_TOKEN_ENV)` và so hằng-thời-gian với thứ bạn cung cấp.
+>
+> Đợt nối dây **có** thêm `backup_operator_token_sha256` vào `Settings`
+> (`server/app/settings.py`, từ `RR_BACKUP_OPERATOR_TOKEN_SHA256`) — nhưng **CLI chưa dùng
+> nó**. Nên khoảng trống thu hẹp chứ chưa đóng: cơ chế đã có chỗ đứng, chỉ chưa được nối vào.
+>
+> Trên một máy một người dùng đây là bất tiện; trên máy dùng chung nó có nghĩa là **ai chạy
+> được CLI thì tự cấp quyền cho mình**. Cho tới khi có card nối `Settings` vào CLI: giữ token
+> trong một file `0600` và dùng `--token-file`, đừng để nó trong shell history.
 
 ### 9.2 Tạo snapshot
 
@@ -685,7 +810,7 @@ thoát **`3`**. Một `expected` chưa cấu hình là **từ chối**, không b
 export RR_BACKUP_OPERATOR_TOKEN=<token của bạn>
 export RR_BACKUP_OPERATOR_TOKEN_EXPECTED="$RR_BACKUP_OPERATOR_TOKEN"
 mkdir -p var/backups
-uv run python -m tools.backup_cli --database var/research-radar.db \
+uv run rr-backup --database var/research-radar.db \
   snapshot --artifact var/backups/2026-09-08.db
 ```
 
@@ -704,7 +829,7 @@ file SQLite" không phải backup.
 **`đã chạy ở đây`**:
 
 ```bash
-uv run python -m tools.backup_cli --database var/research-radar.db verify --snapshot-id <ULID>
+uv run rr-backup --database var/research-radar.db verify --snapshot-id <ULID>
 ```
 
 **Kỳ vọng:** `{"artifact_sha256_matches": true, "counts_match": true, "failed_conditions": [],
@@ -715,42 +840,64 @@ Thoát `2` nếu bất kỳ điều kiện nào trượt.
 
 `storage.yaml` `T-ST-05`: restore **bắt đầu từ `maintenance`** và **không tự mở** cửa sổ đó.
 `restore.restore_snapshot()` **từ chối** khi store chưa ở `maintenance`; mở cửa sổ là một bước
-CLI riêng, có chủ đích.
+CLI riêng, có chủ đích — *"một restore tự mở cửa sổ của chính nó"* sẽ là đúng cái
+`storage.yaml` liệt vào transition bị cấm, và sẽ bỏ con người ra khỏi vòng ở đúng thao tác cần
+họ nhất.
 
-**`đã chạy ở đây`**:
+**`--reason` là bắt buộc** khi `--open`. Nó là một cột `NOT NULL` của `ENT-maintenance-window`,
+nên không có giá trị mặc định nào hợp lệ: một mặc định sẽ **bịa ra một giá trị audit**.
+
+**`đã chạy ở đây`** — quên `--reason`:
 
 ```bash
-uv run python -m tools.backup_cli --database var/research-radar.db maintenance --open
+uv run rr-backup --database var/research-radar.db maintenance --open
 ```
 
-**Kỳ vọng:** `{"storage_health": "maintenance", "transition": "T-ST-03"}`, thoát `0`.
+**Kỳ vọng:** một phong bì lỗi, **không phải traceback**, thoát **`2`**:
 
-> ### `KHOẢNG TRỐNG G-3` — cửa sổ bảo trì **không sống qua hai lần gọi CLI**
+```json
+{"code": "VALIDATION_ERROR",
+ "details_safe": {"field_path": "--reason", "violation_kind": "required_field_missing"},
+ "message_safe": "Mở cửa sổ bảo trì cần --reason."}
+```
+
+**`đã chạy ở đây`** — đúng cách:
+
+```bash
+uv run rr-backup --database var/research-radar.db maintenance --open --reason restore
+```
+
+**Kỳ vọng:** `{"storage_health": "maintenance", "transition": "T-ST-03", "window_id": "01M22R…"}`,
+thoát `0`. Một hàng thật xuất hiện trong `maintenance_window` với
+`opened_by = ACT-backup-operator`, `reason = restore`, `closed_at = NULL` — **`đã chạy ở đây`**,
+đọc lại bằng một tiến trình khác.
+
+> ### `KHOẢNG TRỐNG G-3` — **ĐÃ ĐÓNG** (migration `0015_tc_storage_maintenance_window`)
 >
-> `StorageGuard` giữ `storage.health` **trong bộ nhớ tiến trình** ("One guard per process. It
-> holds no connection and issues no SQL" — `server/app/storage/guard.py`). Không có bảng nào
-> lưu nó. Vì vậy lần gọi `backup_cli` **tiếp theo** khởi động lại ở `healthy`, và
-> `restore` bị chính điều kiện tiên quyết của nó từ chối.
+> **Bản trước ghi:** `StorageGuard` giữ `storage.health` **trong bộ nhớ tiến trình**, không
+> bảng nào lưu nó, nên lần gọi CLI kế tiếp khởi động lại ở `healthy` và `restore` bị chính
+> điều kiện tiên quyết của nó từ chối — *"quy trình restore hai bước bằng CLI như tài liệu mô
+> tả hiện không hoàn tất được"*.
 >
-> Đã quan sát, ngay sau lệnh `maintenance --open` ở trên:
+> **Nay cửa sổ sống qua các tiến trình.** Đã kiểm bằng **các lần gọi hoàn toàn tách rời** —
+> mỗi dòng dưới đây là một tiến trình mới:
 >
-> ```
-> {"code": "VALIDATION_ERROR",
->  "details_safe": {"field_path": "storage_health",
->                   "operation_id": "backup.restore_snapshot",
->                   "violation_kind": "precondition_not_met"}}
-> ```
-> thoát `2`.
+> | # | Lệnh | Kết quả |
+> | --- | --- | --- |
+> | 1 | `snapshot --artifact …` | `state: completed`, `artifact_sha256`, `manifest_sha256` — thoát `0` |
+> | 2 | `maintenance --open --reason restore` | `storage_health: maintenance`, `window_id` — thoát `0` |
+> | 3 | `verify --snapshot-id …` | `state: verified`, `counts_match: true`, `pragma_integrity_check: ok` — thoát `0` |
+> | 4 | `restore --snapshot-id … --confirm RESTORE` | **qua được** điều kiện `maintenance` — `storage_health: recovery_required`, `new_restore_generation: 1` — thoát `0` |
+> | 5 | `status --restore-id …` | `storage_health: recovery_required` — **không** còn `healthy` như vòng trước |
 >
-> Cùng nguyên nhân: sau một restore đưa store về `recovery_required`, lệnh `reconcile` ở tiến
-> trình sau lại báo `"storage_health": "healthy"` — nó đọc guard mới, không đọc trạng thái
-> thật.
+> Bước 4 là bằng chứng: ở vòng trước nó chết ngay tại `precondition_not_met`. Và bước 5 là nửa
+> còn lại — trạng thái **sau** restore cũng bền, nên `recovery_required` thật sự khoá side
+> effect thay vì bốc hơi cùng tiến trình.
 >
-> **Hệ quả:** **quy trình restore hai bước bằng CLI như tài liệu mô tả hiện không hoàn tất
-> được.** Cơ chế restore *tự nó* đúng — chạy `enter_maintenance()` rồi `restore_snapshot()`
-> **trong cùng một tiến trình** thì thành công (đã kiểm: trả `restore_id`,
-> `new_restore_generation = 1`, `leases_revoked = 0`, `storage_health = recovery_required`).
-> Cái thiếu là **chỗ lưu bền cho `storage.health`**.
+> Một chi tiết đáng biết: chạy `restore` trên một snapshot **chưa** `verify` thì bị từ chối
+> bằng `RESTORE_UNVERIFIED` — **`đã chạy ở đây`**. Nó **không** phải lỗi cửa sổ bảo trì; nó
+> nghĩa là bạn đã qua cửa đó rồi và đang vướng cửa kế tiếp. Thứ tự đúng là **snapshot → open →
+> verify → restore**.
 
 ### 9.5 Restore, đối soát, mở lại dispatch
 
@@ -767,32 +914,51 @@ Thứ tự **bắt buộc, không được đảo** (`backup-restore.md` §5.2):
 8. CHỈ KHI ĐÓ: backup.reconcile_after_restore → healthy
 ```
 
-Lệnh (**`đã chạy ở đây`** trên một DB nháp — xem cảnh báo dưới):
+Lệnh — mỗi dòng là **một tiến trình riêng**, và toàn bộ chuỗi **`đã chạy ở đây`** trên một DB
+nháp (xem cảnh báo ở §9.6 về việc điều đó **không** phải một drill):
 
 ```bash
-uv run python -m tools.backup_cli --database var/research-radar.db \
+uv run rr-backup --database var/research-radar.db snapshot --artifact var/backups/<ngày>.db
+uv run rr-backup --database var/research-radar.db maintenance --open --reason restore
+uv run rr-backup --database var/research-radar.db verify  --snapshot-id <ULID>
+
+uv run rr-backup --database var/research-radar.db \
   restore --snapshot-id <ULID> --request-id <id của bạn> --confirm RESTORE \
   --target-database var/restored.db
 
-uv run python -m tools.backup_cli --database var/research-radar.db status  --restore-id <ULID>
-uv run python -m tools.backup_cli --database var/research-radar.db review  --restore-id <ULID> --intent-id <ULID> --decision hold
-uv run python -m tools.backup_cli --database var/research-radar.db ack     --restore-id <ULID> --principal "ACT-backup-operator" --note "<ghi chú>"
-uv run python -m tools.backup_cli --database var/research-radar.db reconcile --restore-id <ULID>
+uv run rr-backup --database var/research-radar.db status  --restore-id <ULID>
+uv run rr-backup --database var/research-radar.db review  --restore-id <ULID> --intent-id <ULID> --decision hold
+uv run rr-backup --database var/research-radar.db ack     --restore-id <ULID> --principal "ACT-backup-operator" --note "<ghi chú>"
+uv run rr-backup --database var/research-radar.db reconcile --restore-id <ULID>
 ```
 
 **Kỳ vọng đã quan sát:**
 
+- `restore` trả `{"restore_id": …, "new_restore_generation": 1, "leases_revoked": 0,
+  "storage_health": "recovery_required", "integrity_check_outcome": "not_run",
+  "dispatcher_unlocked_at": null}`, thoát `0`. `dispatcher_unlocked_at` là `null` **có chủ
+  đích**: không đường nào ở đây mở lại side effect.
 - `status` in bảy mệnh đề của `reconciliation_complete` dưới dạng `clauses_met` /
-  `clauses_unmet` + `unmet_detail`. Trên drill nháp: `clauses_met [2,3,4,5,6]`,
+  `clauses_unmet` + `unmet_detail`. Ngay sau restore: `clauses_met [2,3,4,5,6]`,
   `clauses_unmet [1,7]` với `"1": "integrity_check_outcome = 'not_run'"` và
   `"7": "chưa có operator_ack_at/operator_ack_principal"`. Thoát `2` khi chưa đủ.
 - `ack` trả `{"restore_id": …, "operator_ack_at": "<ISO-8601 UTC ms>"}`, thoát `0`. **Mệnh đề 7
   là lý do không có đường tự động: máy không thể tự xác nhận rằng con người đã nhìn.**
 - `reconcile` khi chưa đủ trả
-  `{"code": "RESTORE_UNVERIFIED", "message_safe": "Bản khôi phục chưa được đối soát; side effect vẫn khóa.", "unmet_clauses": [...]}`,
-  thoát `2`. Đó là hành vi **đúng**: `I15`/`NC-10` cấm tự rời `recovery_required`.
+  `{"code": "RESTORE_UNVERIFIED", "message_safe": "Bản khôi phục chưa được đối soát; side effect vẫn khóa.", "details_safe": {"storage_health": "recovery_required"}, "unmet_clauses": [1]}`,
+  thoát `2`. Đó là hành vi **đúng**: `I15`/`NC-10` cấm tự rời `recovery_required`. Ở vòng
+  trước, cùng lệnh này báo `"storage_health": "healthy"` vì nó đọc một guard mới trong bộ nhớ;
+  nay nó đọc trạng thái bền, nên con số bạn thấy là trạng thái **thật**.
 
 `--confirm` phải là đúng chuỗi `RESTORE`.
+
+> **Một thông báo đáng khen, đáng biết trước.** Nếu bạn chạy `rr-backup` trên một database đã
+> `migrate` nhưng **chưa** `bootstrap-owner`, nó **không** nói "không tìm thấy snapshot" nữa mà
+> nói đúng thứ đang thiếu và cách sửa:
+> `{"code":"NOT_FOUND","details_safe":{"resource_kind":"owner"},"message_safe":"Chưa có hàng `owner` nào: cơ sở dữ liệu đã migrate nhưng chưa bootstrap. Chạy `uv run rr-admin bootstrap-owner` rồi thử lại."}`
+> (`F-A3-P5R2-01`, đã sửa và đã được audit `A3-P5-R3` kiểm cả hai chiều — hỏi một snapshot
+> không tồn tại **vẫn** nói *snapshot*, nên thông báo được phân biệt theo `resource_kind` chứ
+> không bị thay trọn gói.)
 
 ### 9.6 Drill bạn nên chạy, và đo cái gì
 
@@ -844,11 +1010,14 @@ của CI**. Không target nào chạm X, provider AI hay Telegram.
 | Bước | Dòng kết luận |
 | --- | --- |
 | `openapi` | `contracts/http/openapi.yaml: OK` |
-| `e0` | `TOTAL: 27 checks — PASS 27 · FAIL 0 · BLOCKED 0 · N/A 0 · violations 0` (302 file quét) |
-| `cards` | `TOTAL: 13 checks over 19 cards — 13 PASS, 0 FAIL, 0 BLOCKED, 3731 assertions, 0 violations` |
-| `gen-check` | im lặng — nghĩa là sinh lại **không** tạo diff |
-| `lint` | `All checks passed!` (eslint) và `All matched files use Prettier code style!` |
-| `test` | `1042 passed, 3 xfailed` (pytest, ~111 s) rồi `Test Files 6 passed · Tests 126 passed` (vitest) |
+| `e0` | `TOTAL: 27 checks — PASS 27 · FAIL 0 · BLOCKED 0 · N/A 0 · violations 0` |
+| `cards` | `TOTAL: 13 checks over 20 cards — 13 PASS, 0 FAIL, 0 BLOCKED, 3963 assertions, 0 violations` |
+| `gen-check` | `generated tree matches a fresh run of the generator` |
+| `lint` | `All checks passed!` (eslint), `188 files already formatted` (ruff), `Success: no issues found in 101 source files` (mypy) |
+| `test` | `1179 passed, 3 xfailed` (pytest, ~188 s) rồi `Test Files 6 passed · Tests 126 passed` (vitest) |
+
+*(Con số của vòng trước — 19 card, 3731 assertion, 1042 test — đã cũ: đợt nối dây thêm card thứ
+20 `TC-secret-settings-service` và các test của nó.)*
 
 Các target lẻ khi bạn chỉ muốn một phần: `make openapi`, `make e0`, `make cards`,
 `make gen-check`, `make lint`, `make test`. `make clean` xoá cache công cụ và `web/dist`, và
@@ -865,24 +1034,47 @@ hành vi: **sửa hợp đồng → `make gen` → card thành `STALE` theo `INV
 
 ---
 
-## 11. Bảng khoảng trống
+## 11. Bảng khoảng trống — đã đóng và còn mở
 
-Mười khoảng trống ghi ở vòng đầu. **Ba đã đóng** ở `PKT-P0-FIX5` (`G-1`, `G-2`, `G-4`) và được
-gạch dưới đây thay vì xoá, để bản ghi vẫn đọc được. Bảy mục còn lại chưa được "vá tạm" ở đâu
-trong tài liệu này.
+Mười khoảng trống ghi ở vòng đầu. **Sáu đã đóng** qua hai đợt (`PKT-P0-FIX5` và đợt nối dây
+`feat: integration wiring`), **bốn còn mở**. Mục đã đóng được gạch chứ **không xoá**, để bản ghi
+vẫn đọc được — và để bạn thấy điều gì đã thay đổi, không chỉ trạng thái hôm nay.
 
-| # | Khoảng trống | Hệ quả với bạn | Mục |
+Nguồn cho cột "quan sát được": ba báo cáo audit độc lập
+[`A3-P5-R1`](../evidence/audits/A3-P5-R1-report.md),
+[`A3-P5-R2`](../evidence/audits/A3-P5-R2-report.md),
+[`A3-P5-R3`](../evidence/audits/A3-P5-R3-report.md), cộng lần chạy lại toàn bộ khi soạn bản này.
+
+### 11.1 Sáu khoảng trống **đã đóng**
+
+| # | Đã đóng bằng gì | Quan sát được |
+| --- | --- | --- |
+| ~~`G-1`~~ | `rr-admin bootstrap-owner` / `make bootstrap` | Hỏi mật khẩu, **không hiện lại**, **không** có `--password`; in đúng một ULID. [§3](#3-tạo-tài-khoản-owner-duy-nhất) |
+| ~~`G-2`~~ | `server/app/settings.py` + `server/app/wiring.py`, nối qua **lifespan** của `server.app.main:app` | `auth.login` **200** + cookie đúng cờ; readiness / `/v1/runs` / `/v1/settings` / `/v1/saved` đều **200** trên uvicorn thật. [§4.0](#40-điều-phải-đọc-trước--khoảng-trống-g-2--đã-đóng-pkt-p0-fix5) |
+| ~~`G-3`~~ | migration `0015_tc_storage_maintenance_window` — `storage.health` **bền** | `maintenance --open --reason` ở tiến trình 1, `restore` **qua được** ở tiến trình 2; `recovery_required` đọc lại đúng ở tiến trình 3. [§9.4](#94-cửa-sổ-bảo-trì--điều-kiện-tiên-quyết-của-restore) |
+| ~~`G-4`~~ | `rr-admin migrate` / `make migrate` dựng config bằng đường dẫn tuyệt đối | Chạy từ **thư mục tạm ngoài repo**, lên tới `0015`, in `done`. `alembic.ini` và `env.py` **không** bị sửa. [§2.2](#22-chạy-migration-từ-một-file-trắng) |
+| ~~`G-5`~~ | probe giải `output_dir` theo **cwd** và in đường dẫn đã chọn | `--dry-run` từ thư mục tạm: **không ghi gì** — kiểm lại bằng `find`, chỉ còn `cfg.json`. [§6.3](#63-đường-dẫn-đầu-ra--khoảng-trống-g-5-đã-đóng) |
+| ~~`G-6`~~ | card thứ 20 `TC-secret-settings-service`: `server/app/secret/` + `settings_service/`, migration `0014`, AES-256-GCM | Master key **không đặt** ⇒ chạy được, `secret.*` từ chối; **đặt sai** ⇒ **từ chối khởi động**. [§8.4](#84-api-key-để-ở-đâu) |
+
+### 11.2 Bốn khoảng trống **còn mở** — và ba trong bốn chỉ **bạn** đóng được
+
+| # | Khoảng trống | Hệ quả với bạn | Ai đóng được |
 | --- | --- | --- | --- |
-| ~~`G-1`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~Chưa có CLI bootstrap Owner~~ → `tools/rr_admin.py bootstrap-owner` / `make bootstrap`: hỏi mật khẩu, không hiện lại, không nhận qua tham số | — | [§3](#3-tạo-tài-khoản-owner-duy-nhất) |
-| ~~`G-2`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~Chưa có composition root~~ → `server/app/settings.py` + `server/app/wiring.py`, nối qua lifespan của `server.app.main:app`. `auth.login` **200**, readiness **200**, `/v1/runs` **200** trên uvicorn thật. Còn lại: `report_context`, transport Telegram và provider AI chưa nối vì thiếu credential/quyết định — xem §4.0 và `CR-P0-07` | §7/§8 vẫn chặn, nhưng vì `G-6`/`G-8`/`G-9`, không còn vì `G-2` | [§4.0](#40-điều-phải-đọc-trước--khoảng-trống-g-2--đã-đóng-pkt-p0-fix5) |
-| `G-3` | **`storage.health` chỉ sống trong bộ nhớ tiến trình** | Quy trình restore hai bước bằng CLI **không hoàn tất được** | [§9.4](#94-cửa-sổ-bảo-trì--điều-kiện-tiên-quyết-của-restore) |
-| ~~`G-4`~~ **ĐÃ ĐÓNG** (`PKT-P0-FIX5`) | ~~`alembic` chỉ chạy khi cwd = `server/`~~ → `tools/rr_admin.py migrate` / `make migrate` dựng config bằng đường dẫn tuyệt đối và chạy từ thư mục nào cũng được (`server/alembic.ini` và `env.py` **không** bị sửa) | — | [§2.2](#22-chạy-migration-từ-một-file-trắng) |
-| `G-5` | **`output_dir` của probe giải theo thư mục file config**, không theo cwd | Bản ghi probe rơi cạnh file config; một lần `--dry-run` đã tạo `probe/evidence/runs/SP1-x-feasibility/probe.log` | [§6.3](#63-một-cái-bẫy-đường-dẫn--khoảng-trống-g-5) |
-| `G-6` | **Chưa có `MOD-secret-service` / `MOD-settings-service`.** Ba operation `secret.*` chưa có mã; master key chưa được đọc ở đâu | **Không có chỗ hợp lệ nào để đặt API key**; và `ISO-05` không kiểm chứng được vì không có gì để chạy denied-case | [§8.4](#84-api-key-để-ở-đâu) |
-| `G-7` | **Collector và analysis worker là stub Giai đoạn 0** | Không đăng ký, không heartbeat, không claim ⇒ **"collector online" chưa thể xảy ra** | [§4.3](#43-analysis-worker), [§4.4](#44-collector) |
-| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN` | Cả hai adapter `enabled: false`; bật chúng cần một lần **chạy quan sát được**, không phải một công tắc | [§8.2](#82-hai-adapter-đã-đăng-ký--và-vì-sao-cả-hai-enabled-false) |
-| `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram bị khoá ở phạm vi **chỉ chữ, không nút**; `callback_data` chưa có bộ phân tích | [§7.3](#73-ba-lệnh--và-phạm-vi-chỉ-chữ-không-nút) |
-| `G-10` | **`RR_BACKUP_OPERATOR_TOKEN_EXPECTED` do chính người gọi đặt**; không có nguồn phía server | Trên máy dùng chung, ai chạy được CLI thì tự cấp quyền | [§9.1](#91-xác-thực-backupoperatortoken-và-chỉ-nó) |
+| `G-7` | **Vòng chạy collector/worker chưa từng nói chuyện với một server thật.** Cả hai nay là tiến trình thật và **từ chối có lý do** khi thiếu `RR_SERVER_URL`; nhưng đăng ký + heartbeat + claim **chưa từng được quan sát** đầu-cuối. Audit `A3-P5-R1` ghi rõ vòng backoff của adapter bị tắt cũng chưa chạy như một tiến trình | **"collector online"** (`deployment.md` §6) vẫn chưa từng xảy ra | **Bạn** — cấu hình hai tiến trình và chạy chúng cùng server |
+| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Cả hai adapter `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
+| `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram khoá ở phạm vi **chỉ chữ, không nút** | **Bạn** — đọc tài liệu Bot API ([§12.2](#122-mười-việc-chỉ-bạn-làm-được) mục 7) |
+| `G-10` | **`rr-backup` vẫn so token với `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` do chính người gọi đặt.** `Settings` nay có `backup_operator_token_sha256`, nhưng CLI **chưa dùng** nó (`tools/backup_cli.py` vẫn đọc `os.environ`) | Trên máy dùng chung, ai chạy được CLI thì tự cấp quyền | **Một card** — chưa ai được giao |
+
+### 11.3 Bốn phát hiện audit còn `OPEN` mà bạn nên biết
+
+Không phải khoảng trống của runbook, nhưng chúng chạm đúng những gì bạn sắp làm:
+
+| ID | Nội dung | Trạng thái |
+| --- | --- | --- |
+| `F-A3-P5-03` | `GET /v1/reports` trả `500 INTERNAL` cho một tình huống **hoàn toàn dự đoán được**. `message_safe` nay nói rõ nguyên nhân và `CR-P0-07`, nhưng mã lỗi vẫn là "bất ngờ" | `OPEN` — [§4.1](#41-server) |
+| `F-A3-P5-04` | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError`, trong khi `python tools/rr_admin.py` chạy được | `OPEN` — tài liệu này vì vậy dùng **console script** (`rr-backup`, `rr-admin`) ở mọi chỗ |
+| `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
+| `CR-TC-SECRET-01` | `entities.yaml` chưa khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | `OPEN` — [§8.4](#84-api-key-để-ở-đâu) |
 
 ---
 
@@ -894,8 +1086,12 @@ gì từ một lệnh xanh.**
 
 ### 12.1 Cửa kiểm xanh chứng minh cái gì — và không chứng minh cái gì
 
-- **Không có hành vi nghiệp vụ nào tồn tại; `E1–E4` vẫn `NOT_RUN`** ở mọi nhóm scenario, qua cả
-  sáu giai đoạn. Bộ khung boot được, lint sạch, test xanh — và không làm gì cả.
+- **Hệ thống nay khởi động và chạy như những tiến trình thật** — đó là điều đợt nối dây đổi, và
+  §§2–4 của tài liệu này là bằng chứng. Nhưng **`E3` và `E4` vẫn bằng 0 ở mọi nhóm scenario**:
+  chưa một lời gọi thật nào tới X, Telegram hay một provider AI, ở bất kỳ giai đoạn nào.
+  *(Bản trước của dòng này ghi "không có hành vi nghiệp vụ nào tồn tại"; điều đó đúng vào
+  2026-09-08 và **không còn đúng** sau commit `feat: integration wiring`.)*
+- **Một route owner-facing vẫn hỏng**: `GET /v1/reports` trả `500` (`CR-P0-07`) — [§4.1](#41-server).
 - **`make e0` xanh chỉ chứng minh tính nhất quán nội bộ của tập con đã kiểm.** Xem
   `evidence/tools/README.md` §1 và §5 về giới hạn đã biết của chính công cụ đó.
 - **`make cards` xanh chỉ nói card khớp với hợp đồng mà nó pin.** Nó **không đọc nội dung

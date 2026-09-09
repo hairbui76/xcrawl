@@ -2201,3 +2201,67 @@ của cùng card đó) và **`E0-19-generated-matches` — WS đã sinh lại**,
 `GENERATED_FROM.json` từ FIX17 nay sạch.
 
 Lease `LEASE-PC02-e23` nhả 2026-09-09T07:26Z. Không git mutation, không network, không file ngoài grant.
+
+---
+
+# ADDENDUM — PKT-PC02-FIX20 (`OD-20260909-11`: AMD-ENT-maintenance-01 PROVISIONAL → ACCEPTED)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC02-FIX20` · lease `LEASE-PC02-e24` · worker `worker-W3n` |
+| status | **DONE** · `lease_released_at` 2026-09-09T07:40Z · next: W1n (§0/index + `precode/owner-decisions-11.md`) → WP re-pin |
+
+**Kiểm biên bản trước khi viết `ACCEPTED`.** Đọc thẳng
+`…/scratchpad/packets/OWNER-DECISIONS-20260909-11.md`: `decision_id: OD-20260909-11`, issuer Owner
+qua AskUserQuestion sau commit `81bcaf4`, evidence `session_01JRCNWfwz19Kfq1EkCmqnmG`, authority
+mới `AUTH-OWNER-20260909-12`. Mục 1 nêu **đích danh** `AMD-ENT-maintenance-01`. Nếu biên bản không
+gọi tên amendment này, tôi đã dừng — luật đó không đổi vì packet nói ngược.
+
+**Ba delta, không delta nào chạm hình dạng dữ liệu.**
+
+| File | Sửa |
+| --- | --- |
+| `contracts/data/entities.yaml` | `amendments[1].status` `PROVISIONAL` → `ACCEPTED`, thêm `ratified_by: OD-20260909-11` + `ratified_at`; `ratification.owner_disclosure_vi` → `owner_decision_vi` (đã trình, đã phê chuẩn, hệ quả) + `history_vi` mới giữ **nguyên văn** điều kiện cũ |
+| `precode/change-control.md` | khối `CR-TC-storage-06`: `status` → `ACCEPTED` + `ratified_by`; một đoạn cập nhật trước khối ruling FIX18. Version 0.1.7 → 0.1.8 |
+| `precode/decision-register.md` | **chỉ §8.16**: tiêu đề + một block quote cập nhật, ô trạng thái của hàng → `ACCEPTED (OD-20260909-11)`. Version 0.1.4 → 0.1.5. §0/index là của W1n, tôi không chạm |
+
+`version` của `entities.yaml` **giữ 0.3.0** theo đúng quy ước tôi đã dùng ở `PKT-PC02-FIX14`: phê
+chuẩn là một sự kiện về thẩm quyền, không phải một thay đổi hợp đồng. Kiểm bằng `yaml.safe_load`
+sau khi sửa: `version 0.3.0`, 61 entity, `ratification_ref` top-level **vẫn** `OD-20260907-01`,
+`claim_ceiling` `CONTRACT_READY`, `maintenance_window` vẫn đúng 10 trường và 3 CHECK, và cả hai
+amendment nay `ACCEPTED` (`AMD-ENT-owner-01` → `OD-20260907-03`, `AMD-ENT-maintenance-01` →
+`OD-20260909-11`).
+
+**Câu hỏi của packet về thứ tự: KHÔNG cần đảo.** `E0-12b-ratification-refs` **PASS (50/0)** dù
+`precode/owner-decisions-11.md` chưa tồn tại. Lý do có thể kiểm được, không phải may: `E0-12b`
+chỉ đọc `ratification_ref` trong **header** của file `CONTRACT_READY` và so với hằng số
+`RATIFICATION_ID = "OD-20260907-01"` (`RATIFICATION_RECORD = precode/owner-decisions.md`) — đó là
+neo của **trần claim** cho phạm vi "Data and identity", không phải của từng amendment. Tôi đặt phê
+chuẩn vào khóa `ratified_by` **trong node amendment**, đúng như `AMD-ENT-owner-01`/`OD-20260907-03`
+đã làm và đã qua gate nhiều vòng, nên không khóa `ratification_ref` nào đổi và không có ref nào
+cần một file mới để giải. Không check nào trong 27 check resolve `OD-20260909-11` thành đường dẫn.
+
+**Một tham chiếu tiến (forward reference), ghi ra để không ai tưởng là lỗi.** Block quote §8.16
+trích `precode/owner-decisions-11.md` — file W1n sẽ tạo ở packet kế. Hiện **chưa có trên đĩa**
+(kiểm bằng `ls`). Không gate nào giải đường dẫn đó nên không FAIL, nhưng nó là một câu trỏ tới
+thứ chưa tồn tại cho tới khi W1n land. Nếu W1n không land, dòng ấy phải sửa — không được để im.
+
+**Hash sau.**
+
+| Path | Trước | Sau | Bytes |
+| --- | --- | --- | --- |
+| `contracts/data/entities.yaml` | `7cd85e09…7827` | `0ec6bc91eccca0588075c385060f8095d640819ce03910f64d1397ef1e4d4c4c` | 256458 |
+| `precode/change-control.md` | `7f755960…15b2` | `38aaedb980bdd466fce952a8a8b8213dafac224eda776d699ca28a9f3d8d152f` | 89520 |
+| `precode/decision-register.md` | `ab47a9ad…c7ed` | `6620050ed932bc4c357fc6d4ff3d617f811faf232ff34cc8f841178b9ebb6f18` | 189558 |
+
+**Gate.** `verify_pc02.py` **PASS (0 fail)** cả bốn phần. `evidence/tools/e0_check.py`:
+**27/27 PASS · FAIL 0 · violations 0** — sạch hoàn toàn lần đầu kể từ `PKT-PC02-FIX16`.
+`E0-12b` 50/0, `E0-18` 0 vi phạm (37 / 22 / 2, phủ 61/61). Hai FAIL của lượt trước đã tự hết
+trong lúc tôi làm: `E0-19` (WS sinh lại, từ FIX19) và `E0-20` (handoff của
+`TC-secret-settings-service` nay đọc được — WAI đã land).
+
+**Còn mở, không đổi bởi gói này:** `CR-TC-storage-04` (thiếu `storage_probe`), `CR-PC10-13`
+(khoảng trống §2), `CR-PC02-25` (mở rộng `E0-18` — leg đếm đã có, liệt kê TÊN trong văn xuôi vẫn
+chưa được so). Mọi card pin ba file trên nay `STALE`; WP re-pin sau W1n.
+
+Lease `LEASE-PC02-e24` nhả 2026-09-09T07:40Z. Không git mutation, không network, không file ngoài grant.

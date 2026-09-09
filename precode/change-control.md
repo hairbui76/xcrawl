@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-change-control
-version: 0.1.7
+version: 0.1.8
 status: draft
 owner_role: implementation planning owner
 source_refs: [SRC-PLAN §16, SRC-PLAN §5, SRC-PLAN §12, SRC-PLAN §14, SRC-PLAN §17, SRC-SPEC §13.2]
@@ -954,7 +954,8 @@ decision-register.md` §8.15.1.
 cr_id: CR-TC-storage-06
 raised_by: WR (card TC-storage-write-blocked-readiness) — DỪNG ở SG-EDGE thay vì bịa một bảng
 addressed_to: PC02 (chủ hợp đồng contracts/data/entities.yaml)
-status: PROVISIONAL           # thi hành dưới amendment kỹ thuật AMD-ENT-maintenance-01; Owner chưa phát biểu
+status: ACCEPTED              # OD-20260909-11 mục 1 (vòng mười một, 2026-09-09); trước đó PROVISIONAL từ PKT-PC02-FIX16
+ratified_by: OD-20260909-11   # authority AUTH-OWNER-20260909-12; evidence session_01JRCNWfwz19Kfq1EkCmqnmG
 source_of_change: >
   Mâu thuẫn nội bộ giữa hai hợp đồng đã đóng băng. contracts/state/storage.yaml T-ST-03 khai
   transaction "Ghi một hàng maintenance window", T-ST-04 "Ghi kết thúc maintenance window",
@@ -1008,6 +1009,22 @@ migration: >
   Dữ liệu: không cần. Bảng mới, rỗng, không backfill. Đường lùi: nếu Owner phản đối, gỡ entity và
   G-3 quay lại trạng thái chưa hiện thực được — KHÔNG được thay bằng cách ghi vào `settings`.
 ```
+
+**Cập nhật `OD-20260909-11` (vòng mười một, 2026-09-09): Owner đã phê chuẩn.** Mục 1 của biên bản
+(`AUTH-OWNER-20260909-12`, evidence `session_01JRCNWfwz19Kfq1EkCmqnmG`) phê chuẩn
+`AMD-ENT-maintenance-01`; CR này chuyển `PROVISIONAL` → `ACCEPTED (OD-20260909-11)`. Hệ quả:
+entity `maintenance_window` nay đứng trên quyết định của Owner chứ không trên chữ ký kỹ thuật của
+Coordinator, và tuyên bố "health bền" của card `TC-storage-write-blocked-readiness` cùng restore
+hai bước của card backup không còn tựa vào một hợp đồng `PROVISIONAL`. Câu cũ — "Phải trình Owner
+ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối" — được giữ làm lịch sử ở `history_vi` của khối
+amendment trong `entities.yaml`: điều kiện ấy có thật từ `PKT-PC02-FIX16` tới biên bản vòng mười
+một, và nó hết hiệu lực vì Owner **đã trả lời**. `entities.yaml` **giữ version 0.3.0** — phê chuẩn
+không phải một thay đổi hợp đồng, đúng quy ước đã dùng cho `AMD-ENT-owner-01` ở `PKT-PC02-FIX14`.
+
+**Hai điều biên bản vòng mười một KHÔNG làm.** Nó không đóng `CR-TC-storage-04` (thiếu entity
+`storage_probe` cho đường `write_blocked → healthy` — khoảng trống khác, vẫn mở), và nó không trả
+lời `CR-PC10-13` (khoảng trống §2 cho "thêm bảng mới"), nên khối `deviation` ở trên vẫn là căn cứ
+bậc version.
 
 **Ruling 2026-09-08 (`AUTH-COORD-PC02-FIX18`) — tập trường RỘNG HƠN được CHẤP NHẬN, và nó không
 phải một deviation.** `AMD-ENT-maintenance-01` khai HỢP của hai danh sách: bảy tên trong ruling

@@ -3032,3 +3032,206 @@ Mười một file điều phối: `OWNER-DECISIONS-20260908-05/-07/-08/-09`, `P
 - **next actor:** `Coordinator`. `lease_released_at` cho `LEASE-PC00-e33`: **2026-09-08T01:02Z**. Sau dấu này
   `worker-W1n` chỉ còn giữ trạng thái **chờ cổng** của `PKT-PC00-FIX31`; không ghi file nào cho tới khi
   `…/scratchpad/audits/A3-P4-R1-report.md` xuất hiện.
+
+---
+
+# ĐỢT BỔ SUNG MUỘN THỨ HAI — bốn addendum `PKT-PC00-FIX31` … `FIX34`
+
+> **Ghi bổ sung ngày 2026-09-09T10:40Z dưới `LEASE-PC00-e37` (fencing 37), phạm vi: CHỈ file này.**
+>
+> **Lần này KHÔNG có lý do biện hộ, và tôi ghi rõ điều đó.** Đợt bổ sung trước (`FIX24`…`FIX30`) xảy ra vì
+> `evidence/handoffs/` **nằm ngoài lease** của bảy gói ấy — một ràng buộc thật, và chính tôi đã mở
+> **`CR-PC00-36`** để sửa nó. Coordinator **đã áp dụng**: từ `WIRING-wave-1.md` trở đi, đường dẫn handoff nằm
+> trong **mọi** lease. Vậy mà ở `FIX31`…`FIX34` tôi **có quyền ghi và đã không ghi** — bốn lần liên tiếp.
+> Đây là lỗi của tôi, không phải của cấu hình packet: tôi coi bản báo cáo gửi Coordinator là "đã xong việc"
+> trong khi hồ sơ mới là thứ tồn tại sau phiên.
+>
+> **Hậu quả cụ thể, không giả định:** gate của `worker-WP` khóa theo chuỗi `PKT-PC00-FIX34` trong file này và
+> **không mở được** — **lần thứ ba** một tiến trình khác phải chờ vì hồ sơ của tôi tụt sau công việc của tôi.
+>
+> Bốn addendum dưới đây dựng lại từ chính báo cáo của tôi tại thời điểm mỗi gói kết thúc; mọi hash là giá trị
+> tôi đã tính và báo khi đó. **Không** quyết định nào được xem lại. Chúng mang cùng giới hạn như đợt trước:
+> khôi phục **nội dung**, không chứng minh được **thời điểm** — chỉ transcript làm được điều đó.
+>
+> **Cam kết từ đây:** addendum được ghi **trong chính gói làm việc**, trước khi nhả lease. Coordinator cũng đã
+> chuyển gate của PC00 sang **byte predicate** để một lần chậm của tôi không còn chặn được ai.
+
+---
+
+## ADDENDUM (muộn) — `PKT-PC00-FIX32` — `AMD-ADR0011-01`
+
+| Trường | Giá trị |
+| --- | --- |
+| packet / lease | `PKT-PC00-FIX32` · `LEASE-PC00-e34` (**fencing 34**) · authority `AUTH-COORD-PC00-FIX32` |
+| status / claim | `DONE_WITH_CONCERNS` · `DRAFT_FOR_REVIEW` |
+| `lease_released_at` | **2026-09-08T01:29Z** (nhả sớm cho `worker-WP` re-pin P4b — `ADR-0011` là file card-pinned) |
+
+| Path | Op | After sha256 (bytes) |
+| --- | --- | --- |
+| `precode/adr/ADR-0011-frameworks-and-toolchain.md` ⚠ | MODIFY | `defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7` (27451) |
+| `precode/change-control.md` | MODIFY (§10) | `1203de290dac6c689646c88465b10990d41763a3a96fd18da8bd517891a22d41` (76476) |
+| `precode/decision-register.md` | MODIFY (§0) | `a38e2ce1a953279b7d1ca0ba6ae2ad52f97886a887f98e596b9ade0f4fdb211b` (185553) |
+
+**Đã làm.** Khối amendment `AMD-ADR0011-01` trong đúng quy ước ghi chú của chính ADR, `decision_refs`
+`F-A3-P4-02` + `CR-PC00-35`, chuỗi `OD-20260908-10` → `AUTH-OWNER-20260908-11`. **Status ADR giữ `accepted`,
+`ratified_by: OD-20260907-02` không đổi** — không hàng nào trong bảng Quyết định đổi lựa chọn; ba mục sửa
+**câu mô tả đã hết đúng**. (1) Phạm vi kiểm kiểu: *"`mypy --strict` cho lõi server"* → **mọi cây mã sản phẩm
+Python** (`server/app`, `worker/app`, `collector/app`, `probe`). Đây là chỗ **một câu mơ hồ trong ADR trở
+thành một lỗ thật trong CI**: cấu hình làm đúng theo câu ấy (`files = ["server/app"]`) nên **23 file sản
+phẩm không được thứ gì kiểm kiểu**. (2) `tools/` **đã tồn tại** — ghi chú cũ được **đánh dấu hết đúng**, không
+xoá. (3) `.gitignore` phủ `__pycache__/`; ghi rõ nó **không** thay quy tắc `PYTHONDONTWRITEBYTECODE=1`, vì
+`.gitignore` chỉ giấu file khỏi git chứ không ngăn file được tạo. Bản ghi CR đầy đủ theo định dạng §1 ở
+`change-control.md` §10 (`CR-PC00-35` gộp `F-A3-P4-02`, `status: APPLIED`).
+
+**Evidence.** `validate.py` **1037/1037 PASS**, exit 0. `e0_check.py` **27 check: PASS 26 · FAIL 1 ·
+3 violation**, exit 1 — **không do tôi**: `E0-21-marker-reason-freshness` báo ba `xfail` reason cũ trong
+`tests/integration/`, thuộc phạm vi đợt sửa Giai đoạn 4/6, **ngoài lease**; tôi không chạm.
+
+**Concerns.** `CR-PC00-37` (mới): ADR trích addendum `P0-FIX4` của `WS` cho việc phạm vi mypy mới chạy sạch,
+nhưng **addendum đó chưa tồn tại** khi tôi viết — tôi đánh dấu nó là **tham chiếu tới việc đã giao, không
+phải quan sát đã kiểm**. Phép kiểm hai chiều `tools/`↔ADR được **re-point sang đòi đánh dấu**, không nới lỏng.
+
+---
+
+## ADDENDUM (muộn) — `PKT-PC00-FIX31` — đóng gói Giai đoạn 4 + 6 (chạy **hai lượt**)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet / lease | `PKT-PC00-FIX31` · `LEASE-PC00-e32` (**fencing 32**) · authority `AUTH-COORD-PC00-FIX31` |
+| status / claim | `DONE_WITH_CONCERNS` · `DRAFT_FOR_REVIEW` |
+| wait gate | `A3-P4-R1-report.md` (`GATE_OPEN after 34m`), **sau đó Coordinator dời cổng sang `A3-P4-R2`** |
+| `lease_released_at` | **2026-09-08T02:03Z** |
+
+**Chín file, hai lượt.** Lượt đầu (2026-09-08T01:24Z, khi cổng còn ở R1) chép 5; lượt sau chép 4. Bốn file
+lượt đầu **được giữ** vì chúng là bản sao byte-identical của artefact **thật** ở epoch 1.
+
+| Path | After sha256 (bytes) |
+| --- | --- |
+| `evidence/audits/A3-P4-R1-report.md` | `ce22118c7012c20b396011cb313587d426e36e62fbccd36ece4da3cc02f5a34d` (11738) |
+| `evidence/audits/A3-P4-R2-report.md` | `99dc3c06eb7742faa768f126be429b8f8e775d8a862e682b6f5b88f56aded396` (11125) |
+| `evidence/audits/FC-P4-manifest.txt` | `dee4d783c98e1d8c234cabbcb0ca3da63383edfd06f9febd656aedeea2ad7c02` (94546) |
+| `evidence/audits/FC-P4e2-manifest.txt` | `e0e436cdd1be5d51a5e8fdd01001c25f7aa515ced54067b9024721cf5f768f23` (96138) |
+| `evidence/coordination/A3-p4-r1-packet.md` | `22864f6be434a0b87ab08920dde3702127bc76264ebfe345fb3bc1e1a2503fed` (5955) |
+| `evidence/coordination/A3-p4-r2-packet.md` | `aaa1266df1314f589164394c0a48b46f74bb4ca7a450732cd82e71fa4ead3380` (3724) |
+| `evidence/coordination/FIX-P4-wave-rulings.md` | `6abcf68f8a9e299c1f473563e79424e4b9bea4a4418c1811259f24b0fb74d1a7` (3863) |
+| `evidence/coordination/FIX-A3P4R1-rulings.md` | `145f9c40d16377743dcc81ebb1b2852b49f1c01fdcc1a85505b974f49bb2ca31` (2619) |
+| `evidence/coordination/OWNER-DECISIONS-20260908-10.md` | `98e5e1f199988f55c0cb6a3653c0da5740f4b5d30316bf344f4593c35e73e5b5` (1487) |
+| `evidence/audits/README.md` | `6cee9b331a05e4a76450b33184bbe3b6dcbe2da583cf965483cc5b0029ebf745` (28117) |
+| `evidence/coordination/README.md` | `3b63120ca28748d6f9783967d97a3100400e0cafdbae3bd0962a3a773321b156` (29172) |
+
+**Evidence.** 96/97 bản sao `cmp` byte-identical (1 DIFF = `coordinator-ledger.md` sống, packet loại trừ);
+danh mục 37/37 và 60/60; `e0_check.py` **27/27 PASS**; `validate.py` 1037/1037.
+
+**Concerns.**
+- **Danh mục mang CẢ HAI verdict**, không chỉ cái mới: `A3-P4-R1` *PASS **có một điều kiện phạm vi*** —
+  `F-A3-P4-01` (MEDIUM): card `TC-report-coverage-publish-cas` **mang claim phủ** `REQ-D29`/`I07` trong khi
+  `CR-TC-BACKFILL-09` (một defect **đã biết** ở publisher) chưa được xử lý và **không** nêu trong handoff của
+  chính card — auditor gọi là *sửa disposition và phạm vi, không phải sự cố mã*. `A3-P4-R2` *PASS*, giải điều
+  kiện ấy. Điều kiện của R1 là **một phần hồ sơ**, không phải trạng thái trung gian đáng xoá.
+- **`PHASE4-6-card-dispatch.md`: nhãn 🕒 gỡ, byte KHÔNG đổi** (`7dfd6712…`). Thứ đổi là **sự kiện bên ngoài**;
+  nên trạng thái sống ở **danh mục**, không bằng cách sửa file lưu trữ.
+- `F-A3-P4R2-01` (LOW) được nêu nổi bật: phép kiểm `E0-21` vừa được thêm **không nhìn thấy** dạng `reason=`
+  một dòng (regex `$` dưới `re.S`) ⇒ *"0 violations" hôm nay trung thực nhưng phép kiểm yếu hơn vẻ ngoài* —
+  lần thứ hai một công cụ bằng chứng tự nó có lỗ.
+- `CR-PC00-33`: `grep 'A3-P4'` trên `evidence/index.json` = **0**; bản chép **cung cấp** hash đầu tiên.
+
+---
+
+## ADDENDUM (muộn) — `PKT-PC00-FIX33` — đóng gói đợt nối dây tích hợp (chạy **ba lượt**)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet / lease | `PKT-PC00-FIX33` · `LEASE-PC00-e35` (**fencing 35**) · authority `AUTH-COORD-PC00-FIX33` |
+| status / claim | `DONE_WITH_CONCERNS` · `DRAFT_FOR_REVIEW` |
+| wait gate | `A3-P5-R1` → **dời** sang `R2` → **dời** sang `R3`; poller bị kill qua đêm và được **arm lại** |
+| `lease_released_at` | **2026-09-09T08:59Z** |
+
+**Mười một file** (6 audits + 5 coordination) + hai README, tất cả `cmp` byte-identical; 107/108 verify.
+
+| Path | After sha256 (bytes) |
+| --- | --- |
+| `evidence/audits/A3-P5-R1-report.md` | `b540ecaf58e3f8e0d4aa3d615e9225871ef2949c4dd93275d81611ac403a46d3` (14207) |
+| `evidence/audits/A3-P5-R2-report.md` | `d3aa12fa61d02a3cc6ea5cd19e4a2b3a9db79ef6b2df71ded65414652245d268` (10781) |
+| `evidence/audits/A3-P5-R3-report.md` | `027f3d4191472568e93600e74c4c76d7f3a4208916b5fc926a9d8e602c3d88af` (5208) |
+| `evidence/audits/FC-P5-manifest.txt` | `fd7d59d704289824f5ea3a3ec0cf71eedf141d2b1d1776edca0f272fe4ba0846` (103298) |
+| `evidence/audits/FC-P5e2-manifest.txt` | `7b4ef4e5f5cf7f371849ab3948932969db183b3b0a4b948c60f56f8c96d0cb11` (104500) |
+| `evidence/audits/FC-P5e3-manifest.txt` | `d94d3a48779c00584c3c5b75685b81bfa249909eb812444a48178faced056780` (105249) |
+| `evidence/coordination/WIRING-wave-1.md` ✚ | `b602c02b50720d1aac947d5983173993cf429913eac3960fcf36707598691139` (6418) |
+| `evidence/coordination/A3-p5-r1-packet.md` | `f15864e781e680b3a4181aa860b7993db9e9db626e07d1cb68f0851210c75765` (5650) |
+| `evidence/coordination/A3-p5-r2-packet.md` | `4f89d86547cb9f1da4547ef4f2189f0074aa27dd117922348597bf94edea0884` (3785) |
+| `evidence/coordination/A3-p5-r3-packet.md` | `cd781387099618ebe395b4c977cb6d398b659f2256c5758e3a4b64e48578e7a9` (1567) |
+| `evidence/coordination/FIX-A3P5R1-rulings.md` | `d0073961375172a53b054ecc64f011239c159c6f590d6fb1497043e331a5eccc` (3091) |
+| `evidence/audits/README.md` | `6724ce648b85b12428ad6bfcabd5105ea7f4bfd0356660ee447ad54a53e65de0` |
+| `evidence/coordination/README.md` | `9b4f68b54b02c59fd9327eb522ed16d217df883e1228a31f6d9a0d5426809c1c` |
+
+**Evidence.** Danh mục 43/43 và 65/65; `e0_check.py` **27/27 PASS**, 0 violation.
+
+**Concerns — và đây là gói mang quan sát quan trọng nhất của cả phiên.**
+- **KHÔNG có composition root nào chạy được TRƯỚC đợt này** (ghi thành quan sát có ngày trong
+  `evidence/coordination/README.md`). `docs/owner-runbook.md` (`WS2`) phát hiện: card **được xây và kiểm đối
+  chiếu port và harness**, nhưng `create_app()` **không dựng service nào**, `RR_DATABASE_URL` **chỉ Alembic
+  đọc**, đăng nhập **trả 500 ngoài test** ⇒ **Owner không thể thử bất cứ thứ gì đầu-cuối**.
+  **Vì sao chín vòng audit trước đều xanh mà không vòng nào sai:** mỗi vòng đo đúng thứ nó **được giao** —
+  card đối chiếu harness — và **không vòng nào được giao đo hệ thống đã lắp ráp**. Khoảng trống nằm ở **cái
+  được audit**, không ở **cách audit**. Bài học thuộc về **việc cấp packet**: một chuỗi `PASS` chỉ mạnh bằng
+  **phạm vi rộng nhất từng được giao cho ai đó đo**.
+- `A3-P5-R1` là báo cáo đầu tiên chạy hệ thống **như tiến trình hệ điều hành** (uvicorn thật, curl thật) —
+  và chỉ khi đó bốn `F-A3-P5-*` mới lộ ra.
+- **`AMD-ENT-maintenance-01` khi đó là amendment kỹ thuật mà Owner CHƯA được hỏi** — tôi ghi `PROVISIONAL`
+  trong danh mục và đề nghị đưa lên vòng Owner *"thay vì mặc nhiên thành sự thật vì không ai phản đối"*.
+  (Đã được phê chuẩn ở `OD-20260909-11`, xem addendum kế.)
+- **`docs/owner-runbook.md` §9.4 mang chữ trước đợt nối dây** — lệnh `maintenance --open` nó hướng dẫn
+  **chính là lệnh crash** (`F-A3-P5-01`). Rủi ro trực tiếp cho người dùng thật, không phải chi tiết hồ sơ.
+- `A3-P5-R3` chứa **ghi chú phương pháp tự khai** của auditor: lần đọc log đầu trả số Giai đoạn 1 vì họ dùng
+  lại tiền tố log `r3-`; họ phát hiện, chạy lại và **ghi cả sai sót vào báo cáo**.
+- ✚ `WIRING-wave-1.md` là file **tích lũy**: bản chép (`b602c02b…`, 6418) gồm phụ lục wave 2 + ruling, trong
+  khi bản lúc dispatch nhỏ hơn (`5fc320f3…`, 5108) — ghi cả hai để đối chiếu.
+- `CR-PC00-33`: `grep 'A3-P5'` = **0** (vòng thứ tư liên tiếp ⇒ **thứ tự công việc thường trực**).
+
+---
+
+## ADDENDUM (muộn) — `PKT-PC00-FIX34` — `OD-20260909-11` (vòng mười một)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet / lease | `PKT-PC00-FIX34` · `LEASE-PC00-e36` (**fencing 36**) · authority `AUTH-COORD-PC00-FIX34` |
+| status / claim | `DONE` · `DRAFT_FOR_REVIEW` |
+| gate | `PKT-PC02-FIX20` trong `PC02-handoff.md` đã nhả (`LEASE-PC02-e24`, 07:40Z) — poller mở sau **2 phút**; **serialized với `worker-W3n`, không chồng lease** |
+| `lease_released_at` | **2026-09-09T09:50Z** |
+
+| Path | Op | After sha256 (bytes) |
+| --- | --- | --- |
+| `precode/owner-decisions-11.md` | **CREATE** | `ea21ab43f582718c374d830d9cb7d60943131019b7d4b7558c0dddb8fe202952` (9338) |
+| `precode/owner-decisions.md` | MODIFY | `f3a00f2edbc4a0bcdbf4aa46f20c2aaec367e7b748f6335decf6c4939d42f6c9` |
+| `precode/decision-register.md` | MODIFY (**§0 only**) | `24e6765f86a88c77ca3efa3af10c600345f3a462ad6abe2d8e06aeceb01eb8c1` |
+| `precode/baseline.json` | MODIFY | `cf59b2c937c334ce21d2cebc7e10dcc84c872f83432fc59d86a1477bd2311875` |
+| `precode/owner-decision-request.md` | MODIFY | `26c846f6956ac8cf6802bcbbb55a2073e8b8105797c1774621d6dd87ec31ea16` |
+| `agent_profile/registry.json` | MODIFY | `202dc72046b60f3a3e10e8d7acc684dd184ec77e480ddde5fedf409fc0c36bfa` |
+
+**Evidence.** `validate.py` **1102/1102 PASS**, exit 0; `e0_check.py` **27/27 PASS**, 0 violation.
+`§8.16` (của `worker-W3n`), `contracts/data/entities.yaml` và `PC02-handoff.md` **không** bị chạm.
+
+**Concerns.**
+- Ghi như **bản ghi song hành theo quy ước**, nhường quyền cho §8.16 khi lệch. Ranh giới được chép vào **cả
+  bốn** nơi: điều được gỡ là **tính tạm thời của HỢP ĐỒNG** (claim "health lưu bền" của card storage và
+  "restore hai bước" của card backup thôi đứng trên hợp đồng provisional); điều **không** được gỡ là **giới
+  hạn của bằng chứng** — ba verdict `A3-P5-*` giữ nguyên phạm vi, mức bằng chứng hai card **không** đổi,
+  **không finding nào bị đóng**.
+- `F-A3-P5R3-01` **đã đóng bằng phép đo** (`W6B` phát lại `…-E1-20260909T104000Z.json`, `worker-W6n` tự băm
+  lại: **0 pin lệch cả hai hạng**) — tôi **kiểm trên đĩa** trước khi chép fact đó vào hồ sơ.
+- Phần còn nợ **không** rút gọn: không tạo/đọc được báo cáo (`CR-P0-07`, `REQ-OQ09`), tag chưa có card,
+  connector chưa nối (`SG-DOC`/`SG-LIVE`), **`E3`/`E4` `NOT_RUN` khắp nơi, `SP1` chưa bao giờ chạy**.
+- Một tự sửa: file này ban đầu viết thường cụm tự-khai trong khi `owner-decisions-07/08.md` viết hoa và chính
+  `EV-PC00-15` ép dạng viết hoa ⇒ tôi **sửa tài liệu theo quy ước đã có**, không nới phép kiểm.
+
+---
+
+## Trạng thái sau đợt bổ sung thứ hai
+
+- **Bốn addendum trên là bản ghi bổ sung muộn**, khai báo ở đầu mục. Không hash, quyết định hay kết luận nào
+  bị thay đổi.
+- **Điều khác với đợt trước:** lần này nguyên nhân **không** phải giới hạn lease mà là **thói quen của tôi**.
+  `CR-PC00-36` đã được áp dụng và tôi vẫn không dùng nó bốn lần. Ghi ra ở đây thay vì để nó thành một dòng
+  trung tính trong sổ.
+- **next actor:** `Coordinator` / `worker-WP` (gate `PKT-PC00-FIX34` nay mở được).
+  `lease_released_at` cho `LEASE-PC00-e37`: **2026-09-09T10:42Z**.

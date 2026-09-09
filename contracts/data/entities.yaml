@@ -270,7 +270,9 @@ amendments:
 
   - amendment_id: AMD-ENT-maintenance-01
     date: "2026-09-08"
-    status: PROVISIONAL
+    status: ACCEPTED
+    ratified_by: OD-20260909-11
+    ratified_at: "2026-09-09"
     subject_vi: "Thêm entity `maintenance_window` — chỗ ghi mà `contracts/state/storage.yaml` T-ST-03 đã yêu cầu từ đầu."
     decision_refs: [CR-TC-storage-04, CR-TC-storage-06]
     finding_refs: [CR-TC-storage-06]
@@ -323,9 +325,19 @@ amendments:
         Amendment kỹ thuật hòa giải hai hợp đồng Owner ĐÃ phê chuẩn (`storage.yaml` và
         `entities.yaml` cùng thuộc các phạm vi của OD-20260907-01); nó không thêm một quyết định
         sản phẩm mới, chỉ khai chỗ ghi mà một trong hai đã yêu cầu.
-      owner_disclosure_vi: >-
-        Phải trình Owner ở vòng quyết định kế tiếp. Owner CÓ THỂ phản đối. Trạng thái là
-        `PROVISIONAL`, KHÔNG phải `ACCEPTED`: chưa biên bản Owner nào nhắc entity này.
+      owner_decision_vi: >-
+        ĐÃ trình và ĐÃ được phê chuẩn. Biên bản `OD-20260909-11` (vòng mười một, 2026-09-09,
+        authority `AUTH-OWNER-20260909-12`, evidence `session_01JRCNWfwz19Kfq1EkCmqnmG`) mục 1:
+        Owner phê chuẩn `AMD-ENT-maintenance-01`. Hệ quả: tuyên bố "health bền" của card
+        `TC-storage-write-blocked-readiness` và restore hai bước của card backup KHÔNG còn tựa
+        vào một hợp đồng `PROVISIONAL`.
+      history_vi: >-
+        Giữ lại để đọc được đường đi, không xóa: từ `PKT-PC02-FIX16` (2026-09-08) tới
+        `OD-20260909-11`, mục này mang `status: PROVISIONAL` dưới amendment kỹ thuật của
+        Coordinator, với điều kiện tường minh rằng Owner CÓ THỂ phản đối. Điều kiện ấy hết hiệu
+        lực vì Owner ĐÃ TRẢ LỜI, không vì ai đó gỡ nó đi. `OD-20260907-01` vẫn KHÔNG nhắc entity
+        này — thẩm quyền phê chuẩn nó là `OD-20260909-11`, và đó là lý do `ratified_by` ở trên
+        ghi biên bản vòng mười một chứ không phải vòng một.
     claim_ceiling_effect_vi: >-
       `claim_ceiling` GIỮ `CONTRACT_READY`. Nhưng nội dung đã đổi sau lượt xác minh gần nhất, nên
       lượt audit kế tiếp PHẢI xác minh lại `ENT-maintenance-window` và ba tập purge trên epoch mới.

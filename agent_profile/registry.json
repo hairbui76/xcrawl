@@ -118,6 +118,15 @@
       "scope": "Ratifies OD-20260908-10 (3 items), all raised by Phase 5 cards hitting an already-settled constraint. (1) CR-TC-SAVED-04: save.create MAY succeed for a target with no analysis, with the summary block explicitly marked missing via a FIXED, NON-INFERENTIAL label - AMD-B16 is NOT relaxed; the gap is STATED, not FILLED. Implementing it as model-written prose would violate B16, not satisfy this item. (2) CR-TC-TGAUTH-02: /save <id> stays as the plain-text Save trigger until an inline button becomes possible, mapped onto the EXISTING CMD-save - NO fourth Telegram command (AMD-B10, F-PC00-01 unchanged). A time-limited workaround; it does NOT resolve CR-PC07-04, which stays PARTIALLY_RESOLVED. (3) CR-TC-TGAUTH-04: a LINKED chat sending text outside the three-command allowlist gets a short reminder; an UNKNOWN chat stays silent with ZERO outbound, preserving AMD-B09. The boundary-sweep fixture row is NOT corrected here - that is the next contract round, a CR to PC08. Does NOT raise any claim ceiling, does NOT close any finding.",
       "decision_record": "precode/owner-decisions-10.md",
       "evidence_ref": "Claude Code session session_017CTbS7F4oTr4ZtFYkhdabD, 2026-09-08"
+    },
+    {
+      "authority_id": "AUTH-OWNER-20260909-12",
+      "issuer": "Owner (session user)",
+      "issued_at": "2026-09-09",
+      "scope": "Ratifies OD-20260909-11 (1 item): AMD-ENT-maintenance-01 - the Coordinator's SECOND technical amendment - PROVISIONAL -> ACCEPTED, ratified_by OD-20260909-11. It adds entity maintenance_window to contracts/data/entities.yaml (0.3.0; purge sets 37/22/2 = 61) because contracts/state/storage.yaml T-ST-03 required writing a maintenance-window row that no entity declared (CR-TC-storage-04/-06). worker-WR STOPPED AT SG-EDGE rather than inventing the entity; the Coordinator signed it provisionally; the Owner ratifies here - the same shape as AMD-ENT-owner-01 under OD-20260907-03. WHAT THIS REMOVES: the storage card's persisted-health claim and the backup card's two-step restore no longer rest on a PROVISIONAL CONTRACT. WHAT IT DOES NOT REMOVE: it is NOT a verification - the A3-P5-R1/R2/R3 verdicts keep their own scope and neither card's evidence level changes; it closes NO finding (protocol.md §8); it does NOT let the Owner produce or read reports (CR-P0-07), does NOT give tags a card, does NOT wire the research connector (SG-DOC/SG-LIVE), and E3/E4 remain NOT_RUN everywhere. Effect record: precode/decision-register.md §8.16 (worker-W3n, PKT-PC02-FIX20).",
+      "decision_record": "precode/owner-decisions-11.md",
+      "effect_record": "precode/decision-register.md §8.16 (worker-W3n)",
+      "evidence_ref": "Claude Code session session_01JRCNWfwz19Kfq1EkCmqnmG, 2026-09-09"
     }
   ],
   "coding_phase": {

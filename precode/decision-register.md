@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-decision-register
-version: 0.1.4
+version: 0.1.5
 status: draft
 owner_role: requirements owner (PC00)
 source_refs:
@@ -56,6 +56,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `ACCEPTED (OD-20260908-08)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng tám** — xem `precode/owner-decisions-08.md` (bản ghi hiệu lực: §8.15.1) |
 | `ACCEPTED (OD-20260908-09)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng chín** — xem `precode/owner-decisions-09.md` |
 | `ACCEPTED (OD-20260908-10)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng mười** — xem `precode/owner-decisions-10.md` |
+| `ACCEPTED (OD-20260909-11)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng mười một** — xem `precode/owner-decisions-11.md` (bản ghi hiệu lực: §8.16) |
 | `OWNER_DECISION_REQUIRED` | Không có phương án mặc định an toàn; phạm vi liên quan bị chặn tường minh |
 
 **Cập nhật 2026-09-07.** Owner đã trả lời bản yêu cầu quyết định. Biên bản `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`) phê chuẩn B01–B17 và các amendment tương ứng. `agent_profile/registry.json` nay có `open_product_blockers: []` và một danh sách `ratified_product_blockers` trích `evidence_ref`.
@@ -69,6 +70,8 @@ Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv`
 **Cập nhật vòng ba 2026-09-07.** Biên bản thứ ba `OD-20260907-03` (`precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **ba** việc: phê chuẩn `AMD-ENT-owner-01` (§8.11), phê chuẩn `PROV-PC00-08` (§8), và mở lối vào Giai đoạn 2 (§8.12). Nó **không** mở quyền mạng, **không** gỡ cổng probe (`collector-probe.md` §6 mục 2–4), **không** cho phép đoán bốn dữ kiện `REQ-A6`, **không** phê chuẩn mục `PROVISIONAL` nào khác, và **không** giải `REQ-OQ03`.
 
 **Cập nhật vòng bảy và vòng tám 2026-09-08.** Hai vòng này được `worker-WT` và `worker-WAI` ghi hiệu lực ngay khi chúng xảy ra (**§8.14.3** và **§8.15.1**); `PKT-PC00-FIX28` bổ sung **bản ghi song hành theo quy ước** để chúng có cùng hình dạng hồ sơ như các vòng khác — file độc lập, anchor `baseline.json`, authority trong `agent_profile/registry.json`. **Không** quyết lại điều gì; khi hai bên lệch thì **§8.14.3 / §8.15.1 thắng**. `OD-20260908-07` (`AUTH-OWNER-20260908-08`) **nới công cụ** tìm ba dữ kiện Telegram sang `WebSearch` — vẫn chỉ để **định vị nội dung của chính trang** `core.telegram.org/bots/api`, **không** để lấy một con số khác từ site khác; và chốt rằng người ký `REQ-A5` phải là **Owner đích thân**, nên `CR-PC06-OQ03-02` **giữ mở** qua hết vòng bảy. Nới quyền **không** tạo ra dữ kiện: vòng ba chạy dưới quyền mới và **cả ba dữ kiện vẫn `BLOCKED_DEPENDENCY`** (§8.14.3). `OD-20260908-08` (`AUTH-OWNER-20260908-09`) là **chữ ký `REQ-A5`** của Owner cho **riêng Anthropic**, trên **đúng ba trang có ngày hiệu lực**, kèm **chấp nhận tường minh** bảo đảm `TC-A5-01`; `CR-PC06-OQ03-02` **đóng**. Ba ranh giới phải giữ: chữ ký **hết hiệu lực** khi một trong ba trang đổi phiên bản (`ADR-0010`); **ký không phải bật** — `enabled = true` vẫn bị `B13` chặn (`ISO-03`/`ISO-05` chưa kiểm, `E3 NOT_RUN`, `REQ-AC16` vẫn `BLOCKED`); và câu hỏi **arXiv/OpenAlex/X có cho phép tái xử lý nội dung của họ hay không** vẫn **chưa ai trả lời** — Owner **gánh** bảo đảm ấy, không **giải** nó.
+
+**Cập nhật vòng mười một 2026-09-09.** Biên bản `OD-20260909-11` (`precode/owner-decisions-11.md`, authority `AUTH-OWNER-20260909-12`, evidence `session_01JRCNWfwz19Kfq1EkCmqnmG`) phê chuẩn **`AMD-ENT-maintenance-01`** — amendment kỹ thuật **thứ hai** của Coordinator, **cùng hình dạng** với `AMD-ENT-owner-01` ở `OD-20260907-03`: một mâu thuẫn giữa **hai file đã đóng băng** (`storage.yaml` `T-ST-03` đòi ghi một hàng maintenance-window mà `entities.yaml` không khai entity nào), `worker-WR` **dừng ở `SG-EDGE`** thay vì tự bịa, Coordinator ký tạm `PROVISIONAL`, Owner phê chuẩn ở vòng sau. Bản ghi hiệu lực là **§8.16** (`worker-W3n`, `PKT-PC02-FIX20`); §0 này chỉ là chỉ mục. **Điều được gỡ là tính tạm thời của HỢP ĐỒNG**, không phải giới hạn của bằng chứng: claim "health lưu bền" của card storage và "restore hai bước" của card backup thôi đứng trên một hợp đồng provisional, nhưng **mức bằng chứng của chúng không đổi** và **không finding nào bị đóng**. Việc mục này không bị bỏ quên là nhờ `A3-P5-R1` §6 nêu đích danh nó trong phần residual.
 
 **Cập nhật vòng mười 2026-09-08.** Biên bản `OD-20260908-10` (`precode/owner-decisions-10.md`, authority `AUTH-OWNER-20260908-11`) trả lời **ba** câu hỏi mà các card Giai đoạn 5 nêu ra khi chạm phải một ràng buộc đã chốt. (1) `CR-TC-SAVED-04`: **cho phép** lưu một target chưa có analysis, kèm nhãn *"chưa phân tích"* là một **chuỗi cố định, không suy luận** — `AMD-B16` **không** bị nới, chỗ trống được **nói ra** chứ không được **lấp**. (2) `CR-TC-TGAUTH-02`: giữ `/save <id>` làm trigger văn bản thuần cho tới khi nút inline khả thi, ánh xạ vào `CMD-save` đã có — **không** lệnh Telegram thứ tư (`AMD-B10`, `F-PC00-01` giữ nguyên); đây là một đường vòng **có hạn**, tự hết vai khi `CR-PC07-04` được giải, và nó **không** giải `CR-PC07-04`. (3) `CR-TC-TGAUTH-04`: chat **đã liên kết** nhận một lời nhắc ba lệnh; chat **lạ vẫn im lặng, 0 outbound** — `AMD-B09` được bảo toàn nguyên vẹn. Hàng fixture quét biên **chưa** được sửa ở vòng này: nó thuộc **vòng hợp đồng kế tiếp**, một CR cho **PC08** (`CR-PC00-34`). Vòng mười **không** nâng trần claim của file nào và **không** đóng finding nào.
 
@@ -1318,7 +1321,15 @@ xác nhận nội dung đã đọc"*); (2) mệnh đề cuối của `disabled_r
 `terms_check.reviewer` của cả hai mục mang câu đính chính và trỏ tới `CR-PC06-OQ03-08`. Sửa hai câu ấy cần
 một packet khác — viết trước rồi hợp thức hoá sau chính là thứ `BLOCKED_SCOPE` sinh ra để chặn.
 
-### 8.16 Amendment kỹ thuật thứ hai của Coordinator — `AMD-ENT-maintenance-01` (2026-09-08)
+### 8.16 Amendment kỹ thuật thứ hai của Coordinator — `AMD-ENT-maintenance-01` (2026-09-08, **phê chuẩn 2026-09-09**)
+
+> **Cập nhật `OD-20260909-11` (2026-09-09).** Owner đã phê chuẩn `AMD-ENT-maintenance-01`
+> (`precode/owner-decisions-11.md`, authority `AUTH-OWNER-20260909-12`, evidence
+> `session_01JRCNWfwz19Kfq1EkCmqnmG`). Hàng dưới nay `ACCEPTED (OD-20260909-11)`. Phần văn xuôi
+> sau bảng được giữ **nguyên văn** làm lịch sử: nó mô tả đúng trạng thái từ `PKT-PC02-FIX16` tới
+> biên bản vòng mười một, gồm cả câu "Owner phê chuẩn ở vòng kế tiếp và có thể phản đối" — điều
+> kiện ấy hết hiệu lực vì Owner **đã trả lời**, không vì ai đó xoá nó. Hai điều biên bản KHÔNG
+> làm: không đóng `CR-TC-storage-04`, không trả lời `CR-PC10-13`.
 
 Cùng dạng với §8.11: một amendment thực hiện **sau** khi `contracts/data/entities.yaml` đã
 `CONTRACT_READY`, dưới thẩm quyền kỹ thuật của Coordinator, và **chưa** có câu trả lời của Owner.
@@ -1326,7 +1337,7 @@ PC00 **ghi nhận, không thẩm định lại** nội dung kỹ thuật; chủ 
 
 | ID | Gói | Quyết định | Trạng thái | Đưa lên Owner ở mục |
 | --- | --- | --- | --- | --- |
-| `AMD-ENT-maintenance-01` | PC02 | `contracts/data/entities.yaml` (0.2.0 → 0.3.0) thêm entity `maintenance_window` (`ENT-maintenance-window`, `owner_module: MOD-data-store`; 10 trường: `id`, `owner_id`, `opened_at`, `opened_by`, `reason`, `storage_health_at_open`, `closed_at`, `closed_by`, `snapshot_verified_at`, `restore_record_id`; partial unique "nhiều nhất một cửa sổ đang mở"; ba CHECK) — chỗ ghi mà `contracts/state/storage.yaml` T-ST-03/T-ST-04/T-ST-09 đã đòi từ đầu nhưng hợp đồng entity không khai. Tập `retained_by_owner_decision` của `TXN-purge-all`: 21 → 22, tổng 60 → 61. Thi hành qua `CR-TC-storage-06` (cùng gốc `CR-TC-storage-04`), ghi ở `precode/change-control.md` §10 | **PROVISIONAL** — amendment kỹ thuật dưới `AUTH-COORD-PC02-FIX16`; Owner phê chuẩn ở vòng kế tiếp và **có thể phản đối** | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: cửa sổ bảo trì nay là một hàng bền, và nó nằm trong tập GIỮ LẠI khi `data.purge_all` chạy) |
+| `AMD-ENT-maintenance-01` | PC02 | `contracts/data/entities.yaml` (0.2.0 → 0.3.0) thêm entity `maintenance_window` (`ENT-maintenance-window`, `owner_module: MOD-data-store`; 10 trường: `id`, `owner_id`, `opened_at`, `opened_by`, `reason`, `storage_health_at_open`, `closed_at`, `closed_by`, `snapshot_verified_at`, `restore_record_id`; partial unique "nhiều nhất một cửa sổ đang mở"; ba CHECK) — chỗ ghi mà `contracts/state/storage.yaml` T-ST-03/T-ST-04/T-ST-09 đã đòi từ đầu nhưng hợp đồng entity không khai. Tập `retained_by_owner_decision` của `TXN-purge-all`: 21 → 22, tổng 60 → 61. Thi hành qua `CR-TC-storage-06` (cùng gốc `CR-TC-storage-04`), ghi ở `precode/change-control.md` §10 | **`ACCEPTED (OD-20260909-11)`** — Owner phê chuẩn 2026-09-09 (`AUTH-OWNER-20260909-12`); trước đó `PROVISIONAL` dưới `AUTH-COORD-PC02-FIX16` | mục **Vận hành và bảo mật** (đã có — bổ sung hệ quả: cửa sổ bảo trì nay là một hàng bền, và nó nằm trong tập GIỮ LẠI khi `data.purge_all` chạy) |
 
 **Vì sao Coordinator ký được.** Amendment hòa giải hai hợp đồng mà Owner **đã** phê chuẩn — state
 contract nói một hàng được ghi, entity contract không khai bảng nào để ghi — nên nó không thêm một

@@ -588,6 +588,18 @@ CR-TC-TGAUTH-04 (chat đã liên kết gửi text ngoài allowlist):
    >>> Chat LẠ VẪN IM LẶNG, 0 outbound. AMD-B09 nguyên vẹn.
    Hàng fixture quét biên: SỬA Ở VÒNG HỢP ĐỒNG KẾ TIẾP (CR cho PC08).
 
+── VÒNG MƯỜI MỘT · ĐÃ TRẢ LỜI 2026-09-09 · OD-20260909-11 · AUTH-OWNER-20260909-12 ──
+AMD-ENT-maintenance-01 (entity `maintenance_window`): RATIFY     ✅
+   (Amendment kỹ thuật THỨ HAI của Coordinator — cùng hình dạng với
+    AMD-ENT-owner-01 ở OD-20260907-03. worker-WR DỪNG ở SG-EDGE thay
+    vì tự bịa entity; Coordinator ký tạm; Owner phê chuẩn ở đây.)
+   >>> ĐƯỢC GỠ: tính TẠM THỜI CỦA HỢP ĐỒNG — claim "health lưu bền"
+       của card storage và "restore hai bước" của card backup thôi
+       đứng trên một hợp đồng provisional.
+   >>> KHÔNG ĐƯỢC GỠ: đây KHÔNG phải một lượt xác minh. Ba verdict
+       A3-P5-R1/R2/R3 giữ nguyên phạm vi; mức bằng chứng của hai card
+       KHÔNG đổi; KHÔNG finding nào bị đóng.
+
 ── VẪN CHỜ ─────────────────────────────────────────────────
 Ba dữ kiện Telegram còn lại — GIẢI BẰNG CÁCH NÀO: _______________
    (amendment công cụ cho fetch phân trang, hay Owner tự đọc trang?

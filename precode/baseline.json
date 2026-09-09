@@ -1855,6 +1855,31 @@
           "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi)",
           "registered_by_ruling": "PKT-PC00-FIX30",
           "note_vi": "Bien ban vong muoi KHONG thay the bien ban nao; chung cong don."
+        },
+        {
+          "anchor_id": "OD-20260909-11",
+          "label": "OD-20260909-11",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-09-09, vong muoi mot (1 muc)",
+          "source_file": "precode/owner-decisions-11.md",
+          "effect_record": "precode/decision-register.md §8.16 (worker-W3n, PKT-PC02-FIX20) - BAN GHI HIEU LUC; owner-decisions-11.md la ban ghi SONG HANH THEO QUY UOC. Khi hai ben lech: §8.16 THANG.",
+          "authority_created": "AUTH-OWNER-20260909-12",
+          "evidence_ref": "Claude Code session session_01JRCNWfwz19Kfq1EkCmqnmG, 2026-09-09 - AskUserQuestion sau commit 81bcaf4",
+          "ratifies": ["AMD-ENT-maintenance-01"],
+          "same_shape_as": "OD-20260907-03 (phe chuan AMD-ENT-owner-01) - amendment ky thuat THU NHAT cua Coordinator",
+          "conflict_resolved_vi": "Mau thuan giua HAI file DA DONG BANG: contracts/state/storage.yaml T-ST-03 doi ghi mot hang maintenance-window, contracts/data/entities.yaml khong khai entity nao (CR-TC-storage-04/-06). worker-WR DUNG O SG-EDGE thay vi tu bia entity; Coordinator ky tam PROVISIONAL; Owner phe chuan o vong sau.",
+          "what_it_removes_vi": "Tinh TAM THOI CUA HOP DONG: claim 'health luu ben' cua card storage va 'restore hai buoc' cua card backup thoi dung tren mot hop dong provisional.",
+          "what_it_does_not_remove_vi": "KHONG phai mot luot xac minh - ba verdict A3-P5-R1/R2/R3 giu nguyen pham vi, muc bang chung cua hai card KHONG doi. KHONG dong finding nao (protocol.md §8).",
+          "not_decided": [
+            "Khong co - bien ban tu khai vay; nhung 'khong quyet gi them' noi ve PHAM VI CAU HOI, khong phai pham vi he qua",
+            "Owner VAN khong tao hay doc duoc bao cao (CR-P0-07: khong co TagConfigVersionPort, khong co model embedding that, REQ-OQ09)",
+            "Tag van chua co card; research connector van chua noi (SG-DOC - khong hop dong nao neu host/endpoint cua hai API - cong SG-LIVE)",
+            "E3/E4 VAN NOT_RUN o khap noi: chua mot loi goi live nao toi AI/Telegram/X, chua drill restore that, SP1 CHUA BAO GIO CHAY; ca hai adapter AI van enabled: false",
+            "docs/owner-runbook.md §9.4 van mang chu truoc dot noi day - can WS2 xac minh lai"
+          ],
+          "closed_since_last_round_vi": "F-A3-P5R3-01 (manifest backup ghim pin DOC cu) DA DONG BANG PHEP DO: W6B phat lai manifest (PKT-TC-BACKUP-FIX6, ...-E1-20260909T104000Z.json), worker-W6n TU BAM LAI va dang ky ban phat lai - 0 pin lech ca hai hang (PC09-handoff §W2). Dung con duong auditor neu: PHAT LAI, va KHONG sua hash cua cac ban da bi thay the - do troi cua chung la su that lich su.",
+          "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi mot); §8.16 la ban ghi hieu luc",
+          "registered_by_ruling": "PKT-PC00-FIX34",
+          "note_vi": "Bien ban vong muoi mot KHONG thay the bien ban nao; chung cong don."
         }
       ],
       "invariants": [

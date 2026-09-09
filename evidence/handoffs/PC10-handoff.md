@@ -3795,3 +3795,75 @@ pin **không thể** bắt. Nếu có ai đó cân nhắc nới nó, đây là b
 ---
 
 *PKT-PC10-FIX30 · worker-WP · `lease_released_at` 2026-09-09T03:05Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*
+
+---
+
+# ADDENDUM — PKT-PC10-FIX31 (re-pin `P6`; cổng PC00 chuyển sang byte predicate)
+
+| Trường | Giá trị |
+| --- | --- |
+| packet_id | `PKT-PC10-FIX31` · lease `LEASE-PC10-e32` (fencing 32) · worker `worker-WP` |
+| status | `DONE` · ceiling `DRAFT_FOR_REVIEW` · `lease_released_at` 2026-09-09T10:35Z · next actor `Coordinator` |
+| **pin epoch mới** | **`PC10-PIN-P6-20260909`** (thay `PC10-PIN-P5c-20260909`) · 20 card |
+
+## AE.1 Cổng đã **không** mở như đã viết — và tôi dừng thay vì tự quyết
+
+Predicate của packet đòi `PKT-PC00-FIX34` xuất hiện kèm mốc nhả lease trong `evidence/handoffs/PC00-handoff.md`.
+Sau **55 phút** poll: chuỗi đó **chưa từng xuất hiện** (`present=0`). Không phải chậm — file này vẫn dừng ở
+addendum `FIX23`, đúng lỗ hổng tôi đã nêu ở `PKT-PC10-FIX26` §Z.5 và nhắc lại ở `FIX29`.
+
+Việc **đã** xong trên đĩa: `precode/owner-decisions-11.md` tồn tại, và `verify_cards.py` báo **60** vi phạm
+trên đúng ba file mà packet mô tả — `contracts/data/entities.yaml` (16), `precode/baseline.json` (17),
+`precode/decision-register.md` (17).
+
+Tôi **không** tự coi cổng là mở. Một predicate không khớp là một predicate không khớp, kể cả khi tôi tin
+rằng sự việc phía sau nó đã đúng — tin và đo là hai việc khác nhau, và Worker không được tự nâng cấp cái
+trước thành cái sau. Tôi báo cáo kèm bằng chứng, chạy song song một phép đo **chỉ trên byte**
+(`E0-18` sạch + 142 file đứng yên ba phút) để khi có phán quyết thì pin được ngay, và ghi rõ phép đo đó
+**không** mở cổng.
+
+Coordinator ra phán quyết: coi `FIX34` là đã nhả (W1n báo `LEASE-PC00-e36` nhả 09:50Z), và **đặt thành luật
+đứng: cổng của PC00 từ nay bám vào byte** (`precode/owner-decisions-NN.md` tồn tại + `E0-18` sạch + toàn bộ
+tập pin đứng yên), **không** bám vào một chuỗi addendum. Đây là vòng thứ ba cùng một lớp hỏng; luật mới gỡ
+đúng nguyên nhân chứ không gỡ triệu chứng.
+
+Phép đo lúc pin: `E0-18` sạch, **142** file, `h=93824b1f2742dc89`, ổn định ba phút liên tiếp.
+
+## AE.2 File đã pin nào đổi
+
+Đúng ba, khớp cả với danh sách vi phạm và với phép so từng hàng hash: **`contracts/data/entities.yaml`**
+(amendment chuyển sang `ACCEPTED`), **`precode/baseline.json`**, **`precode/decision-register.md`**.
+
+`docs/owner-runbook.md` (gói của WS2) **không** được pin: **0 hàng pin** trên cả 20 card — kiểm bằng cách
+parse bảng §0, không bằng phỏng đoán. Nó xuất hiện đúng một lần trong văn xuôi của một card, và văn xuôi
+không phải pin.
+
+Phép kiểm hai vùng: **20/20 card giống hệt ngoài §0**. Tập pin **554 dòng hash / 142 file**. Sau khi ghi,
+băm lại tập 142 file đúng cách phép đo đã chạy: **`93824b1f2742dc89`** — khớp giá trị lúc cổng mở, nên
+không có drift trong cửa sổ ghi.
+
+## AE.3 Changes
+
+**25 file**: 20 card `agent-tasks/TC-*.md` (chỉ §0), `agent-tasks/README.md`, `TEMPLATE.md`,
+`WALKTHROUGH.md`, `precode/README.md` (chỉ dòng epoch), và addendum này. Không file nào khác. Không lệnh
+git, không mạng, `PYTHONDONTWRITEBYTECODE=1`.
+
+## AE.4 Evidence
+
+**`verify_cards.py`:** **13/13 PASS, 0 FAIL, 0 BLOCKED, 3 963 assertion, 0 violation**; epoch
+`PC10-PIN-P6-20260909`. exit 0. **Generator verifier (a…m):** `PASS: no failures`. **`--self-test`:**
+**14/14 đột biến bị bắt**. **`E0-18`:** 0 vi phạm tại thời điểm pin. Tất cả `SELF_VALIDATION`.
+
+## AE.5 CR
+
+Không CR mới. **`CR-PC10-17` được thay bằng một luật đứng thay vì một CR:** cổng của PC00 bám byte, không
+bám chuỗi addendum. Lỗ hổng ghi chép của `PC00-handoff.md` (thiếu `FIX24`…) **vẫn còn** và vẫn nên được
+backfill — nhưng nó không còn chặn được một lần pin nào nữa.
+
+**Còn mở:** `CR-PC10-05`, `-07`, `-08`, `-13`, `-16`; `CR-P0-02`, `CR-P0-05`; `CR-PC07-04`; `CR-PC06-04`;
+`REQ-OQ03`; **A3-R2 chưa chạy**; probe `NOT_RUN`; E2–E4 `NOT_RUN`; validator OpenAPI 3.1 `NOT_RUN`;
+`PC00-handoff.md` thiếu addendum `FIX24`…`FIX34`.
+
+---
+
+*PKT-PC10-FIX31 · worker-WP · `lease_released_at` 2026-09-09T10:35Z · ceiling `DRAFT_FOR_REVIEW` · không mục nào là independent audit.*

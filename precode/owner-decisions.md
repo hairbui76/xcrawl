@@ -41,6 +41,9 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > ký** `REQ-A5`) và `OD-20260908-08` (authority `AUTH-OWNER-20260908-09`: Owner **đích thân ký** `REQ-A5`
 > cho Anthropic, chấp nhận tường minh bảo đảm `TC-A5-01`). Hai file đó là **bản ghi song hành theo quy ước**;
 > hiệu lực thực chất nằm ở `decision-register.md` §8.14.3 và §8.15.1.
+> Vòng mười một ở `precode/owner-decisions-11.md` — `OD-20260909-11` (authority `AUTH-OWNER-20260909-12`,
+> 2026-09-09): phê chuẩn `AMD-ENT-maintenance-01`, amendment kỹ thuật **thứ hai** của Coordinator — cùng hình
+> dạng với `OD-20260907-03`. Bản ghi hiệu lực ở `decision-register.md` §8.16.
 > Vòng mười ở `precode/owner-decisions-10.md` — `OD-20260908-10` (authority `AUTH-OWNER-20260908-11`,
 > 2026-09-08): ba câu hỏi do card Giai đoạn 5 nêu — lưu target **chưa phân tích** kèm nhãn cố định (`B16`
 > **không** bị nới), giữ `/save <id>` làm trigger tạm, và nhắc ba lệnh **chỉ** cho chat đã liên kết (chat lạ
