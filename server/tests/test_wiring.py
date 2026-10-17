@@ -207,6 +207,25 @@ def test_readiness_is_401_before_login_and_200_after(
     assert "modules" in response.json()
 
 
+def test_each_run_route_names_itself_when_it_refuses(
+    wired: tuple[TestClient, Settings, str],
+) -> None:
+    """``run.list`` and ``run.run_now`` share one auth scheme but not one operation id.
+
+    The shared helper used to stamp ``run.list`` on both refusals, so an unauthenticated
+    "run now" pointed its reader at the wrong route. Seen on a real uvicorn process by
+    ``tools/loopback_drill.py`` (G-7), not by any in-process test.
+    """
+    client, _settings_obj, _owner = wired
+    listed = client.get("/v1/runs", headers=WIRE_HEADERS)
+    run_now = client.post(
+        "/v1/runs/run-now", headers=WIRE_HEADERS, json={"request_id": "01JREQ0000000000000000000A"}
+    )
+    assert listed.status_code == run_now.status_code == 401
+    assert listed.json()["details_safe"]["operation_id"] == "run.list"
+    assert run_now.json()["details_safe"]["operation_id"] == "run.run_now"
+
+
 def test_runs_list_is_200_and_empty_on_a_fresh_database(
     wired: tuple[TestClient, Settings, str],
 ) -> None:

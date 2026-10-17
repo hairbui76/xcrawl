@@ -321,8 +321,14 @@ async def get_worker_status(request: Request) -> Response:
 # --------------------------------------------------------------------------------------
 
 
-def require_owner_or_linked_chat(request: Request) -> None:
+def require_owner_or_linked_chat(
+    request: Request, operation: OperationId = OperationId.RUN_LIST
+) -> None:
     """``owner_session_or_linked_chat`` for ``run.list`` and ``run.run_now``.
+
+    ``operation`` is the route's own id, echoed in the refusal: the scheme is shared, the
+    operation is not, and a ``run.run_now`` refusal that named ``run.list`` sent the reader
+    to the wrong route (observed on a real process by ``tools/loopback_drill.py``).
 
     Two alternative requirements, and the Telegram branch is satisfied by the ingress secret
     the adapter presents. Compared in constant time via the auth service's own helper where
@@ -346,7 +352,7 @@ def require_owner_or_linked_chat(request: Request) -> None:
         raise JobError(
             ErrorCode.UNAUTHORIZED,
             details_safe={
-                "operation_id": OperationId.RUN_LIST.value,
+                "operation_id": operation.value,
                 "required_auth_scope": AuthScope.OWNER_SESSION_OR_LINKED_CHAT.value,
             },
         ) from None
@@ -403,7 +409,7 @@ async def post_run_now(request: Request) -> Response:
         except JobError:
             raise
         except Exception:  # noqa: BLE001 - fall through to the Telegram alternative
-            require_owner_or_linked_chat(request)
+            require_owner_or_linked_chat(request, OperationId.RUN_RUN_NOW)
         body = await _body(request)
         request_id = str(body.get("request_id", ""))
         return _ok(service.run_now(_context(request), request_id=request_id))

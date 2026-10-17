@@ -282,7 +282,7 @@ curl -i -X POST http://127.0.0.1:8080/v1/auth/login \
   -H 'Content-Type: application/json' \
   -H 'X-Schema-Version: 0.3.0' \
   -H 'X-Request-Id: <ULID của bạn>' \
-  -d '{"username":"owner","password":"<mật-khẩu>"}'
+  -d '{"username":"Owner","password":"<mật-khẩu>"}'
 ```
 
 **Kỳ vọng — `đã chạy ở đây` trên tiến trình uvicorn thật:** `HTTP 200` và thân
@@ -406,13 +406,22 @@ thoát `0`. `ai_providers` rỗng vì chưa adapter nào được bật ([§8](#
 thoát **`2`**. Nó **không** đoán một địa chỉ server, **không** ghi hàng nào, và nói đúng biến
 môi trường bạn còn thiếu. Đó là lời từ chối đúng, không phải lỗi của bạn.
 
-> **`KHOẢNG TRỐNG G-7` — ĐÃ ĐÓNG một nửa.** Worker **không còn là stub**: `--run` là một vòng
-> chạy thật, biết đăng ký, heartbeat và claim khi có `RR_SERVER_URL` cùng token. Cái **chưa**
-> chứng minh được ở đây là vòng chạy đó **nói chuyện với một server thật** — điều đó cần cả
-> hai tiến trình cùng cấu hình, và audit `A3-P5-R1` ghi rõ nó **không** chạy được vòng backoff
-> của adapter bị tắt trong đợt kiểm đó. Vì vậy **"collector online"** theo `deployment.md` §6
-> (đăng ký hợp lệ **và** heartbeat trong `online_threshold` = 90 s **và** server ghi được)
-> vẫn **chưa từng được quan sát**.
+> **`KHOẢNG TRỐNG G-7` — tầng giao vận ĐÃ ĐÓNG; hai lệnh `--run` vẫn bị chặn bởi việc của bạn.**
+> Worker **không còn là stub**, nhưng `rr-worker --run` thoát `3` (`no_dispatchable_adapter`)
+> **trước khi** chạm server, vì cả hai adapter `enabled: false` (`G-8`); `rr-collector --run`
+> thoát vì chưa có bộ điều khiển X (`SP1`). Cả hai lời từ chối là đúng.
+>
+> **`đã chạy ở đây`** (2026-10-17) — `uv run python tools/loopback_drill.py`: dựng database tạm,
+> `rr-admin migrate` + `bootstrap-owner`, chạy `uvicorn server.app.main:app` như **một tiến trình
+> riêng** trên `127.0.0.1`, rồi chạy **vòng collector thật** (`CollectorLoop`, `httpx` thật, socket
+> TCP thật) với nguồn X **ghi sẵn**, và `AnalysisServerPort` thật. Quan sát được:
+> `POST /v1/runs/run-now` **200** `queued` → collector `register` (`heartbeat_interval_s: 30`,
+> `lease_granted: false`) → claim → 5 bài → `acked_through_ingest_sequence: 5` → release;
+> `GET /v1/workers/status` **200** với collector **`online_state: "online"`** — lần đầu tiên
+> **"collector online"** của `deployment.md` §6 được quan sát; worker claim **200**
+> `{"task": null, "reason": "no_enabled_provider"}`. Thoát `0`.
+>
+> Cái drill **không** chứng minh: hành vi thật của X và của bất kỳ provider AI nào.
 
 Cấu hình worker cần (`secrets.md` §3): `RR_SERVER_URL`, và `analysis_worker_token` trong một
 file **`0600`** ở thư mục cấu hình của user — **không bao giờ trong repo**.
@@ -1068,16 +1077,16 @@ Nguồn cho cột "quan sát được": ba báo cáo audit độc lập
 | ~~`G-5`~~ | probe giải `output_dir` theo **cwd** và in đường dẫn đã chọn | `--dry-run` từ thư mục tạm: **không ghi gì** — kiểm lại bằng `find`, chỉ còn `cfg.json`. [§6.3](#63-đường-dẫn-đầu-ra--khoảng-trống-g-5-đã-đóng) |
 | ~~`G-6`~~ | card thứ 20 `TC-secret-settings-service`: `server/app/secret/` + `settings_service/`, migration `0014`, AES-256-GCM | Master key **không đặt** ⇒ chạy được, `secret.*` từ chối; **đặt sai** ⇒ **từ chối khởi động**. [§8.4](#84-api-key-để-ở-đâu) |
 
-### 11.2 Bốn khoảng trống **còn mở** — và ba trong bốn chỉ **bạn** đóng được
+### 11.2 Khoảng trống **còn mở** — `G-10` đã đóng; ba cái còn lại đều chờ **bạn**
 
 | # | Khoảng trống | Hệ quả với bạn | Ai đóng được |
 | --- | --- | --- | --- |
-| `G-7` | **Vòng chạy collector/worker chưa từng nói chuyện với một server thật.** Cả hai nay là tiến trình thật và **từ chối có lý do** khi thiếu `RR_SERVER_URL`; nhưng đăng ký + heartbeat + claim **chưa từng được quan sát** đầu-cuối. Audit `A3-P5-R1` ghi rõ vòng backoff của adapter bị tắt cũng chưa chạy như một tiến trình | **"collector online"** (`deployment.md` §6) vẫn chưa từng xảy ra | **Bạn** — cấu hình hai tiến trình và chạy chúng cùng server |
+| `G-7` | **Tầng giao vận đã đóng** (`tools/loopback_drill.py`, 2026-10-17): đăng ký, claim, ingest, checkpoint, release và "collector online" đều quan sát được qua socket TCP với một server uvicorn thật. **Còn mở** ở chỗ hai lệnh `--run` đã phát hành dừng trước khi chạm server, đúng như thiết kế | Collector cần `SP1`; worker cần một adapter bật (`G-8`) | **Bạn** — `SP1` và `G-8` |
 | `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Cả hai adapter `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
 | `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram khoá ở phạm vi **chỉ chữ, không nút** | **Bạn** — đọc tài liệu Bot API ([§12.2](#122-mười-việc-chỉ-bạn-làm-được) mục 7) |
 | ~~`G-10`~~ | **Đã đóng theo phạm vi máy một người dùng** (`OD-20261017-12` mục 1): `rr-backup` so `sha256` của token với `RR_BACKUP_OPERATOR_TOKEN_SHA256` qua `Settings`, cùng biến server dùng; bản rõ `..._EXPECTED` không còn được đọc | Trên máy **dùng chung** vẫn không phải ranh giới giữa user cục bộ — xem [§9.1](#91-xác-thực-backupoperatortoken-và-chỉ-nó) | — |
 
-### 11.3 Bốn phát hiện audit còn `OPEN` mà bạn nên biết
+### 11.3 Phát hiện audit và phát hiện mới mà bạn nên biết
 
 Không phải khoảng trống của runbook, nhưng chúng chạm đúng những gì bạn sắp làm:
 
@@ -1087,6 +1096,8 @@ Không phải khoảng trống của runbook, nhưng chúng chạm đúng nhữn
 | ~~`F-A3-P5-04`~~ | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError` | **`VERIFIED`** (`A3-P5-R2` §2, `precode/review.md`): năm console script `rr-*` chạy từ mọi cwd, và từ 2026-10-17 `python tools/backup_cli.py --help` từ gốc repo **cũng chạy** (`đã chạy ở đây`). Bảng này đã ghi nhầm `OPEN` |
 | `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
 | ~~`CR-TC-SECRET-01`~~ | `entities.yaml` không khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | **Đã trả lời** (`OD-20261017-12` mục 3): ở ngoài DB **là thiết kế**. `secrets.md` 0.1.1 §4.1 nói đúng điều đó; hệ quả: **backup DB không chứa ciphertext** — kế hoạch khôi phục secret phải giữ cả master key **lẫn** thư mục material. [§8.4](#84-api-key-để-ở-đâu) |
+| `CR-G7-01` | **`run.posts_ingested_new` không bao giờ được ghi.** `entities.yaml`/`run.yaml` nói nó "bằng tổng `ingest_receipt.posts_inserted` của run", nhưng không hàm nào ghi cột này: drill G-7 nạp 5 bài mới và `GET /v1/runs` vẫn trả `posts_ingested_new: 0`. Cột thuộc `MOD-job-service`, số liệu thuộc `MOD-ingest-api`, và không transition nào nói ai ghi — nên đây là một CR cho PC03/PC02, **không** sửa tự phát | `OPEN` — màn Runs hiện "0 bài mới" cho mọi đợt |
+| ~~`F-G7-02`~~ | `POST /v1/runs/run-now` không đăng nhập trả `401` với `operation_id: run.list` | **Đã sửa** (`server/app/jobs/router.py`, test `server/tests/test_wiring.py::test_each_run_route_names_itself_when_it_refuses`) |
 
 ---
 
