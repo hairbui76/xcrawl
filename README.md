@@ -49,7 +49,7 @@ hỗ trợ khi bạn chạy từ thư mục khác:
 
 | Lệnh | Là gì |
 | --- | --- |
-| `uv run rr-admin {migrate,bootstrap-owner,status}` | ba lệnh vận hành ở trên |
+| `uv run rr-admin {migrate,bootstrap-owner,status,embedding-bootstrap}` | ba lệnh vận hành ở trên, và tạo + kích hoạt generation embedding từ model cục bộ (runbook §4.1b) |
 | `uv run rr-backup …` | CLI backup/restore (`tools/backup_cli.py`) |
 | `uv run rr-collector --print-registration` | collector trên máy cá nhân |
 | `uv run rr-worker --print-capabilities` | analysis worker trên máy cá nhân |

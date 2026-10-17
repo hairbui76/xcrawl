@@ -1911,6 +1911,23 @@
           "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi hai) va §8.17",
           "registered_by_ruling": "OD-20261017-12",
           "note_vi": "Bien ban vong muoi hai KHONG thay the bien ban nao; chung cong don."
+        },
+        {
+          "anchor_id": "OD-20261017-13",
+          "label": "OD-20261017-13",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-10-17, vong muoi ba (2 muc)",
+          "source_file": "precode/owner-decisions-13.md",
+          "effect_record": "precode/owner-decisions-13.md + precode/decision-register.md §8.18",
+          "authority_created": "AUTH-OWNER-20261017-14",
+          "evidence_ref": "Claude Code session session_01XQgXrAiGrnAUFS3jowQf2w, 2026-10-17 - nguyen van: lam ca bon viec di, model thi dung opus 5.5",
+          "decides": [
+            "REQ-OQ03: claude-opus-5-5 cho ca ba tac vu (providers.yaml 0.3.0, mot muc)",
+            "ISO-03 endpoint: api.anthropic.com",
+            "Lenh bat dau cho transport SDK, khoi tao generation embedding, vong bao cao"
+          ],
+          "what_it_does_not_remove_vi": "Adapter VAN enabled: false - can bang chung co lap E3. Fallback phia server KHONG bat (§6 default off).",
+          "registered_by_ruling": "OD-20261017-13",
+          "note_vi": "Bien ban vong muoi ba KHONG thay the bien ban nao; chung cong don."
         }
       ],
       "invariants": [

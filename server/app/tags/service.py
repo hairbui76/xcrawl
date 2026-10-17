@@ -777,6 +777,54 @@ def _embed(ctx: TagContext, subjects: Sequence[_Subject]) -> dict[str, Any]:
     return {"state": "generated", "embedding_generation_id": generation_id}
 
 
+def active_subjects(ctx: TagContext) -> list[_Subject]:
+    """Every subject a report selection needs a vector for: active tags, aliases, exclusions."""
+    with ctx.engine.connect() as connection:
+        payload = live_payload(connection, ctx.owner_id)
+    return (
+        [_Subject(SubjectType.TAG, str(t["id"]), str(t["text"])) for t in payload["tags"]]
+        + [_Subject(_ALIAS_TYPE, str(a["id"]), str(a["text"])) for a in payload["tag_aliases"]]
+        + [
+            _Subject(_EXCLUSION_TYPE, str(e["id"]), str(e["text"]))
+            for e in payload["tag_exclusions"]
+        ]
+    )
+
+
+def embed_into_generation(ctx: TagContext, *, generation_id: str) -> int:
+    """``embedding.generate_vectors`` for every active subject, into a *named* generation.
+
+    Fixture ``reporting/n`` event 3: during a rebuild, ``MOD-tag-service`` writes the new
+    generation's vectors for tags, aliases and exclusions. The generation is an argument —
+    typically one still ``building`` — never "whichever is active". Idempotent: a subject
+    that already has a vector in that generation is returned unchanged by the embedding
+    service. Returns the number of subjects sent.
+    """
+    if ctx.embedding is None:
+        raise TagError(
+            ErrorCode.EMBEDDING_GENERATION_MISMATCH,
+            message_safe="Chưa cấu hình model embedding cục bộ.",
+            details_safe={
+                "expected_generation_id": generation_id,
+                "seen_generation_id": None,
+                "dimension_expected": None,
+                "dimension_seen": None,
+            },
+        )
+    subjects = active_subjects(ctx)
+    if subjects:
+        ctx.embedding.generate_vectors(
+            ctx.owner_id,
+            caller_module=OWNER_MODULE,
+            generation_id=generation_id,
+            requests=[
+                VectorRequest(subject_type=s.subject_type, subject_id=s.subject_id, text=s.text)
+                for s in subjects
+            ],
+        )
+    return len(subjects)
+
+
 # --------------------------------------------------------------------------------------
 # Mutations
 # --------------------------------------------------------------------------------------
@@ -1297,6 +1345,8 @@ __all__ = [
     "content_hash_of",
     "create_tag",
     "delete_tag",
+    "embed_into_generation",
+    "active_subjects",
     "freeze_config_version",
     "get_active_config_version",
     "list_tags",

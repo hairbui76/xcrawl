@@ -215,7 +215,7 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 > | `collector_token` | `RR_COLLECTOR_TOKEN` chưa đặt ⇒ collector gọi ingest nhận `401` |
 > | `telegram_ingress_secret` | `RR_TELEGRAM_WEBHOOK_SECRET` chưa đặt ⇒ **mọi update bị từ chối**, đúng hướng default-deny |
 > | `delivery_context.transport` | chưa cấu hình bot token Telegram. `status` nói thẳng: *"MOD-secret-service exists now, so this is a missing credential, not a missing module"* |
-> | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng cả hai adapter giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
+> | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng adapter `anthropic@claude-opus-5-5` (`OD-20261017-13`) giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
 > | `secret_store` | `RR_SECRET_MASTER_KEY` chưa đặt ⇒ `secret.*` từ chối. *"No key is ever generated or defaulted"* — xem §7.1 và §8.4 |
 > | `local_embedding_model` | `RR_EMBEDDING_MODEL_PATH` chưa đặt ⇒ vector của tag ở trạng thái `pending` và mọi lần build báo cáo bị từ chối (`REQ-OQ09`, ứng viên làm việc `intfloat/multilingual-e5-small`). *(Bản trước của dòng này là `report_context` / `CR-P0-07`; `TC-tag-service` đã đóng nó — §4.1b.)* |
 > | `research_connector` | `SG-DOC`: **không hợp đồng nào** nêu host hay endpoint của arXiv/OpenAlex (`endpoint_template` là `None`, `CR-PC05-03`); `SG-LIVE`: một lời gọi thật là E3, cần packet riêng |
@@ -373,8 +373,22 @@ encoder thay thế nào được cắm vào. Khi bạn có model trên đĩa:
 | `RR_EMBEDDING_MODEL_NAME` | mặc định `intfloat/multilingual-e5-small` |
 | `RR_EMBEDDING_MODEL_DIMENSION` | mặc định `384` |
 
-Còn thiếu, ghi rõ: chưa có lệnh nào tạo/kích hoạt một `embedding_generation`, và chưa có tiến trình
-nào tự build/publish báo cáo theo lịch (`TC-tag-service` §1 non-goals).
+Rồi tạo, nạp và kích hoạt generation đầu tiên (`OD-20261017-13`):
+
+```bash
+export RR_EMBEDDING_MODEL_PATH=/đường/dẫn/multilingual-e5-small   # đã có sẵn trên đĩa
+export RR_EMBEDDING_MODEL_VERSION=<revision cố định>
+uv run rr-admin embedding-bootstrap
+```
+
+Lệnh này mở một generation `building` (`expected_vector_count` = số tag/alias/exclusion đang
+hoạt động), sinh vector cho từng subject vào đó, rồi kích hoạt — generation cũ (nếu có) vẫn
+`active` cho tới khi bước cuối commit. **Kỳ vọng:** JSON với `"activated": true` và
+`generation_id`. Thiếu `RR_EMBEDDING_MODEL_PATH` ⇒ dừng mà không ghi gì; bị guard từ chối ⇒
+mã thoát `2` kèm `code`. Không bước nào tải model.
+
+Còn thiếu, ghi rõ: chưa có tiến trình nào tự build/publish báo cáo theo lịch (`TC-tag-service`
+§1 non-goals) — xem §11.2.
 
 **`text` của tag không sửa được** (`PATCH` chỉ nhận `similarity_threshold`, `aliases`,
 `exclusions`): N ngày với ngược tính theo chữ, nên đổi chữ = xoá rồi tạo lại (`CR-TC-TAG-06`).
@@ -440,7 +454,7 @@ môi trường bạn còn thiếu. Đó là lời từ chối đúng, không ph�
 
 > **`KHOẢNG TRỐNG G-7` — tầng giao vận ĐÃ ĐÓNG; hai lệnh `--run` vẫn bị chặn bởi việc của bạn.**
 > Worker **không còn là stub**, nhưng `rr-worker --run` thoát `3` (`no_dispatchable_adapter`)
-> **trước khi** chạm server, vì cả hai adapter `enabled: false` (`G-8`); `rr-collector --run`
+> **trước khi** chạm server, vì adapter duy nhất `enabled: false` (`G-8`); `rr-collector --run`
 > thoát vì chưa có bộ điều khiển X (`SP1`). Cả hai lời từ chối là đúng.
 >
 > **`đã chạy ở đây`** (2026-10-17) — `uv run python tools/loopback_drill.py`: dựng database tạm,
@@ -691,15 +705,21 @@ Hợp đồng: [`contracts/ai/providers.yaml`](../contracts/ai/providers.yaml),
 embedding là model local ở server (`REQ-D48`/`REQ-D50`). `SEC-P5`: **không secret nào là bắt
 buộc**.
 
-### 8.2 Hai adapter đã đăng ký — và vì sao **cả hai** `enabled: false`
+### 8.2 Adapter đã đăng ký — và vì sao nó `enabled: false`
 
-`providers.yaml` §2.1 ghi hai mục của một nhà cung cấp thật (Anthropic), theo `REQ-OQ03` /
-`OD-20260908-06`:
+`providers.yaml` §2.1 (bản `0.3.0`) ghi **một** mục của Anthropic, theo `REQ-OQ03` /
+`OD-20261017-13` (trước đó là hai mục Sonnet 5 / Opus 5 của `OD-20260908-06`):
 
-| `adapter_id` | Tác vụ | `enabled` |
-| --- | --- | --- |
-| `anthropic@claude-sonnet-5` | `label`, `direction_phrasing` | **`false`** |
-| `anthropic@claude-opus-5` | `summary` | **`false`** |
+| `adapter_id` | Tác vụ | `effort` | Endpoint | `enabled` |
+| --- | --- | --- | --- | --- |
+| `anthropic@claude-opus-5-5` | `label`, `summary`, `direction_phrasing` | `low` / `medium` / `medium` | `https://api.anthropic.com` (allowlist `api.anthropic.com`) | **`false`** |
+
+Transport thật là `AnthropicTransport` (`worker/app/adapter/api_provider.py`, SDK `anthropic`
+chính thức): một lời gọi cho mỗi task, **SDK không retry** (`max_retries=0`), không gửi tool
+nào, `stop_reason: refusal` là lỗi provider chứ không phải kết quả rỗng. `rr-worker --run` dùng
+nó — nhưng vẫn thoát với `no_dispatchable_adapter` chừng nào mục trên còn `enabled: false`.
+**Không có fallback model phía server**: `providers.yaml` §6 mặc định tắt fallback; muốn bật là
+một quyết định Owner mới.
 
 **Cái đang chặn là *cô lập*, không phải điều khoản.** `REQ-A5` (điều khoản Anthropic) đã được
 **Owner ký xác nhận** — `OD-20260908-08`, `AUTH-OWNER-20260908-09`, 2026-09-08. Cái giữ
@@ -1109,13 +1129,14 @@ Nguồn cho cột "quan sát được": ba báo cáo audit độc lập
 | ~~`G-5`~~ | probe giải `output_dir` theo **cwd** và in đường dẫn đã chọn | `--dry-run` từ thư mục tạm: **không ghi gì** — kiểm lại bằng `find`, chỉ còn `cfg.json`. [§6.3](#63-đường-dẫn-đầu-ra--khoảng-trống-g-5-đã-đóng) |
 | ~~`G-6`~~ | card thứ 20 `TC-secret-settings-service`: `server/app/secret/` + `settings_service/`, migration `0014`, AES-256-GCM | Master key **không đặt** ⇒ chạy được, `secret.*` từ chối; **đặt sai** ⇒ **từ chối khởi động**. [§8.4](#84-api-key-để-ở-đâu) |
 
-### 11.2 Khoảng trống **còn mở** — `G-10` đã đóng; ba cái còn lại đều chờ **bạn**
+### 11.2 Khoảng trống **còn mở** — `G-10` đã đóng; bốn cái còn lại đều chờ **bạn**
 
 | # | Khoảng trống | Hệ quả với bạn | Ai đóng được |
 | --- | --- | --- | --- |
 | `G-7` | **Tầng giao vận đã đóng** (`tools/loopback_drill.py`, 2026-10-17): đăng ký, claim, ingest, checkpoint, release và "collector online" đều quan sát được qua socket TCP với một server uvicorn thật. **Còn mở** ở chỗ hai lệnh `--run` đã phát hành dừng trước khi chạm server, đúng như thiết kế | Collector cần `SP1`; worker cần một adapter bật (`G-8`) | **Bạn** — `SP1` và `G-8` |
-| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Cả hai adapter `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
+| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Adapter `anthropic@claude-opus-5-5` `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
 | `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram khoá ở phạm vi **chỉ chữ, không nút** | **Bạn** — đọc tài liệu Bot API ([§12.2](#122-mười-việc-chỉ-bạn-làm-được) mục 7) |
+| `G-11` | **Chưa có đường ống báo cáo chạy theo lịch** (khảo sát 2026-10-17, `OD-20261017-13` mục 2): không tiến trình nào tick lịch, chuyển pha run, gọi `analysis.enqueue_tasks` hay `report.build`; chưa có văn bản prompt cho ba tác vụ (`tasks.yaml` chỉ có `prompt_version`); chưa có đường sinh vector cho `work_label`; bản đồ cô lập chưa có chỗ cho `ISO-04`/`ISO-05` (`CR-PC06-OQ03-01`); cổng delivery/run_outcome chưa nối | `embedding-bootstrap` và transport Anthropic đã có, nhưng một đợt báo cáo đầu-cuối chưa chạy được | **Bạn** quyết các điểm hợp đồng (prompt, vector nhãn, slot cô lập, chuyển pha), rồi mới viết mã |
 | ~~`G-10`~~ | **Đã đóng theo phạm vi máy một người dùng** (`OD-20261017-12` mục 1): `rr-backup` so `sha256` của token với `RR_BACKUP_OPERATOR_TOKEN_SHA256` qua `Settings`, cùng biến server dùng; bản rõ `..._EXPECTED` không còn được đọc | Trên máy **dùng chung** vẫn không phải ranh giới giữa user cục bộ — xem [§9.1](#91-xác-thực-backupoperatortoken-và-chỉ-nó) | — |
 
 ### 11.3 Phát hiện audit và phát hiện mới mà bạn nên biết

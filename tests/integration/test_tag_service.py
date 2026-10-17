@@ -698,3 +698,57 @@ def test_wire_headers_are_required(client: TestClient) -> None:
     assert response.json()["details_safe"]["field_path"] == "header.X-Request-Id"
     missing_key = client.post("/v1/tags", headers=headers, json={"text": "z"})
     assert missing_key.json()["details_safe"]["field_path"] == "header.Idempotency-Key"
+
+
+# --------------------------------------------------------------------------- rr-admin
+
+
+def test_embedding_bootstrap_builds_and_activates_a_generation_for_every_subject(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    encoder: DeterministicHashEncoder,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``rr-admin embedding-bootstrap``: tags created while no model was configured get
+    their vectors in a new generation, which is then the active one (OD-20261017-13)."""
+    import json
+
+    from server.app import wiring
+    from tools import rr_admin
+
+    database = tmp_path / "boot.db"
+    upgrade_database(database)
+    seeded = create_sqlite_engine(database)
+    try:
+        _seed(seeded)
+        bare = TagContext(engine=seeded, owner_id=OWNER_ID, activation=BackfillActivationAdapter())
+        _create(bare, "machine learning", "IDEMP-B-CREATE-0001", aliases=["ML"])
+        _create(bare, "protein folding", "IDEMP-B-CREATE-0002")
+    finally:
+        seeded.dispose()
+
+    monkeypatch.setenv("RR_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("RR_DATABASE_URL", str(database))
+    monkeypatch.setattr(wiring, "local_encoder", lambda settings: None)
+    with pytest.raises(SystemExit, match="RR_EMBEDDING_MODEL_PATH"):
+        rr_admin.main(["embedding-bootstrap"])
+
+    monkeypatch.setattr(wiring, "local_encoder", lambda settings: encoder)
+    assert rr_admin.main(["embedding-bootstrap"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["activated"] is True
+
+    engine = create_sqlite_engine(database)
+    try:
+        assert _count(engine, "SELECT COUNT(*) FROM tag_vector") == 3, "two tags and one alias"
+        assert (
+            _count(
+                engine,
+                "SELECT COUNT(*) FROM embedding_generation WHERE state = 'active' AND id = :g "
+                "AND built_vector_count = 3",
+                g=printed["generation_id"],
+            )
+            == 1
+        )
+    finally:
+        engine.dispose()

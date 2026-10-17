@@ -40,6 +40,7 @@ from rr_contracts.generated.constants import CONTRACT_SCHEMA_VERSION
 from rr_contracts.generated.states import AnalysisTaskType
 
 from worker.app.adapter.api_provider import (
+    AnthropicTransport,
     ApiProviderAdapter,
     ProviderRequest,
     ProviderResponse,
@@ -165,9 +166,9 @@ def load_config(environ: dict[str, str] | None = None) -> WorkerConfig:
 class RefusingTransport:
     """A provider transport that raises if anything ever tries to send through it.
 
-    Used where an adapter object must exist but no call may be made — probing, and the
-    not-yet-reachable branch of :func:`_run`. A transport that quietly returned an empty
-    answer would let a missing configuration read as a working one.
+    Used where an adapter object must exist but no call may be made — probing. A transport
+    that quietly returned an empty answer would let a missing configuration read as a
+    working one.
     """
 
     def send(self, request: ProviderRequest, *, credential: TaskCredential) -> ProviderResponse:
@@ -217,7 +218,7 @@ def _print_capabilities() -> int:
                 "schema_version": CONTRACT_SCHEMA_VERSION,
                 "tasks_supported": advertised_task_types(),
                 # Still empty, and for the same reason as in Phase 0: `ai_providers` lists
-                # providers this worker may actually use, and both registered adapters are
+                # providers this worker may actually use, and the one registered adapter is
                 # `enabled: false` while isolation is unverified. `--print-adapters` shows
                 # the registry behind that emptiness.
                 "ai_providers": [],
@@ -249,8 +250,8 @@ def _run(config: WorkerConfig) -> int:
     entries = load_registered_adapters()
     usable = [entry for entry in entries if entry.dispatchable]
     if not usable:
-        # Not an error: the contract's answer. Both adapters are `enabled: false` because
-        # isolation is unverified (B13), so there is no work this process could finish.
+        # Not an error: the contract's answer. The one registered adapter is `enabled: false`
+        # because isolation is unverified (B13), so there is no work this process could finish.
         # Saying so and exiting beats spinning against a queue that will refuse anyway.
         print(
             json.dumps(
@@ -272,10 +273,13 @@ def _run(config: WorkerConfig) -> int:
     with httpx.Client(base_url=config.server_url, timeout=30.0) as client:  # pragma: no cover
         loop = AnalysisWorkerLoop(
             server=AnalysisServerPort(client, token=config.token()),
-            # `RefusingTransport` on purpose: an entry that is dispatchable but has no wired
-            # provider transport must fail loudly. Inventing an endpoint here is exactly the
-            # class of guess ISO-03 exists to prevent.
-            adapter=ApiProviderAdapter(usable[0], transport=RefusingTransport(), endpoint=""),
+            # The endpoint comes from the registry entry (OD-20261017-13), never from this
+            # file: ISO-03 checks it against the entry's allowlist before any socket opens.
+            adapter=ApiProviderAdapter(
+                usable[0],
+                transport=AnthropicTransport(effort_by_task=usable[0].effort_by_task),
+                endpoint=usable[0].endpoint,
+            ),
             worker_instance_id=config.worker_instance_id,
             credentials=AbsentSecretService(),
         )

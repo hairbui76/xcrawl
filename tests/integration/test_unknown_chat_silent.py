@@ -362,11 +362,13 @@ def test_over_the_rate_limit_the_code_is_not_even_looked_up(engine) -> None:
             context, _message(100 + index, STRANGER_CHAT, "RR-ZZZZZZZZ", at=now), now=now
         )
 
+    # All six attempts share one `attempted_at`, and a ULID's low 80 bits are random, so
+    # `id` does not break the tie in insertion order; `rowid` does.
     with engine.connect() as connection:
         outcomes = [
             row[0]
             for row in connection.execute(
-                text("SELECT outcome FROM telegram_link_attempt ORDER BY attempted_at, id")
+                text("SELECT outcome FROM telegram_link_attempt ORDER BY attempted_at, rowid")
             )
         ]
     assert len(outcomes) == policy.rate_limit_attempts + 1

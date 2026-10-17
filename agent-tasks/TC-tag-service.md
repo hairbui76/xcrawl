@@ -23,7 +23,7 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản — đã có: O
 
 ## §0. Baseline pin
 
-**Pin epoch: `PC10-PIN-P7-20261017`** (thay `PC10-PIN-P6-20260909`; các epoch cũ hơn: `PC10-PIN-P6`, `PC10-PIN-P5c`, `PC10-PIN-P5b`, `PC10-PIN-P4b`, `PC10-PIN-P4`, `PC10-PIN-P3b`, `PC10-PIN-P3`, `PC10-PIN-P2d`, `PC10-PIN-P2c`, `PC10-PIN-P2b`, `PC10-PIN-P2`, `PC10-PIN-P1d`, `PC10-PIN-P1c`, `PC10-PIN-P1b`, `PC10-PIN-P1`, `PC10-PIN-OD01e`, `PC10-PIN-OD01d`, `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). **Card thứ 21**, pin tại cùng epoch với 20 card kia: **không** file đã pin nào đổi byte giữa lần pin `P7` và lúc card này được thêm, nên 20 card kia **không** được sinh lại. Cùng epoch nghĩa là cùng tập byte nguồn. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
+**Pin epoch: `PC10-PIN-P8-20261017`** (thay `PC10-PIN-P7-20261017`; các epoch cũ hơn: `PC10-PIN-P7`, `PC10-PIN-P6`, `PC10-PIN-P5c`, `PC10-PIN-P5b`, `PC10-PIN-P4b`, `PC10-PIN-P4`, `PC10-PIN-P3b`, `PC10-PIN-P3`, `PC10-PIN-P2d`, `PC10-PIN-P2c`, `PC10-PIN-P2b`, `PC10-PIN-P2`, `PC10-PIN-P1d`, `PC10-PIN-P1c`, `PC10-PIN-P1b`, `PC10-PIN-P1`, `PC10-PIN-OD01e`, `PC10-PIN-OD01d`, `PC10-PIN-OD01c`, `PC10-PIN-OD01b`, `PC10-PIN-OD01`, `PC10-PIN-FCW4f`…`PC10-PIN-FCW4-20260907`, `PC10-PIN-20260907`). **Card thứ 21**, pin tại cùng epoch với 20 card kia: **không** file đã pin nào đổi byte giữa lần pin `P7` và lúc card này được thêm, nên 20 card kia **không** được sinh lại. Cùng epoch nghĩa là cùng tập byte nguồn. **`P8` (2026-10-17)** pin sau vòng `OD-20261017-13`: `contracts/ai/providers.yaml` lên `0.3.0` (một mục `anthropic@claude-opus-5-5` thay cặp Sonnet 5 / Opus 5; endpoint `api.anthropic.com`; vẫn `enabled: false`), cùng `precode/requirements.csv`, `precode/decision-register.md`, `precode/baseline.json`, `precode/owner-decision-request.md`, `precode/owner-decisions.md`. Hash tính lại trực tiếp trên repo. **Card là nguồn chuẩn của tên epoch** (`F-A2R1-03`). Lệch một dòng ⇒ card `STALE`, DỪNG.
 
 | Nguồn | SHA-256 | Bytes |
 | --- | --- | --- |
@@ -33,8 +33,8 @@ coding_precondition: "G5 pass + Owner go-ahead bằng văn bản — đã có: O
 | Hợp đồng / fixture đã pin | SHA-256 | Bytes |
 | --- | --- | --- |
 | `precode/adr/ADR-0011-frameworks-and-toolchain.md` | `defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7` | 27451 |
-| `precode/baseline.json` | `81557c5c0c13232e0a8f9d4d7cbe45ba7799288abc3f56dc2685f0001e31d8c2` | 132009 |
-| `precode/decision-register.md` | `bbe879fa28917de83ba491a229a24c36ecfeecae57d71a20dd1f950565d3326e` | 194541 |
+| `precode/baseline.json` | `187bf7106ef1c213bdc221a2c20b955953c51b97d244b55b514a45f7d6a2e848` | 133122 |
+| `precode/decision-register.md` | `9eddddb41ae6d1839ed471896107904fcdc204099e925d189e3c1167d95816c5` | 196193 |
 | `contracts/modules.yaml` | `7a4e19bdbb43e1339f305cd4715f1e7ac704b09720408ccf1db48a01b23c1e25` | 108912 |
 | `contracts/capabilities.yaml` | `17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7` | 47177 |
 | `contracts/ports.yaml` | `c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412` | 128872 |

@@ -611,6 +611,11 @@ REQ-OQ09 model embedding: ỨNG VIÊN multilingual-e5-small          ✅ (PROVIS
    >>> REQ-OQ09 và REQ-A3 VẪN KC — chọn không phải đo.
 MOD-tag-service: VIẾT CARD VÀ HIỆN THỰC                            ✅
 
+── VÒNG MƯỜI BA · ĐÃ TRẢ LỜI 2026-10-17 · OD-20261017-13 · AUTH-OWNER-20261017-14 ──
+Model AI: claude-opus-5-5 cho cả ba tác vụ                       ✅
+Endpoint api.anthropic.com + transport SDK + generation + vòng báo cáo ✅
+   >>> Adapter VẪN enabled: false — cần bằng chứng cô lập E3.
+
 ── VẪN CHỜ ─────────────────────────────────────────────────
 Ba dữ kiện Telegram còn lại — GIẢI BẰNG CÁCH NÀO: _______________
    (amendment công cụ cho fetch phân trang, hay Owner tự đọc trang?
