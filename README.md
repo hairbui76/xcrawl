@@ -72,6 +72,7 @@ secret:
 | `RR_TIMEZONE` | `Asia/Ho_Chi_Minh` | giá trị Owner đã chấp nhận (`OD-20260907-01` mục 4) |
 | `RR_SCHEDULE_SLOTS` | `08:00,20:00` | giá trị Owner đã chấp nhận (mục 20); `REQ-OQ05` sẽ đo lại |
 | `RR_TELEGRAM_WEBHOOK_SECRET` | **không có** | thiếu ⇒ mọi update Telegram bị từ chối |
+| `RR_EMBEDDING_MODEL_PATH` / `_VERSION` | **không có** | model embedding cục bộ (`REQ-OQ09`, ứng viên `intfloat/multilingual-e5-small`); thiếu ⇒ vector tag `pending`, không build được báo cáo. Có path mà thiếu version ⇒ từ chối khởi động |
 | `RR_{COLLECTOR,ANALYSIS_WORKER,BACKUP_OPERATOR}_TOKEN_SHA256` | **không có** | cấu hình bằng **hash**, không bao giờ bằng token |
 
 Server đọc database qua **lifespan lúc khởi động**: `create_app()` gọi trần vẫn là app rỗng
@@ -90,7 +91,7 @@ Web dev: `cd web && npm run dev`. Server dev có reload: `uv run uvicorn server.
 | `make gen` | sinh lại **toàn bộ** code sinh từ `contracts/` |
 | `make gen-check` | fail nếu sinh lại tạo ra khác biệt — đây là cửa "không sửa tay" |
 | `make e0` | 24 phép kiểm tĩnh E0 trên baseline hợp đồng (chỉ đọc) |
-| `make cards` | kiểm hash đã pin của 18 card + quy tắc hai ngôn ngữ |
+| `make cards` | kiểm hash đã pin của 21 card + quy tắc hai ngôn ngữ |
 | `make openapi` | validate `contracts/http/openapi.yaml` bằng validator OpenAPI 3.1 thật |
 | `make ci` | đúng những gì CI chạy, theo thứ tự của CI |
 

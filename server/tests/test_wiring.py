@@ -331,10 +331,11 @@ def test_unwired_reasons_are_derived_not_frozen(
     assert "SG-DOC" in connector and "SG-LIVE" in connector
     assert "PLACEHOLDER_KC" not in connector, "the stale REQ-A6 claim is back"
 
-    # `report_context` is set to None *explicitly*, so a router can tell "deliberately not
-    # built" from "forgotten" (F-A3-P5-03).
-    assert client.app.state.report_context is None  # type: ignore[attr-defined]
-    assert reasons["report_context"].startswith("CR-P0-07")
+    # CR-P0-07 closed by TC-tag-service: `report_context` is built, and what is still missing
+    # -- the local embedding model -- is named instead, not hidden behind the report routes.
+    assert client.app.state.report_context is not None  # type: ignore[attr-defined]
+    assert "report_context" not in reasons
+    assert reasons["local_embedding_model"].startswith("RR_EMBEDDING_MODEL_PATH")
 
     # The secret/settings service landed, so a reason blaming its absence would be the same
     # class of staleness this test exists to catch.

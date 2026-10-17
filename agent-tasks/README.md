@@ -72,6 +72,7 @@ SRC-PLAN §12.
 | 17 | [`TC-backup-restore-drill`](TC-backup-restore-drill.md) | M8 | G5 | `IMPLEMENTATION_VERIFIED` |
 | 18 | [`TC-research-connector-metadata`](TC-research-connector-metadata.md) | M2 | G5 | `IMPLEMENTATION_VERIFIED` (E1 với response ghi sẵn; module **chưa** `CONTRACT_READY` — `REQ-A6`) |
 | 19 | [`TC-secret-settings-service`](TC-secret-settings-service.md) | M3 | G5 | `IMPLEMENTATION_VERIFIED` (E1+E2 trên fixture; **không** provider nào được bật) |
+| 20 | [`TC-tag-service`](TC-tag-service.md) | M4 | G5 | `IMPLEMENTATION_VERIFIED` (E1 trên fixture; **không** có model embedding thật) |
 
 **SP1 chạy sớm.** SRC-PLAN §12: *"SP1 cho X nên chạy sớm sau G2 và PC05, vì rủi ro nguồn lớn nhất."*
 `TC-x-feasibility-probe` đứng số 0 không phải vì dễ mà vì nếu nó no-go thì phần lớn phần còn lại đổi nghĩa.
@@ -362,6 +363,12 @@ và ca âm `ISO-05` của `contracts/ai/providers.yaml` §4 (*gọi `secret.issu
 **không** giữ lease và thấy nó bị từ chối*) **không chạy được**, vì operation đó chưa có mã. Card **chưa được
 thi công**; nó được pin tại **cùng epoch** với 19 card kia — tên epoch đọc ở §4, file này **không** chép tay
 tên đó lần thứ hai (`F-A2R1-03`) — và 19 card kia **không** bị sinh lại vì không file đã pin nào đổi byte.
+
+**Card thứ 21 — `TC-tag-service` (M4, `OD-20261017-12` mục 6).** Owner ra lệnh "viết card và hiện thực" cho
+đúng card này. Nó lấp `CR-P0-07` và `CR-TC-BACKFILL-07`: tám operation `tag.*` có trong `contracts/ports.yaml`
+mà không module nào hiện thực, nên `report_context` không nối được và `GET /v1/reports` trả `500`. Card được
+viết cùng lượt với mã, nên §3/§8 ghi đúng những gì đã viết và đã chạy; tám CR (`CR-TC-TAG-01`…`-08`) ghi những
+chỗ hợp đồng mâu thuẫn mà một tag service không tự giải được. Thư mục nay có **21 card**.
 
 ## 5.5 Bộ khung Giai đoạn 0 đã tồn tại — và tên module để import
 

@@ -217,7 +217,7 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 > | `delivery_context.transport` | chưa cấu hình bot token Telegram. `status` nói thẳng: *"MOD-secret-service exists now, so this is a missing credential, not a missing module"* |
 > | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng cả hai adapter giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
 > | `secret_store` | `RR_SECRET_MASTER_KEY` chưa đặt ⇒ `secret.*` từ chối. *"No key is ever generated or defaulted"* — xem §7.1 và §8.4 |
-> | `report_context` | `CR-P0-07`: `TagConfigVersionPort` chưa có hiện thực, và chưa có model embedding thật (`REQ-OQ09`) |
+> | `local_embedding_model` | `RR_EMBEDDING_MODEL_PATH` chưa đặt ⇒ vector của tag ở trạng thái `pending` và mọi lần build báo cáo bị từ chối (`REQ-OQ09`, ứng viên làm việc `intfloat/multilingual-e5-small`). *(Bản trước của dòng này là `report_context` / `CR-P0-07`; `TC-tag-service` đã đóng nó — §4.1b.)* |
 > | `research_connector` | `SG-DOC`: **không hợp đồng nào** nêu host hay endpoint của arXiv/OpenAlex (`endpoint_template` là `None`, `CR-PC05-03`); `SG-LIVE`: một lời gọi thật là E3, cần packet riêng |
 >
 > Hệ quả: §7 (Telegram) và §8 (AI) **vẫn bị chặn**, nhưng nay bị chặn vì **thiếu credential và
@@ -319,33 +319,65 @@ Năm route dưới đây đã được gọi **trên một tiến trình uvicorn
 | `GET /v1/runs` | **200** | `{"runs":[]}` |
 | `GET /v1/settings` | **200** | `{"settings":{},"timezone_iana":null,"providers":[],"source_connections":[]}` |
 | `GET /v1/saved` | **200** | `{"schema_version":"0.3.0","items":[],"count":0}` |
-| `GET /v1/reports` | **500** | xem ngay dưới |
+| `GET /v1/reports` | **200** | `{"schema_version":"0.3.0","reports":[],"next_cursor":null}` — từ `TC-tag-service` (2026-10-17) |
+| `GET /v1/tags` | **200** | `{"tags":[],"global_exclusions":[],"tag_config_version":null,"empty_state_vi":"Chưa có tag nào, báo cáo sẽ trống"}` |
 
 Trong khối `modules` của readiness, những mục chưa nối trả **`null`**, không trả `ok`. Đó là
 `I13` và `CAP-P5` được tôn trọng đúng chỗ dễ vi phạm nhất: *"không có dữ liệu"* phải phân biệt
 được với *"khoẻ"*.
 
-> #### `GET /v1/reports` trả `500` — và vì sao bạn **không** cần lo
+> #### `GET /v1/reports` — từng trả `500`, nay `200`
 >
-> Đây là route owner-facing **duy nhất** chưa hoạt động. Thân trả về — **`đã chạy ở đây`**:
->
-> ```json
-> {"code":"INTERNAL","scope":"request","retry_class":"unknown_outcome",
->  "message_safe":"Dịch vụ báo cáo chưa được cấu hình trong bản triển khai này (CR-P0-07):
->                  chưa có cổng tag-service và cổng embedding. Yêu cầu của bạn hợp lệ và
->                  không có dữ liệu nào bị đọc hay ghi.",
->  "details_safe":{"operation_id":"report.list"}}
-> ```
->
-> Ba điều đáng ghi nhận: mã `500` **đúng hợp đồng** (`openapi.yaml` khai `500` cho đường này),
-> phong bì là `ErrorEnvelope` hợp lệ **không rò traceback**, và `message_safe` **nói thẳng
-> nguyên nhân, mã CR, và rằng không dữ liệu nào bị đọc hay ghi**.
->
-> Audit `A3-P5-R1` nêu đúng điểm yếu còn lại (`F-A3-P5-03`): mã vẫn là `INTERNAL` — nghĩa là
-> *"bất ngờ"* — cho một tình huống **hoàn toàn được dự đoán. `retry_class` là
-> `unknown_outcome`, nên đừng đọc nó như "thử lại sẽ được": sẽ không, cho tới khi `CR-P0-07`
-> đóng. Điều đã cải thiện so với vòng trước là `message_safe`: nó không còn chỉ nói *"Có lỗi
-> không mong đợi"*.
+> Trước `TC-tag-service`, đây là route owner-facing duy nhất hỏng: `500 INTERNAL` với
+> `message_safe` nêu `CR-P0-07` (không có tag service, không có cổng embedding). Owner chọn **giữ
+> mã `500`** thay vì thêm `503` vào hợp đồng (`OD-20261017-12` mục 4), và lỗi tự hết khi
+> `report_context` được nối. **`đã chạy ở đây`** (2026-10-17, app đã nối, database trắng):
+> `200` với danh sách rỗng.
+
+#### 4.1b Tag — tạo chủ đề theo dõi (**`đã chạy ở đây`**, 2026-10-17)
+
+Tag là lớp subscription: báo cáo chỉ chọn những gì khớp tag đang active lúc publish
+(`time-and-tags.md` §3). Sáu route, `contracts/http/openapi.yaml`; body chốt ở
+`agent-tasks/TC-tag-service.md` §4.
+
+**Bước 1 — đặt N (số ngày với ngược) một lần.** Hợp đồng cấm đặt mặc định trong mã; Owner đã chốt
+N = 7 (`OD-20261017-12` mục 2). Chưa đặt thì `POST /v1/tags` trả `422` với
+`field_path: reporting.backfill_days` và câu *"Chưa cấu hình số ngày với ngược (backfill_days)
+trong Settings; đặt nó trước khi tạo tag."* Đặt qua Settings:
+
+```bash
+curl -X PATCH https://<server>/v1/settings -b cookies.txt \
+  -H 'X-Schema-Version: 0.3.0' -H 'X-Request-Id: <ULID>' -H 'X-CSRF-Token: <rr_csrf>' \
+  -H 'Idempotency-Key: <khoá-16+-ký-tự>' -H 'Content-Type: application/json' \
+  -d '{"settings":{"backfill_days":7}}'
+```
+
+**Kỳ vọng:** `200` `{"settings":{"backfill_days":7},…}`. (Settings lưu khoá `backfill_days`, còn
+backfill đọc `reporting.backfill_days`; tag service đọc cả hai, khoá hợp đồng trước —
+`CR-TC-TAG-08`.)
+
+**Bước 2 — tạo tag.** `POST /v1/tags` với `{"text":"protein folding","aliases":["protein
+structure"]}` (cùng bốn header như trên). **Kỳ vọng:** `201` với `tag`, `tag_config_version`
+(`sequence: 1`, `content_hash: sha256:…`), `backfill` (`activation_sequence: 1`,
+`entitlement: granted`, `backfill_days: 7`) và `vectors: {"state":"pending","reason":
+"no_local_embedding_model"}`.
+
+**`pending` nghĩa là gì.** Không có model embedding cục bộ, nên tag được lưu mà **chưa có vector**;
+một lần build báo cáo sẽ bị từ chối với `EMBEDDING_GENERATION_MISMATCH` thay vì chọn bừa. Không có
+encoder thay thế nào được cắm vào. Khi bạn có model trên đĩa:
+
+| Biến | Nghĩa |
+| --- | --- |
+| `RR_EMBEDDING_MODEL_PATH` | thư mục model trên máy (không bao giờ tải lúc chạy) |
+| `RR_EMBEDDING_MODEL_VERSION` | **bắt buộc** khi có path; một revision cố định, không `latest` — thiếu ⇒ server từ chối khởi động |
+| `RR_EMBEDDING_MODEL_NAME` | mặc định `intfloat/multilingual-e5-small` |
+| `RR_EMBEDDING_MODEL_DIMENSION` | mặc định `384` |
+
+Còn thiếu, ghi rõ: chưa có lệnh nào tạo/kích hoạt một `embedding_generation`, và chưa có tiến trình
+nào tự build/publish báo cáo theo lịch (`TC-tag-service` §1 non-goals).
+
+**`text` của tag không sửa được** (`PATCH` chỉ nhận `similarity_threshold`, `aliases`,
+`exclusions`): N ngày với ngược tính theo chữ, nên đổi chữ = xoá rồi tạo lại (`CR-TC-TAG-06`).
 
 `GET /openapi.json` trả `404` — có chủ đích: `create_app()` đặt `openapi_url=None`,
 `docs_url=None`, `redoc_url=None`. Hợp đồng HTTP là `contracts/http/openapi.yaml`, không phải
@@ -1092,9 +1124,9 @@ Không phải khoảng trống của runbook, nhưng chúng chạm đúng nhữn
 
 | ID | Nội dung | Trạng thái |
 | --- | --- | --- |
-| `F-A3-P5-03` | `GET /v1/reports` trả `500` cho một tình huống **hoàn toàn dự đoán được**; `message_safe` nói rõ nguyên nhân và `CR-P0-07` | **`VERIFIED`** theo ruling (`openapi.yaml` chỉ khai `200/401/403/500`, nên `500` là mã đã khai gần nhất). Owner chọn **giữ `500`** và không thêm `503` vào hợp đồng (`OD-20261017-12` mục 4): lỗi hết khi `CR-P0-07` đóng |
+| ~~`F-A3-P5-03`~~ | `GET /v1/reports` trả `500` cho một tình huống dự đoán được | **Hết hiện tượng**: `CR-P0-07` đóng nên route trả `200`. Owner đã chọn giữ `500` thay vì thêm `503` (`OD-20261017-12` mục 4) |
 | ~~`F-A3-P5-04`~~ | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError` | **`VERIFIED`** (`A3-P5-R2` §2, `precode/review.md`): năm console script `rr-*` chạy từ mọi cwd, và từ 2026-10-17 `python tools/backup_cli.py --help` từ gốc repo **cũng chạy** (`đã chạy ở đây`). Bảng này đã ghi nhầm `OPEN` |
-| `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
+| ~~`CR-P0-07`~~ | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật | **Đã đóng** bởi `TC-tag-service`: `report_context` được nối, `GET /v1/reports` trả `200`. Phần model vẫn mở — `REQ-OQ09` có ứng viên làm việc nhưng vẫn `KC` |
 | ~~`CR-TC-SECRET-01`~~ | `entities.yaml` không khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | **Đã trả lời** (`OD-20261017-12` mục 3): ở ngoài DB **là thiết kế**. `secrets.md` 0.1.1 §4.1 nói đúng điều đó; hệ quả: **backup DB không chứa ciphertext** — kế hoạch khôi phục secret phải giữ cả master key **lẫn** thư mục material. [§8.4](#84-api-key-để-ở-đâu) |
 | `CR-G7-01` | **`run.posts_ingested_new` không bao giờ được ghi.** `entities.yaml`/`run.yaml` nói nó "bằng tổng `ingest_receipt.posts_inserted` của run", nhưng không hàm nào ghi cột này: drill G-7 nạp 5 bài mới và `GET /v1/runs` vẫn trả `posts_ingested_new: 0`. Cột thuộc `MOD-job-service`, số liệu thuộc `MOD-ingest-api`, và không transition nào nói ai ghi — nên đây là một CR cho PC03/PC02, **không** sửa tự phát | `OPEN` — màn Runs hiện "0 bài mới" cho mọi đợt |
 | ~~`F-G7-02`~~ | `POST /v1/runs/run-now` không đăng nhập trả `401` với `operation_id: run.list` | **Đã sửa** (`server/app/jobs/router.py`, test `server/tests/test_wiring.py::test_each_run_route_names_itself_when_it_refuses`) |
@@ -1114,7 +1146,7 @@ gì từ một lệnh xanh.**
   chưa một lời gọi thật nào tới X, Telegram hay một provider AI, ở bất kỳ giai đoạn nào.
   *(Bản trước của dòng này ghi "không có hành vi nghiệp vụ nào tồn tại"; điều đó đúng vào
   2026-09-08 và **không còn đúng** sau commit `feat: integration wiring`.)*
-- **Một route owner-facing vẫn hỏng**: `GET /v1/reports` trả `500` (`CR-P0-07`) — [§4.1](#41-server).
+- **Không còn route owner-facing nào hỏng**: `GET /v1/reports` trả `200` từ `TC-tag-service`. Nhưng **chưa có báo cáo nào được build** — không có model embedding thật và không có tiến trình build/publish theo lịch ([§4.1b](#41b-tag--tạo-chủ-đề-theo-dõi-đã-chạy-ở-đây-2026-10-17)).
 - **`make e0` xanh chỉ chứng minh tính nhất quán nội bộ của tập con đã kiểm.** Xem
   `evidence/tools/README.md` §1 và §5 về giới hạn đã biết của chính công cụ đó.
 - **`make cards` xanh chỉ nói card khớp với hợp đồng mà nó pin.** Nó **không đọc nội dung
@@ -1141,7 +1173,7 @@ gì từ một lệnh xanh.**
 | 7 | **Đọc tài liệu Bot API** cho ba dữ kiện `delivery.md` §3.4 | `CR-PC07-04`, `SC46` |
 | 8 | ~~**Chốt các giá trị `PROVISIONAL`**~~ — **đã chốt** `N = 7` và ba tham số mã liên kết (`OD-20261017-12` mục 2); model embedding có **ứng viên làm việc** `intfloat/multilingual-e5-small` (mục 5) nhưng `REQ-OQ09` vẫn `KC` tới khi đo | `REQ-OQ04` → `XN`; `CR-PC07-01` `ACCEPTED`; `REQ-OQ09`/`REQ-A3` vẫn mở |
 | 9 | **Trả lời chính sách nguồn**: arXiv/OpenAlex/X có cho phép xử lý lại nội dung của họ không | một câu hỏi pháp lý còn mở — `TC-A5-01` chỉ phủ điều khoản **Anthropic** |
-| 10 | **Quyết định `MOD-tag-service`** — chưa card nào viết nó | `CR-TC-BACKFILL-07` |
+| 10 | ~~**Quyết định `MOD-tag-service`**~~ — **đã quyết và đã làm** (`OD-20261017-12` mục 6, card `TC-tag-service`) | `CR-TC-BACKFILL-07`, `CR-P0-07` đóng |
 
 Mục 5 đáng nói thêm: 126 test Vitest chứng minh ba trạng thái sinh ra **ba chuỗi khác nhau**.
 *"Khác nhau ở mức người dùng hiểu được"* là **phán đoán của người** — của bạn.
