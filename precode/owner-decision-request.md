@@ -600,6 +600,17 @@ AMD-ENT-maintenance-01 (entity `maintenance_window`): RATIFY     ✅
        A3-P5-R1/R2/R3 giữ nguyên phạm vi; mức bằng chứng của hai card
        KHÔNG đổi; KHÔNG finding nào bị đóng.
 
+── VÒNG MƯỜI HAI · ĐÃ TRẢ LỜI 2026-10-17 · OD-20261017-12 · AUTH-OWNER-20261017-13 ──
+G-10 (token rr-backup): MÁY MỘT NGƯỜI DÙNG                       ✅
+   >>> CLI so digest qua Settings; KHÔNG phải ranh giới giữa user cục bộ.
+REQ-OQ04 N = 7 ngày: CHỐT                                         ✅
+CR-PC07-01 mã liên kết (8 ký tự, 15 phút, 5 lần/chat/giờ): CHỐT  ✅
+CR-TC-SECRET-01 material secret ngoài DB: CHẤP NHẬN               ✅
+F-A3-P5-03 /v1/reports 500: GIỮ, chờ CR-P0-07                     ✅
+REQ-OQ09 model embedding: ỨNG VIÊN multilingual-e5-small          ✅ (PROVISIONAL)
+   >>> REQ-OQ09 và REQ-A3 VẪN KC — chọn không phải đo.
+MOD-tag-service: VIẾT CARD VÀ HIỆN THỰC                            ✅
+
 ── VẪN CHỜ ─────────────────────────────────────────────────
 Ba dữ kiện Telegram còn lại — GIẢI BẰNG CÁCH NÀO: _______________
    (amendment công cụ cho fetch phân trang, hay Owner tự đọc trang?

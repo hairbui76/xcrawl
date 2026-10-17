@@ -1086,7 +1086,7 @@ Không phải khoảng trống của runbook, nhưng chúng chạm đúng nhữn
 | `F-A3-P5-03` | `GET /v1/reports` trả `500` cho một tình huống **hoàn toàn dự đoán được**; `message_safe` nói rõ nguyên nhân và `CR-P0-07` | **`VERIFIED`** theo ruling (`openapi.yaml` chỉ khai `200/401/403/500`, nên `500` là mã đã khai gần nhất). Owner chọn **giữ `500`** và không thêm `503` vào hợp đồng (`OD-20261017-12` mục 4): lỗi hết khi `CR-P0-07` đóng |
 | ~~`F-A3-P5-04`~~ | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError` | **`VERIFIED`** (`A3-P5-R2` §2, `precode/review.md`): năm console script `rr-*` chạy từ mọi cwd, và từ 2026-10-17 `python tools/backup_cli.py --help` từ gốc repo **cũng chạy** (`đã chạy ở đây`). Bảng này đã ghi nhầm `OPEN` |
 | `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
-| `CR-TC-SECRET-01` | `entities.yaml` chưa khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | `OPEN` — [§8.4](#84-api-key-để-ở-đâu) |
+| ~~`CR-TC-SECRET-01`~~ | `entities.yaml` không khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | **Đã trả lời** (`OD-20261017-12` mục 3): ở ngoài DB **là thiết kế**. `secrets.md` 0.1.1 §4.1 nói đúng điều đó; hệ quả: **backup DB không chứa ciphertext** — kế hoạch khôi phục secret phải giữ cả master key **lẫn** thư mục material. [§8.4](#84-api-key-để-ở-đâu) |
 
 ---
 
@@ -1128,7 +1128,7 @@ gì từ một lệnh xanh.**
 | 5 | **Đọc và review giao diện thật** trên desktop và điện thoại (E4) | `SC10`, `SC11`, `SC15` |
 | 6 | **Đọc 3–4 kỳ báo cáo thật** để hiệu chỉnh `REQ-A2`/`REQ-A4` | `G7`, rubric mật độ |
 | 7 | **Đọc tài liệu Bot API** cho ba dữ kiện `delivery.md` §3.4 | `CR-PC07-04`, `SC46` |
-| 8 | **Chốt các giá trị `PROVISIONAL`**: N backfill (`REQ-OQ04`), model embedding (`REQ-OQ09`), ba số của link code (`CR-PC07-01`) | các dòng `KC` tương ứng |
+| 8 | ~~**Chốt các giá trị `PROVISIONAL`**~~ — **đã chốt** `N = 7` và ba tham số mã liên kết (`OD-20261017-12` mục 2); model embedding có **ứng viên làm việc** `intfloat/multilingual-e5-small` (mục 5) nhưng `REQ-OQ09` vẫn `KC` tới khi đo | `REQ-OQ04` → `XN`; `CR-PC07-01` `ACCEPTED`; `REQ-OQ09`/`REQ-A3` vẫn mở |
 | 9 | **Trả lời chính sách nguồn**: arXiv/OpenAlex/X có cho phép xử lý lại nội dung của họ không | một câu hỏi pháp lý còn mở — `TC-A5-01` chỉ phủ điều khoản **Anthropic** |
 | 10 | **Quyết định `MOD-tag-service`** — chưa card nào viết nó | `CR-TC-BACKFILL-07` |
 

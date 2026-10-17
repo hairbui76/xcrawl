@@ -1,6 +1,6 @@
 ---
 contract_id: CT-precode-decision-register
-version: 0.1.5
+version: 0.1.6
 status: draft
 owner_role: requirements owner (PC00)
 source_refs:
@@ -57,6 +57,7 @@ claim_ceiling: DRAFT_FOR_REVIEW
 | `ACCEPTED (OD-20260908-09)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng chín** — xem `precode/owner-decisions-09.md` |
 | `ACCEPTED (OD-20260908-10)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng mười** — xem `precode/owner-decisions-10.md` |
 | `ACCEPTED (OD-20260909-11)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng mười một** — xem `precode/owner-decisions-11.md` (bản ghi hiệu lực: §8.16) |
+| `ACCEPTED (OD-20261017-12)` | Quyết định đã được Owner chấp nhận ở biên bản **vòng mười hai** — xem `precode/owner-decisions-12.md` (bản ghi hiệu lực: file đó + §8.17) |
 | `OWNER_DECISION_REQUIRED` | Không có phương án mặc định an toàn; phạm vi liên quan bị chặn tường minh |
 
 **Cập nhật 2026-09-07.** Owner đã trả lời bản yêu cầu quyết định. Biên bản `OD-20260907-01` (`precode/owner-decisions.md`, authority `AUTH-OWNER-20260907-02`) phê chuẩn B01–B17 và các amendment tương ứng. `agent_profile/registry.json` nay có `open_product_blockers: []` và một danh sách `ratified_product_blockers` trích `evidence_ref`.
@@ -70,6 +71,8 @@ Trạng thái yêu cầu (`XN | UQ | ĐX | KC`) trong `precode/requirements.csv`
 **Cập nhật vòng ba 2026-09-07.** Biên bản thứ ba `OD-20260907-03` (`precode/owner-decisions-03.md`, authority `AUTH-OWNER-20260907-04`, evidence `session_0156UBBHDSeC9soECzSVUb3U`) làm **ba** việc: phê chuẩn `AMD-ENT-owner-01` (§8.11), phê chuẩn `PROV-PC00-08` (§8), và mở lối vào Giai đoạn 2 (§8.12). Nó **không** mở quyền mạng, **không** gỡ cổng probe (`collector-probe.md` §6 mục 2–4), **không** cho phép đoán bốn dữ kiện `REQ-A6`, **không** phê chuẩn mục `PROVISIONAL` nào khác, và **không** giải `REQ-OQ03`.
 
 **Cập nhật vòng bảy và vòng tám 2026-09-08.** Hai vòng này được `worker-WT` và `worker-WAI` ghi hiệu lực ngay khi chúng xảy ra (**§8.14.3** và **§8.15.1**); `PKT-PC00-FIX28` bổ sung **bản ghi song hành theo quy ước** để chúng có cùng hình dạng hồ sơ như các vòng khác — file độc lập, anchor `baseline.json`, authority trong `agent_profile/registry.json`. **Không** quyết lại điều gì; khi hai bên lệch thì **§8.14.3 / §8.15.1 thắng**. `OD-20260908-07` (`AUTH-OWNER-20260908-08`) **nới công cụ** tìm ba dữ kiện Telegram sang `WebSearch` — vẫn chỉ để **định vị nội dung của chính trang** `core.telegram.org/bots/api`, **không** để lấy một con số khác từ site khác; và chốt rằng người ký `REQ-A5` phải là **Owner đích thân**, nên `CR-PC06-OQ03-02` **giữ mở** qua hết vòng bảy. Nới quyền **không** tạo ra dữ kiện: vòng ba chạy dưới quyền mới và **cả ba dữ kiện vẫn `BLOCKED_DEPENDENCY`** (§8.14.3). `OD-20260908-08` (`AUTH-OWNER-20260908-09`) là **chữ ký `REQ-A5`** của Owner cho **riêng Anthropic**, trên **đúng ba trang có ngày hiệu lực**, kèm **chấp nhận tường minh** bảo đảm `TC-A5-01`; `CR-PC06-OQ03-02` **đóng**. Ba ranh giới phải giữ: chữ ký **hết hiệu lực** khi một trong ba trang đổi phiên bản (`ADR-0010`); **ký không phải bật** — `enabled = true` vẫn bị `B13` chặn (`ISO-03`/`ISO-05` chưa kiểm, `E3 NOT_RUN`, `REQ-AC16` vẫn `BLOCKED`); và câu hỏi **arXiv/OpenAlex/X có cho phép tái xử lý nội dung của họ hay không** vẫn **chưa ai trả lời** — Owner **gánh** bảo đảm ấy, không **giải** nó.
+
+**Cập nhật vòng mười hai 2026-10-17.** Biên bản `OD-20261017-12` (`precode/owner-decisions-12.md`, authority `AUTH-OWNER-20261017-13`, evidence `session_01XQgXrAiGrnAUFS3jowQf2w`) trả lời **sáu** câu Owner được hỏi sau lượt kiểm tra trạng thái repo trên `8281274`; Owner chọn phương án khuyến nghị ở mọi câu. (1) `G-10`: máy **một người dùng** — `rr-backup` so digest qua `Settings`, `secrets.md` không đổi. (2) **Chốt** `N = 7` (`REQ-OQ04` `ĐX` → `XN`) và ba tham số mã liên kết (`CR-PC07-01`). (3) `CR-TC-SECRET-01`: material của secret store **ở ngoài DB** là thiết kế, không phải khoảng trống — `secrets.md` §4.1 sửa cho khớp. (4) `F-A3-P5-03`: **giữ `500`**, không thêm `503`. (5) `REQ-OQ09`: ứng viên làm việc `intfloat/multilingual-e5-small`; `REQ-OQ09`/`REQ-A3` **vẫn `KC`**. (6) **Lệnh bắt đầu** cho card `MOD-tag-service`. Bản ghi hiệu lực là §8.17. Vòng này **không** đóng finding nào và **không** đổi mức bằng chứng của card nào.
 
 **Cập nhật vòng mười một 2026-09-09.** Biên bản `OD-20260909-11` (`precode/owner-decisions-11.md`, authority `AUTH-OWNER-20260909-12`, evidence `session_01JRCNWfwz19Kfq1EkCmqnmG`) phê chuẩn **`AMD-ENT-maintenance-01`** — amendment kỹ thuật **thứ hai** của Coordinator, **cùng hình dạng** với `AMD-ENT-owner-01` ở `OD-20260907-03`: một mâu thuẫn giữa **hai file đã đóng băng** (`storage.yaml` `T-ST-03` đòi ghi một hàng maintenance-window mà `entities.yaml` không khai entity nào), `worker-WR` **dừng ở `SG-EDGE`** thay vì tự bịa, Coordinator ký tạm `PROVISIONAL`, Owner phê chuẩn ở vòng sau. Bản ghi hiệu lực là **§8.16** (`worker-W3n`, `PKT-PC02-FIX20`); §0 này chỉ là chỉ mục. **Điều được gỡ là tính tạm thời của HỢP ĐỒNG**, không phải giới hạn của bằng chứng: claim "health lưu bền" của card storage và "restore hai bước" của card backup thôi đứng trên một hợp đồng provisional, nhưng **mức bằng chứng của chúng không đổi** và **không finding nào bị đóng**. Việc mục này không bị bỏ quên là nhờ `A3-P5-R1` §6 nêu đích danh nó trong phần residual.
 
@@ -1356,3 +1359,23 @@ WR tạo bảng thật thay vì để hợp đồng và kho tiếp tục nói ha
 `data_owner_of` của MOD-data-store chưa có token `maintenance_window` (`CR-PC02-24`, PC01 sửa —
 phép so hai chiều EV-PC02-06 đang FAIL đúng một phần tử vì việc này); và mọi artefact nêu
 "37 / 21 / 2" hoặc "60 entity" nay sai — cập nhật trong `PKT-PC02-FIX17`.
+
+### 8.17 Quyết định của `OD-20261017-12` (vòng mười hai, 2026-10-17)
+
+Bản ghi song hành: `precode/owner-decisions-12.md` (cùng lượt, cùng người viết — khác vòng mười một, không có
+bản ghi hiệu lực nào viết trước). Khi hai bên lệch: **file biên bản thắng** về *điều Owner chọn*, mục này thắng
+về *hợp đồng nào đổi*.
+
+| ID | Gói | Quyết định | Trạng thái | Hợp đồng đổi |
+| --- | --- | --- | --- | --- |
+| `G-10` | PC08 / W6B | Mô hình đe doạ **máy một người dùng**: backup CLI xác thực bằng `Settings.backup_operator_token_sha256` | `ACCEPTED (OD-20261017-12)` | **Không** — `secrets.md` §3 đã nói server lưu `sha256`; CLI nay làm đúng điều đó |
+| `REQ-OQ04` | PC04 | `N = 7` ngày, **chốt** | `ACCEPTED (OD-20261017-12)` | `requirements.csv`, `traceability.csv` (`ĐX` → `XN`); `time-and-tags.md` §6.1/§10; `screens.yaml` |
+| `CR-PC07-01` | PC07 | Định dạng mã `^RR-[0-9A-HJKMNP-TV-Z]{8}$`, hạn 15 phút, 5 lần thử/chat/giờ, **chốt** | `ACCEPTED (OD-20261017-12)` | `contracts/telegram/commands.yaml` ba mục, mỗi mục mang `ratification_ref` + `ratified_by` |
+| `CR-TC-SECRET-01` | PC02 / PC08 | Ciphertext của secret store ở **file ngoài DB**; `entities.yaml` cố ý không khai bảng | `ACCEPTED (OD-20261017-12)` | `secrets.md` 0.1.1 §4.1; `backup-restore.md` 0.1.1 bảng khôi phục |
+| `F-A3-P5-03` | PC05 | Giữ `500` cho `report.list`/`report.get` khi `report_context` vắng | `ACCEPTED (OD-20261017-12)` | **Không** |
+| `REQ-OQ09` | PC04 | Ứng viên làm việc `intfloat/multilingual-e5-small` | `PROVISIONAL` — `REQ-OQ09` và `REQ-A3` **vẫn `KC`** | `requirements.csv` (ghi chú) |
+| `MOD-tag-service` | PC10 | Lệnh bắt đầu bằng văn bản cho **một** card mới | `ACCEPTED (OD-20261017-12)` | Card mới dưới `agent-tasks/` |
+
+**Ba điều mục này KHÔNG làm.** Không đóng finding nào (`protocol.md` §8). Không nâng trần claim của file nào.
+Không chạm `acceptance/scenarios.yaml` — câu "giá trị làm việc" của các `SC` liên kết Telegram cố ý để nguyên vì
+sửa nó làm mọi manifest E1 `STALE` (`CR-PC09-16`).

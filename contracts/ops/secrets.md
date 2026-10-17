@@ -1,6 +1,6 @@
 ---
 contract_id: CT-ops-secrets
-version: 0.1.0
+version: 0.1.1
 status: draft
 owner_role: operations contract owner
 source_refs:
@@ -204,10 +204,10 @@ Mã hóa **envelope**: mỗi secret được mã hóa bằng một data key riê
 | --- | --- | --- | --- |
 | Thuật toán | AEAD 256-bit (AES-256-GCM hoặc XChaCha20-Poly1305) | PROVISIONAL | AEAD cho cả bí mật lẫn toàn vẹn; chọn cụ thể khi chốt stack (ADR-0006, Option A Python). |
 | Nguồn master key | biến môi trường của container, hoặc file `0400` mount vào container | PROVISIONAL | Không nằm trong DB (nếu nằm cùng DB thì mã hóa vô nghĩa khi mất file DB), không nằm trong repo. |
-| Nơi lưu ciphertext | bảng của `MOD-secret-service`, trỏ bằng `secret_ref.store_locator` | — | `secret_ref` chỉ giữ **tham chiếu + trạng thái**, không giữ giá trị (PC02). |
+| Nơi lưu ciphertext | **file ngoài database**: một file `0600` cho mỗi `secret_ref.store_locator`, trong một thư mục `0700` (cấu hình được qua settings; mặc định `<RR_DATA_DIR>/secret-material`), sau port `SecretMaterialStore` | Owner chốt — `OD-20261017-12` mục 3 (`CR-TC-SECRET-01`) | `secret_ref` chỉ giữ **tham chiếu + trạng thái**, không giữ giá trị (PC02). `entities.yaml` **cố ý không** khai bảng ciphertext: ciphertext không đi theo snapshot backup của DB và không lẫn vào tập `data.purge_all`. Bản trước của ô này ghi "bảng của `MOD-secret-service`" — chưa entity nào hiện thực nó |
 
-**Hệ quả phải nói thẳng:** master key nằm ngoài DB nên **backup file DB không chứa key**; mất master key là mất
-mọi secret dù backup còn nguyên. Đó là lý do §5 của `backup-restore.md` yêu cầu một *secret recovery plan* riêng.
+**Hệ quả phải nói thẳng:** master key **và** ciphertext đều nằm ngoài DB nên **backup file DB không chứa
+cả hai**; mất master key hoặc mất thư mục material là mất mọi secret dù backup DB còn nguyên. Đó là lý do §5 của `backup-restore.md` yêu cầu một *secret recovery plan* riêng.
 
 ### 4.2 Truy cập
 

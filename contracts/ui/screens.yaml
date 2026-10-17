@@ -525,7 +525,7 @@ screens:
       fields:
         - {name: schedule, type: object, display_vi: "Giờ chạy + `owner.timezone_iana`; giờ là mốc SỚM NHẤT được chạy (REQ-D13). Giá trị cụ thể là REQ-OQ06 (PROVISIONAL 08:00 và 20:00)."}
         - {name: per_run_limits, type: object, display_vi: "Giới hạn mỗi đợt; PROVISIONAL 200 post hoặc 30 phút (REQ-OQ05), owner chốt sau M0."}
-        - {name: backfill_days, type: integer, display_vi: "N ngày với ngược; PROVISIONAL 7 (REQ-OQ04)."}
+        - {name: backfill_days, type: integer, display_vi: "N ngày với ngược; 7, Owner chốt ở OD-20261017-12 (REQ-OQ04)."}
         - {name: provider_config_per_task, type: array, display_vi: "Provider/model theo từng tác vụ (REQ-D39/D40); đường CLI khai `max_concurrency = 1`."}
         - {name: provider_key_state, type: enum, values: [configured, not_configured], display_vi: "CHỈ hiện đã cấu hình hay chưa. KHÔNG BAO GIỜ hiện giá trị key, kể cả một phần (SRC-SPEC §11.2, I11)."}
         - {name: provider_test_result, type: object, display_vi: "Nêu rõ NHÀ NÀO lỗi (SRC-SPEC §4). `unknown` hiện là `unknown`, không quy thành lỗi (I14)."}
