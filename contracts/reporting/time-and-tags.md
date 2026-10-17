@@ -585,7 +585,7 @@ thống **không** tự bỏ; không có timeout nào biến pending thành aban
 
 | Tham số | Giá trị | Đơn vị | Trạng thái | Lý do |
 | --- | --- | --- | --- | --- |
-| `backfill_days` (N) | 7 | ngày | `ACCEPTED (OD-20260907-01)` (REQ-OQ04) | Owner đã chấp nhận N = 7 (OD-20260907-01 mục 20/22) như **giá trị làm việc**; đây là lựa chọn của Owner, không phải một giá trị đo được |
+| `backfill_days` (N) | 7 | ngày | `ACCEPTED (OD-20261017-12)` (REQ-OQ04) | Owner chấp nhận N = 7 như **giá trị làm việc** ở `OD-20260907-01` mục 20/22, rồi **chốt** nó ở `OD-20261017-12` mục 2; đây là lựa chọn của Owner, không phải một giá trị đo được |
 | `backfill_max_extension` | 30 | ngày | `ACCEPTED (OD-20260907-01)` | Trần cứng để một giá trị N nhập nhầm không kéo lùi biên coverage vô hạn |
 
 N được lưu trong `settings['reporting.backfill_days']` và **sao chép** vào
@@ -892,7 +892,8 @@ nguyên `0`, `1` hoặc `2` theo bảng §8.3, và `null` không còn là giá t
 - Không chứng minh code chạy đúng: chưa có code (SRC-PLAN §14.2, cấp E0).
 - Không chứng minh cửa sổ coverage phản ánh đúng những gì có trên X: giới hạn bao phủ nguồn là
   vấn đề của B05/PC05, và `coverage_note` → `observed_data_only` tồn tại chính vì điều đó.
-- Không chứng minh tham số của §6 (N = 7) là đúng với nhu cầu Owner: REQ-OQ04 vẫn mở.
+- Không chứng minh tham số của §6 (N = 7) là đúng với nhu cầu Owner: Owner đã **chốt** N = 7
+  (`OD-20261017-12` mục 2, REQ-OQ04), nhưng chốt là một lựa chọn, không phải một phép đo.
 - Không thay thế `contracts/state/report.yaml` (PC03): bảng transition, guard và effect của
   `building → published | aborted` thuộc PC03.
 - Không định nghĩa cách hiển thị (PC07) hay schema task AI (PC06).

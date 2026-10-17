@@ -100,6 +100,18 @@ class Settings:
     #: owns `RR_SECRET_MASTER_KEY` and its decoding rules, and copying a 32-byte key into a
     #: second dataclass would mean a second object that can leak it.
     secret_material_dir: Path | None = None
+    #: The local embedding model (``REQ-OQ09``; working candidate
+    #: ``intfloat/multilingual-e5-small`` under ``OD-20261017-12`` item 5). A **path on disk**:
+    #: ``contracts/modules.yaml`` says the model is loaded from a local artifact and never
+    #: downloaded at run time. Unset ⇒ no encoder; tag mutations answer ``vectors: pending``
+    #: and no test encoder is ever substituted (``server/app/wiring.py``).
+    embedding_model_path: Path | None = None
+    embedding_model_name: str = "intfloat/multilingual-e5-small"
+    #: Pinned, never ``latest`` (``embedding.start_generation_rebuild`` refuses it). Required
+    #: together with the path: a vector whose model version is unknown cannot be compared.
+    embedding_model_version: str | None = None
+    #: 384 is the published output width of the working candidate.
+    embedding_model_dimension: int = 384
 
     @property
     def database_url(self) -> str:
@@ -136,6 +148,9 @@ class Settings:
             "secret_master_key_configured": bool(os.environ.get("RR_SECRET_MASTER_KEY")),
             "analysis_worker_token_configured": self.analysis_worker_token_sha256 is not None,
             "backup_operator_token_configured": self.backup_operator_token_sha256 is not None,
+            "embedding_model_configured": self.embedding_model_path is not None,
+            "embedding_model_name": self.embedding_model_name,
+            "embedding_model_version": self.embedding_model_version,
         }
 
 
@@ -245,6 +260,14 @@ def load_settings() -> Settings:
         collector_token_sha256=_env("RR_COLLECTOR_TOKEN_SHA256"),
         analysis_worker_token_sha256=_env("RR_ANALYSIS_WORKER_TOKEN_SHA256"),
         backup_operator_token_sha256=_env("RR_BACKUP_OPERATOR_TOKEN_SHA256"),
+        embedding_model_path=(
+            Path(_model_raw)
+            if (_model_raw := _env("RR_EMBEDDING_MODEL_PATH")) is not None
+            else None
+        ),
+        embedding_model_name=_env("RR_EMBEDDING_MODEL_NAME") or "intfloat/multilingual-e5-small",
+        embedding_model_version=_env("RR_EMBEDDING_MODEL_VERSION"),
+        embedding_model_dimension=int(_env("RR_EMBEDDING_MODEL_DIMENSION") or "384"),
     )
 
 

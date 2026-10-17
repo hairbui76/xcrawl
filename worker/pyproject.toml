@@ -10,6 +10,7 @@ version = "0.1.0"
 description = "Research Radar analysis worker (AI adapters, personal machine)"
 requires-python = "==3.12.*"
 dependencies = [
+  "anthropic>=1.15,<2",
   "httpx>=0.27,<0.29",
   "pydantic>=2.9,<3",
   "rr-contracts",

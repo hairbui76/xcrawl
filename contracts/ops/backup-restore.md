@@ -1,6 +1,6 @@
 ---
 contract_id: CT-ops-backup-restore
-version: 0.1.0
+version: 0.1.1
 status: draft
 owner_role: operations contract owner
 source_refs:
@@ -257,7 +257,7 @@ rằng restore hoạt động (SRC-PLAN §14.2: E0 không chứng minh runtime).
 | --- | --- | --- |
 | Profile Chrome + phiên X | Ở máy cá nhân; không bao giờ đồng bộ lên server (REQ-S11.2-03) | Chủ máy **đăng nhập X lại bằng tay** trong profile riêng của dự án; lần đầu X thường đòi xác minh thiết bị mới |
 | Token collector / analysis worker | File cấu hình trên máy cá nhân, không trong repo (REQ-S11.2-02) | Sinh token mới trong app, cập nhật file `0600`, khởi động lại worker (`secrets.md` §3) |
-| Master key của secret store | Ngoài DB theo thiết kế (`secrets.md` §4.1) | **Kế hoạch khôi phục secret** riêng: master key được giữ ở nơi Owner chọn, ngoài server và ngoài backup. Mất master key ⇒ ciphertext trong backup vô dụng ⇒ phải nhập lại API key. Manifest chỉ chứa **con trỏ** tới kế hoạch này, không chứa key |
+| Master key của secret store | Ngoài DB theo thiết kế (`secrets.md` §4.1) | **Kế hoạch khôi phục secret** riêng: master key được giữ ở nơi Owner chọn, ngoài server và ngoài backup. Ciphertext cũng nằm ngoài DB (`secrets.md` §4.1, `OD-20261017-12` mục 3) nên **không** có trong backup DB; mất master key **hoặc** thư mục material ⇒ phải nhập lại API key. Manifest chỉ chứa **con trỏ** tới kế hoạch này, không chứa key |
 | Giá trị API key AI | Là secret; không nằm trong bản xuất settings | Nhập lại trong Settings sau restore |
 | Artifact model embedding | Có thể lớn; manifest ghi tên/phiên bản/hash | Tải lại đúng phiên bản ghi trong manifest, đối chiếu sha256 |
 

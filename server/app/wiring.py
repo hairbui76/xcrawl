@@ -24,12 +24,11 @@ asymmetry is why this module never invents a dependency to make a route "work".
 What is deliberately not wired
 ------------------------------
 ``app.state.report_context``
-    ``PublishContext`` requires ``tag_port`` **and** ``embedding_port`` as non-optional
-    fields. Neither has a production implementation: ``TagConfigVersionPort`` has none at all
-    (``CR-TC-REPORT-01`` -- no card creates the tag-service side), and ``LocalEncoder`` is a
-    Protocol whose only implementations live in tests, because the embedding model is still
-    ``REQ-OQ09``/``REQ-A3``. Wiring a hash-based test encoder into a real deployment would
-    put vectors in the database that no real model produced. Reported as ``CR-P0-07``.
+    Wired since ``TC-tag-service`` (``CR-P0-07`` closed): the tag port is the real tag service
+    behind :class:`TagConfigVersionAdapter`, the embedding port the real ``EmbeddingService``.
+    What stays honest is the model: without ``RR_EMBEDDING_MODEL_PATH`` the encoder is
+    :class:`UnconfiguredEncoder`, which refuses to encode. Wiring a hash-based test encoder into
+    a real deployment would put vectors in the database that no real model produced.
 
 ``DeliveryContext.transport`` / ``AnalysisContext.provider_config`` / ``.secrets``
     All three need a credential, and there is no ``MOD-secret-service`` yet (gap ``G-6``,
@@ -63,11 +62,210 @@ from server.app.settings import Settings, load_settings
 #: Marker used in the wiring report for an attribute this module deliberately did not set.
 UNWIRED = "unwired"
 
-#: Why `report_context` is not built. A literal is right here and a lookup would be wrong:
-#: the blocker is the *absence* of two implementations, and absence has nothing to read.
-REPORT_CONTEXT_BLOCKED = (
-    "CR-P0-07: TagConfigVersionPort has no implementation; no real embedding model " "(REQ-OQ09)"
+#: Why no local encoder was built. Not a blocker for any route: tag mutations then answer
+#: `vectors: pending`, and a report build refuses with EMBEDDING_GENERATION_MISMATCH.
+EMBEDDING_MODEL_UNSET = (
+    "RR_EMBEDDING_MODEL_PATH is not set; no local embedding model, so tag vectors stay pending "
+    "and report builds refuse (REQ-OQ09 working candidate: intfloat/multilingual-e5-small)"
 )
+
+#: `settings.update_config` stores this key (`SETTINGS_KEYS` in settings_service/service.py);
+#: `report/backfill.py` reads `reporting.backfill_days`. The adapter below reads the contract's
+#: key first and this one second (`CR-TC-TAG-08`). Neither is a code-side default.
+SETTINGS_SERVICE_BACKFILL_KEY = "backfill_days"
+
+
+class UnconfiguredEncoder:
+    """A ``LocalEncoder`` for a deployment with no model: it identifies as nothing and refuses.
+
+    ``EmbeddingService`` needs an encoder to exist; it does not need one to *work* for
+    ``pin_generation`` / ``embedding_generation_matches``, which are all a report build or
+    publish asks of it before any vector is generated. Its fingerprint matches no generation,
+    so ``generate_vectors`` answers ``EMBEDDING_GENERATION_MISMATCH`` before ``encode`` could
+    run. This is the opposite of a test encoder: it can never put a vector in the database.
+    """
+
+    model_name = "unconfigured"
+    model_version = "unconfigured"
+    dimension = 1
+
+    @property
+    def normalization(self) -> Any:
+        from server.app.embedding.generation import Normalization
+
+        return Normalization.L2
+
+    def encode(self, texts: Any) -> list[tuple[float, ...]]:
+        raise RuntimeError("no local embedding model is configured (RR_EMBEDDING_MODEL_PATH)")
+
+
+def local_encoder(settings: Settings) -> Any:
+    """The configured local model, or ``None``. Loads lazily; never downloads.
+
+    A path without a pinned version is refused at startup: a vector whose model version is
+    unknown can never be proven comparable to another (I12), and "latest" is refused by the
+    embedding service for the same reason.
+    """
+    if settings.embedding_model_path is None:
+        return None
+    if not settings.embedding_model_version or settings.embedding_model_version == "latest":
+        raise RuntimeError(
+            "RR_EMBEDDING_MODEL_PATH is set but RR_EMBEDDING_MODEL_VERSION is not pinned. "
+            "Refusing to start rather than write vectors of an unknown model version (I12)."
+        )
+    from server.app.embedding.generation import SentenceTransformersEncoder
+
+    return SentenceTransformersEncoder(
+        model_path=str(settings.embedding_model_path),
+        model_name=settings.embedding_model_name,
+        model_version=settings.embedding_model_version,
+        dimension=settings.embedding_model_dimension,
+    )
+
+
+class TagConfigVersionAdapter:
+    """``MOD-tag-service`` → ``server.app.report.builder.TagConfigVersionPort``.
+
+    Lives here, not in either package: the port's error type is ``ReportError`` (the publisher
+    catches nothing else), and the tag package may not import the report package
+    (``ENF-import-rule``; the edge is report → tag, never the reverse).
+    """
+
+    def __init__(self, context: Any) -> None:
+        self._context = context
+
+    @staticmethod
+    def _convert(record: Any) -> Any:
+        from server.app.report.builder import TagConfigVersion
+
+        return TagConfigVersion(
+            id=record.id,
+            sequence=record.sequence,
+            content_hash=record.content_hash,
+            payload=record.payload,
+            created_at=record.created_at,
+        )
+
+    @staticmethod
+    def _report_error(error: Any) -> Any:
+        from server.app.report.coverage import ReportError
+
+        return ReportError(error.code, details_safe=dict(error.details_safe))
+
+    def get_active_config_version(self, owner_id: str) -> Any:
+        from server.app.tags import service
+        from server.app.tags.service import TagError
+
+        self._assert_owner(owner_id)
+        try:
+            return self._convert(service.get_active_config_version(self._context))
+        except TagError as error:
+            raise self._report_error(error) from error
+
+    def config_version(self, *, owner_id: str, tag_config_version_id: str) -> Any:
+        from server.app.tags import service
+        from server.app.tags.service import TagError
+
+        self._assert_owner(owner_id)
+        try:
+            return self._convert(
+                service.config_version(self._context, tag_config_version_id=tag_config_version_id)
+            )
+        except TagError as error:
+            raise self._report_error(error) from error
+
+    def freeze_config_version(
+        self, *, owner_id: str, report_build_id: str, expected_tag_config_version_id: str
+    ) -> Any:
+        from server.app.tags import service
+        from server.app.tags.service import TagError
+
+        self._assert_owner(owner_id)
+        try:
+            return self._convert(
+                service.freeze_config_version(
+                    self._context,
+                    report_build_id=report_build_id,
+                    expected_tag_config_version_id=expected_tag_config_version_id,
+                )
+            )
+        except TagError as error:
+            raise self._report_error(error) from error
+
+    def _assert_owner(self, owner_id: str) -> None:
+        # One owner per deployment; a different id here is a wiring bug, not a request.
+        if owner_id != self._context.owner_id:
+            raise RuntimeError("tag port called for an owner this deployment does not hold")
+
+
+class BackfillActivationAdapter:
+    """``tag.create``'s D28 activation, on the tag transaction's own connection.
+
+    ``backfill_ledger`` and ``open_activation`` belong to ``MOD-report-service``; there is no
+    tag → report edge, so the composition root binds them (``CR-TC-TAG-02``). N comes from
+    ``settings`` and never from code (``time-and-tags.md`` §6.1, backfill card ``SG-03``).
+    """
+
+    def preflight(self, connection: Any, *, owner_id: str) -> None:
+        self._days(connection, owner_id)
+
+    @staticmethod
+    def _days(connection: Any, owner_id: str) -> int:
+        from rr_contracts.generated.errors import ErrorCode
+        from rr_contracts.generated.operations import OperationId
+
+        from server.app.report import backfill
+        from server.app.tags.service import TagError
+
+        settings = backfill.TableSettings(owner_id=owner_id, connection=connection)
+
+        class _Keys:
+            @staticmethod
+            def get_int(key: str) -> int | None:
+                value = settings.get_int(key)
+                if value is None and key == backfill.SETTING_BACKFILL_DAYS:
+                    value = settings.get_int(SETTINGS_SERVICE_BACKFILL_KEY)
+                return value
+
+        try:
+            return backfill.backfill_days(_Keys())
+        except backfill.BackfillError as error:
+            raise TagError(
+                ErrorCode.VALIDATION_ERROR,
+                message_safe=(
+                    "Chưa cấu hình số ngày với ngược (backfill_days) trong Settings; "
+                    "đặt nó trước khi tạo tag."
+                ),
+                details_safe={
+                    "operation_id": OperationId.TAG_CREATE.value,
+                    "field_path": backfill.SETTING_BACKFILL_DAYS,
+                    "violation_kind": "required_missing",
+                },
+            ) from error
+
+    def open_activation(
+        self, connection: Any, *, owner_id: str, tag_id: str, tag_text: str
+    ) -> dict[str, Any]:
+        from server.app.report import backfill
+        from server.app.report.coverage import new_ulid
+
+        days = self._days(connection, owner_id)
+        entitlement = backfill.open_activation(
+            connection,
+            owner_id=owner_id,
+            tag_id=tag_id,
+            tag_text=tag_text,
+            days=days,
+            new_id=new_ulid(),
+        )
+        return {
+            "backfill_ledger_id": entitlement.id,
+            "activation_sequence": entitlement.activation_sequence,
+            "entitlement": entitlement.entitlement,
+            "entitlement_reason": entitlement.entitlement_reason,
+            "backfill_days": entitlement.backfill_days,
+        }
+
 
 #: The two stop conditions that actually hold the research connector below CONTRACT_READY,
 #: named in `agent-tasks/TC-research-connector-metadata.md` §10.
@@ -525,12 +723,44 @@ def wire(app: Any, settings: Settings | None = None) -> Runtime:
     app.state.settings_context = settings_context
     wired += ["secret_context", "settings_context"]
 
-    # Set explicitly rather than left absent (`F-A3-P5-03`). `None` and "attribute missing"
-    # are the same to `getattr(..., None)`, but only one of them is a *statement*: W4A is
-    # making the report routes answer a declared error instead of 500, and that needs the
-    # composition root to have said "deliberately not built" rather than to have forgotten.
-    app.state.report_context = None
-    unwired.append(("report_context", REPORT_CONTEXT_BLOCKED))
+    # -- tags + report (TC-tag-service, closes CR-P0-07) -------------------------------
+    # The report routes needed a `TagConfigVersionPort` and an `EmbeddingPort`. The first now
+    # exists (MOD-tag-service); the second is the real EmbeddingService over a *local* model
+    # when one is configured, and over `UnconfiguredEncoder` when not -- an encoder that
+    # refuses to encode, so no vector is ever written by anything but a real model. The read
+    # routes (`report.list`, `report.get`) need neither the model nor an active generation.
+    from server.app.embedding.service import EmbeddingService
+    from server.app.report.publisher import PublishContext
+    from server.app.tags.rescan import RescanContext
+    from server.app.tags.service import TagContext
+
+    encoder = local_encoder(runtime.settings)
+    embedding_service = EmbeddingService(
+        engine, encoder=encoder or UnconfiguredEncoder(), storage_guard=storage_guard
+    )
+    tag_context = TagContext(
+        engine=engine,
+        owner_id=owner_id,
+        storage_guard=storage_guard,
+        embedding=embedding_service if encoder is not None else None,
+        encoder=encoder,
+        activation=BackfillActivationAdapter(),
+    )
+    app.state.tag_context = tag_context
+    app.state.rescan_context = RescanContext(
+        engine=engine, owner_id=owner_id, storage_guard=storage_guard
+    )
+    wired += ["tag_context", "rescan_context"]
+    if encoder is None:
+        unwired.append(("local_embedding_model", EMBEDDING_MODEL_UNSET))
+
+    app.state.report_context = PublishContext(
+        engine=engine,
+        tag_port=TagConfigVersionAdapter(tag_context),
+        embedding_port=embedding_service,
+        storage_guard=storage_guard,
+    )
+    wired.append("report_context")
     unwired.append(("research_connector", research_connector_blockers()))
 
     runtime = replace(runtime, wired=tuple(wired), unwired=tuple(unwired))
@@ -596,7 +826,10 @@ def upgrade_database(database_path: Path, revision: str = "head") -> None:
 
 
 __all__ = [
-    "REPORT_CONTEXT_BLOCKED",
+    "EMBEDDING_MODEL_UNSET",
+    "BackfillActivationAdapter",
+    "TagConfigVersionAdapter",
+    "UnconfiguredEncoder",
     "UNWIRED",
     "Runtime",
     "alembic_config",
@@ -604,6 +837,7 @@ __all__ = [
     "build_runtime",
     "build_token_registry",
     "create_wired_app",
+    "local_encoder",
     "research_connector_blockers",
     "resolve_owner_id",
     "upgrade_database",

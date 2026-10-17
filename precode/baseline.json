@@ -1880,6 +1880,54 @@
           "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi mot); §8.16 la ban ghi hieu luc",
           "registered_by_ruling": "PKT-PC00-FIX34",
           "note_vi": "Bien ban vong muoi mot KHONG thay the bien ban nao; chung cong don."
+        },
+        {
+          "anchor_id": "OD-20261017-12",
+          "label": "OD-20261017-12",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-10-17, vong muoi hai (6 muc)",
+          "source_file": "precode/owner-decisions-12.md",
+          "effect_record": "precode/owner-decisions-12.md + precode/decision-register.md §8.17 (viet cung luot)",
+          "authority_created": "AUTH-OWNER-20261017-13",
+          "evidence_ref": "Claude Code session session_01XQgXrAiGrnAUFS3jowQf2w, 2026-10-17 - AskUserQuestion sau luot kiem tra trang thai tren commit 8281274",
+          "decides": [
+            "G-10 (may mot nguoi dung)",
+            "REQ-OQ04 (N = 7, chot)",
+            "CR-PC07-01 (ba tham so ma lien ket, chot)",
+            "CR-TC-SECRET-01 (material ngoai DB)",
+            "F-A3-P5-03 (giu 500)",
+            "REQ-OQ09 (ung vien lam viec, van KC)",
+            "MOD-tag-service (lenh bat dau cho mot card moi)"
+          ],
+          "what_it_removes_vi": "Tinh TAM THOI cua bon con so (N, dinh dang ma, han ma, rate limit) va cau hoi 'material cua secret store o dau'.",
+          "what_it_does_not_remove_vi": "KHONG phai mot luot xac minh: muc bang chung cua moi card KHONG doi; REQ-OQ09 va REQ-A3 VAN KC; KHONG dong finding nao (protocol.md §8).",
+          "not_decided": [
+            "G-8 co lap AI va E3 cua adapter",
+            "G-9 ba du kien Bot API (CR-PC07-04)",
+            "SP1 probe X",
+            "drill restore that, RPO/RTO; review giao dien E4",
+            "chinh sach tai xu ly noi dung cua arXiv/OpenAlex/X",
+            "REQ-A5 cho nha cung cap khac Anthropic"
+          ],
+          "decision_record": "precode/decision-register.md §0 (Cap nhat vong muoi hai) va §8.17",
+          "registered_by_ruling": "OD-20261017-12",
+          "note_vi": "Bien ban vong muoi hai KHONG thay the bien ban nao; chung cong don."
+        },
+        {
+          "anchor_id": "OD-20261017-13",
+          "label": "OD-20261017-13",
+          "title_vi": "Bien ban quyet dinh cua Owner ngay 2026-10-17, vong muoi ba (2 muc)",
+          "source_file": "precode/owner-decisions-13.md",
+          "effect_record": "precode/owner-decisions-13.md + precode/decision-register.md §8.18",
+          "authority_created": "AUTH-OWNER-20261017-14",
+          "evidence_ref": "Claude Code session session_01XQgXrAiGrnAUFS3jowQf2w, 2026-10-17 - nguyen van: lam ca bon viec di, model thi dung opus 5.5",
+          "decides": [
+            "REQ-OQ03: claude-opus-5-5 cho ca ba tac vu (providers.yaml 0.3.0, mot muc)",
+            "ISO-03 endpoint: api.anthropic.com",
+            "Lenh bat dau cho transport SDK, khoi tao generation embedding, vong bao cao"
+          ],
+          "what_it_does_not_remove_vi": "Adapter VAN enabled: false - can bang chung co lap E3. Fallback phia server KHONG bat (§6 default off).",
+          "registered_by_ruling": "OD-20261017-13",
+          "note_vi": "Bien ban vong muoi ba KHONG thay the bien ban nao; chung cong don."
         }
       ],
       "invariants": [

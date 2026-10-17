@@ -472,7 +472,9 @@ def test_a_registered_adapter_refuses_the_dispatch_and_records_no_result(
     `contracts/ai/providers.yaml` §2.1 — still refuses because isolation is unverified (B13).
     """
     enqueue_one(ctx)
-    entry = next(e for e in load_registered_adapters() if e.adapter_id == "anthropic@claude-opus-5")
+    entry = next(
+        e for e in load_registered_adapters() if e.adapter_id == "anthropic@claude-opus-5-5"
+    )
     transport = RecordedTransport()
     audit = CallAudit()
     loop = AnalysisWorkerLoop(
@@ -885,9 +887,9 @@ def test_print_adapters_explains_the_emptiness_without_enabling_anything(
     assert worker_main.main(["--print-adapters"]) == 0
     printed = json.loads(capsys.readouterr().out)
     assert printed["ac16"] == "BLOCKED", "never FAIL — ADR-0010 §Hệ quả"
+    # OD-20261017-13: one Opus 5.5 entry replaced the Sonnet 5 / Opus 5 pair.
     assert {row["adapter_id"] for row in printed["registered_adapters"]} == {
-        "anthropic@claude-sonnet-5",
-        "anthropic@claude-opus-5",
+        "anthropic@claude-opus-5-5",
     }
     for row in printed["registered_adapters"]:
         assert row["enabled"] is False

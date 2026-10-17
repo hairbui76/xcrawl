@@ -149,13 +149,17 @@ linking:
       Tiền tố `RR-` cố định cho phép nhận diện "chuỗi này ĐÚNG định dạng mã liên kết" mà không
       cần biết mã thật — đó chính là điều kiện của ngoại lệ B09. Bảng chữ Crockford base32 bỏ
       I, L, O, U để tránh nhầm khi gõ tay. 8 ký tự ⇒ 32^8 ≈ 1.1e12 khả năng.
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_ref: CR-PC07-01
+    ratification_ref: "OD-20260907-01 mục 23 (giá trị làm việc) → OD-20261017-12 mục 2 (chốt)"
+    ratified_by: OD-20261017-12
   expiry:
     value: 15
     unit: minutes
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_ref: CR-PC07-01
+    ratification_ref: "OD-20260907-01 mục 23 (giá trị làm việc) → OD-20261017-12 mục 2 (chốt)"
+    ratified_by: OD-20261017-12
     rationale_vi: >-
       Đủ để người dùng chuyển từ app sang Telegram và gõ mã; đủ ngắn để một mã lộ qua ảnh chụp
       màn hình không còn dùng được. Owner có thể đổi; giá trị phải nằm trong settings.
@@ -182,8 +186,10 @@ linking:
   rate_limit:
     value: 5
     unit: attempts_per_chat_per_hour
-    status: PROVISIONAL
+    status: ACCEPTED
     decision_ref: CR-PC07-01
+    ratification_ref: "OD-20260907-01 mục 23 (giá trị làm việc) → OD-20261017-12 mục 2 (chốt)"
+    ratified_by: OD-20261017-12
     counter_source:
       entity: telegram_link_attempt
       file: contracts/data/entities.yaml

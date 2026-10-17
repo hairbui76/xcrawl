@@ -4,6 +4,7 @@
     uv run rr-admin migrate          # from ANY working directory
     uv run rr-admin bootstrap-owner
     uv run rr-admin status
+    uv run rr-admin embedding-bootstrap   # once a local model is configured (REQ-OQ09)
 
 (`uv run python tools/rr_admin.py …` still works from the repo root; the console script is
 the supported path because it does not care where you are standing.)
@@ -209,6 +210,77 @@ def cmd_status(settings: Settings, args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_embedding_bootstrap(settings: Settings, args: argparse.Namespace) -> int:
+    """Create, fill and activate an embedding generation from the configured local model.
+
+    The three operations, in the order ``selection.md`` §5.5 requires, each through its own
+    service and each under the module that owns it:
+
+    1. ``embedding.start_generation_rebuild`` -- caller ``MOD-settings-service``, the one
+       module allowed to change the model (``ports.yaml``). ``expected_vector_count`` is the
+       number of active tag subjects, so the activation guard has a real target.
+    2. ``embedding.generate_vectors`` for every active tag, alias and exclusion into the
+       *building* generation -- ``MOD-tag-service`` (fixture ``reporting/n`` event 3).
+    3. ``embedding.activate_generation`` -- refused with ``EMBEDDING_GENERATION_MISMATCH``
+       unless built >= expected; the old generation stays active until this commits.
+
+    Nothing is downloaded: the model is read from ``RR_EMBEDDING_MODEL_PATH``. Re-running it
+    with the same model is a no-op past step 1 (both earlier steps are idempotent).
+    """
+    from server.app.embedding.generation import EmbeddingError
+    from server.app.embedding.service import EmbeddingService
+    from server.app.tags import service as tags
+    from server.app.wiring import local_encoder
+
+    encoder = local_encoder(settings)
+    if encoder is None:
+        raise SystemExit(
+            "RR_EMBEDDING_MODEL_PATH is not set; there is no local model to build a generation "
+            "from (REQ-OQ09). Nothing was written."
+        )
+    runtime = build_runtime(settings)
+    if runtime.owner_id is None:
+        raise SystemExit("no owner row; run `uv run rr-admin bootstrap-owner` first")
+    owner_id = runtime.owner_id
+    embedding = EmbeddingService(runtime.engine, encoder=encoder)
+    context = tags.TagContext(
+        engine=runtime.engine, owner_id=owner_id, embedding=embedding, encoder=encoder
+    )
+    subjects = len(tags.active_subjects(context))
+    try:
+        generation = embedding.start_generation_rebuild(
+            owner_id,
+            caller_module="MOD-settings-service",
+            target_model_name=encoder.model_name,
+            target_model_version=encoder.model_version,
+            dimension=encoder.dimension,
+            expected_vector_count=subjects,
+        )
+        generation_id = str(generation["generation_id"])
+        sent = tags.embed_into_generation(context, generation_id=generation_id)
+        activated = embedding.activate_generation(
+            owner_id, caller_module="MOD-embedding-service", generation_id=generation_id
+        )
+    except (EmbeddingError, tags.TagError) as refused:
+        print(json.dumps({"activated": False, "code": refused.code.value}, indent=2))
+        return 2
+    print(
+        json.dumps(
+            {
+                "activated": True,
+                "generation_id": activated["generation_id"],
+                "model_name": activated["model_name"],
+                "model_version": activated["model_version"],
+                "dimension": activated["dimension"],
+                "tag_subjects_embedded": sent,
+                "built_vector_count": activated["built_vector_count"],
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
 # ----------------------------------------------------------------------------------------
 # driver
 # ----------------------------------------------------------------------------------------
@@ -232,6 +304,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     bootstrap.add_argument("--display-name", default="Owner")
     bootstrap.set_defaults(func=cmd_bootstrap_owner)
+
+    embedding = sub.add_parser(
+        "embedding-bootstrap",
+        help="build and activate an embedding generation from RR_EMBEDDING_MODEL_PATH",
+    )
+    embedding.set_defaults(func=cmd_embedding_bootstrap)
 
     status = sub.add_parser("status", help="configuration, database state and wiring report")
     status.add_argument("--json", action="store_true")

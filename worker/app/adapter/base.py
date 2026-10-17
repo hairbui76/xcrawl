@@ -486,6 +486,13 @@ class AdapterEntry:
     model_name: str = ""
     #: ``ai_provider_endpoints_configured`` for this entry: the only hosts ISO-03 permits.
     endpoint_allowlist: frozenset[str] = frozenset()
+    #: The provider base URL the transport is built from (``providers.yaml`` §2.1
+    #: ``endpoint``). Empty for an entry that declares none -- it then cannot be dispatched,
+    #: because no host can be in an allowlist of an endpoint that does not exist.
+    endpoint: str = ""
+    #: ``effort_by_task``: the model's ``output_config.effort`` per task type, read from the
+    #: registry so the cost lever is contract data, not a constant in the transport.
+    effort_by_task: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.auth_family is AuthFamily.CLI_ACP and self.max_concurrency != 1:
@@ -762,9 +769,9 @@ def load_registered_adapters(path: Path | None = None) -> tuple[AdapterEntry, ..
 
     The registry is read, never restated: an entry's ``enabled`` flag is the contract's
     answer to "may this adapter be dispatched", and the whole point of reading it here is
-    that no code path can hold a different opinion. Both entries are currently
-    ``enabled: false`` (REQ-OQ03 / ``OD-20260908-06``), so this function returns two
-    adapters that :meth:`ProviderAdapter._require_dispatchable` will refuse.
+    that no code path can hold a different opinion. The one entry
+    (``anthropic@claude-opus-5-5``, ``OD-20261017-13``) is ``enabled: false``, so this
+    function returns an adapter that :meth:`ProviderAdapter._require_dispatchable` refuses.
     """
     source = path or PROVIDERS_YAML
     document = yaml.safe_load(source.read_text(encoding="utf-8"))
@@ -787,7 +794,11 @@ def load_registered_adapters(path: Path | None = None) -> tuple[AdapterEntry, ..
                 disabled_reason=raw.get("disabled_reason"),
                 provider_name=str(raw.get("provider_name", "")),
                 model_name=str(raw.get("model_name", "")),
-                endpoint_allowlist=frozenset(),
+                endpoint_allowlist=frozenset(str(h) for h in raw.get("endpoint_allowlist", ())),
+                endpoint=str(raw.get("endpoint", "")),
+                effort_by_task={
+                    str(k): str(v) for k, v in (raw.get("effort_by_task") or {}).items()
+                },
             )
         )
     return tuple(loaded)

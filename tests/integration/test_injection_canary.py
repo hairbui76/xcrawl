@@ -259,10 +259,8 @@ def test_both_registered_adapters_are_disabled_for_isolation_not_for_terms() -> 
     read.
     """
     entries = load_registered_adapters()
-    assert {entry.adapter_id for entry in entries} == {
-        "anthropic@claude-sonnet-5",
-        "anthropic@claude-opus-5",
-    }
+    # OD-20261017-13: one Opus 5.5 entry replaced the Sonnet 5 / Opus 5 pair.
+    assert {entry.adapter_id for entry in entries} == {"anthropic@claude-opus-5-5"}
     for entry in entries:
         assert entry.enabled is False
         assert entry.dispatchable is False
@@ -280,7 +278,7 @@ def test_a_registered_adapter_refuses_before_it_touches_a_transport(canary: str)
     consumed either.
     """
     entry = next(
-        e for e in load_registered_adapters() if e.adapter_id == "anthropic@claude-sonnet-5"
+        e for e in load_registered_adapters() if e.adapter_id == "anthropic@claude-opus-5-5"
     )
     transport = RecordedTransport(body="{}")
     audit = CallAudit()

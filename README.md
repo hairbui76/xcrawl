@@ -1,12 +1,15 @@
 # Research Radar
 
 Repo này chứa **hợp đồng** của hệ thống (`contracts/`, `acceptance/`, `precode/`,
-`agent-tasks/`) và **bộ khung triển khai** dựng ở Giai đoạn 0 (`server/`, `collector/`,
+`agent-tasks/`) và **bộ khung triển khai** dựng từ Giai đoạn 0 (`server/`, `collector/`,
 `worker/`, `probe/`, `shared/rr_contracts/`, `tests/`, `web/`).
 
-> **Chưa có hành vi nghiệp vụ nào.** Bộ khung boot được, lint sạch, test xanh — và không
-> làm gì cả. Mọi hành vi được giao bằng card ở `agent-tasks/`, và card chỉ chạy sau khi
-> cổng **G5** đạt và Owner ra lệnh. Xem [`docs/master-plan.md`](docs/master-plan.md).
+> **Hệ khởi động và chạy như những tiến trình thật, nhưng chưa từng chạm thế giới thật.**
+> Các card ở `agent-tasks/` đã được hiện thực và nối vào server, collector, worker
+> (commit `feat: integration wiring`); `E3`/`E4` vẫn bằng 0 — chưa một lời gọi thật nào tới
+> X, Telegram hay provider AI. Xem [`docs/owner-runbook.md`](docs/owner-runbook.md) §12 trước
+> khi kết luận bất cứ điều gì từ một lệnh xanh, và [`docs/master-plan.md`](docs/master-plan.md)
+> cho lộ trình.
 
 Điểm vào để đọc: [`precode/README.md`](precode/README.md) (toàn bộ baseline) và
 [`docs/master-plan.md`](docs/master-plan.md) (lộ trình bảy giai đoạn).
@@ -46,7 +49,7 @@ hỗ trợ khi bạn chạy từ thư mục khác:
 
 | Lệnh | Là gì |
 | --- | --- |
-| `uv run rr-admin {migrate,bootstrap-owner,status}` | ba lệnh vận hành ở trên |
+| `uv run rr-admin {migrate,bootstrap-owner,status,embedding-bootstrap}` | ba lệnh vận hành ở trên, và tạo + kích hoạt generation embedding từ model cục bộ (runbook §4.1b) |
 | `uv run rr-backup …` | CLI backup/restore (`tools/backup_cli.py`) |
 | `uv run rr-collector --print-registration` | collector trên máy cá nhân |
 | `uv run rr-worker --print-capabilities` | analysis worker trên máy cá nhân |
@@ -69,6 +72,7 @@ secret:
 | `RR_TIMEZONE` | `Asia/Ho_Chi_Minh` | giá trị Owner đã chấp nhận (`OD-20260907-01` mục 4) |
 | `RR_SCHEDULE_SLOTS` | `08:00,20:00` | giá trị Owner đã chấp nhận (mục 20); `REQ-OQ05` sẽ đo lại |
 | `RR_TELEGRAM_WEBHOOK_SECRET` | **không có** | thiếu ⇒ mọi update Telegram bị từ chối |
+| `RR_EMBEDDING_MODEL_PATH` / `_VERSION` | **không có** | model embedding cục bộ (`REQ-OQ09`, ứng viên `intfloat/multilingual-e5-small`); thiếu ⇒ vector tag `pending`, không build được báo cáo. Có path mà thiếu version ⇒ từ chối khởi động |
 | `RR_{COLLECTOR,ANALYSIS_WORKER,BACKUP_OPERATOR}_TOKEN_SHA256` | **không có** | cấu hình bằng **hash**, không bao giờ bằng token |
 
 Server đọc database qua **lifespan lúc khởi động**: `create_app()` gọi trần vẫn là app rỗng
@@ -87,7 +91,7 @@ Web dev: `cd web && npm run dev`. Server dev có reload: `uv run uvicorn server.
 | `make gen` | sinh lại **toàn bộ** code sinh từ `contracts/` |
 | `make gen-check` | fail nếu sinh lại tạo ra khác biệt — đây là cửa "không sửa tay" |
 | `make e0` | 24 phép kiểm tĩnh E0 trên baseline hợp đồng (chỉ đọc) |
-| `make cards` | kiểm hash đã pin của 18 card + quy tắc hai ngôn ngữ |
+| `make cards` | kiểm hash đã pin của 21 card + quy tắc hai ngôn ngữ |
 | `make openapi` | validate `contracts/http/openapi.yaml` bằng validator OpenAPI 3.1 thật |
 | `make ci` | đúng những gì CI chạy, theo thứ tự của CI |
 
@@ -154,7 +158,10 @@ Bốn job, **không job nào chạm mạng ngoài registry gói**.
 
 ## 6. Điều repo này **chưa** chứng minh
 
-- Không có hành vi nghiệp vụ nào tồn tại; E1–E4 vẫn `NOT_RUN`.
+- Hành vi nghiệp vụ tồn tại; 21/56 scenario có bằng chứng E1/E2 (chạy trên fixture), 35
+  còn `NOT_RUN`. **E3 và E4 vẫn `NOT_RUN`** ở mọi nhóm scenario: chưa lần chạy thật nào với
+  X, Telegram hay provider AI.
+  Danh sách đầy đủ: [`docs/owner-runbook.md`](docs/owner-runbook.md) §12.
 - `make e0` xanh chỉ chứng minh **tính nhất quán nội bộ của tập con đã kiểm** — xem
   `evidence/tools/README.md` §1 và §5 về những giới hạn đã biết của chính công cụ đó.
 - `make cards` xanh chỉ nói rằng card **khớp với hợp đồng mà nó pin**. Nó không đọc nội

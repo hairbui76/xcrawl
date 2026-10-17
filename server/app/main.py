@@ -267,6 +267,18 @@ def create_app(
     app.include_router(settings_router)
     # <<< TC-secret-settings-service <<<
 
+    # >>> TC-tag-service (MOD-tag-service) >>>
+    # Six routes for MOD-web-ui: `tag.list` and `tag.preview_matches` on the owner session,
+    # the four mutations behind CSRF as well. `tag.get_active_config_version` and
+    # `tag.freeze_config_version` are internal to MOD-report-service and are NOT routed --
+    # `server/app/wiring.py` adapts them onto the report service's TagConfigVersionPort.
+    # The router reads `app.state.tag_context` / `app.state.rescan_context`; unwired, it
+    # answers 500 INTERNAL rather than inventing a database or an owner.
+    from server.app.tags.router import router as tags_router
+
+    app.include_router(tags_router)
+    # <<< TC-tag-service <<<
+
     @app.get("/healthz", operation_id=OperationId.HEALTH_GET_LIVENESS.value)
     def get_liveness() -> JSONResponse:
         """``health.get_liveness`` — DB-independent liveness (HC-01).

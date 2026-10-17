@@ -1,0 +1,174 @@
+{
+  "schema_version": "0.1.0",
+  "evidence_id": "EV-E1-21-tc-tag-service",
+  "created_at": "2026-10-17T04:26:23Z",
+  "producer_principal": "claude-code session_01XQgXrAiGrnAUFS3jowQf2w",
+  "producer_role": "Worker",
+  "review_type": "SELF_VALIDATION",
+  "evidence_level": "E1",
+  "baseline": {
+    "spec_sha256": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+    "plan_sha256": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+    "contract_hashes": {
+      "research-radar-spec.md": "d35e1f2daab30e7ab36969ecd9b9b0f227d8ab70fbf55482af47c4a1405e0e26",
+      "research-radar-pre-code-plan.md": "f65bb04657f30f1dffe9c96f2667ed9ca1bb1d9363cca3d857abb15034707f40",
+      "precode/adr/ADR-0011-frameworks-and-toolchain.md": "defbe74ef6a4953adb25e9a31e07f010856f05a142e6973f14cbb7c5b2e3f8b7",
+      "precode/baseline.json": "81557c5c0c13232e0a8f9d4d7cbe45ba7799288abc3f56dc2685f0001e31d8c2",
+      "precode/decision-register.md": "bbe879fa28917de83ba491a229a24c36ecfeecae57d71a20dd1f950565d3326e",
+      "contracts/modules.yaml": "7a4e19bdbb43e1339f305cd4715f1e7ac704b09720408ccf1db48a01b23c1e25",
+      "contracts/capabilities.yaml": "17d7494fe38b2ab5d3778b9af5e2d82ad274bcafb792d90b94c8e614182097f7",
+      "contracts/ports.yaml": "c7c7734001b98f2516aff9a36b5a6f947cee0cb4485be2e64fca55c264b8b412",
+      "contracts/errors.yaml": "640991c91ad046ebe513badad1a9baa0582be8269bf7696472322dd3e867599f",
+      "contracts/retry-policy.yaml": "f9505525ae438181326abef06974a0e0287bc685ee71df9710740672bd52a69a",
+      "contracts/data/entities.yaml": "0ec6bc91eccca0588075c385060f8095d640819ce03910f64d1397ef1e4d4c4c",
+      "contracts/data/invariants.md": "7358f54bd2eff5e87c464b0a5f1657f21fa217a1024607316361976560011a9c",
+      "contracts/reporting/time-and-tags.md": "fabfc77ecd9cfe2a4e687bf612f997bd4d42deefef36f09c2299fdd1f6b69bb3",
+      "contracts/reporting/selection.md": "781effb61be2865a07fa3be4373196229bb6bd89048abbb943d646ca95401fe4",
+      "contracts/http/openapi.yaml": "a3e7e42203bdb2c2b3c65a387a52eff62dc339fe198b9c8ca1c8ae22937a838d",
+      "contracts/ui/screens.yaml": "7e67f884c6bb42e6b287261578613c4b9f12e03ddf94fd08281b5218ed73ed64",
+      "acceptance/fixtures/reporting/README.md": "cdb2008913f53562ec41fe7ed179c3c17d3a568ee9d5dc8027e16405dcf2b54f",
+      "acceptance/fixtures/reporting/a-tag-removed-before-publish.json": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+      "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+      "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json": "b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a",
+      "acceptance/fixtures/recovery/README.md": "fa733add0f408dee3f1d870b1ca6f6da977337f2d940e0e13afe74ec4efccc79",
+      "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+      "acceptance/fixtures/recovery/i-collector-token-calls-save.json": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+      "acceptance/fixtures/ui/README.md": "c7ac5d304c33ff48228f5256ac2e56e097eb20121a6648ee4cca431041670dce",
+      "acceptance/fixtures/ui/sc51-first-time-setup.json": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+      "acceptance/fixtures/boundary/README.md": "6a41b4e4fffc0febc9fb93aebae948d6a1ce3d91de45b57153ae9ce4aef42fba",
+      "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+      "agent-tasks/TC-tag-service.md": "6cfd87d2b9706824a251adee586c58ccf31fbbd0e268610ac9917576b89e2b94"
+    },
+    "implementation_revision": "working tree on claude/eloquent-gauss-a7h0pu; 0016_tc_tag_service.py=b6c150a361fbde17; service.py=84c2e923e173aff8; router.py=680c2a54031bf7ec; main.py=17e398296f776582; wiring.py=e1c6ffda0559af14; settings.py=98701f095b4577f7; test_wiring.py=1b5274128f58b9ca; test_tag_service.py=c7c6f7fd0471d479",
+    "contract_versions": {
+      "CT-data-entities": "0.3.0",
+      "CT-ports": "0.1.0"
+    }
+  },
+  "environment": {
+    "os": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "runtimes": {
+      "python": "3.12.3",
+      "sqlite": "3.45.1"
+    },
+    "config_redacted": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RR_EMBEDDING_MODEL_PATH": "<not set: no local model in this environment; mutations answer vectors: pending and the wired app uses UnconfiguredEncoder>",
+      "encoder_in_tests": "DeterministicHashEncoder (test stand-in, not a model); no similarity value is read as meaningful"
+    }
+  },
+  "inputs": {
+    "scenario_ids": [
+      "SC05",
+      "SC06",
+      "SC19",
+      "SC22",
+      "SC24",
+      "SC37",
+      "SC40",
+      "SC41",
+      "SC49",
+      "SC51"
+    ],
+    "requirement_ids": [
+      "REQ-D23",
+      "REQ-D28",
+      "REQ-D46",
+      "REQ-D47",
+      "REQ-OQ04",
+      "REQ-OQ09"
+    ],
+    "invariant_ids": [
+      "I01",
+      "I05",
+      "I06",
+      "I08",
+      "I12"
+    ],
+    "fixtures": [
+      {
+        "path": "acceptance/fixtures/reporting/a-tag-removed-before-publish.json",
+        "sha256": "cd543ec22a34fbf18b923b1e4fb4d733e54075a6586f810175bf28767f691d44",
+        "bytes": 16121
+      },
+      {
+        "path": "acceptance/fixtures/reporting/c-tag-changed-after-publish-before-send.json",
+        "sha256": "3b0d6f24a06ac907ce6c65b139d6124f09dd9ff89389e64d58256a844004a3fa",
+        "bytes": 6023
+      },
+      {
+        "path": "acceptance/fixtures/reporting/j-backfill-add-remove-readd.json",
+        "sha256": "b074e9f353e4b9646cdf58c88864e1677b86adccdff1b38ab049cbc5e9a4cd4a",
+        "bytes": 6842
+      },
+      {
+        "path": "acceptance/fixtures/recovery/h-unauthenticated-owner-api.json",
+        "sha256": "32883c7a2a12b36d964f7974c45952e731f2330cc1416b43c9e4895ae1ad5119",
+        "bytes": 4024
+      },
+      {
+        "path": "acceptance/fixtures/recovery/i-collector-token-calls-save.json",
+        "sha256": "78e6e6ee47008b5d9b44dbdf65994f93c7ce89ee33ef7f96e7699ee7e0372886",
+        "bytes": 5229
+      },
+      {
+        "path": "acceptance/fixtures/ui/sc51-first-time-setup.json",
+        "sha256": "19820cec74bb3a73dd9945674ce3dd88fd9d18f1d15ae0b48ebef938b92f18d7",
+        "bytes": 13282
+      },
+      {
+        "path": "acceptance/fixtures/boundary/a-default-deny-sweep-36-edges.json",
+        "sha256": "5de06521eb250c1c4e1514d760b30f1f9fdf198a7f10f1342e7019ec68b3c4b0",
+        "bytes": 31529
+      }
+    ]
+  },
+  "execution": {
+    "kind": "command",
+    "command": "uv run ruff check . && uv run ruff format --check . && uv run mypy && uv run pytest tests/integration/test_tag_service.py server/tests/test_wiring.py && uv run pytest (full suite) && evidence/tools/e0_check.py --repo . && evidence/tools/verify_cards.py --repo .",
+    "working_directory": "/home/user/xcrawl",
+    "started_at": "2026-10-17T04:26:23Z",
+    "ended_at": "2026-10-17T04:26:23Z",
+    "exit_code": 0,
+    "attempts": 1,
+    "error_classification": null
+  },
+  "oracle": {
+    "statement_vi": "Fixture là oracle (SRC-PLAN §15). (j) activation 2 trên tag id mới = denied_already_consumed với đúng chuỗi lý do của fixture, một subscription_identity_hash, đúng 1 hàng đã tiêu thụ. (a) phiên bản active sau khi xóa chỉ còn 'protein folding'; freeze với id cũ ⇒ ReportError(TAG_VERSION_STALE). (c) phiên bản đã freeze đọc lại cùng id/content_hash/payload sau một thay đổi; freeze lặp lại idempotent. (h) DELETE không phiên ⇒ 401, thiếu CSRF ⇒ 403 CSRF_REJECTED, GET /v1/tags trước = sau. (i) PATCH bằng token collector ⇒ 401, không đổi gì. (sc51) preview không tag ⇒ trạng thái trống của SCR-topics. GET /v1/reports trên app đã nối ⇒ 200. Một tag.create bị từ chối không để lại vector nào (COUNT(tag_vector) = 0, built_vector_count = 0)."
+  },
+  "result": "PASS",
+  "artifacts": [],
+  "limitations": {
+    "mock_or_live": "mock",
+    "sample_size": 19,
+    "not_checked_vi": [
+      "sc51 'tag_config_version__total: 1' sau ba lần tạo: NOT_RUN — mâu thuẫn với ports.yaml và fixture a/c (CR-TC-TAG-01).",
+      "Không có model embedding thật: REQ-A3/REQ-OQ09 vẫn KC; mọi phép đo similarity NOT_RUN.",
+      "Build/publish một báo cáo đầu-cuối bằng tag port thật cùng một generation có vector thật: NOT_RUN — chưa có tiến trình production nào gọi build_report/publish_report.",
+      "Idempotency theo request_id và freeze theo report_build_id là sổ trong tiến trình (CR-TC-TAG-03/-04).",
+      "Manifest này CHƯA được đăng ký vào evidence/index.json (file của PC09)."
+    ]
+  },
+  "invalidation": {
+    "invalidated_by_paths": [
+      "contracts/ports.yaml",
+      "contracts/data/entities.yaml",
+      "contracts/reporting/time-and-tags.md",
+      "contracts/reporting/selection.md",
+      "contracts/modules.yaml",
+      "contracts/http/openapi.yaml"
+    ],
+    "invalidated_by_rule_ids": [
+      "INV-06"
+    ]
+  },
+  "claim": {
+    "supports_label": "CONTRACT_READY",
+    "scope_vi": "Card §9 đặt TRẦN là IMPLEMENTATION_VERIFIED, nhưng bản ghi này là SELF_VALIDATION nên chỉ chống đỡ được tới CONTRACT_READY.",
+    "not_established_vi": [
+      "KHÔNG có independent audit.",
+      "KHÔNG có model embedding thật.",
+      "KHÔNG có báo cáo nào được build/publish đầu-cuối bằng tag port thật."
+    ]
+  }
+}

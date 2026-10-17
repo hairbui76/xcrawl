@@ -215,9 +215,9 @@ mang nhãn `PROVISIONAL` trong hợp đồng.
 > | `collector_token` | `RR_COLLECTOR_TOKEN` chưa đặt ⇒ collector gọi ingest nhận `401` |
 > | `telegram_ingress_secret` | `RR_TELEGRAM_WEBHOOK_SECRET` chưa đặt ⇒ **mọi update bị từ chối**, đúng hướng default-deny |
 > | `delivery_context.transport` | chưa cấu hình bot token Telegram. `status` nói thẳng: *"MOD-secret-service exists now, so this is a missing credential, not a missing module"* |
-> | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng cả hai adapter giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
+> | `analysis_context.provider_config` | chưa provider AI nào được bật: `REQ-OQ03` đã trả lời nhưng adapter `anthropic@claude-opus-5-5` (`OD-20261017-13`) giữ `enabled=false` cho tới khi có bằng chứng cô lập (`REQ-A5`, `ADR-0010`) |
 > | `secret_store` | `RR_SECRET_MASTER_KEY` chưa đặt ⇒ `secret.*` từ chối. *"No key is ever generated or defaulted"* — xem §7.1 và §8.4 |
-> | `report_context` | `CR-P0-07`: `TagConfigVersionPort` chưa có hiện thực, và chưa có model embedding thật (`REQ-OQ09`) |
+> | `local_embedding_model` | `RR_EMBEDDING_MODEL_PATH` chưa đặt ⇒ vector của tag ở trạng thái `pending` và mọi lần build báo cáo bị từ chối (`REQ-OQ09`, ứng viên làm việc `intfloat/multilingual-e5-small`). *(Bản trước của dòng này là `report_context` / `CR-P0-07`; `TC-tag-service` đã đóng nó — §4.1b.)* |
 > | `research_connector` | `SG-DOC`: **không hợp đồng nào** nêu host hay endpoint của arXiv/OpenAlex (`endpoint_template` là `None`, `CR-PC05-03`); `SG-LIVE`: một lời gọi thật là E3, cần packet riêng |
 >
 > Hệ quả: §7 (Telegram) và §8 (AI) **vẫn bị chặn**, nhưng nay bị chặn vì **thiếu credential và
@@ -282,7 +282,7 @@ curl -i -X POST http://127.0.0.1:8080/v1/auth/login \
   -H 'Content-Type: application/json' \
   -H 'X-Schema-Version: 0.3.0' \
   -H 'X-Request-Id: <ULID của bạn>' \
-  -d '{"username":"owner","password":"<mật-khẩu>"}'
+  -d '{"username":"Owner","password":"<mật-khẩu>"}'
 ```
 
 **Kỳ vọng — `đã chạy ở đây` trên tiến trình uvicorn thật:** `HTTP 200` và thân
@@ -319,33 +319,79 @@ Năm route dưới đây đã được gọi **trên một tiến trình uvicorn
 | `GET /v1/runs` | **200** | `{"runs":[]}` |
 | `GET /v1/settings` | **200** | `{"settings":{},"timezone_iana":null,"providers":[],"source_connections":[]}` |
 | `GET /v1/saved` | **200** | `{"schema_version":"0.3.0","items":[],"count":0}` |
-| `GET /v1/reports` | **500** | xem ngay dưới |
+| `GET /v1/reports` | **200** | `{"schema_version":"0.3.0","reports":[],"next_cursor":null}` — từ `TC-tag-service` (2026-10-17) |
+| `GET /v1/tags` | **200** | `{"tags":[],"global_exclusions":[],"tag_config_version":null,"empty_state_vi":"Chưa có tag nào, báo cáo sẽ trống"}` |
 
 Trong khối `modules` của readiness, những mục chưa nối trả **`null`**, không trả `ok`. Đó là
 `I13` và `CAP-P5` được tôn trọng đúng chỗ dễ vi phạm nhất: *"không có dữ liệu"* phải phân biệt
 được với *"khoẻ"*.
 
-> #### `GET /v1/reports` trả `500` — và vì sao bạn **không** cần lo
+> #### `GET /v1/reports` — từng trả `500`, nay `200`
 >
-> Đây là route owner-facing **duy nhất** chưa hoạt động. Thân trả về — **`đã chạy ở đây`**:
->
-> ```json
-> {"code":"INTERNAL","scope":"request","retry_class":"unknown_outcome",
->  "message_safe":"Dịch vụ báo cáo chưa được cấu hình trong bản triển khai này (CR-P0-07):
->                  chưa có cổng tag-service và cổng embedding. Yêu cầu của bạn hợp lệ và
->                  không có dữ liệu nào bị đọc hay ghi.",
->  "details_safe":{"operation_id":"report.list"}}
-> ```
->
-> Ba điều đáng ghi nhận: mã `500` **đúng hợp đồng** (`openapi.yaml` khai `500` cho đường này),
-> phong bì là `ErrorEnvelope` hợp lệ **không rò traceback**, và `message_safe` **nói thẳng
-> nguyên nhân, mã CR, và rằng không dữ liệu nào bị đọc hay ghi**.
->
-> Audit `A3-P5-R1` nêu đúng điểm yếu còn lại (`F-A3-P5-03`): mã vẫn là `INTERNAL` — nghĩa là
-> *"bất ngờ"* — cho một tình huống **hoàn toàn được dự đoán. `retry_class` là
-> `unknown_outcome`, nên đừng đọc nó như "thử lại sẽ được": sẽ không, cho tới khi `CR-P0-07`
-> đóng. Điều đã cải thiện so với vòng trước là `message_safe`: nó không còn chỉ nói *"Có lỗi
-> không mong đợi"*.
+> Trước `TC-tag-service`, đây là route owner-facing duy nhất hỏng: `500 INTERNAL` với
+> `message_safe` nêu `CR-P0-07` (không có tag service, không có cổng embedding). Owner chọn **giữ
+> mã `500`** thay vì thêm `503` vào hợp đồng (`OD-20261017-12` mục 4), và lỗi tự hết khi
+> `report_context` được nối. **`đã chạy ở đây`** (2026-10-17, app đã nối, database trắng):
+> `200` với danh sách rỗng.
+
+#### 4.1b Tag — tạo chủ đề theo dõi (**`đã chạy ở đây`**, 2026-10-17)
+
+Tag là lớp subscription: báo cáo chỉ chọn những gì khớp tag đang active lúc publish
+(`time-and-tags.md` §3). Sáu route, `contracts/http/openapi.yaml`; body chốt ở
+`agent-tasks/TC-tag-service.md` §4.
+
+**Bước 1 — đặt N (số ngày với ngược) một lần.** Hợp đồng cấm đặt mặc định trong mã; Owner đã chốt
+N = 7 (`OD-20261017-12` mục 2). Chưa đặt thì `POST /v1/tags` trả `422` với
+`field_path: reporting.backfill_days` và câu *"Chưa cấu hình số ngày với ngược (backfill_days)
+trong Settings; đặt nó trước khi tạo tag."* Đặt qua Settings:
+
+```bash
+curl -X PATCH https://<server>/v1/settings -b cookies.txt \
+  -H 'X-Schema-Version: 0.3.0' -H 'X-Request-Id: <ULID>' -H 'X-CSRF-Token: <rr_csrf>' \
+  -H 'Idempotency-Key: <khoá-16+-ký-tự>' -H 'Content-Type: application/json' \
+  -d '{"settings":{"backfill_days":7}}'
+```
+
+**Kỳ vọng:** `200` `{"settings":{"backfill_days":7},…}`. (Settings lưu khoá `backfill_days`, còn
+backfill đọc `reporting.backfill_days`; tag service đọc cả hai, khoá hợp đồng trước —
+`CR-TC-TAG-08`.)
+
+**Bước 2 — tạo tag.** `POST /v1/tags` với `{"text":"protein folding","aliases":["protein
+structure"]}` (cùng bốn header như trên). **Kỳ vọng:** `201` với `tag`, `tag_config_version`
+(`sequence: 1`, `content_hash: sha256:…`), `backfill` (`activation_sequence: 1`,
+`entitlement: granted`, `backfill_days: 7`) và `vectors: {"state":"pending","reason":
+"no_local_embedding_model"}`.
+
+**`pending` nghĩa là gì.** Không có model embedding cục bộ, nên tag được lưu mà **chưa có vector**;
+một lần build báo cáo sẽ bị từ chối với `EMBEDDING_GENERATION_MISMATCH` thay vì chọn bừa. Không có
+encoder thay thế nào được cắm vào. Khi bạn có model trên đĩa:
+
+| Biến | Nghĩa |
+| --- | --- |
+| `RR_EMBEDDING_MODEL_PATH` | thư mục model trên máy (không bao giờ tải lúc chạy) |
+| `RR_EMBEDDING_MODEL_VERSION` | **bắt buộc** khi có path; một revision cố định, không `latest` — thiếu ⇒ server từ chối khởi động |
+| `RR_EMBEDDING_MODEL_NAME` | mặc định `intfloat/multilingual-e5-small` |
+| `RR_EMBEDDING_MODEL_DIMENSION` | mặc định `384` |
+
+Rồi tạo, nạp và kích hoạt generation đầu tiên (`OD-20261017-13`):
+
+```bash
+export RR_EMBEDDING_MODEL_PATH=/đường/dẫn/multilingual-e5-small   # đã có sẵn trên đĩa
+export RR_EMBEDDING_MODEL_VERSION=<revision cố định>
+uv run rr-admin embedding-bootstrap
+```
+
+Lệnh này mở một generation `building` (`expected_vector_count` = số tag/alias/exclusion đang
+hoạt động), sinh vector cho từng subject vào đó, rồi kích hoạt — generation cũ (nếu có) vẫn
+`active` cho tới khi bước cuối commit. **Kỳ vọng:** JSON với `"activated": true` và
+`generation_id`. Thiếu `RR_EMBEDDING_MODEL_PATH` ⇒ dừng mà không ghi gì; bị guard từ chối ⇒
+mã thoát `2` kèm `code`. Không bước nào tải model.
+
+Còn thiếu, ghi rõ: chưa có tiến trình nào tự build/publish báo cáo theo lịch (`TC-tag-service`
+§1 non-goals) — xem §11.2.
+
+**`text` của tag không sửa được** (`PATCH` chỉ nhận `similarity_threshold`, `aliases`,
+`exclusions`): N ngày với ngược tính theo chữ, nên đổi chữ = xoá rồi tạo lại (`CR-TC-TAG-06`).
 
 `GET /openapi.json` trả `404` — có chủ đích: `create_app()` đặt `openapi_url=None`,
 `docs_url=None`, `redoc_url=None`. Hợp đồng HTTP là `contracts/http/openapi.yaml`, không phải
@@ -406,13 +452,22 @@ thoát `0`. `ai_providers` rỗng vì chưa adapter nào được bật ([§8](#
 thoát **`2`**. Nó **không** đoán một địa chỉ server, **không** ghi hàng nào, và nói đúng biến
 môi trường bạn còn thiếu. Đó là lời từ chối đúng, không phải lỗi của bạn.
 
-> **`KHOẢNG TRỐNG G-7` — ĐÃ ĐÓNG một nửa.** Worker **không còn là stub**: `--run` là một vòng
-> chạy thật, biết đăng ký, heartbeat và claim khi có `RR_SERVER_URL` cùng token. Cái **chưa**
-> chứng minh được ở đây là vòng chạy đó **nói chuyện với một server thật** — điều đó cần cả
-> hai tiến trình cùng cấu hình, và audit `A3-P5-R1` ghi rõ nó **không** chạy được vòng backoff
-> của adapter bị tắt trong đợt kiểm đó. Vì vậy **"collector online"** theo `deployment.md` §6
-> (đăng ký hợp lệ **và** heartbeat trong `online_threshold` = 90 s **và** server ghi được)
-> vẫn **chưa từng được quan sát**.
+> **`KHOẢNG TRỐNG G-7` — tầng giao vận ĐÃ ĐÓNG; hai lệnh `--run` vẫn bị chặn bởi việc của bạn.**
+> Worker **không còn là stub**, nhưng `rr-worker --run` thoát `3` (`no_dispatchable_adapter`)
+> **trước khi** chạm server, vì adapter duy nhất `enabled: false` (`G-8`); `rr-collector --run`
+> thoát vì chưa có bộ điều khiển X (`SP1`). Cả hai lời từ chối là đúng.
+>
+> **`đã chạy ở đây`** (2026-10-17) — `uv run python tools/loopback_drill.py`: dựng database tạm,
+> `rr-admin migrate` + `bootstrap-owner`, chạy `uvicorn server.app.main:app` như **một tiến trình
+> riêng** trên `127.0.0.1`, rồi chạy **vòng collector thật** (`CollectorLoop`, `httpx` thật, socket
+> TCP thật) với nguồn X **ghi sẵn**, và `AnalysisServerPort` thật. Quan sát được:
+> `POST /v1/runs/run-now` **200** `queued` → collector `register` (`heartbeat_interval_s: 30`,
+> `lease_granted: false`) → claim → 5 bài → `acked_through_ingest_sequence: 5` → release;
+> `GET /v1/workers/status` **200** với collector **`online_state: "online"`** — lần đầu tiên
+> **"collector online"** của `deployment.md` §6 được quan sát; worker claim **200**
+> `{"task": null, "reason": "no_enabled_provider"}`. Thoát `0`.
+>
+> Cái drill **không** chứng minh: hành vi thật của X và của bất kỳ provider AI nào.
 
 Cấu hình worker cần (`secrets.md` §3): `RR_SERVER_URL`, và `analysis_worker_token` trong một
 file **`0600`** ở thư mục cấu hình của user — **không bao giờ trong repo**.
@@ -650,15 +705,21 @@ Hợp đồng: [`contracts/ai/providers.yaml`](../contracts/ai/providers.yaml),
 embedding là model local ở server (`REQ-D48`/`REQ-D50`). `SEC-P5`: **không secret nào là bắt
 buộc**.
 
-### 8.2 Hai adapter đã đăng ký — và vì sao **cả hai** `enabled: false`
+### 8.2 Adapter đã đăng ký — và vì sao nó `enabled: false`
 
-`providers.yaml` §2.1 ghi hai mục của một nhà cung cấp thật (Anthropic), theo `REQ-OQ03` /
-`OD-20260908-06`:
+`providers.yaml` §2.1 (bản `0.3.0`) ghi **một** mục của Anthropic, theo `REQ-OQ03` /
+`OD-20261017-13` (trước đó là hai mục Sonnet 5 / Opus 5 của `OD-20260908-06`):
 
-| `adapter_id` | Tác vụ | `enabled` |
-| --- | --- | --- |
-| `anthropic@claude-sonnet-5` | `label`, `direction_phrasing` | **`false`** |
-| `anthropic@claude-opus-5` | `summary` | **`false`** |
+| `adapter_id` | Tác vụ | `effort` | Endpoint | `enabled` |
+| --- | --- | --- | --- | --- |
+| `anthropic@claude-opus-5-5` | `label`, `summary`, `direction_phrasing` | `low` / `medium` / `medium` | `https://api.anthropic.com` (allowlist `api.anthropic.com`) | **`false`** |
+
+Transport thật là `AnthropicTransport` (`worker/app/adapter/api_provider.py`, SDK `anthropic`
+chính thức): một lời gọi cho mỗi task, **SDK không retry** (`max_retries=0`), không gửi tool
+nào, `stop_reason: refusal` là lỗi provider chứ không phải kết quả rỗng. `rr-worker --run` dùng
+nó — nhưng vẫn thoát với `no_dispatchable_adapter` chừng nào mục trên còn `enabled: false`.
+**Không có fallback model phía server**: `providers.yaml` §6 mặc định tắt fallback; muốn bật là
+một quyết định Owner mới.
 
 **Cái đang chặn là *cô lập*, không phải điều khoản.** `REQ-A5` (điều khoản Anthropic) đã được
 **Owner ký xác nhận** — `OD-20260908-08`, `AUTH-OWNER-20260908-09`, 2026-09-08. Cái giữ
@@ -776,9 +837,18 @@ Thực tế mạnh hơn hợp đồng đòi: **không có router HTTP nào** cho
 tại**.
 
 CLI đọc token từ `RR_BACKUP_OPERATOR_TOKEN` (hoặc `--token-file`, một file `0600` theo
-`secrets.md` §3) và so **constant-time** với `RR_BACKUP_OPERATOR_TOKEN_EXPECTED`.
+`secrets.md` §3), băm thành `sha256:<hex>` và so **constant-time** với
+`RR_BACKUP_OPERATOR_TOKEN_SHA256` — **đúng biến mà server dùng** để dựng registry token, qua
+`Settings`. Không nơi nào giữ bản rõ của token ngoài file của bạn.
 **`--token` cố tình không tồn tại**: tham số tiến trình đọc được bởi mọi user trên máy dùng
 chung.
+
+Tạo digest một lần (nhận cả dạng `sha256:<hex>` lẫn hex trần mà `sha256sum` in ra):
+
+```bash
+printf %s "$(cat ~/.config/research-radar/backup-operator.token)" | sha256sum | cut -d' ' -f1
+# rồi đặt: export RR_BACKUP_OPERATOR_TOKEN_SHA256=<hex vừa in>
+```
 
 **`đã chạy ở đây`** — không token:
 
@@ -790,17 +860,20 @@ uv run rr-backup --database var/research-radar.db status --restore-id <ULID>
 `{"code":"UNAUTHORIZED","message_safe":"Thao tác này chỉ chấp nhận backup operator token.","required_auth_scope":"backup_operator"}`,
 thoát **`3`**. Một `expected` chưa cấu hình là **từ chối**, không bao giờ là cho qua.
 
-> **`KHOẢNG TRỐNG G-10` — VẪN MỞ.** Token "đúng" vẫn đến từ biến môi trường
-> `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` **do chính người gọi đặt**: `tools/backup_cli.py` đọc
-> `os.environ.get(EXPECTED_TOKEN_ENV)` và so hằng-thời-gian với thứ bạn cung cấp.
+**`đã chạy ở đây`** (2026-10-17) — từ một thư mục tạm, database vừa migrate, chưa bootstrap:
+không đặt digest ⇒ `UNAUTHORIZED`, thoát `3`; đặt digest đúng ⇒ qua xác thực và dừng ở
+`NOT_FOUND` `resource_kind: owner`, thoát `2`; token sai với digest đúng ⇒ `UNAUTHORIZED`,
+thoát `3`. Đặt chính token (bản rõ) vào biến digest ⇒ **từ chối**, vì đó không phải digest.
+
+> **`KHOẢNG TRỐNG G-10` — ĐÃ ĐÓNG theo phạm vi Owner chọn** (`OD-20261017-12` mục 1).
+> CLI nay đọc `Settings.backup_operator_token_sha256`; biến `RR_BACKUP_OPERATOR_TOKEN_EXPECTED`
+> (bản rõ, do người gọi tự đặt) **không còn được đọc**.
 >
-> Đợt nối dây **có** thêm `backup_operator_token_sha256` vào `Settings`
-> (`server/app/settings.py`, từ `RR_BACKUP_OPERATOR_TOKEN_SHA256`) — nhưng **CLI chưa dùng
-> nó**. Nên khoảng trống thu hẹp chứ chưa đóng: cơ chế đã có chỗ đứng, chỉ chưa được nối vào.
->
-> Trên một máy một người dùng đây là bất tiện; trên máy dùng chung nó có nghĩa là **ai chạy
-> được CLI thì tự cấp quyền cho mình**. Cho tới khi có card nối `Settings` vào CLI: giữ token
-> trong một file `0600` và dùng `--token-file`, đừng để nó trong shell history.
+> Owner đã chọn mô hình đe doạ **máy một người dùng**. Giới hạn còn lại, ghi rõ để không ai
+> đọc nhầm: digest vẫn đến từ môi trường của người chạy CLI, và CLI mở thẳng file database —
+> nên trên máy **dùng chung**, ai ghi được file đó thì không cần token. Token ở đây tách vai
+> trò backup operator khỏi phiên trình duyệt của owner; nó **không** là ranh giới giữa các
+> user cục bộ. Muốn thứ đó thì cần một thay đổi hợp đồng ở `contracts/ops/secrets.md`.
 
 ### 9.2 Tạo snapshot
 
@@ -1056,25 +1129,28 @@ Nguồn cho cột "quan sát được": ba báo cáo audit độc lập
 | ~~`G-5`~~ | probe giải `output_dir` theo **cwd** và in đường dẫn đã chọn | `--dry-run` từ thư mục tạm: **không ghi gì** — kiểm lại bằng `find`, chỉ còn `cfg.json`. [§6.3](#63-đường-dẫn-đầu-ra--khoảng-trống-g-5-đã-đóng) |
 | ~~`G-6`~~ | card thứ 20 `TC-secret-settings-service`: `server/app/secret/` + `settings_service/`, migration `0014`, AES-256-GCM | Master key **không đặt** ⇒ chạy được, `secret.*` từ chối; **đặt sai** ⇒ **từ chối khởi động**. [§8.4](#84-api-key-để-ở-đâu) |
 
-### 11.2 Bốn khoảng trống **còn mở** — và ba trong bốn chỉ **bạn** đóng được
+### 11.2 Khoảng trống **còn mở** — `G-10` đã đóng; bốn cái còn lại đều chờ **bạn**
 
 | # | Khoảng trống | Hệ quả với bạn | Ai đóng được |
 | --- | --- | --- | --- |
-| `G-7` | **Vòng chạy collector/worker chưa từng nói chuyện với một server thật.** Cả hai nay là tiến trình thật và **từ chối có lý do** khi thiếu `RR_SERVER_URL`; nhưng đăng ký + heartbeat + claim **chưa từng được quan sát** đầu-cuối. Audit `A3-P5-R1` ghi rõ vòng backoff của adapter bị tắt cũng chưa chạy như một tiến trình | **"collector online"** (`deployment.md` §6) vẫn chưa từng xảy ra | **Bạn** — cấu hình hai tiến trình và chạy chúng cùng server |
-| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Cả hai adapter `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
+| `G-7` | **Tầng giao vận đã đóng** (`tools/loopback_drill.py`, 2026-10-17): đăng ký, claim, ingest, checkpoint, release và "collector online" đều quan sát được qua socket TCP với một server uvicorn thật. **Còn mở** ở chỗ hai lệnh `--run` đã phát hành dừng trước khi chạm server, đúng như thiết kế | Collector cần `SP1`; worker cần một adapter bật (`G-8`) | **Bạn** — `SP1` và `G-8` |
+| `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Adapter `anthropic@claude-opus-5-5` `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
 | `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram khoá ở phạm vi **chỉ chữ, không nút** | **Bạn** — đọc tài liệu Bot API ([§12.2](#122-mười-việc-chỉ-bạn-làm-được) mục 7) |
-| `G-10` | **`rr-backup` vẫn so token với `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` do chính người gọi đặt.** `Settings` nay có `backup_operator_token_sha256`, nhưng CLI **chưa dùng** nó (`tools/backup_cli.py` vẫn đọc `os.environ`) | Trên máy dùng chung, ai chạy được CLI thì tự cấp quyền | **Một card** — chưa ai được giao |
+| `G-11` | **Chưa có đường ống báo cáo chạy theo lịch** (khảo sát 2026-10-17, `OD-20261017-13` mục 2): không tiến trình nào tick lịch, chuyển pha run, gọi `analysis.enqueue_tasks` hay `report.build`; chưa có văn bản prompt cho ba tác vụ (`tasks.yaml` chỉ có `prompt_version`); chưa có đường sinh vector cho `work_label`; bản đồ cô lập chưa có chỗ cho `ISO-04`/`ISO-05` (`CR-PC06-OQ03-01`); cổng delivery/run_outcome chưa nối | `embedding-bootstrap` và transport Anthropic đã có, nhưng một đợt báo cáo đầu-cuối chưa chạy được | **Bạn** quyết các điểm hợp đồng (prompt, vector nhãn, slot cô lập, chuyển pha), rồi mới viết mã |
+| ~~`G-10`~~ | **Đã đóng theo phạm vi máy một người dùng** (`OD-20261017-12` mục 1): `rr-backup` so `sha256` của token với `RR_BACKUP_OPERATOR_TOKEN_SHA256` qua `Settings`, cùng biến server dùng; bản rõ `..._EXPECTED` không còn được đọc | Trên máy **dùng chung** vẫn không phải ranh giới giữa user cục bộ — xem [§9.1](#91-xác-thực-backupoperatortoken-và-chỉ-nó) | — |
 
-### 11.3 Bốn phát hiện audit còn `OPEN` mà bạn nên biết
+### 11.3 Phát hiện audit và phát hiện mới mà bạn nên biết
 
 Không phải khoảng trống của runbook, nhưng chúng chạm đúng những gì bạn sắp làm:
 
 | ID | Nội dung | Trạng thái |
 | --- | --- | --- |
-| `F-A3-P5-03` | `GET /v1/reports` trả `500 INTERNAL` cho một tình huống **hoàn toàn dự đoán được**. `message_safe` nay nói rõ nguyên nhân và `CR-P0-07`, nhưng mã lỗi vẫn là "bất ngờ" | `OPEN` — [§4.1](#41-server) |
-| `F-A3-P5-04` | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError`, trong khi `python tools/rr_admin.py` chạy được | `OPEN` — tài liệu này vì vậy dùng **console script** (`rr-backup`, `rr-admin`) ở mọi chỗ |
-| `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
-| `CR-TC-SECRET-01` | `entities.yaml` chưa khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | `OPEN` — [§8.4](#84-api-key-để-ở-đâu) |
+| ~~`F-A3-P5-03`~~ | `GET /v1/reports` trả `500` cho một tình huống dự đoán được | **Hết hiện tượng**: `CR-P0-07` đóng nên route trả `200`. Owner đã chọn giữ `500` thay vì thêm `503` (`OD-20261017-12` mục 4) |
+| ~~`F-A3-P5-04`~~ | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError` | **`VERIFIED`** (`A3-P5-R2` §2, `precode/review.md`): năm console script `rr-*` chạy từ mọi cwd, và từ 2026-10-17 `python tools/backup_cli.py --help` từ gốc repo **cũng chạy** (`đã chạy ở đây`). Bảng này đã ghi nhầm `OPEN` |
+| ~~`CR-P0-07`~~ | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật | **Đã đóng** bởi `TC-tag-service`: `report_context` được nối, `GET /v1/reports` trả `200`. Phần model vẫn mở — `REQ-OQ09` có ứng viên làm việc nhưng vẫn `KC` |
+| ~~`CR-TC-SECRET-01`~~ | `entities.yaml` không khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | **Đã trả lời** (`OD-20261017-12` mục 3): ở ngoài DB **là thiết kế**. `secrets.md` 0.1.1 §4.1 nói đúng điều đó; hệ quả: **backup DB không chứa ciphertext** — kế hoạch khôi phục secret phải giữ cả master key **lẫn** thư mục material. [§8.4](#84-api-key-để-ở-đâu) |
+| `CR-G7-01` | **`run.posts_ingested_new` không bao giờ được ghi.** `entities.yaml`/`run.yaml` nói nó "bằng tổng `ingest_receipt.posts_inserted` của run", nhưng không hàm nào ghi cột này: drill G-7 nạp 5 bài mới và `GET /v1/runs` vẫn trả `posts_ingested_new: 0`. Cột thuộc `MOD-job-service`, số liệu thuộc `MOD-ingest-api`, và không transition nào nói ai ghi — nên đây là một CR cho PC03/PC02, **không** sửa tự phát | `OPEN` — màn Runs hiện "0 bài mới" cho mọi đợt |
+| ~~`F-G7-02`~~ | `POST /v1/runs/run-now` không đăng nhập trả `401` với `operation_id: run.list` | **Đã sửa** (`server/app/jobs/router.py`, test `server/tests/test_wiring.py::test_each_run_route_names_itself_when_it_refuses`) |
 
 ---
 
@@ -1091,7 +1167,7 @@ gì từ một lệnh xanh.**
   chưa một lời gọi thật nào tới X, Telegram hay một provider AI, ở bất kỳ giai đoạn nào.
   *(Bản trước của dòng này ghi "không có hành vi nghiệp vụ nào tồn tại"; điều đó đúng vào
   2026-09-08 và **không còn đúng** sau commit `feat: integration wiring`.)*
-- **Một route owner-facing vẫn hỏng**: `GET /v1/reports` trả `500` (`CR-P0-07`) — [§4.1](#41-server).
+- **Không còn route owner-facing nào hỏng**: `GET /v1/reports` trả `200` từ `TC-tag-service`. Nhưng **chưa có báo cáo nào được build** — không có model embedding thật và không có tiến trình build/publish theo lịch ([§4.1b](#41b-tag--tạo-chủ-đề-theo-dõi-đã-chạy-ở-đây-2026-10-17)).
 - **`make e0` xanh chỉ chứng minh tính nhất quán nội bộ của tập con đã kiểm.** Xem
   `evidence/tools/README.md` §1 và §5 về giới hạn đã biết của chính công cụ đó.
 - **`make cards` xanh chỉ nói card khớp với hợp đồng mà nó pin.** Nó **không đọc nội dung
@@ -1116,9 +1192,9 @@ gì từ một lệnh xanh.**
 | 5 | **Đọc và review giao diện thật** trên desktop và điện thoại (E4) | `SC10`, `SC11`, `SC15` |
 | 6 | **Đọc 3–4 kỳ báo cáo thật** để hiệu chỉnh `REQ-A2`/`REQ-A4` | `G7`, rubric mật độ |
 | 7 | **Đọc tài liệu Bot API** cho ba dữ kiện `delivery.md` §3.4 | `CR-PC07-04`, `SC46` |
-| 8 | **Chốt các giá trị `PROVISIONAL`**: N backfill (`REQ-OQ04`), model embedding (`REQ-OQ09`), ba số của link code (`CR-PC07-01`) | các dòng `KC` tương ứng |
+| 8 | ~~**Chốt các giá trị `PROVISIONAL`**~~ — **đã chốt** `N = 7` và ba tham số mã liên kết (`OD-20261017-12` mục 2); model embedding có **ứng viên làm việc** `intfloat/multilingual-e5-small` (mục 5) nhưng `REQ-OQ09` vẫn `KC` tới khi đo | `REQ-OQ04` → `XN`; `CR-PC07-01` `ACCEPTED`; `REQ-OQ09`/`REQ-A3` vẫn mở |
 | 9 | **Trả lời chính sách nguồn**: arXiv/OpenAlex/X có cho phép xử lý lại nội dung của họ không | một câu hỏi pháp lý còn mở — `TC-A5-01` chỉ phủ điều khoản **Anthropic** |
-| 10 | **Quyết định `MOD-tag-service`** — chưa card nào viết nó | `CR-TC-BACKFILL-07` |
+| 10 | ~~**Quyết định `MOD-tag-service`**~~ — **đã quyết và đã làm** (`OD-20261017-12` mục 6, card `TC-tag-service`) | `CR-TC-BACKFILL-07`, `CR-P0-07` đóng |
 
 Mục 5 đáng nói thêm: 126 test Vitest chứng minh ba trạng thái sinh ra **ba chuỗi khác nhau**.
 *"Khác nhau ở mức người dùng hiểu được"* là **phán đoán của người** — của bạn.

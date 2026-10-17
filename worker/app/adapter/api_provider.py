@@ -262,3 +262,103 @@ def credential_headers(credential: TaskCredential) -> dict[str, str]:
     a log" can actually be performed (DC-AI-05).
     """
     return {_CREDENTIAL_HEADER: f"Bearer {credential.reveal()}"}
+
+
+# --------------------------------------------------------------------------------------
+# The production transport: Anthropic Messages API through the official SDK
+# --------------------------------------------------------------------------------------
+
+#: ``output_config.effort`` values the model accepts. A registry value outside this set is a
+#: contract error, refused before any call rather than sent and rejected by the provider.
+_EFFORT_LEVELS: Final[frozenset[str]] = frozenset({"low", "medium", "high", "xhigh", "max"})
+
+#: Room for the model's thinking *and* the JSON answer. Thinking cannot be disabled on
+#: ``claude-opus-5-5`` and counts toward ``max_tokens`` even though its text is not returned,
+#: so a limit sized for the answer alone would cut answers off.
+DEFAULT_MAX_TOKENS: Final[int] = 16000
+
+
+class AnthropicTransport:
+    """``ProviderTransport`` over the ``anthropic`` SDK — one ``messages.create`` per task.
+
+    Four decisions, each forced by a contract line rather than taste:
+
+    * ``max_retries=0``. :meth:`ApiProviderAdapter.run_inference_task` is "one call, one
+      task, zero retries" so that ``COUNT(analysis_attempt)`` counts model calls; the SDK's
+      default of two silent retries would make that count wrong where SQL cannot see it.
+    * No ``tools`` are sent and no ``thinking`` field is set. ISO-01 is "0 tool definitions on
+      every call"; thinking is always on for ``claude-opus-5-5`` and its depth is governed by
+      ``output_config.effort``, which comes from the registry (``effort_by_task``).
+    * No server-side ``fallbacks``. ``providers.yaml`` §6 keeps fallback off by default, and a
+      result produced by a different model would not match the registered entry. A
+      ``stop_reason: "refusal"`` therefore surfaces as a provider failure for this attempt.
+    * The base URL is the request's URL, which the adapter has already checked against the
+      entry's ``endpoint_allowlist`` (ISO-03). Nothing here reads an environment variable.
+    """
+
+    def __init__(
+        self,
+        *,
+        effort_by_task: Mapping[str, str],
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        client_factory: Any = None,
+    ) -> None:
+        unknown = {value for value in effort_by_task.values() if value not in _EFFORT_LEVELS}
+        if unknown:
+            raise ValueError(f"effort_by_task holds values the model does not accept: {unknown}")
+        self._effort_by_task = dict(effort_by_task)
+        self._max_tokens = max_tokens
+        self._client_factory = client_factory
+
+    def _client(self, *, api_key: str, base_url: str, timeout_seconds: int) -> Any:
+        if self._client_factory is not None:
+            return self._client_factory(
+                api_key=api_key, base_url=base_url, timeout=timeout_seconds, max_retries=0
+            )
+        import anthropic
+
+        return anthropic.Anthropic(
+            api_key=api_key, base_url=base_url, timeout=float(timeout_seconds), max_retries=0
+        )
+
+    def send(self, request: ProviderRequest, *, credential: TaskCredential) -> ProviderResponse:
+        import anthropic
+
+        task_type = str(request.response_schema.get("task_type", ""))
+        effort = self._effort_by_task.get(task_type)
+        if effort is None:
+            raise ValueError(f"no effort is registered for task type {task_type!r}")
+        # The single credential read stays in `credential_headers` (DC-AI-05).
+        api_key = credential_headers(credential)[_CREDENTIAL_HEADER].removeprefix("Bearer ")
+        client = self._client(
+            api_key=api_key, base_url=request.url, timeout_seconds=request.timeout_seconds
+        )
+        try:
+            message = client.messages.create(
+                model=request.model,
+                max_tokens=self._max_tokens,
+                system=request.system,
+                messages=list(request.messages),
+                output_config={"effort": effort},
+            )
+        except anthropic.APITimeoutError as exc:
+            raise ProviderUnavailable(ProbeReasonCode.PROBE_TIMEOUT) from exc
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as exc:
+            raise ProviderUnavailable(ProbeReasonCode.NOT_LOGGED_IN) from exc
+        except (anthropic.RateLimitError, anthropic.APIConnectionError) as exc:
+            raise ProviderUnavailable(ProbeReasonCode.PROBE_TIMEOUT) from exc
+        except anthropic.APIStatusError as exc:
+            if exc.status_code >= 500:
+                raise ProviderUnavailable(ProbeReasonCode.PROBE_TIMEOUT) from exc
+            raise
+        if message.stop_reason == "refusal":
+            raise ProviderUnavailable(ProbeReasonCode.POLICY_UNVERIFIED)
+        body = "".join(block.text for block in message.content if block.type == "text")
+        tool_requests = sum(1 for block in message.content if block.type == "tool_use")
+        usage = message.usage
+        return ProviderResponse(
+            body=body,
+            tokens_in=getattr(usage, "input_tokens", None),
+            tokens_out=getattr(usage, "output_tokens", None),
+            tool_requests=tool_requests,
+        )

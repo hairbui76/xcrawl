@@ -41,6 +41,13 @@ claim_ceiling: DRAFT_FOR_REVIEW
 > ký** `REQ-A5`) và `OD-20260908-08` (authority `AUTH-OWNER-20260908-09`: Owner **đích thân ký** `REQ-A5`
 > cho Anthropic, chấp nhận tường minh bảo đảm `TC-A5-01`). Hai file đó là **bản ghi song hành theo quy ước**;
 > hiệu lực thực chất nằm ở `decision-register.md` §8.14.3 và §8.15.1.
+> Vòng mười ba ở `precode/owner-decisions-13.md` — `OD-20261017-13` (authority `AUTH-OWNER-20261017-14`,
+> 2026-10-17): model AI là `claude-opus-5-5` cho cả ba tác vụ, và lệnh làm bốn việc để Claude chạy thật
+> (endpoint, transport SDK, khởi tạo generation embedding, vòng báo cáo). Adapter vẫn `enabled: false`.
+> Vòng mười hai ở `precode/owner-decisions-12.md` — `OD-20261017-12` (authority `AUTH-OWNER-20261017-13`,
+> 2026-10-17): sáu mục — `G-10` theo mô hình máy một người dùng, chốt `N = 7` và ba tham số mã liên kết,
+> material của secret store ở ngoài DB, giữ `500` cho `/v1/reports`, ứng viên embedding làm việc, và lệnh bắt
+> đầu cho card `MOD-tag-service`. Bản ghi hiệu lực ở file đó và `decision-register.md` §8.17.
 > Vòng mười một ở `precode/owner-decisions-11.md` — `OD-20260909-11` (authority `AUTH-OWNER-20260909-12`,
 > 2026-09-09): phê chuẩn `AMD-ENT-maintenance-01`, amendment kỹ thuật **thứ hai** của Coordinator — cùng hình
 > dạng với `OD-20260907-03`. Bản ghi hiệu lực ở `decision-register.md` §8.16.
