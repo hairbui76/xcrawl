@@ -1,12 +1,15 @@
 # Research Radar
 
 Repo này chứa **hợp đồng** của hệ thống (`contracts/`, `acceptance/`, `precode/`,
-`agent-tasks/`) và **bộ khung triển khai** dựng ở Giai đoạn 0 (`server/`, `collector/`,
+`agent-tasks/`) và **bộ khung triển khai** dựng từ Giai đoạn 0 (`server/`, `collector/`,
 `worker/`, `probe/`, `shared/rr_contracts/`, `tests/`, `web/`).
 
-> **Chưa có hành vi nghiệp vụ nào.** Bộ khung boot được, lint sạch, test xanh — và không
-> làm gì cả. Mọi hành vi được giao bằng card ở `agent-tasks/`, và card chỉ chạy sau khi
-> cổng **G5** đạt và Owner ra lệnh. Xem [`docs/master-plan.md`](docs/master-plan.md).
+> **Hệ khởi động và chạy như những tiến trình thật, nhưng chưa từng chạm thế giới thật.**
+> Các card ở `agent-tasks/` đã được hiện thực và nối vào server, collector, worker
+> (commit `feat: integration wiring`); `E3`/`E4` vẫn bằng 0 — chưa một lời gọi thật nào tới
+> X, Telegram hay provider AI. Xem [`docs/owner-runbook.md`](docs/owner-runbook.md) §12 trước
+> khi kết luận bất cứ điều gì từ một lệnh xanh, và [`docs/master-plan.md`](docs/master-plan.md)
+> cho lộ trình.
 
 Điểm vào để đọc: [`precode/README.md`](precode/README.md) (toàn bộ baseline) và
 [`docs/master-plan.md`](docs/master-plan.md) (lộ trình bảy giai đoạn).
@@ -154,7 +157,10 @@ Bốn job, **không job nào chạm mạng ngoài registry gói**.
 
 ## 6. Điều repo này **chưa** chứng minh
 
-- Không có hành vi nghiệp vụ nào tồn tại; E1–E4 vẫn `NOT_RUN`.
+- Hành vi nghiệp vụ tồn tại; 21/56 scenario có bằng chứng E1/E2 (chạy trên fixture), 35
+  còn `NOT_RUN`. **E3 và E4 vẫn `NOT_RUN`** ở mọi nhóm scenario: chưa lần chạy thật nào với
+  X, Telegram hay provider AI.
+  Danh sách đầy đủ: [`docs/owner-runbook.md`](docs/owner-runbook.md) §12.
 - `make e0` xanh chỉ chứng minh **tính nhất quán nội bộ của tập con đã kiểm** — xem
   `evidence/tools/README.md` §1 và §5 về những giới hạn đã biết của chính công cụ đó.
 - `make cards` xanh chỉ nói rằng card **khớp với hợp đồng mà nó pin**. Nó không đọc nội

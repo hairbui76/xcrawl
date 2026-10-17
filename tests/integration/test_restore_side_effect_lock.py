@@ -30,6 +30,7 @@ the dispatcher ever did send, both the outcome counter and the transport's list 
 
 from __future__ import annotations
 
+import hashlib
 import os
 from collections.abc import Iterator
 from pathlib import Path
@@ -59,6 +60,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 OWNER_ID = "01J0WNER100000000000000000"
 NOW = "2026-09-08T03:00:00.000Z"
 SNAPSHOT_PAYLOAD = {"content_version": "0.1.0", "display_title": "Đã lưu trước khi backup"}
+#: What `RR_BACKUP_OPERATOR_TOKEN_SHA256` holds for the token "op-token" (G-10).
+_OP_TOKEN_DIGEST = "sha256:" + hashlib.sha256(b"op-token").hexdigest()
 
 
 # --------------------------------------------------------------------------------------
@@ -649,10 +652,23 @@ def test_cli_requires_the_backup_operator_token() -> None:
     """
     from tools.backup_cli import authenticate
 
-    authenticate(presented="t0ken", expected="t0ken")
-    for presented, expected in (("wrong", "t0ken"), (None, "t0ken"), ("t0ken", None), (None, None)):
+    digest = hashlib.sha256(b"t0ken").hexdigest()
+    # G-10: the configured value is the digest the server's token registry uses, in either
+    # the `sha256:<hex>` form or the bare hex `sha256sum` prints.
+    authenticate(presented="t0ken", expected_digest="sha256:" + digest)
+    authenticate(presented="t0ken", expected_digest=digest.upper())
+    for presented, expected in (
+        ("wrong", "sha256:" + digest),
+        (None, "sha256:" + digest),
+        ("t0ken", None),
+        (None, None),
+        # The plaintext is no longer a usable configuration: a caller who sets the expected
+        # value to the token itself is comparing against something that is not a digest.
+        ("t0ken", "t0ken"),
+        ("t0ken", "sha256:" + digest[:-1]),
+    ):
         with pytest.raises(PermissionError):
-            authenticate(presented=presented, expected=expected)
+            authenticate(presented=presented, expected_digest=expected)
 
 
 def _run_cli(
@@ -668,10 +684,10 @@ def _run_cli(
     import json as _json
     from contextlib import redirect_stdout
 
-    from tools.backup_cli import EXPECTED_TOKEN_ENV, TOKEN_ENV, main
+    from tools.backup_cli import EXPECTED_DIGEST_ENV, TOKEN_ENV, main
 
     monkeypatch.setenv(TOKEN_ENV, token)
-    monkeypatch.setenv(EXPECTED_TOKEN_ENV, "op-token")
+    monkeypatch.setenv(EXPECTED_DIGEST_ENV, _OP_TOKEN_DIGEST)
     buffer = io.StringIO()
     with redirect_stdout(buffer):
         code = main(["--database", str(database), *args])
@@ -886,10 +902,10 @@ def test_maintenance_open_with_an_unknown_reason_is_rejected_by_argparse(
     in the tool's own vocabulary; "that is not one of the five reasons" is answered by showing
     the five, which an envelope with a ``violation_kind`` would not do.
     """
-    from tools.backup_cli import EXPECTED_TOKEN_ENV, TOKEN_ENV, main
+    from tools.backup_cli import EXPECTED_DIGEST_ENV, TOKEN_ENV, main
 
     monkeypatch.setenv(TOKEN_ENV, "op-token")
-    monkeypatch.setenv(EXPECTED_TOKEN_ENV, "op-token")
+    monkeypatch.setenv(EXPECTED_DIGEST_ENV, _OP_TOKEN_DIGEST)
     with pytest.raises(SystemExit) as exited:
         main(["--database", str(database), "maintenance", "--open", "--reason", "nonsense"])
     assert exited.value.code == 2
@@ -937,7 +953,7 @@ def test_an_unexpected_exception_still_leaves_a_clean_envelope(
     import tools.backup_cli as cli
 
     monkeypatch.setenv(cli.TOKEN_ENV, "op-token")
-    monkeypatch.setenv(cli.EXPECTED_TOKEN_ENV, "op-token")
+    monkeypatch.setenv(cli.EXPECTED_DIGEST_ENV, _OP_TOKEN_DIGEST)
 
     def _boom(*_args: Any, **_kwargs: Any) -> None:
         raise RuntimeError("/home/someone/secret/path leaked in a message")

@@ -9,10 +9,19 @@ operation on the whole database, and a session cookie is exactly the credential 
 gets to borrow.
 
 This CLI reads the token from ``RR_BACKUP_OPERATOR_TOKEN`` (or ``--token-file``, a
-restricted-permission file per ``secrets.md`` §3) and compares it constant-time against the
-configured value. Nothing is printed that could echo a token, and the token never reaches an
+restricted-permission file per ``secrets.md`` §3), reduces it to ``sha256:<hex>`` and compares
+that constant-time against ``Settings.backup_operator_token_sha256``
+(``RR_BACKUP_OPERATOR_TOKEN_SHA256``) -- the same digest the server's token registry is built
+from, so the CLI and the server agree on one configured credential and neither keeps the
+plaintext (``G-10``). Nothing is printed that could echo a token, and the token never reaches an
 argument vector: ``--token`` deliberately does not exist, because process arguments are world
 readable on a shared machine.
+
+Threat model (``OD-20261017-12``): the Owner runs this on a single-user machine. The expected
+digest still comes from the environment of whoever runs the CLI, and the CLI opens the
+database file directly, so on a shared machine anyone who can write that file needs no token
+at all. The token separates the operator role from an owner browser session; it is not a
+boundary between local users.
 
 Why there is no HTTP router in this card
 ----------------------------------------
@@ -55,6 +64,7 @@ from typing import Any
 
 from rr_contracts.generated.errors import ErrorCode
 
+from server.app.auth.service import hash_bearer_token
 from server.app.backup import reconcile, restore, verify
 from server.app.backup.snapshot import (
     BackupError,
@@ -63,6 +73,7 @@ from server.app.backup.snapshot import (
     new_ulid,
 )
 from server.app.db import create_sqlite_engine
+from server.app.settings import load_settings
 from server.app.storage.guard import MaintenanceWindowRequired, StorageRefused
 
 # `ForbiddenTransition` is re-exported through `guard` but declared in `health`; importing it
@@ -72,8 +83,10 @@ from server.app.storage.health import ForbiddenTransition
 #: Environment variable holding the operator token. ``secrets.md`` §3 keeps it in a 0600 file
 #: on the server; the deployment exports it into this process and nowhere else.
 TOKEN_ENV = "RR_BACKUP_OPERATOR_TOKEN"
-#: The value the presented token is checked against.
-EXPECTED_TOKEN_ENV = "RR_BACKUP_OPERATOR_TOKEN_EXPECTED"
+#: The digest the presented token is checked against -- read through
+#: :func:`server.app.settings.load_settings`, never directly, so there is one place that
+#: names it. Kept here as a constant for tests and for the refusal text.
+EXPECTED_DIGEST_ENV = "RR_BACKUP_OPERATOR_TOKEN_SHA256"
 
 EXIT_OK = 0
 EXIT_REFUSED = 2
@@ -87,14 +100,32 @@ CALLER_MODULE = "MOD-backup-cli"
 OPERATOR_PRINCIPAL = "ACT-backup-operator"
 
 
-def authenticate(*, presented: str | None, expected: str | None) -> None:
-    """``backupOperatorToken``, compared constant-time.
+def normalize_digest(value: str | None) -> str | None:
+    """``sha256:<64 hex>``, accepting the bare hex ``sha256sum`` prints.
 
-    An unconfigured ``expected`` is a refusal, never a pass: a deployment that forgot to set
-    the token must reject every operator, not accept every caller. That direction is the
+    Anything else is ``None`` -- an unusable configuration, which :func:`authenticate` turns
+    into a refusal rather than a comparison against garbage.
+    """
+    if value is None:
+        return None
+    digest = value.strip().lower()
+    digest = digest.removeprefix("sha256:")
+    if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+        return None
+    return "sha256:" + digest
+
+
+def authenticate(*, presented: str | None, expected_digest: str | None) -> None:
+    """``backupOperatorToken``: its ``sha256`` compared constant-time with the configured digest.
+
+    An unconfigured ``expected_digest`` is a refusal, never a pass: a deployment that forgot to
+    set the token must reject every operator, not accept every caller. That direction is the
     whole of ``contracts/modules.yaml`` ``default_deny`` applied to a CLI.
     """
-    if not expected or not presented or not hmac.compare_digest(presented, expected):
+    expected = normalize_digest(expected_digest)
+    if not expected or not presented:
+        raise PermissionError("backup operator token missing or incorrect")
+    if not hmac.compare_digest(hash_bearer_token(presented), expected):
         raise PermissionError("backup operator token missing or incorrect")
 
 
@@ -288,7 +319,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Entry point. Returns an exit code rather than raising, so a refusal reads as a refusal."""
     args = build_parser().parse_args(argv)
     try:
-        authenticate(presented=_read_token(args), expected=os.environ.get(EXPECTED_TOKEN_ENV))
+        authenticate(
+            presented=_read_token(args),
+            expected_digest=load_settings().backup_operator_token_sha256,
+        )
     except PermissionError:
         _emit(
             {

@@ -776,9 +776,18 @@ Thực tế mạnh hơn hợp đồng đòi: **không có router HTTP nào** cho
 tại**.
 
 CLI đọc token từ `RR_BACKUP_OPERATOR_TOKEN` (hoặc `--token-file`, một file `0600` theo
-`secrets.md` §3) và so **constant-time** với `RR_BACKUP_OPERATOR_TOKEN_EXPECTED`.
+`secrets.md` §3), băm thành `sha256:<hex>` và so **constant-time** với
+`RR_BACKUP_OPERATOR_TOKEN_SHA256` — **đúng biến mà server dùng** để dựng registry token, qua
+`Settings`. Không nơi nào giữ bản rõ của token ngoài file của bạn.
 **`--token` cố tình không tồn tại**: tham số tiến trình đọc được bởi mọi user trên máy dùng
 chung.
+
+Tạo digest một lần (nhận cả dạng `sha256:<hex>` lẫn hex trần mà `sha256sum` in ra):
+
+```bash
+printf %s "$(cat ~/.config/research-radar/backup-operator.token)" | sha256sum | cut -d' ' -f1
+# rồi đặt: export RR_BACKUP_OPERATOR_TOKEN_SHA256=<hex vừa in>
+```
 
 **`đã chạy ở đây`** — không token:
 
@@ -790,17 +799,20 @@ uv run rr-backup --database var/research-radar.db status --restore-id <ULID>
 `{"code":"UNAUTHORIZED","message_safe":"Thao tác này chỉ chấp nhận backup operator token.","required_auth_scope":"backup_operator"}`,
 thoát **`3`**. Một `expected` chưa cấu hình là **từ chối**, không bao giờ là cho qua.
 
-> **`KHOẢNG TRỐNG G-10` — VẪN MỞ.** Token "đúng" vẫn đến từ biến môi trường
-> `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` **do chính người gọi đặt**: `tools/backup_cli.py` đọc
-> `os.environ.get(EXPECTED_TOKEN_ENV)` và so hằng-thời-gian với thứ bạn cung cấp.
+**`đã chạy ở đây`** (2026-10-17) — từ một thư mục tạm, database vừa migrate, chưa bootstrap:
+không đặt digest ⇒ `UNAUTHORIZED`, thoát `3`; đặt digest đúng ⇒ qua xác thực và dừng ở
+`NOT_FOUND` `resource_kind: owner`, thoát `2`; token sai với digest đúng ⇒ `UNAUTHORIZED`,
+thoát `3`. Đặt chính token (bản rõ) vào biến digest ⇒ **từ chối**, vì đó không phải digest.
+
+> **`KHOẢNG TRỐNG G-10` — ĐÃ ĐÓNG theo phạm vi Owner chọn** (`OD-20261017-12` mục 1).
+> CLI nay đọc `Settings.backup_operator_token_sha256`; biến `RR_BACKUP_OPERATOR_TOKEN_EXPECTED`
+> (bản rõ, do người gọi tự đặt) **không còn được đọc**.
 >
-> Đợt nối dây **có** thêm `backup_operator_token_sha256` vào `Settings`
-> (`server/app/settings.py`, từ `RR_BACKUP_OPERATOR_TOKEN_SHA256`) — nhưng **CLI chưa dùng
-> nó**. Nên khoảng trống thu hẹp chứ chưa đóng: cơ chế đã có chỗ đứng, chỉ chưa được nối vào.
->
-> Trên một máy một người dùng đây là bất tiện; trên máy dùng chung nó có nghĩa là **ai chạy
-> được CLI thì tự cấp quyền cho mình**. Cho tới khi có card nối `Settings` vào CLI: giữ token
-> trong một file `0600` và dùng `--token-file`, đừng để nó trong shell history.
+> Owner đã chọn mô hình đe doạ **máy một người dùng**. Giới hạn còn lại, ghi rõ để không ai
+> đọc nhầm: digest vẫn đến từ môi trường của người chạy CLI, và CLI mở thẳng file database —
+> nên trên máy **dùng chung**, ai ghi được file đó thì không cần token. Token ở đây tách vai
+> trò backup operator khỏi phiên trình duyệt của owner; nó **không** là ranh giới giữa các
+> user cục bộ. Muốn thứ đó thì cần một thay đổi hợp đồng ở `contracts/ops/secrets.md`.
 
 ### 9.2 Tạo snapshot
 
@@ -1063,7 +1075,7 @@ Nguồn cho cột "quan sát được": ba báo cáo audit độc lập
 | `G-7` | **Vòng chạy collector/worker chưa từng nói chuyện với một server thật.** Cả hai nay là tiến trình thật và **từ chối có lý do** khi thiếu `RR_SERVER_URL`; nhưng đăng ký + heartbeat + claim **chưa từng được quan sát** đầu-cuối. Audit `A3-P5-R1` ghi rõ vòng backoff của adapter bị tắt cũng chưa chạy như một tiến trình | **"collector online"** (`deployment.md` §6) vẫn chưa từng xảy ra | **Bạn** — cấu hình hai tiến trình và chạy chúng cùng server |
 | `G-8` | **Cô lập AI `ISO-01..05` = `unverified`**, E3 `NOT_RUN`. `MOD-secret-service` nay tồn tại nên `ISO-05` **đã có thứ để chạy denied-case**, nhưng lần chạy đó chưa diễn ra | Cả hai adapter `enabled: false`; `--print-adapters` in `"ac16": "BLOCKED"` | **Bạn** — chạy probe cô lập E3 ([§8.3](#83-bạn-phải-làm-gì-để-bật-một-adapter)) |
 | `G-9` | **Ba dữ kiện Bot API vẫn `KC`** (`CR-PC07-04`) | Telegram khoá ở phạm vi **chỉ chữ, không nút** | **Bạn** — đọc tài liệu Bot API ([§12.2](#122-mười-việc-chỉ-bạn-làm-được) mục 7) |
-| `G-10` | **`rr-backup` vẫn so token với `RR_BACKUP_OPERATOR_TOKEN_EXPECTED` do chính người gọi đặt.** `Settings` nay có `backup_operator_token_sha256`, nhưng CLI **chưa dùng** nó (`tools/backup_cli.py` vẫn đọc `os.environ`) | Trên máy dùng chung, ai chạy được CLI thì tự cấp quyền | **Một card** — chưa ai được giao |
+| ~~`G-10`~~ | **Đã đóng theo phạm vi máy một người dùng** (`OD-20261017-12` mục 1): `rr-backup` so `sha256` của token với `RR_BACKUP_OPERATOR_TOKEN_SHA256` qua `Settings`, cùng biến server dùng; bản rõ `..._EXPECTED` không còn được đọc | Trên máy **dùng chung** vẫn không phải ranh giới giữa user cục bộ — xem [§9.1](#91-xác-thực-backupoperatortoken-và-chỉ-nó) | — |
 
 ### 11.3 Bốn phát hiện audit còn `OPEN` mà bạn nên biết
 
@@ -1071,8 +1083,8 @@ Không phải khoảng trống của runbook, nhưng chúng chạm đúng nhữn
 
 | ID | Nội dung | Trạng thái |
 | --- | --- | --- |
-| `F-A3-P5-03` | `GET /v1/reports` trả `500 INTERNAL` cho một tình huống **hoàn toàn dự đoán được**. `message_safe` nay nói rõ nguyên nhân và `CR-P0-07`, nhưng mã lỗi vẫn là "bất ngờ" | `OPEN` — [§4.1](#41-server) |
-| `F-A3-P5-04` | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError`, trong khi `python tools/rr_admin.py` chạy được | `OPEN` — tài liệu này vì vậy dùng **console script** (`rr-backup`, `rr-admin`) ở mọi chỗ |
+| `F-A3-P5-03` | `GET /v1/reports` trả `500` cho một tình huống **hoàn toàn dự đoán được**; `message_safe` nói rõ nguyên nhân và `CR-P0-07` | **`VERIFIED`** theo ruling (`openapi.yaml` chỉ khai `200/401/403/500`, nên `500` là mã đã khai gần nhất). Owner chọn **giữ `500`** và không thêm `503` vào hợp đồng (`OD-20261017-12` mục 4): lỗi hết khi `CR-P0-07` đóng |
+| ~~`F-A3-P5-04`~~ | `python tools/backup_cli.py` chết bằng `ModuleNotFoundError` | **`VERIFIED`** (`A3-P5-R2` §2, `precode/review.md`): năm console script `rr-*` chạy từ mọi cwd, và từ 2026-10-17 `python tools/backup_cli.py --help` từ gốc repo **cũng chạy** (`đã chạy ở đây`). Bảng này đã ghi nhầm `OPEN` |
 | `CR-P0-07` | `TagConfigVersionPort` chưa có hiện thực; không model embedding thật (`REQ-OQ09`) | `OPEN` — chặn `report_context` |
 | `CR-TC-SECRET-01` | `entities.yaml` chưa khai bảng nào cho **material** của secret store; nó nằm sau `SecretMaterialStore` ngoài database | `OPEN` — [§8.4](#84-api-key-để-ở-đâu) |
 
